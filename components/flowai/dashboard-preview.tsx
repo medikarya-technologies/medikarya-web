@@ -1,27 +1,12 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { motion, useScroll, useTransform, useSpring } from "framer-motion"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Play, Pause, Maximize2, Volume2 } from "lucide-react"
 
 export function DashboardPreview() {
   const containerRef = useRef<HTMLDivElement>(null)
-
-  // Scroll-based 3D tilt effect
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end center"]
-  })
-
-  // Smooth out the scroll value
-  const smoothProgress = useSpring(scrollYProgress, { mass: 0.1, stiffness: 100, damping: 20 })
-
-  // Transform values
-  const rotateX = useTransform(smoothProgress, [0, 1], [45, 0]) // Starts tilted back, stands up
-  const scale = useTransform(smoothProgress, [0, 1], [0.8, 1])
-  const opacity = useTransform(smoothProgress, [0, 0.5], [0.5, 1])
-  const glowOpacity = useTransform(smoothProgress, [0, 1], [0.3, 0.8])
 
   const [isPlaying, setIsPlaying] = useState(false)
 
@@ -69,20 +54,18 @@ export function DashboardPreview() {
       </div>
 
       {/* THE HOLOGRAPHIC THEATER (Light Mode) */}
-      <div className="w-full max-w-6xl px-6 perspective-1000 relative z-10" ref={containerRef} style={{ perspective: "1000px" }}>
+      <div className="w-full max-w-6xl px-6 relative z-10" ref={containerRef}>
 
         {/* Soft Glow (Behind - Light Mode) */}
-        <motion.div
-          style={{ opacity: glowOpacity, scale }}
-          className="absolute inset-0 bg-brand-500/20 blur-[100px] -z-10 rounded-full mix-blend-multiply"
+        <div
+          className="absolute inset-0 bg-brand-500/20 blur-[100px] -z-10 rounded-full mix-blend-multiply opacity-50"
         />
 
         <motion.div
-          style={{
-            rotateX,
-            scale,
-            opacity
-          }}
+           initial={{ opacity: 0, y: 40 }}
+           whileInView={{ opacity: 1, y: 0 }}
+           viewport={{ once: true, amount: 0.2 }}
+           transition={{ duration: 0.7, ease: "easeOut" }}
           className="relative aspect-video w-full rounded-[2rem] bg-slate-900 border border-slate-200/50 shadow-2xl overflow-hidden group cursor-pointer ring-1 ring-slate-900/5"
           onClick={() => setIsPlaying(!isPlaying)}
         >
@@ -139,9 +122,8 @@ export function DashboardPreview() {
         </motion.div>
 
         {/* Reflection on floor (Light Mode) */}
-        <motion.div
-          style={{ scale, opacity: glowOpacity }}
-          className="absolute -bottom-10 left-[5%] right-[5%] h-12 bg-brand-600/10 blur-xl rounded-[100%] z-0"
+        <div
+          className="absolute -bottom-10 left-[5%] right-[5%] h-12 bg-brand-600/10 blur-xl rounded-[100%] z-0 opacity-50"
         />
       </div>
     </section>

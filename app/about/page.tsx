@@ -7,6 +7,10 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
     title: "About MediKarya",
     description: "MediKarya is an AI-powered clinical simulation platform built for medical students in India. Learn about our mission, what we're building, and the problem we're solving.",
+    robots: {
+        index: true,
+        follow: true,
+    },
     openGraph: {
         title: "About MediKarya — AI Clinical Simulation for Medical Students",
         description: "We're building the practice environment that medical education has always needed — realistic, affordable, and available before your first real patient.",
