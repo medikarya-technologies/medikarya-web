@@ -1,12 +1,17 @@
 import { Footer } from "@/components/flowai/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, BookOpen, Clock, User } from "lucide-react"
+import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react"
 import type { Metadata } from "next"
+import ArticleGrid from "./ArticleGrid"
 
 export const metadata: Metadata = {
     title: "Blog — MediKarya Insights",
-    description: "Deep dives into clinical reasoning, AI-driven medical education, diagnostic thinking, and the future of healthcare simulation for medical students.",
+    description: "The MediKarya blog explores clinical reasoning training, simulation-based medical education, and AI in healthcare. Written for medical students, educators, and clinicians.",
+    robots: {
+        index: true,
+        follow: true,
+    },
     openGraph: {
         title: "MediKarya Blog — Clinical Reasoning & Medical Education",
         description: "Deep dives into clinical reasoning, AI-driven medical education, diagnostic thinking, and the future of healthcare simulation.",
@@ -18,17 +23,17 @@ export const metadata: Metadata = {
     },
 }
 
+// Featured pillar article (first article)
+const featured = {
+    slug: "ai-revolutionizing-medical-education",
+    title: "How AI is Revolutionizing Medical Education",
+    excerpt: "Artificial intelligence is beginning to change how medical students practise clinical reasoning. Instead of relying solely on ward exposure, students can now work through simulated patient cases repeatedly and receive structured feedback — anywhere, anytime.",
+    category: "AI in Medicine",
+    categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
+}
+
+// Remaining articles shown in the grid
 const articles = [
-    {
-        slug: "ai-revolutionizing-medical-education",
-        title: "How AI is Revolutionizing Medical Education",
-        excerpt: "Artificial intelligence is no longer a futuristic concept—it's actively changing how medical students learn clinical reasoning, pattern recognition, and diagnostic accuracy.",
-        category: "AI in Medicine",
-        categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
-        author: "MediKarya Team",
-        date: "February 2025",
-        readTime: "8 min read",
-    },
     {
         slug: "feynman-technique-clinical-reasoning",
         title: "The Feynman Technique for Clinical Reasoning",
@@ -115,46 +120,48 @@ export default function BlogPage() {
                         <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
                             Ideas on{" "}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">
-                                Medicine & Learning
+                                Medicine &amp; Learning
                             </span>
                         </h1>
                         <p className="text-lg text-slate-600 leading-relaxed">
-                            Deep dives into clinical reasoning, AI-driven medical education, diagnostic thinking, and the future of healthcare — written for medical students and educators.
+                            The MediKarya blog explores how medical students develop clinical reasoning,
+                            how simulation training changes medical education, and how artificial
+                            intelligence is shaping the future of healthcare training. These articles are
+                            written for medical students, educators, and clinicians interested in
+                            case-based learning and diagnostic thinking.
                         </p>
                     </div>
 
-                    {/* Articles grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
-                        {articles.map((article) => (
-                            <Link
-                                key={article.slug}
-                                href={`/blog/${article.slug}`}
-                                className="group flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 overflow-hidden"
-                            >
-                                {/* Top color bar */}
-                                <div className="h-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 w-full" />
-                                <div className="flex flex-col flex-1 p-6 space-y-4">
-                                    <span className={`self-start text-xs font-semibold px-3 py-1 rounded-full border ${article.categoryColor}`}>
-                                        {article.category}
+                    {/* Featured pillar article */}
+                    <div className="mb-16 rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                        <Link href={`/blog/${featured.slug}`} className="block group">
+                            <div className="h-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 w-full" />
+                            <div className="p-8 md:p-10">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                                        Featured Article
                                     </span>
-                                    <h2 className="text-lg font-bold text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">
-                                        {article.title}
-                                    </h2>
-                                    <p className="text-sm text-slate-500 leading-relaxed flex-1">
-                                        {article.excerpt}
-                                    </p>
-                                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                                        <div className="flex items-center gap-3 text-xs text-slate-400">
-                                            <span className="flex items-center gap-1"><User className="w-3 h-3" />{article.author}</span>
-                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{article.readTime}</span>
-                                        </div>
-                                        <span className="text-xs font-medium text-blue-600 flex items-center gap-1 group-hover:gap-2 transition-all">
-                                            Read <ArrowRight className="w-3 h-3" />
-                                        </span>
-                                    </div>
+                                    <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${featured.categoryColor}`}>
+                                        {featured.category}
+                                    </span>
                                 </div>
-                            </Link>
-                        ))}
+                                <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4 group-hover:text-blue-700 transition-colors leading-tight">
+                                    {featured.title}
+                                </h2>
+                                <p className="text-slate-600 max-w-2xl leading-relaxed">
+                                    {featured.excerpt}
+                                </p>
+                                <div className="mt-5 text-blue-600 font-medium flex items-center gap-2 group-hover:gap-3 transition-all">
+                                    Read the full article <ArrowRight className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </Link>
+                    </div>
+
+                    {/* More articles with category filter */}
+                    <div className="pb-24">
+                        <h2 className="text-xl font-bold text-slate-900 mb-6">More Articles</h2>
+                        <ArticleGrid articles={articles} />
                     </div>
                 </div>
             </div>
