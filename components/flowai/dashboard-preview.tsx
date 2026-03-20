@@ -62,10 +62,10 @@ export function DashboardPreview() {
         />
 
         <motion.div
-           initial={{ opacity: 0, y: 40 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: true, amount: 0.2 }}
-           transition={{ duration: 0.7, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
           className="relative aspect-video w-full rounded-[2rem] bg-slate-900 border border-slate-200/50 shadow-2xl overflow-hidden group cursor-pointer ring-1 ring-slate-900/5"
           onClick={() => setIsPlaying(!isPlaying)}
         >
@@ -92,7 +92,7 @@ export function DashboardPreview() {
             ) : (
               <iframe
                 className="w-full h-full"
-                src="https://www.youtube.com/embed/PB46P5vINQc?autoplay=1"
+                src="https://www.youtube.com/embed/k_K8HfMhAIw?autoplay=1"
                 title="Demo Video"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
