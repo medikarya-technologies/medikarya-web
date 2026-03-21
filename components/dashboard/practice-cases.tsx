@@ -11,15 +11,12 @@ import {
   Search,
   Clock,
   Users,
-  Star,
   Play,
   BookOpen,
   Heart,
   Brain,
   Stethoscope,
   Activity,
-  TrendingUp,
-  Award,
   Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -35,14 +32,7 @@ export function PracticeCases() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const categories = [
-    { id: "cardiology", name: "Cardiology", icon: Heart, count: 12 },
-    { id: "neurology", name: "Neurology", icon: Brain, count: 8 },
-    { id: "pulmonology", name: "Pulmonology", icon: Activity, count: 10 },
-    { id: "emergency", name: "Emergency Medicine", icon: Stethoscope, count: 15 },
-    { id: "pediatrics", name: "Pediatrics", icon: Users, count: 9 },
-    { id: "general", name: "General Medicine", icon: BookOpen, count: 18 }
-  ]
+
 
   // Map case categories to their display names and icons
   const categoryMap = {
@@ -59,8 +49,7 @@ export function PracticeCases() {
   const enhanceCaseData = (caseData: CaseMetadata[]): CaseMetadata[] => {
     return caseData.map(caseItem => ({
       ...caseItem,
-      xpReward: caseItem.estimatedTime * 5, // Calculate XP based on estimated time
-      completionRate: Math.floor(Math.random() * 30) + 70, // Random completion rate between 70-99%
+      xpReward: caseItem.estimatedTime * 5,
       description: caseItem.description || `Practice your skills with this ${caseItem.difficulty.toLowerCase()} case in ${caseItem.category}.`
     }));
   };
@@ -259,12 +248,8 @@ export function PracticeCases() {
                     <div className="flex items-center justify-between pt-2">
                       <div className="flex items-center gap-3 sm:gap-4 text-xs text-slate-500">
                         <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          <span>{case_.completionRate}%</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                          <span>4.8</span>
+                          <Clock className="h-3 w-3" />
+                          <span>{case_.estimatedTime} min</span>
                         </div>
                       </div>
 
@@ -325,7 +310,7 @@ export function PracticeCases() {
 
         <Card className="bg-gradient-to-br from-amber-50 to-orange-100 border border-amber-200/50 shadow-sm hover:shadow-md transition-all duration-200">
           <CardContent className="p-3 sm:p-4 text-center">
-            <div className="text-xl sm:text-2xl font-bold text-amber-600 mb-1">{categories.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-amber-600 mb-1">{Object.keys(categoryMap).length}</div>
             <div className="text-xs sm:text-sm text-amber-700 font-medium">Categories</div>
           </CardContent>
         </Card>
