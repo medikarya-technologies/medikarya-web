@@ -105,56 +105,75 @@ export function DashboardOverview() {
 
       {/* Stats Grid */}
       <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-3">
-        {/* Total XP */}
-        <Card className="bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 touch-manipulation">
-          <CardContent className="p-4 sm:p-5 md:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Total XP</p>
-                <p className="text-2xl md:text-3xl font-bold text-slate-900">{userStats.totalXP.toLocaleString()}</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center flex-shrink-0 shadow-sm">
-                <Star className="h-6 w-6 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cases Solved */}
-        <Card className="bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 touch-manipulation">
-          <CardContent className="p-4 sm:p-5 md:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Cases Solved</p>
-                <p className="text-2xl md:text-3xl font-bold text-slate-900">{userStats.casesSolved}</p>
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center flex-shrink-0 shadow-sm">
-                <CheckCircle2 className="h-6 w-6 text-brand-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Current Streak */}
-        <Card className="bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 touch-manipulation">
-          <CardContent className="p-4 sm:p-5 md:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Current Streak</p>
-                <p className="text-2xl md:text-3xl font-bold text-slate-900">{userStats.streakDays} days</p>
-                {userStats.streakDays > 0 && (
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-xs text-green-600 font-medium">Active</span>
+        {isLoadingStats ? (
+          // Skeleton shimmer for stat cards
+          ["amber", "brand", "green"].map((color) => (
+            <Card key={color} className="bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm">
+              <CardContent className="p-4 sm:p-5 md:p-6">
+                <div className="flex items-center justify-between gap-4 animate-pulse">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-16 bg-slate-200 rounded-md" />
+                    <div className="h-8 w-24 bg-slate-200 rounded-md" />
                   </div>
-                )}
-              </div>
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-100 to-emerald-200 flex items-center justify-center flex-shrink-0 shadow-sm">
-                <Activity className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="h-12 w-12 rounded-xl bg-slate-200 flex-shrink-0" />
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <>
+            {/* Total XP */}
+            <Card className="bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 touch-manipulation">
+              <CardContent className="p-4 sm:p-5 md:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Total XP</p>
+                    <p className="text-2xl md:text-3xl font-bold text-slate-900">{userStats.totalXP.toLocaleString()}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <Star className="h-6 w-6 text-amber-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Cases Solved */}
+            <Card className="bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 touch-manipulation">
+              <CardContent className="p-4 sm:p-5 md:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Cases Solved</p>
+                    <p className="text-2xl md:text-3xl font-bold text-slate-900">{userStats.casesSolved}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-100 to-brand-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <CheckCircle2 className="h-6 w-6 text-brand-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Current Streak */}
+            <Card className="bg-white/90 backdrop-blur-sm border border-slate-200/50 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 touch-manipulation">
+              <CardContent className="p-4 sm:p-5 md:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-slate-600 mb-1">Current Streak</p>
+                    <p className="text-2xl md:text-3xl font-bold text-slate-900">{userStats.streakDays} days</p>
+                    {userStats.streakDays > 0 && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                        <span className="text-xs text-green-600 font-medium">Active</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-100 to-emerald-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <Activity className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Recent Cases */}
@@ -168,7 +187,25 @@ export function DashboardOverview() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {recentCases.length === 0 ? (
+          {isLoadingStats ? (
+            // Skeleton shimmer for recent cases rows
+            <div className="space-y-2 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 items-center p-3 sm:p-4 rounded-xl bg-slate-50">
+                  <div className="col-span-2 space-y-1.5">
+                    <div className="h-4 w-3/4 bg-slate-200 rounded-md" />
+                    <div className="h-3 w-1/3 bg-slate-200 rounded-md" />
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="h-6 w-12 bg-slate-200 rounded-full" />
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="h-4 w-16 bg-slate-200 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentCases.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
               <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center">
                 <Clock className="h-7 w-7 text-slate-400" />
