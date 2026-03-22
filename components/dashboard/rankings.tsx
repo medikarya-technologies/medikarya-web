@@ -97,19 +97,19 @@ export function Rankings() {
   ]
 
   const weeklyLeaderboard = [
-    { rank: 1, name: "Dr. Alex Kumar", xp: 1250, casesSolved: 8, streak: 7 },
-    { rank: 2, name: "Dr. Maria Santos", xp: 1180, casesSolved: 7, streak: 5 },
-    { rank: 3, name: "Dr. David Wilson", xp: 1120, casesSolved: 7, streak: 4 },
-    { rank: 4, name: "Dr. Jane Doe (You)", xp: 890, casesSolved: 5, streak: 7, isCurrentUser: true },
-    { rank: 5, name: "Dr. Robert Chen", xp: 850, casesSolved: 5, streak: 3 }
+    { rank: 1, name: "Dr. Alex Kumar", xp: 1250, casesSolved: 8, streak: 7, badge: "Expert" },
+    { rank: 2, name: "Dr. Maria Santos", xp: 1180, casesSolved: 7, streak: 5, badge: "Advanced" },
+    { rank: 3, name: "Dr. David Wilson", xp: 1120, casesSolved: 7, streak: 4, badge: "Advanced" },
+    { rank: 4, name: "Dr. Jane Doe (You)", xp: 890, casesSolved: 5, streak: 7, badge: "Beginner", isCurrentUser: true },
+    { rank: 5, name: "Dr. Robert Chen", xp: 850, casesSolved: 5, streak: 3, badge: "Beginner" }
   ]
 
   const monthlyLeaderboard = [
-    { rank: 1, name: "Dr. Sarah Chen", xp: 4850, casesSolved: 28, streak: 23 },
-    { rank: 2, name: "Dr. Michael Rodriguez", xp: 4720, casesSolved: 26, streak: 19 },
-    { rank: 3, name: "Dr. Emily Watson", xp: 4580, casesSolved: 25, streak: 15 },
-    { rank: 4, name: "Dr. James Park", xp: 4350, casesSolved: 24, streak: 12 },
-    { rank: 5, name: "Dr. Jane Doe (You)", xp: 2840, casesSolved: 15, streak: 7, isCurrentUser: true }
+    { rank: 1, name: "Dr. Sarah Chen", xp: 4850, casesSolved: 28, streak: 23, badge: "Expert" },
+    { rank: 2, name: "Dr. Michael Rodriguez", xp: 4720, casesSolved: 26, streak: 19, badge: "Advanced" },
+    { rank: 3, name: "Dr. Emily Watson", xp: 4580, casesSolved: 25, streak: 15, badge: "Advanced" },
+    { rank: 4, name: "Dr. James Park", xp: 4350, casesSolved: 24, streak: 12, badge: "Intermediate" },
+    { rank: 5, name: "Dr. Jane Doe (You)", xp: 2840, casesSolved: 15, streak: 7, badge: "Beginner", isCurrentUser: true }
   ]
 
   const getCurrentLeaderboard = () => {
@@ -238,7 +238,6 @@ export function Rankings() {
                     </div>
 
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.avatar} alt={user.name} />
                       <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600">
                         {user.name.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
