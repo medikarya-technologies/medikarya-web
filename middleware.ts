@@ -11,9 +11,17 @@ const isAuthRoute = createRouteMatcher([
     "/signup(.*)"
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-    const { userId } = await auth();
+// Public routes that should NEVER trigger Clerk auth/redirects (important for SEO/Googlebot)
+const isPublicRoute = createRouteMatcher([
+    "/",
+    "/contact(.*)",
+    "/about(.*)",
+    "/pricing(.*)",
+    "/blog(.*)",
+    "/api/webhook(.*)",
+]);
 
+export default clerkMiddleware(async (auth, req) => {
     // Don't redirect if this is a Clerk OAuth callback or internal route
     if (req.nextUrl.pathname.includes('/sso-callback') ||
         req.nextUrl.pathname.includes('/oauth') ||
@@ -21,6 +29,13 @@ export default clerkMiddleware(async (auth, req) => {
         req.nextUrl.pathname.includes('.')) {
         return;
     }
+
+    // Skip auth entirely for public routes — no Clerk call, no redirects, clean response for Googlebot
+    if (isPublicRoute(req)) {
+        return;
+    }
+
+    const { userId } = await auth();
 
     // Protect dashboard routes - redirect unauthenticated users to login
     if (isProtectedRoute(req)) {
