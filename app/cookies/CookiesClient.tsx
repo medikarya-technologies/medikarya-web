@@ -52,7 +52,7 @@ export default function CookiesClient() {
                     <p>We may update this Cookie Policy from time to time. Please re-visit regularly to stay informed.</p>
                     <div className="not-prose mt-8">
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Questions?</h3>
-                        <Button variant="outline" asChild><a href="mailto:contact@medikarya.in">contact@medikarya.in</a></Button>
+                        <Button variant="outline" asChild><a href="mailto:privacy@medikarya.in">privacy@medikarya.in</a></Button>
                     </div>
                 </div>
             </main>
