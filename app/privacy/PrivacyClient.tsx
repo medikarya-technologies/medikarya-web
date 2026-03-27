@@ -61,7 +61,7 @@ export default function PrivacyClient() {
                     <h3>5. Your Privacy Rights</h3>
                     <p>You may have rights to request access to, correction of, or deletion of your personal information. Contact us at any time to exercise these rights.</p>
                     <h3>6. Contact Us</h3>
-                    <p>Questions? Email us at <a href="mailto:medikarya.in@gmail.com">medikarya.in@gmail.com</a>.</p>
+                    <p>Questions? Email us at <a href="mailto:contact@medikarya.in">contact@medikarya.in</a>.</p>
                 </div>
             </main>
             <footer className="border-t py-8 bg-white">

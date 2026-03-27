@@ -116,7 +116,7 @@ export default function ContactClient() {
                                         {isLoading ? <><Loader2 className="h-5 w-5 animate-spin mr-2" />Sending...</> : "Request Demo & Pricing"}
                                     </Button>
                                     <p className="text-xs text-slate-400 text-center pt-2">
-                                        Prefer email? <a href="mailto:medikarya.in@gmail.com" className="text-brand-600 hover:underline">medikarya.in@gmail.com</a>
+                                        Prefer email? <a href="mailto:contact@medikarya.in" className="text-brand-600 hover:underline">contact@medikarya.in</a>
                                     </p>
                                 </form>
                             )}
