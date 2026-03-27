@@ -159,7 +159,7 @@ export default function AboutPage() {
                             <Link href="/contact">Partner with us</Link>
                         </Button>
                         <Button asChild size="lg" variant="ghost" className="rounded-full">
-                            <Link href="mailto:medikarya.in@gmail.com">medikarya.in@gmail.com</Link>
+                            <Link href="mailto:contact@medikarya.in">contact@medikarya.in</Link>
                         </Button>
                     </section>
 

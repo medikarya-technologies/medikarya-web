@@ -215,7 +215,7 @@ export function Support() {
               <div className="flex items-center gap-4 pt-4 border-t border-slate-200 text-sm text-slate-600">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  <span>medikarya.in@gmail.com</span>
+                  <span>contact@medikarya.in</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />

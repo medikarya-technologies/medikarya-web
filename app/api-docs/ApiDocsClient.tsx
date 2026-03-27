@@ -128,7 +128,7 @@ export default function ApiDocsClient() {
                                     <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white">
                                         {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Submitting...</> : "Request Access"}
                                     </Button>
-                                    <p className="text-xs text-slate-400 text-center">Or email us directly at <a href="mailto:medikarya.in@gmail.com" className="text-blue-600 hover:underline">medikarya.in@gmail.com</a></p>
+                                    <p className="text-xs text-slate-400 text-center">Or email us directly at <a href="mailto:contact@medikarya.in" className="text-blue-600 hover:underline">contact@medikarya.in</a></p>
                                 </form>
                             )}
                         </div>
