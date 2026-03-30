@@ -35,7 +35,7 @@ export async function evaluateCase(
                     .insert({
                         user_id: userId,
                         case_id: caseId,
-                        score: result.score,
+                        score: Math.round(result.score),
                         xp_earned: finalXpEarned,
                         time_taken: timeTaken
                     });

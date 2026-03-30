@@ -18,7 +18,8 @@ import {
   X,
   User,
   AlertCircle,
-  Info
+  Info,
+  Loader2
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -366,6 +367,7 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
                     testResults={testResults}
                     chatHistory={chatHistory}
                     onSubmit={handleDiagnosisSubmit}
+                    isLoading={isEvaluating}
                   />
                 </TabsContent>
               </Tabs>
@@ -392,6 +394,36 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
           </div>
         </div>
       </div>
+      {/* Evaluation overlay — shown while 4-layer engine is running */}
+      {isEvaluating && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center space-y-5">
+            <div className="relative mx-auto w-16 h-16">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-brand-400 to-accent-500 opacity-20 animate-ping" />
+              <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-brand-500 to-accent-600 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-white animate-spin" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">Evaluating your performance</h3>
+              <p className="text-sm text-slate-500">AI is analysing your history taking,<br />reasoning, and diagnosis…</p>
+            </div>
+            <div className="space-y-2 text-left">
+              {[
+                "Extracting clinical intents",
+                "Scoring history coverage",
+                "Reasoning through diagnosis",
+                "Checking red flag safety",
+              ].map((step, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
+                  <Loader2 className="h-3 w-3 animate-spin text-brand-500 flex-shrink-0" style={{ animationDelay: `${i * 0.3}s` }} />
+                  {step}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
