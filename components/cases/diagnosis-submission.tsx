@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Send,
   FileText,
-  Pill
+  Pill,
+  Loader2
 } from "lucide-react"
 import { trackEvent } from "@/lib/clarity"
 
@@ -25,13 +26,15 @@ interface DiagnosisSubmissionProps {
   testResults: any[]
   chatHistory: any[]
   onSubmit: (diagnosis: any) => void
+  isLoading?: boolean
 }
 
 export function DiagnosisSubmission({
   orderedTests,
   testResults,
   chatHistory,
-  onSubmit
+  onSubmit,
+  isLoading = false,
 }: DiagnosisSubmissionProps) {
   const [primaryDiagnosis, setPrimaryDiagnosis] = useState("")
   const [managementPlan, setManagementPlan] = useState("")
@@ -102,6 +105,7 @@ export function DiagnosisSubmission({
             value={primaryDiagnosis}
             onChange={(e) => setPrimaryDiagnosis(e.target.value)}
             className="h-9 sm:h-10 md:h-11 text-xs sm:text-sm"
+            disabled={isLoading}
           />
           <p className="text-[10px] sm:text-xs text-slate-600">
             What is your main diagnosis based on the patient's presentation?
@@ -122,6 +126,7 @@ export function DiagnosisSubmission({
             value={managementPlan}
             onChange={(e) => setManagementPlan(e.target.value)}
             className="min-h-[100px] sm:min-h-[120px] resize-none text-xs sm:text-sm font-mono"
+            disabled={isLoading}
           />
           <p className="text-[10px] sm:text-xs text-slate-500">
             One step per line. Leave blank if you haven&apos;t decided yet.
@@ -147,11 +152,20 @@ export function DiagnosisSubmission({
         <div className="flex flex-col sm:flex-row justify-end gap-3 pt-3 sm:pt-4">
           <Button
             onClick={handleSubmit}
-            disabled={!primaryDiagnosis.trim()}
-            className="bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10 shadow-md"
+            disabled={!primaryDiagnosis.trim() || isLoading}
+            className="bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 w-full sm:w-auto text-xs sm:text-sm h-9 sm:h-10 shadow-md min-w-[160px]"
           >
-            <Send className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            Generate Feedback
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                Evaluating...
+              </>
+            ) : (
+              <>
+                <Send className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                Generate Feedback
+              </>
+            )}
           </Button>
         </div>
       </div>

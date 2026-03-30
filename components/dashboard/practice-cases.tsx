@@ -31,7 +31,7 @@ export function PracticeCases() {
   const [cases, setCases] = useState<CaseMetadata[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
+  const [loadingCaseId, setLoadingCaseId] = useState<string | null>(null)
 
 
   // Map case categories to their display names and icons
@@ -254,15 +254,27 @@ export function PracticeCases() {
                       </div>
 
                       <Button
+                        disabled={loadingCaseId !== null}
                         onClick={() => {
+                          setLoadingCaseId(case_.id)
                           trackEvent("Case_Started")
                           router.push(`/dashboard/cases/${case_.id}`)
                         }}
                         className="bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-sm hover:shadow-md transition-all duration-200 h-9 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm min-w-0"
                       >
-                        <Play className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="hidden sm:inline truncate">Start Case</span>
-                        <span className="sm:hidden truncate">Start</span>
+                        {loadingCaseId === case_.id ? (
+                          <>
+                            <Loader2 className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin flex-shrink-0" />
+                            <span className="hidden sm:inline">Starting...</span>
+                            <span className="sm:hidden">...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                            <span className="hidden sm:inline truncate">Start Case</span>
+                            <span className="sm:hidden truncate">Start</span>
+                          </>
+                        )}
                       </Button>
                     </div>
                   </CardContent>
