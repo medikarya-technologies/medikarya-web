@@ -17,12 +17,25 @@ import {
 import { useState, useEffect } from "react"
 import { getDashboardStats } from "@/app/actions/dashboard"
 
-export function DashboardOverview() {
-  const { user, isLoaded } = useUser()
+interface DashboardStats {
+  totalXP: number
+  casesSolved: number
+  streakDays: number
+  recentCases: {
+    id: number
+    title: string
+    score: number
+    xpEarned: number
+    timeTaken: string
+  }[]
+}
+
+export function DashboardOverview({ initialStats }: { initialStats?: DashboardStats }) {
+  const { user, isLoaded: isClerkLoaded } = useUser()
 
   // Helper function to get display name
   const getDisplayName = () => {
-    if (!isLoaded || !user) return "Doctor"
+    if (!isClerkLoaded || !user) return "Doctor"
 
     if (user.firstName || user.lastName) {
       return `${user.firstName || ""} ${user.lastName || ""}`.trim()
@@ -40,24 +53,22 @@ export function DashboardOverview() {
     return "Doctor"
   }
 
-  const [isLoadingStats, setIsLoadingStats] = useState(true)
-  const [userStats, setUserStats] = useState({
+  const [isLoadingStats, setIsLoadingStats] = useState(!initialStats)
+  const [userStats, setUserStats] = useState(initialStats || {
     totalXP: 0,
     casesSolved: 0,
     streakDays: 0,
   })
 
-  const [recentCases, setRecentCases] = useState<{
-    id: number
-    title: string
-    score: number
-    xpEarned: number
-    timeTaken: string
-  }[]>([])
+  const [recentCases, setRecentCases] = useState(initialStats?.recentCases || [])
 
   useEffect(() => {
+    // If stats were already provided from SSR, we can skip the first fetch
+    // but keep it here in case the user interaction triggers a refresh later
+    if (initialStats && !isClerkLoaded) return;
+
     async function fetchStats() {
-      if (!isLoaded || !user) return
+      if (!isClerkLoaded || !user) return
 
       try {
         const stats = await getDashboardStats()
@@ -75,7 +86,7 @@ export function DashboardOverview() {
     }
 
     fetchStats()
-  }, [isLoaded, user])
+  }, [isClerkLoaded, user, initialStats])
 
   return (
     <div className="p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 md:space-y-8 bg-gradient-to-br from-slate-50/50 via-white to-brand-50/30 min-h-full">

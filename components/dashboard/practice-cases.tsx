@@ -23,13 +23,13 @@ import { cn } from "@/lib/utils"
 import { CaseMetadata } from "@/data/cases"
 import { trackEvent } from "@/lib/clarity"
 
-export function PracticeCases() {
+export function PracticeCases({ initialCases }: { initialCases?: CaseMetadata[] }) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedDifficulty, setSelectedDifficulty] = useState("all")
-  const [cases, setCases] = useState<CaseMetadata[]>([])
-  const [loading, setLoading] = useState(true)
+  const [cases, setCases] = useState<CaseMetadata[]>(initialCases || [])
+  const [loading, setLoading] = useState(!initialCases)
   const [error, setError] = useState<string | null>(null)
   const [loadingCaseId, setLoadingCaseId] = useState<string | null>(null)
 
@@ -54,8 +54,13 @@ export function PracticeCases() {
     }));
   };
 
-  // Fetch cases from API
+  // Fetch cases from API only if not provided from the server
   useEffect(() => {
+    if (initialCases && initialCases.length > 0) {
+      setLoading(false);
+      return;
+    }
+
     const fetchCases = async () => {
       try {
         const response = await fetch('/api/cases');
@@ -73,7 +78,7 @@ export function PracticeCases() {
     };
 
     fetchCases();
-  }, []);
+  }, [initialCases]);
 
   const filteredCases = cases.filter(case_ => {
     const matchesSearch = case_.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
