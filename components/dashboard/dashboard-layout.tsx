@@ -102,17 +102,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return "Medical Student"
   }
 
-  // Show loading state while Clerk is loading
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-accent-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600"></div>
-          <p className="text-sm text-slate-600">Loading dashboard...</p>
-        </div>
-      </div>
-    )
-  }
+  // We no longer block the whole dashboard with a loading screen.
+  // The server-rendered children (stats, cases) should be visible immediately.
+  // We handle the "Loading..." states inside the individual sidebar elements if needed.
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-accent-50 flex">

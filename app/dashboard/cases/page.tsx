@@ -1,12 +1,13 @@
-"use client"
-
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { PracticeCases } from "@/components/dashboard/practice-cases"
+import { getCases } from "@/data/cases"
 
-export default function CasesPage() {
+export default async function CasesPage() {
+  const cases = await getCases();
+
   return (
     <DashboardLayout>
-      <PracticeCases />
+      <PracticeCases initialCases={cases} />
     </DashboardLayout>
   )
 }
