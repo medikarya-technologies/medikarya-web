@@ -29,6 +29,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { cn } from "@/lib/utils"
 
 interface CaseInteractionProps {
   caseData: any
@@ -52,6 +53,37 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
   const [feedback, setFeedback] = useState<any>(null)
   const [isPatientInfoOpen, setIsPatientInfoOpen] = useState(false)
   const [startTime, setStartTime] = useState<number | null>(null)
+  const tabMeta = [
+    {
+      value: "chat",
+      label: "Chat",
+      desktopLabel: "Interview",
+      hint: "Take focused history",
+      icon: MessageSquare,
+      activeStyle: "data-[state=active]:text-brand-700 data-[state=active]:border-brand-300 data-[state=active]:bg-brand-50/80",
+      iconStyle: "bg-brand-100 text-brand-700"
+    },
+    {
+      value: "tests",
+      label: "Tests",
+      desktopLabel: "Tests",
+      hint: "Order and review reports",
+      icon: FlaskConical,
+      activeStyle: "data-[state=active]:text-purple-700 data-[state=active]:border-purple-300 data-[state=active]:bg-purple-50/80",
+      iconStyle: "bg-purple-100 text-purple-700"
+    },
+    {
+      value: "diagnosis",
+      label: "Dx",
+      desktopLabel: "Diagnosis",
+      hint: "Submit diagnosis and plan",
+      icon: Stethoscope,
+      activeStyle: "data-[state=active]:text-emerald-700 data-[state=active]:border-emerald-300 data-[state=active]:bg-emerald-50/80",
+      iconStyle: "bg-emerald-100 text-emerald-700"
+    }
+  ] as const
+
+  const activeTabInfo = tabMeta.find((tab) => tab.value === activeTab)
 
   // Load from storage on mount
   useEffect(() => {
@@ -309,38 +341,55 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
             <Card className="bg-white/90 backdrop-blur-sm border border-slate-200 shadow-lg overflow-hidden">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="border-b border-slate-200 bg-slate-50/50">
+                  <div className="px-2 sm:px-4 pt-2 sm:pt-3">
+                    <p className="text-[10px] sm:text-xs font-medium tracking-wide text-slate-600 uppercase">
+                      Clinical Workflow
+                    </p>
+                  </div>
                   <div className="overflow-x-auto scrollbar-hide">
-                    <TabsList className="w-full justify-start h-auto p-0 bg-transparent rounded-none inline-flex min-w-full">
-                      <TabsTrigger
-                        value="chat"
-                        className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-600 rounded-none text-[11px] sm:text-xs md:text-sm whitespace-nowrap flex-1 sm:flex-none"
-                      >
-                        <MessageSquare className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
-                        <span className="hidden xs:inline">Interview</span>
-                        <span className="xs:hidden">Chat</span>
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="tests"
-                        className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-600 rounded-none text-[11px] sm:text-xs md:text-sm whitespace-nowrap flex-1 sm:flex-none relative"
-                      >
-                        <FlaskConical className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
-                        <span className="hidden xs:inline">Tests</span>
-                        <span className="xs:hidden">Tests</span>
-                        {orderedTests.length > 0 && (
-                          <Badge className="ml-0.5 sm:ml-1 h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 rounded-full p-0 flex items-center justify-center text-[9px] sm:text-[10px] md:text-xs">
-                            {orderedTests.length}
-                          </Badge>
-                        )}
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="diagnosis"
-                        className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-brand-600 rounded-none text-[11px] sm:text-xs md:text-sm whitespace-nowrap flex-1 sm:flex-none"
-                      >
-                        <Stethoscope className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
-                        <span className="hidden xs:inline">Diagnosis</span>
-                        <span className="xs:hidden">Dx</span>
-                      </TabsTrigger>
+                    <TabsList className="w-full h-auto p-1.5 sm:p-2 bg-transparent rounded-none inline-grid grid-cols-3 min-w-full gap-1.5 sm:gap-2">
+                      {tabMeta.map((tab) => {
+                        const TabIcon = tab.icon
+                        return (
+                          <TabsTrigger
+                            key={tab.value}
+                            value={tab.value}
+                            className={cn(
+                              "group relative h-auto min-h-[56px] sm:min-h-[64px] rounded-xl border border-slate-200 bg-white/70 px-2 sm:px-3 py-2 text-left shadow-sm transition-all",
+                              "data-[state=active]:shadow data-[state=active]:ring-1 data-[state=active]:ring-inset",
+                              "hover:border-slate-300 hover:bg-white",
+                              tab.activeStyle
+                            )}
+                          >
+                            <div className="flex w-full items-center gap-2 sm:gap-2.5">
+                              <div className={cn("h-6 w-6 sm:h-7 sm:w-7 rounded-md flex items-center justify-center transition-colors", tab.iconStyle)}>
+                                <TabIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[11px] sm:text-xs font-semibold leading-tight text-slate-800 truncate">
+                                  <span className="sm:hidden">{tab.label}</span>
+                                  <span className="hidden sm:inline">{tab.desktopLabel}</span>
+                                </p>
+                                <p className="hidden md:block text-[10px] text-slate-500 leading-tight truncate">
+                                  {tab.hint}
+                                </p>
+                              </div>
+                              {tab.value === "tests" && orderedTests.length > 0 && (
+                                <Badge className="h-4 min-w-4 sm:h-5 sm:min-w-5 rounded-full px-1 flex items-center justify-center text-[9px] sm:text-[10px] bg-purple-600">
+                                  {orderedTests.length}
+                                </Badge>
+                              )}
+                            </div>
+                          </TabsTrigger>
+                        )
+                      })}
                     </TabsList>
+                  </div>
+                  <div className="px-2 sm:px-4 pb-2 sm:pb-3">
+                    <p className="text-[11px] sm:text-xs text-slate-600">
+                      <span className="font-semibold text-slate-800">{activeTabInfo?.desktopLabel}:</span>{" "}
+                      {activeTabInfo?.hint}
+                    </p>
                   </div>
                 </div>
 
