@@ -1,6 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
+const CANONICAL_HOST = "www.medikarya.in";
+
 const isProtectedRoute = createRouteMatcher([
     "/dashboard(.*)",
     "/admin(.*)"
@@ -16,12 +18,25 @@ const isPublicRoute = createRouteMatcher([
     "/",
     "/contact(.*)",
     "/about(.*)",
-    "/pricing(.*)",
     "/blog(.*)",
+    "/case-studies(.*)",
+    "/contribute(.*)",
+    "/cookies(.*)",
+    "/privacy(.*)",
+    "/terms(.*)",
+    "/tutorials(.*)",
+    "/api-docs(.*)",
     "/api/webhook(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+    // Force a single canonical host so Search Console only sees one site variant.
+    if (req.nextUrl.protocol === "https:" && req.nextUrl.hostname === "medikarya.in") {
+        const canonicalUrl = req.nextUrl.clone();
+        canonicalUrl.hostname = CANONICAL_HOST;
+        return NextResponse.redirect(canonicalUrl, 308);
+    }
+
     // Don't redirect if this is a Clerk OAuth callback or internal route
     if (req.nextUrl.pathname.includes('/sso-callback') ||
         req.nextUrl.pathname.includes('/oauth') ||
