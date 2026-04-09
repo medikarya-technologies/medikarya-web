@@ -206,7 +206,7 @@ export default function TutorialsPage() {
                     <div className="text-center pb-20">
                         <p className="text-slate-500 mb-4">Ready to put it into practice?</p>
                         <Button asChild size="lg" className="rounded-full bg-slate-900 text-white hover:bg-slate-800">
-                            <Link href="/dashboard">Start a Patient Simulation →</Link>
+                            <Link href="/case-studies">Browse Patient Simulations →</Link>
                         </Button>
                     </div>
                 </div>
