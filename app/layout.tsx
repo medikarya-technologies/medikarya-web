@@ -75,6 +75,13 @@ export const metadata: Metadata = {
   generator: 'v0.app'
 }
 
+export const viewport = {
+  themeColor: "#0f172a",
+  minimumScale: 1,
+  initialScale: 1,
+  width: "device-width",
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>

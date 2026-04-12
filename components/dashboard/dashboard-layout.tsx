@@ -17,6 +17,8 @@ import {
   User
 } from "lucide-react"
 
+import { InstallPrompt } from "./install-prompt"
+
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
@@ -196,7 +198,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         {/* Footer actions */}
-        <div className="border-t border-slate-100 p-6">
+        <div className="border-t border-slate-100 p-6 space-y-2">
+          <InstallPrompt />
           <Button
             variant="ghost"
             onClick={handleSignOut}
@@ -282,7 +285,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-4 border-t border-slate-200/50">
+        <div className="p-4 border-t border-slate-200/50 space-y-2">
+          <InstallPrompt />
           <Button
             variant="ghost"
             onClick={handleSignOut}

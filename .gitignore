@@ -33,3 +33,8 @@ scripts/migrate-cases.ts
 
 # Case Templates
 data/cases/*.json
+
+# Serwist PWA
+public/sw.js
+public/sw.js.map
+.serwist
