@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
         description: 'AI-Powered Medical Education Platform',
         start_url: '/',
         display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#2563EB',
+        background_color: '#0f172a',
+        theme_color: '#0f172a',
         icons: [
             {
                 src: '/favicon.ico',
