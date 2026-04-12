@@ -33,9 +33,10 @@ interface TestOrderingProps {
   testResults: any[]
   onOrderTest: (test: any) => void
   caseData: any
+  hasLimitedHistory?: boolean
 }
 
-export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData }: TestOrderingProps) {
+export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData, hasLimitedHistory }: TestOrderingProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedTest, setSelectedTest] = useState<any>(null)
@@ -131,10 +132,20 @@ export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData 
 
   return (
     <div className="h-[500px] sm:h-[550px] md:h-[600px] flex flex-col min-h-0">
+      {/* Soft warning for limited history */}
+      {hasLimitedHistory && (
+        <div className="mx-2 sm:mx-3 md:mx-4 mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-900">Limited history taken</p>
+            <p className="text-xs text-amber-700 mt-0.5">You're ordering tests before thorough history. Your test choices will be scored against clinical appropriateness.</p>
+          </div>
+        </div>
+      )}
       {caseData?.patient?.investigations?.tips?.map((tip: any, index: number) => (
-        <div key={index} className="mb-2 mx-2 sm:mx-3 md:mx-4 mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-          <Lightbulb className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-blue-800">{tip.text}</p>
+        <div key={index} className="mb-2 mx-2 sm:mx-3 md:mx-4 mt-2 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-start gap-3">
+          <Lightbulb className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-purple-800">{tip.text}</p>
         </div>
       ))}
 
