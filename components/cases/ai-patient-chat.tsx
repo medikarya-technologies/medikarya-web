@@ -15,28 +15,46 @@ interface Message {
   timestamp: Date
 }
 
+interface HistoryCoverage {
+  symptomsExplored: boolean
+  durationAsked: boolean
+  associatedSymptomsAsked: boolean
+  redFlagsChecked: boolean
+  score: number
+}
+
 interface AIPatientChatProps {
   caseData: any
   onMessageSent: (message: Message) => void
   chatHistory?: Message[]
+  coverage?: HistoryCoverage
 }
 
-export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatientChatProps) {
-  const isGuardian =
-    caseData.ai_role?.speaker?.toLowerCase().includes("mother") ||
-    caseData.ai_role?.speaker?.toLowerCase().includes("father") ||
-    caseData.ai_role?.speaker?.toLowerCase().includes("guardian")
+// Rotated in groups of 3 — slightly incomplete to prompt thinking
+const SUGGESTED_QUESTION_SETS = [
+  [
+    "How long has this been going on?",
+    "Is there any blood in the stools?",
+    "How is the child's urine output?",
+  ],
+  [
+    "Any fever or chills?",
+    "Has this happened before?",
+    "What does the vomit look like?",
+  ],
+  [
+    "Any contact with someone who had similar symptoms?",
+    "Are vaccinations up to date?",
+    "Is the child drinking fluids?",
+  ],
+]
 
+export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage }: AIPatientChatProps) {
   const [openingLoading, setOpeningLoading] = useState(true)
 
-  const SUGGESTED_QUESTIONS = [
-    "Can you tell me more about your symptoms?",
-    "How long have you been feeling this way?",
-    "Do you have any known allergies?",
-    "Are you currently taking any medications?",
-    "Does anything make the pain better or worse?",
-    "Do you have a family history of this condition?"
-  ]
+  // Rotate suggestion set based on user message count
+  const userMsgCount = (chatHistory || []).filter(m => m.role === "user").length
+  const suggestionSet = SUGGESTED_QUESTION_SETS[Math.floor(userMsgCount / 3) % SUGGESTED_QUESTION_SETS.length]
 
   const [messages, setMessages] = useState<Message[]>(() => {
     if (chatHistory && chatHistory.length > 0) {
@@ -97,16 +115,13 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
       .finally(() => setOpeningLoading(false))
   }, [])
 
-  /* ---------------- SPEECH TO TEXT ---------------- */
-
+  /* ── Speech to text ─────────────────────────────────────────── */
   const [isListening, setIsListening] = useState(false)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
 
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop()
-      }
+      if (recognitionRef.current) recognitionRef.current.stop()
     }
   }, [])
 
@@ -116,34 +131,25 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
       setIsListening(false)
       return
     }
-
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
       alert("Your browser does not support speech recognition. Please try Chrome or Edge.")
       return
     }
-
     const recognition = new SpeechRecognition()
     recognitionRef.current = recognition
     recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = "en-US"
-
     recognition.onstart = () => setIsListening(true)
     recognition.onend = () => setIsListening(false)
-
     recognition.onresult = (event) => {
       let finalTranscript = ""
-      let interimTranscript = ""
-
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript
-        } else {
-          interimTranscript += event.results[i][0].transcript
         }
       }
-
       if (finalTranscript) {
         setInput(prev => {
           const needsSpace = prev.length > 0 && !prev.endsWith(" ")
@@ -151,26 +157,21 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
         })
       }
     }
-
     recognition.start()
   }
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return
-
-    // Stop listening if sending
     if (isListening) {
       recognitionRef.current?.stop()
       setIsListening(false)
     }
-
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: input.trim(),
       timestamp: new Date()
     }
-
     setMessages(prev => [...prev, userMessage])
     onMessageSent(userMessage)
     trackEvent("Message_Sent")
@@ -181,34 +182,25 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
       const response = await fetch("/api/chat/patient", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userMessage.content,
-          caseData,
-          chatHistory: messages
-        })
+        body: JSON.stringify({ message: userMessage.content, caseData, chatHistory: messages })
       })
-
       if (!response.ok) throw new Error("Failed")
-
       const data = await response.json()
-
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: data.response,
         timestamp: new Date()
       }
-
       setMessages(prev => [...prev, assistantMessage])
       onMessageSent(assistantMessage)
     } catch {
       const fallback: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: generateMockResponse(input, caseData),
+        content: "I'm not sure about that, Doctor. Is that important for my child's condition?",
         timestamp: new Date()
       }
-
       setMessages(prev => [...prev, fallback])
       onMessageSent(fallback)
     } finally {
@@ -223,15 +215,40 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
     }
   }
 
+  const userQuestions = messages.filter(m => m.role === "user").length
+
   return (
     <div className="flex flex-col h-[500px] sm:h-[550px] md:h-[600px] min-h-0">
-      {/* CHAT AREA */}
+
+      {/* ── Chat area ─────────────────────────────────────────────── */}
       <div
         className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
         ref={scrollAreaRef}
         style={{ scrollbarWidth: 'thin' }}
         data-lenis-prevent
       >
+        {/* Counter strip */}
+        <div className="sticky top-0 z-10 px-3 py-1.5 bg-blue-50/80 backdrop-blur-sm border-b border-blue-100 flex items-center justify-between">
+          <span className="text-[10px] text-blue-600 font-medium">
+            {userQuestions === 0
+              ? "Ask your first question to begin history taking"
+              : `${userQuestions} question${userQuestions !== 1 ? "s" : ""} asked`}
+          </span>
+          {coverage && (
+            <div className="flex gap-0.5 items-center">
+              {[0, 1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-1 w-4 rounded-full transition-all duration-500",
+                    i < coverage.score ? "bg-blue-500" : "bg-blue-200"
+                  )}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="p-3 space-y-3">
           {messages.map(message => (
             <div
@@ -242,29 +259,23 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
               )}
             >
               {message.role === "assistant" && (
-                <Avatar className="h-7 w-7">
-                  <AvatarFallback className="bg-brand-500 text-white">
+                <Avatar className="h-7 w-7 flex-shrink-0">
+                  <AvatarFallback className="bg-blue-600 text-white">
                     <User className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
               )}
-
               <div
                 className={cn(
-                  "max-w-[80%] rounded-lg px-3 py-2 text-sm",
+                  "max-w-[80%] rounded-2xl px-3 py-2 text-sm",
                   message.role === "user"
-                    ? "bg-brand-600 text-white"
-                    : "bg-slate-100 border"
+                    ? "bg-blue-600 text-white rounded-br-sm"
+                    : "bg-slate-100 border border-slate-200 text-slate-800 rounded-bl-sm"
                 )}
               >
-                <p className="whitespace-pre-wrap break-words">
-                  {message.content}
-                </p>
-                <span className="block text-[10px] opacity-60 mt-1">
-                  {message.timestamp.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  })}
+                <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                <span className="block text-[10px] opacity-50 mt-1">
+                  {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
             </div>
@@ -273,11 +284,11 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
           {(isLoading || openingLoading) && (
             <div className="flex gap-2 items-center">
               <Avatar className="h-7 w-7">
-                <AvatarFallback className="bg-brand-500 text-white">
+                <AvatarFallback className="bg-blue-600 text-white">
                   <User className="h-4 w-4" />
                 </AvatarFallback>
               </Avatar>
-              <div className="bg-slate-100 border rounded-lg px-3 py-2">
+              <div className="bg-slate-100 border border-slate-200 rounded-2xl rounded-bl-sm px-3 py-2">
                 <span className="flex gap-1 items-center">
                   <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -291,19 +302,19 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
         </div>
       </div>
 
-      {/* INPUT */}
-      <div className="border-t p-3 space-y-2 bg-white">
+      {/* ── Input area ─────────────────────────────────────────────── */}
+      <div className="border-t border-slate-200 p-3 space-y-2 bg-white">
 
-        {/* Suggested Questions */}
-        <div className="flex gap-2 overflow-x-auto pb-2 native-scrollbar">
-          {SUGGESTED_QUESTIONS.map((question, index) => (
+        {/* Rotating suggestion pills — 3 at a time */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {suggestionSet.map((question, index) => (
             <button
-              key={index}
+              key={`${Math.floor(userMsgCount / 3)}-${index}`}
               onClick={() => {
                 setInput(question)
                 trackEvent("Suggested_Question_Clicked")
               }}
-              className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition-colors border border-slate-200"
+              className="whitespace-nowrap rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100 transition-colors border border-blue-200 flex-shrink-0"
             >
               {question}
             </button>
@@ -315,44 +326,31 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory }: AIPatien
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
+            placeholder="Ask the patient a question..."
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 bg-slate-50 border-slate-200 focus:border-blue-300 focus:ring-blue-100"
           />
           <Button
             variant="outline"
             size="icon"
             onClick={toggleListening}
             className={cn(
-              "shrink-0",
+              "shrink-0 border-slate-200",
               isListening && "bg-red-100 text-red-600 border-red-200 hover:bg-red-200 hover:text-red-700"
             )}
             title={isListening ? "Stop listening" : "Start listening"}
           >
-            {isListening ? (
-              <MicOff className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
-            )}
+            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
           <Button
             onClick={handleSendMessage}
             disabled={!input.trim() || isLoading}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
       </div>
     </div>
   )
-}
-
-/* ---------------- MOCK ---------------- */
-
-function generateMockResponse(question: string, caseData: any): string {
-  return "I'm not sure about that, Doctor. Is that important for my condition?"
 }

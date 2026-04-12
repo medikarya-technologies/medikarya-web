@@ -17,7 +17,8 @@ import {
   Home,
   BookOpen,
   PartyPopper,
-  AlertTriangle
+  AlertTriangle,
+  Network
 } from "lucide-react";
 import { trackEvent } from "@/lib/clarity";
 
@@ -103,27 +104,44 @@ function Section({ icon: Icon, title, children }: { icon: any; title: string; ch
   );
 }
 
-function TimelineItem({ good, children }: { good?: boolean; children: React.ReactNode }) {
+function ConsequenceItem({ action, effect, outcome, type }: { action: string, effect: string, outcome: string, type: 'success' | 'warning' | 'danger' }) {
+  const colors = {
+    success: { bg: "bg-emerald-50", border: "border-emerald-100", text: "text-emerald-800", iconStr: "text-emerald-500", outcomeBg: "bg-emerald-100", outcomeText: "text-emerald-700" },
+    warning: { bg: "bg-amber-50", border: "border-amber-100", text: "text-amber-800", iconStr: "text-amber-500", outcomeBg: "bg-amber-100", outcomeText: "text-amber-700" },
+    danger: { bg: "bg-rose-50", border: "border-rose-100", text: "text-rose-800", iconStr: "text-rose-500", outcomeBg: "bg-rose-100", outcomeText: "text-rose-700" },
+  }
+  const c = colors[type];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      className={`flex gap-4 p-4 rounded-xl border ${good
-        ? "bg-emerald-50/50 border-emerald-100"
-        : "bg-rose-50/50 border-rose-100"
-        }`}
-    >
-      <div className={`mt-1 p-1 rounded-full ${good ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}`}>
-        {good ? (
-          <CheckCircle2 className="w-4 h-4" />
-        ) : (
-          <XCircle className="w-4 h-4" />
-        )}
+    <div className={`p-4 rounded-xl border ${c.bg} ${c.border} flex flex-col gap-3`}>
+      <div className="flex items-start gap-3">
+         <div className={`mt-0.5 p-1.5 rounded-full bg-white shadow-sm flex-shrink-0`}>
+            {type === 'success' ? <CheckCircle2 className={`w-4 h-4 ${c.iconStr}`} /> : 
+             type === 'warning' ? <AlertTriangle className={`w-4 h-4 ${c.iconStr}`} /> : 
+             <XCircle className={`w-4 h-4 ${c.iconStr}`} />}
+         </div>
+         <div className="flex-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-0.5 block">Your Decision</span>
+            <p className={`text-sm font-semibold ${c.text}`}>{action}</p>
+         </div>
       </div>
-      <div className="text-base text-slate-800 font-medium leading-relaxed">{children}</div>
-    </motion.div>
-  );
+      
+      <div className="pl-10 flex flex-col gap-2.5">
+         <div className="flex items-center gap-2.5">
+           <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+           <p className={`text-sm ${c.text} opacity-90 leading-snug`}>{effect}</p>
+         </div>
+         <div className="flex items-center gap-2.5">
+           <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+           <div className={`inline-flex px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${c.outcomeBg} ${c.outcomeText}`}>
+             {outcome}
+           </div>
+         </div>
+      </div>
+    </div>
+  )
 }
+
 
 // Simple celebration component using framer-motion
 function Celebration() {
@@ -175,6 +193,109 @@ export function CaseFeedback({ feedback, caseData, orderedTests, onExit, onReset
     }
   }, [feedback.score, step]);
 
+  // --- Build Decision Consequence Chain ---
+  const consequenceChain: Array<{action: string, effect: string, outcome: string, type: 'success'|'warning'|'danger'}> = [];
+
+  try {
+    if (feedback.isCorrect) {
+      consequenceChain.push({
+        action: "Synthesised clinical findings accurately",
+        effect: `Correctly identified ${feedback.correctDiagnosis}`,
+        outcome: "+15 Diagnosis Score",
+        type: "success"
+      });
+    } else {
+      consequenceChain.push({
+        action: "Misinterpreted clinical findings",
+        effect: `Diagnosed ${feedback.studentDiagnosis || "unknown"} instead of ${feedback.correctDiagnosis}`,
+        outcome: "0 Diagnosis Score",
+        type: "danger"
+      });
+    }
+
+    // Red flags
+    if (feedback.missedRedFlags && feedback.missedRedFlags.length > 0) {
+      feedback.missedRedFlags.forEach((flag: string) => {
+        consequenceChain.push({
+          action: `Missed red flag: ${flag.replace(/_/g, " ")}`,
+          effect: "Failed to rule out critical differential or complication",
+          outcome: "-5 Safety Penalty",
+          type: "danger"
+        });
+      });
+    }
+
+    // Testing
+    const { appropriateTests, unnecessaryTests, missedTests } = feedback.feedback?.testingEfficiency || { appropriateTests: 0, unnecessaryTests: 0, missedTests: [] };
+
+    if (unnecessaryTests > 0) {
+      consequenceChain.push({
+        action: `Ordered ${unnecessaryTests} unnecessary investigation(s)`,
+        effect: "Wasted clinical resources and potential patient discomfort",
+        outcome: "Reduced Testing Score",
+        type: "warning"
+      });
+    }
+
+    if (missedTests && missedTests.length > 0) {
+      consequenceChain.push({
+        action: `Failed to order core investigation(s)`,
+        effect: "Diagnosis lacked sufficient objective evidence",
+        outcome: "Reduced Testing Score",
+        type: "warning"
+      });
+    } else if (appropriateTests > 0 && unnecessaryTests === 0) {
+       consequenceChain.push({
+         action: "Ordered highly targeted investigations",
+         effect: "Validates hypotheses efficiently without waste",
+         outcome: "Max Testing Score",
+         type: "success"
+       })
+    }
+
+    // History Quality
+    if (feedback.historyScore >= 20) {
+      consequenceChain.push({
+        action: "Conducted thorough history taking",
+        effect: "Gathered strong clinical evidence prior to tests",
+        outcome: "Max History Score",
+        type: "success"
+      });
+    } else if (feedback.historyScore < 15) {
+      consequenceChain.push({
+        action: "Conducted incomplete patient history",
+        effect: "Proceeded with limited clinical context",
+        outcome: "Low History Score",
+        type: "warning"
+      });
+    }
+
+    // Sort consequence chain
+    const typeWeight = { danger: 0, warning: 1, success: 2 };
+    consequenceChain.sort((a, b) => typeWeight[a.type] - typeWeight[b.type]);
+  } catch (err) {
+    console.error("Failed to parse consequence chain details", err)
+  }
+
+  // Fallback to simple explanation if parsing fails or chain is empty
+  if (consequenceChain.length === 0) {
+    consequenceChain.push(
+      {
+        action: "Completed Clinical Evaluation",
+        effect: "Structured metrics derived from history and diagnosis",
+        outcome: "Evaluation Generated",
+        type: "success"
+      },
+      {
+        action: "Submitted Final Diagnosis",
+        effect: "Review your detailed diagnostic breakdown below",
+        outcome: "Review Recommended",
+        type: "warning"
+      }
+    )
+  }
+
+
   // Construct steps based on feedback data
   const steps = [
     {
@@ -220,20 +341,13 @@ export function CaseFeedback({ feedback, caseData, orderedTests, onExit, onReset
       ),
     },
     {
-      title: "Your Decision Timeline",
-      icon: Brain,
+      title: "Decision Consequences",
+      icon: Network,
       content: (
-        <div className="space-y-3">
-          {/* Mixing strengths and improvements to simulate a timeline of good/bad decisions */}
-          {feedback.feedback.strengths?.slice(0, 2).map((str: string, i: number) => (
-            <TimelineItem key={`good-${i}`} good>
-              {str.replace(/✅/g, '').trim()}
-            </TimelineItem>
-          ))}
-          {feedback.feedback.improvements?.map((imp: string, i: number) => (
-            <TimelineItem key={`bad-${i}`}>
-              {imp.replace(/❌/g, '').trim()}
-            </TimelineItem>
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500 mb-4 px-1">Every clinical action has an outcome. Here is how your approach shaped the case:</p>
+          {consequenceChain.map((item, i) => (
+            <ConsequenceItem key={`cons-${i}`} {...item} />
           ))}
         </div>
       ),
