@@ -81,8 +81,14 @@ export function PracticeCases({ initialCases }: { initialCases?: CaseMetadata[] 
   }, [initialCases]);
 
   const filteredCases = cases.filter(case_ => {
-    const matchesSearch = case_.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      case_.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    const searchLower = searchQuery.toLowerCase()
+    
+    // Improved search: only search in anonymized fields to prevent spoiling diagnoses
+    const titleMatch = (case_.displayTitle || "").toLowerCase().includes(searchLower)
+    const tagMatch = (case_.displayTags || []).some(tag => tag.toLowerCase().includes(searchLower))
+    
+    const matchesSearch = titleMatch || tagMatch
+    
     const matchesCategory = selectedCategory === "all" ||
       (case_.category && categoryMap[case_.category as keyof typeof categoryMap]?.id === selectedCategory)
     const matchesDifficulty = selectedDifficulty === "all" ||
@@ -228,17 +234,17 @@ export function PracticeCases({ initialCases }: { initialCases?: CaseMetadata[] 
                       </div>
                     </div>
                     <CardTitle className="text-base sm:text-lg text-slate-900 group-hover:text-brand-600 transition-colors leading-tight line-clamp-2">
-                      {case_.title}
+                      {case_.displayTitle || case_.title}
                     </CardTitle>
                   </CardHeader>
 
                   <CardContent className="space-y-3 sm:space-y-4">
                     <p className="text-sm text-slate-600 leading-relaxed line-clamp-2">
-                      {case_.description || 'No description available for this case.'}
+                      {case_.displayDescription || case_.description || 'No description available for this case.'}
                     </p>
 
                     <div className="flex flex-wrap gap-1">
-                      {case_.tags?.slice(0, 2).map((tag: string) => (
+                      {(case_.displayTags || case_.tags)?.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="outline" className="text-xs bg-slate-50">
                           {tag}
                         </Badge>

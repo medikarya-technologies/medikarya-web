@@ -30,6 +30,15 @@ export async function evaluateCase(
                 // Determine case_id
                 const caseId = caseData.id || caseData.patient.name.toLowerCase().replace(/\s+/g, '-');
 
+                // Prepare the full feedback payload that the UI needs
+                const persistedFeedback = { 
+                    ...result, 
+                    xpEarned: finalXpEarned,
+                    caseId: caseId,
+                    caseTitle: caseData.displayTitle || caseData.title,
+                    timestamp: new Date().toISOString()
+                };
+
                 const { error: dbError } = await supabaseServer
                     .from("case_attempts")
                     .insert({
@@ -37,7 +46,9 @@ export async function evaluateCase(
                         case_id: caseId,
                         score: Math.round(result.score),
                         xp_earned: finalXpEarned,
-                        time_taken: timeTaken
+                        time_taken: timeTaken,
+                        feedback_json: persistedFeedback,
+                        completed_at: new Date().toISOString()
                     });
 
                 if (dbError) {

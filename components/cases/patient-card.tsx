@@ -68,7 +68,7 @@ export function PatientCard({ patient, caseTitle, onStartCase }: PatientCardProp
         <Badge className="bg-brand-100 text-brand-700 border-brand-200 px-4 py-1">
           Case Study
         </Badge>
-        <h1 className="text-3xl font-bold text-slate-900">{caseTitle}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{caseTitle}</h1>
         <p className="text-slate-600">
           Review the patient information below and start the case when ready
         </p>
