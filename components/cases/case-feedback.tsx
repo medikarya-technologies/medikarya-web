@@ -21,13 +21,13 @@ import {
   Network
 } from "lucide-react";
 import { trackEvent } from "@/lib/clarity";
-
 interface CaseFeedbackProps {
   feedback: any
   caseData: any
   orderedTests: any[]
   onExit: () => void
   onReset?: () => void
+  mode?: 'live' | 'history'
 }
 
 function ProgressHeader({ step, total }: { step: number; total: number }) {
@@ -49,13 +49,14 @@ function ProgressHeader({ step, total }: { step: number; total: number }) {
   );
 }
 
-function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset }: {
+function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, mode }: {
   onPrev: () => void;
   onNext: () => void;
   isFirst: boolean;
   isLast: boolean;
   onExit: () => void;
   onReset?: () => void;
+  mode?: 'live' | 'history';
 }) {
   return (
     <div className="flex items-center justify-between mt-10">
@@ -74,7 +75,7 @@ function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset }: {
             <Home className="w-4 h-4" /> Dashboard
           </Button>
           <Button onClick={onReset || (() => window.location.reload())} className="gap-2 bg-slate-900 hover:bg-slate-800 text-white">
-            <RotateCcw className="w-4 h-4" /> Try Again
+            <RotateCcw className="w-4 h-4" /> {mode === 'history' ? 'Re-attempt Case' : 'Try Again'}
           </Button>
         </div>
       ) : (
@@ -170,7 +171,14 @@ function Celebration() {
   );
 }
 
-export function CaseFeedback({ feedback, caseData, orderedTests, onExit, onReset }: CaseFeedbackProps) {
+export function CaseFeedback({ 
+  feedback, 
+  caseData, 
+  orderedTests, 
+  onExit, 
+  onReset,
+  mode = 'live'
+}: CaseFeedbackProps) {
   const [step, setStep] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -523,6 +531,27 @@ export function CaseFeedback({ feedback, caseData, orderedTests, onExit, onReset
     },
   ];
 
+  // Add optional authored walkthrough if present in caseData
+  if (caseData.walkthrough) {
+    steps.push({
+      title: "Expert Walkthrough",
+      icon: Brain,
+      content: (
+        <div className="space-y-4 prose prose-slate max-w-none">
+          <div className="p-5 rounded-2xl bg-brand-50 border border-brand-100/50 shadow-sm">
+            <div className="flex items-center gap-2 mb-4 text-brand-700">
+               <Brain className="w-5 h-5" />
+               <span className="text-xs font-bold uppercase tracking-wider">Expert Teaching Layer</span>
+            </div>
+            <div className="text-slate-700 whitespace-pre-wrap leading-relaxed">
+              {caseData.walkthrough}
+            </div>
+          </div>
+        </div>
+      )
+    });
+  }
+
   const totalSteps = steps.length;
   const next = () => setStep((s) => Math.min(s + 1, totalSteps - 1));
   const prev = () => setStep((s) => Math.max(s - 1, 0));
@@ -557,6 +586,7 @@ export function CaseFeedback({ feedback, caseData, orderedTests, onExit, onReset
           isLast={step === totalSteps - 1}
           onExit={onExit}
           onReset={onReset}
+          mode={mode}
         />
       </div>
     </div>

@@ -7,7 +7,9 @@ export interface CaseMetadata {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   estimatedTime: number;
   tags: string[];
-  description: string;
+  displayTitle: string;
+  displayDescription: string;
+  displayTags: string[];
   xpReward: number;
   completionRate?: number;
   createdAt: string;
@@ -24,6 +26,7 @@ export interface CaseData extends CaseMetadata {
   patient_facts: any; // Structured object with variable keys
   questions: any[];
   discussion: any;
+  walkthrough?: string;
   ai_role?: {
     speaker: string;
     first_person_description: string;
@@ -53,11 +56,14 @@ export async function getCases(): Promise<CaseMetadata[]> {
   // Map database columns back to the CaseMetadata format expected by the frontend
   return data.map((row) => {
     // Extract remaining metadata fields not explicitly broken out into columns from case_json
-    const { tags, description, xpReward, completionRate } = row.case_json || {};
+    const { tags, description, xpReward, completionRate, displayTitle, displayDescription, displayTags } = row.case_json || {};
 
     return {
       id: row.id,
       title: row.title,
+      displayTitle: displayTitle || row.title,
+      displayDescription: displayDescription || description || `Practice your skills with this ${row.difficulty.toLowerCase()} case in ${row.category}.`,
+      displayTags: displayTags || tags || [],
       category: row.category,
       difficulty: row.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
       estimatedTime: row.estimated_time,
