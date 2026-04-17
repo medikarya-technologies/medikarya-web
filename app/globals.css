@@ -240,7 +240,8 @@ html {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 6px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -277,4 +278,13 @@ html {
 .native-scrollbar::-webkit-scrollbar-thumb {
   background: revert;
   border-radius: revert;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

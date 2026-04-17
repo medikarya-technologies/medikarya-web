@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect, useRef } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TestResultModal } from "./test-result-modal"
 import {
   FlaskConical,
@@ -17,13 +16,12 @@ import {
   XCircle,
   Loader2,
   FileText,
-  Heart,
-  Brain,
   Droplets,
-  Activity,
-  Eye,
   AlertCircle,
-  Lightbulb
+  X,
+  Eye,
+  ArrowRight,
+  Stethoscope,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
@@ -32,11 +30,28 @@ interface TestOrderingProps {
   orderedTests: any[]
   testResults: any[]
   onOrderTest: (test: any) => void
+  onRemoveTest: (testId: string) => void
+  onProceedToDiagnosis: () => void
   caseData: any
   hasLimitedHistory?: boolean
 }
 
-export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData, hasLimitedHistory }: TestOrderingProps) {
+const CATEGORY_FILTERS = [
+  { value: "all", label: "All Tests" },
+  { value: "laboratory", label: "Laboratory" },
+  { value: "imaging", label: "Imaging" },
+  { value: "other", label: "Other" },
+]
+
+export function TestOrdering({
+  orderedTests,
+  testResults,
+  onOrderTest,
+  onRemoveTest,
+  onProceedToDiagnosis,
+  caseData,
+  hasLimitedHistory,
+}: TestOrderingProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedTest, setSelectedTest] = useState<any>(null)
@@ -45,16 +60,27 @@ export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData,
   const [availableTests, setAvailableTests] = useState<any[]>([])
   const { toast } = useToast()
 
+  // Preserve scroll position in the left column on re-render
+  const browserScrollRef = useRef<HTMLDivElement>(null)
+  const savedScrollRef = useRef<number>(0)
+
+  useEffect(() => {
+    const el = browserScrollRef.current
+    if (!el) return
+    // Restore scroll position after orderedTests update
+    el.scrollTop = savedScrollRef.current
+  }, [orderedTests])
+
   useEffect(() => {
     if (!caseData?.patient?.investigations) return
 
     const tests: any[] = []
     const investigations = caseData.patient.investigations
 
-    // Map explicit tests list
-    const sourceTests = (investigations.tests && investigations.tests.length > 0)
-      ? investigations.tests
-      : (investigations.allowed_tests || []);
+    const sourceTests =
+      investigations.tests && investigations.tests.length > 0
+        ? investigations.tests
+        : investigations.allowed_tests || []
 
     if (Array.isArray(sourceTests)) {
       sourceTests.forEach((testItem: any, index: number) => {
@@ -69,22 +95,21 @@ export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData,
           extraProps = rest
         }
 
-        // Determine category and icon based on name
         let category = "laboratory"
         let icon = FlaskConical
-        let cost = 100
-        let duration = "2-4 hours"
+        let duration = "2–4 hrs"
 
         if (testName.toLowerCase().includes("microscopy") || testName.toLowerCase().includes("iem")) {
           icon = Scan
-          cost = 150
         } else if (testName.toLowerCase().includes("elisa")) {
           icon = Droplets
-          cost = 80
-        } else if (testName.toLowerCase().includes("x-ray") || testName.toLowerCase().includes("ct ") || testName.toLowerCase().includes("ultrasound")) {
+        } else if (
+          testName.toLowerCase().includes("x-ray") ||
+          testName.toLowerCase().includes("ct ") ||
+          testName.toLowerCase().includes("ultrasound")
+        ) {
           category = "imaging"
           icon = Scan
-          cost = 200
         }
 
         tests.push({
@@ -92,10 +117,9 @@ export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData,
           name: testName,
           category,
           icon,
-          cost,
           duration,
           description: testName,
-          ...extraProps
+          ...extraProps,
         })
       })
     }
@@ -103,351 +127,302 @@ export function TestOrdering({ orderedTests, testResults, onOrderTest, caseData,
     setAvailableTests(tests)
   }, [caseData])
 
+  const isOrdered = (test: any) =>
+    orderedTests.some((t) => t.id === test.id || t.name === test.name)
+
+  const filteredTests = availableTests.filter((test) => {
+    const matchesSearch =
+      test.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      test.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = selectedCategory === "all" || test.category === selectedCategory
+    return matchesSearch && matchesCategory
+  })
+
+  const getTestResult = (testId: string) => testResults.find((r) => r.testId === testId)
+
   const handleViewResult = (test: any, result: any) => {
     setSelectedTest(test)
     setSelectedResult(result)
     setIsResultModalOpen(true)
   }
 
-  // const availableTests = []
-
-  const filteredTests = availableTests.filter(test => {
-    const matchesSearch = test.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || test.category === selectedCategory
-    const notOrdered = !orderedTests.some(ordered => ordered.id === test.id)
-
-    return matchesSearch && matchesCategory && notOrdered
-  })
-
-  const getTestStatus = (testId: string) => {
-    const ordered = orderedTests.find(t => t.id === testId)
-    if (!ordered) return null
-    return ordered.status
-  }
-
-  const getTestResult = (testId: string) => {
-    return testResults.find(r => r.testId === testId)
-  }
+  // Max turnaround for cart summary
+  const maxTurnaround = orderedTests.length > 0
+    ? orderedTests.map((t) => t.duration || "—").join(", ")
+    : null
 
   return (
-    <div className="h-[500px] sm:h-[550px] md:h-[600px] flex flex-col min-h-0">
-      {/* Soft warning for limited history */}
-      {hasLimitedHistory && (
-        <div className="mx-2 sm:mx-3 md:mx-4 mt-2 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-amber-900">Limited history taken</p>
-            <p className="text-xs text-amber-700 mt-0.5">You're ordering tests before thorough history. Your test choices will be scored against clinical appropriateness.</p>
+    <div className="flex flex-col md:flex-row h-full min-h-0 overflow-hidden">
+
+      {/* ── Left / top column: test browser ─────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden border-b md:border-b-0 md:border-r border-slate-100">
+
+        {/* Search + filter */}
+        <div className="flex-shrink-0 px-3 pt-3 pb-2 bg-white border-b border-slate-100 space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+            <Input
+              placeholder="Search tests…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 text-xs bg-slate-50 border-slate-200"
+            />
+          </div>
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            {CATEGORY_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setSelectedCategory(f.value)}
+                className={cn(
+                  "whitespace-nowrap px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors flex-shrink-0",
+                  selectedCategory === f.value
+                    ? "bg-brand-600 text-white border-transparent"
+                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
-      )}
-      {caseData?.patient?.investigations?.tips?.map((tip: any, index: number) => (
-        <div key={index} className="mb-2 mx-2 sm:mx-3 md:mx-4 mt-2 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-start gap-3">
-          <Lightbulb className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-purple-800">{tip.text}</p>
-        </div>
-      ))}
 
-      <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="flex-1 flex flex-col min-h-0">
-
-        <div className="border-b border-slate-200 bg-slate-50/50 px-2 sm:px-3 md:px-4 py-2 sm:py-3 flex-shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
-              <Input
-                placeholder="Search tests..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 sm:pl-10 h-8 sm:h-9 text-xs sm:text-sm"
-              />
+        {/* Scrollable test list — saves scroll pos on re-render */}
+        <div
+          ref={browserScrollRef}
+          className="flex-1 overflow-y-auto px-3 py-2 space-y-2"
+          style={{ scrollbarWidth: "thin" }}
+          data-lenis-prevent
+          onScroll={(e) => {
+            savedScrollRef.current = (e.target as HTMLDivElement).scrollTop
+          }}
+        >
+          {filteredTests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <FlaskConical className="h-10 w-10 text-slate-300 mb-3" />
+              <p className="text-sm text-slate-500">No tests match your search</p>
             </div>
-          </div>
-
-          <div className="overflow-x-auto scrollbar-hide">
-            <TabsList className="w-full justify-start h-auto p-0 bg-transparent inline-flex">
-              <TabsTrigger value="all" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">All Tests</TabsTrigger>
-              <TabsTrigger value="laboratory" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Laboratory</TabsTrigger>
-              <TabsTrigger value="imaging" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Imaging</TabsTrigger>
-              <TabsTrigger value="ordered" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">
-                Ordered ({orderedTests.length})
-              </TabsTrigger>
-            </TabsList>
-          </div>
-        </div>
-
-        <TabsContent value="all" className="flex-1 m-0 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
-          style={{ scrollbarWidth: 'thin' }}
-          data-lenis-prevent
-        >
-          <div className="p-2 sm:p-3 md:p-4 space-y-2">
-            {filteredTests.map((test) => {
+          ) : (
+            filteredTests.map((test) => {
               const TestIcon = test.icon
+              const ordered = isOrdered(test)
+              const result = getTestResult(test.id)
+              const orderedTest = ordered ? orderedTests.find((t) => t.id === test.id || t.name === test.name) : null
+
               return (
                 <Card
                   key={test.id}
-                  className="hover:shadow-md transition-all cursor-pointer border border-slate-200"
-                  onClick={() => setSelectedTest(test)}
-                >
-                  <CardContent className="p-2 sm:p-3">
-                    <div className="flex items-start justify-between gap-3 sm:gap-4">
-                      <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-                          <TestIcon className="h-5 w-5 sm:h-6 sm:w-6 text-brand-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm sm:text-base text-slate-900 mb-1 line-clamp-1">{test.name}</h4>
-                          <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">{test.description}</p>
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
-                            <Badge variant="outline" className="text-xs py-0.5 px-2 bg-white">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {test.duration}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Button
-                        size="sm"
-                        disabled={orderedTests.some((t: any) => t.id === test.id || t.name === test.name)}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (orderedTests.some((t: any) => t.id === test.id || t.name === test.name)) return
-                          onOrderTest(test)
-                          toast({
-                            title: "Test Ordered",
-                            description: `${test.name} has been requested. Check the Ordered tab for results.`,
-                            duration: 3000,
-                          })
-                        }}
-                        className={cn(
-                          "h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm shadow-sm flex-shrink-0",
-                          orderedTests.some((t: any) => t.id === test.id || t.name === test.name)
-                            ? "bg-slate-100 text-slate-400 hover:bg-slate-100"
-                            : "bg-brand-600 hover:bg-brand-700"
-                        )}
-                      >
-                        {orderedTests.some((t: any) => t.id === test.id || t.name === test.name) ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 sm:mr-1.5" />
-                        ) : (
-                          <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-                        )}
-                        <span className="hidden sm:inline">{orderedTests.some((t: any) => t.id === test.id || t.name === test.name) ? "Ordered" : "Order"}</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-
-            {filteredTests.length === 0 && (
-              <div className="text-center py-12">
-                <FlaskConical className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                <p className="text-sm text-slate-600">No tests found</p>
-              </div>
-            )}
-          </div>
-        </TabsContent >
-
-        <TabsContent value="laboratory" className="flex-1 m-0 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
-          style={{ scrollbarWidth: 'thin' }}
-          data-lenis-prevent
-        >
-          <div className="p-4 space-y-2">
-            {filteredTests.filter(t => t.category === "laboratory").map((test) => {
-              const TestIcon = test.icon
-              return (
-                <Card
-                  key={test.id}
-                  className="hover:shadow-md transition-all cursor-pointer border border-slate-200"
+                  className={cn(
+                    "border transition-all duration-200",
+                    ordered ? "border-slate-100 bg-slate-50/50" : "border-slate-200 hover:shadow-sm hover:border-brand-200"
+                  )}
                 >
                   <CardContent className="p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="h-10 w-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                          <TestIcon className="h-5 w-5 text-brand-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm text-slate-900 mb-1">{test.name}</h4>
-                          <p className="text-xs text-slate-600">{test.description}</p>
-                          <div className="flex items-center gap-3 mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {test.duration}
-                            </Badge>
-                          </div>
-                        </div>
+                    <div className="flex items-start gap-3">
+                      <div className={cn(
+                        "h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0",
+                        test.category === "imaging" ? "bg-violet-50" : "bg-brand-50"
+                      )}>
+                        <TestIcon className={cn(
+                          "h-4 w-4",
+                          test.category === "imaging" ? "text-violet-600" : "text-brand-600"
+                        )} />
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          onOrderTest(test)
-                          toast({
-                            title: "Test Ordered",
-                            description: `${test.name} has been requested. Check the Ordered tab for results.`,
-                            duration: 3000,
-                          })
-                        }}
-                        className="bg-brand-600 hover:bg-brand-700 h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm shadow-sm flex-shrink-0"
-                      >
-                        <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-                        <span className="hidden sm:inline">Order</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </TabsContent >
-
-        <TabsContent value="imaging" className="flex-1 m-0 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
-          style={{ scrollbarWidth: 'thin' }}
-          data-lenis-prevent
-        >
-          <div className="p-4 space-y-2">
-            {filteredTests.filter(t => t.category === "imaging").map((test) => {
-              const TestIcon = test.icon
-              return (
-                <Card
-                  key={test.id}
-                  className="hover:shadow-md transition-all cursor-pointer border border-slate-200"
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-start justify-between gap-3 sm:gap-4">
-                      <div className="flex items-start gap-3 sm:gap-4 flex-1">
-                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
-                          <TestIcon className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm sm:text-base text-slate-900 mb-1">{test.name}</h4>
-                          <p className="text-xs sm:text-sm text-slate-600 line-clamp-2">{test.description}</p>
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
-                            <Badge variant="outline" className="text-xs py-0.5 px-2 bg-white">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {test.duration}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          onOrderTest(test)
-                          toast({
-                            title: "Test Ordered",
-                            description: `${test.name} has been requested. Check the Ordered tab for results.`,
-                            duration: 3000,
-                          })
-                        }}
-                        className="bg-purple-600 hover:bg-purple-700 h-9 sm:h-10 px-3 sm:px-4 text-xs sm:text-sm shadow-sm flex-shrink-0"
-                      >
-                        <Plus className="h-3.5 w-3.5 sm:mr-1.5" />
-                        Order
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div >
-        </TabsContent >
-
-        <TabsContent value="ordered" className="flex-1 m-0 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
-          style={{ scrollbarWidth: 'thin' }}
-          data-lenis-prevent
-        >
-          <div className="p-2 sm:p-3 md:p-4 space-y-2 sm:space-y-3">
-            {orderedTests.length === 0 ? (
-              <div className="text-center py-12">
-                <FlaskConical className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                <p className="text-sm text-slate-600">No tests ordered yet</p>
-                <p className="text-xs text-slate-500 mt-1">Order tests to begin investigation</p>
-              </div>
-            ) : (
-              orderedTests.map((test) => {
-                const result = getTestResult(test.id)
-                // Try to find the original test definition to get the icon, or fallback
-                const originalTest = availableTests.find(t => t.name === test.name)
-                const TestIcon = test.icon || (originalTest ? originalTest.icon : FlaskConical)
-
-                return (
-                  <Card key={test.id} className="border border-slate-200">
-                    <CardContent className="p-2 sm:p-3">
-                      <div className="flex items-start gap-3 sm:gap-4">
-                        <div className={cn(
-                          "h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center flex-shrink-0",
-                          test.status === "completed" ? "bg-green-50" : "bg-slate-50"
-                        )}>
-                          <TestIcon className={cn(
-                            "h-5 w-5 sm:h-6 sm:w-6",
-                            test.status === "completed" ? "text-green-600" : "text-slate-600"
-                          )} />
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <h4 className="font-medium text-sm sm:text-base text-slate-900 line-clamp-1">{test.name}</h4>
-                            {test.status === "processing" && (
-                              <Badge className="bg-brand-100 text-brand-700 border-brand-200 text-xs px-2 py-0.5 flex-shrink-0">
-                                <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                                Processing
-                              </Badge>
-                            )}
-                            {test.status === "completed" && (
-                              <Badge className="bg-green-100 text-green-700 border-green-200 text-xs px-2 py-0.5 flex-shrink-0">
-                                <CheckCircle2 className="h-3 w-3 mr-1.5" />
-                                Completed
-                              </Badge>
-                            )}
-                            {test.status === "failed" && (
-                              <Badge variant="destructive" className="text-xs px-2 py-0.5 flex-shrink-0">
-                                <XCircle className="h-3 w-3 mr-1.5" />
-                                Failed
-                              </Badge>
-                            )}
-                          </div>
-
+                      <div className="flex-1 min-w-0">
+                        <h4 className={cn("font-medium text-sm leading-tight mb-0.5", ordered ? "text-slate-400" : "text-slate-900")}>
+                          {test.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 line-clamp-1">{test.description}</p>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <span className="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                            <Clock className="h-2.5 w-2.5" />
+                            {test.duration}
+                          </span>
                           {result && (
-                            <div className="bg-slate-50 rounded-xl p-3 sm:p-4 mt-2 border border-slate-200">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4 text-slate-600 flex-shrink-0" />
-                                  <span className="text-sm font-medium text-slate-900">Results Available</span>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleViewResult(test, result)}
-                                  className="h-8 sm:h-9 text-xs sm:text-sm px-3 w-full sm:w-auto hover:bg-white hover:text-brand-600"
-                                >
-                                  <Eye className="h-3.5 w-3.5 mr-1.5" />
-                                  View Report
-                                </Button>
-                              </div>
-                              <p className="text-xs sm:text-sm text-slate-700 mb-2 leading-relaxed line-clamp-2">{result.summary || result.results?.summary || "Results pending..."}</p>
-                              <p className="text-xs text-slate-600 line-clamp-1 italic">{result.interpretation || result.results?.interpretation}</p>
-                              {(result.criticalFindings?.length > 0 || result.results?.criticalFindings?.length > 0) && (
-                                <div className="mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 animate-pulse">
-                                  <p className="text-xs font-medium text-red-900 flex items-center gap-1.5">
-                                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                                    <span className="line-clamp-1">Critical Findings - Click to view</span>
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+                            <button
+                              onClick={() => handleViewResult(test, result)}
+                              className="flex items-center gap-1 text-[10px] text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-full hover:bg-brand-100 transition-colors"
+                            >
+                              <Eye className="h-2.5 w-2.5" />
+                              View result
+                            </button>
+                          )}
+                          {orderedTest?.status === "processing" && (
+                            <span className="flex items-center gap-1 text-[10px] text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-full">
+                              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                              Processing
+                            </span>
                           )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })
-            )}
-          </div>
+                      <Button
+                        size="sm"
+                        disabled={ordered}
+                        onClick={() => {
+                          if (ordered) return
+                          savedScrollRef.current = browserScrollRef.current?.scrollTop ?? 0
+                          onOrderTest(test)
+                          toast({
+                            title: "Test Ordered",
+                            description: `${test.name} has been requested.`,
+                            duration: 2500,
+                          })
+                        }}
+                        className={cn(
+                          "h-7 px-2.5 text-[11px] flex-shrink-0 rounded-full",
+                          ordered
+                            ? "bg-slate-100 text-slate-400 hover:bg-slate-100 border border-slate-200"
+                            : "bg-brand-600 hover:bg-brand-700 text-white"
+                        )}
+                      >
+                        {ordered ? (
+                          <>
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Ordered
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-3 w-3 mr-1" />
+                            Order
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })
+          )}
+        </div>
+      </div>
 
-        </TabsContent>
-      </Tabs>
+      {/* ── Right column: cart (full on md+, slim strip on mobile) ──── */}
+      <div className="md:w-[260px] flex-shrink-0 flex flex-col bg-slate-50/50 border-t md:border-t-0 md:border-l border-slate-100">
+
+        {/* Cart header — hidden on mobile (info shown in footer strip) */}
+        <div className="hidden md:block flex-shrink-0 px-3 pt-3 pb-2 border-b border-slate-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-slate-700">
+              Ordered
+              <span className="ml-1.5 px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded-full text-[10px] font-bold">
+                {orderedTests.length}
+              </span>
+            </h3>
+          </div>
+        </div>
+
+        {/* Cart items — only visible on md+ */}
+        <div
+          className="hidden md:block flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0"
+          style={{ scrollbarWidth: "thin" }}
+          data-lenis-prevent
+        >
+        {/* Cart items list body */}
+          {orderedTests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <FlaskConical className="h-8 w-8 text-slate-200 mb-2" />
+              <p className="text-[11px] text-slate-400">No tests ordered yet</p>
+            </div>
+          ) : (
+            orderedTests.map((test) => {
+              const result = getTestResult(test.id)
+              return (
+                <div
+                  key={test._uid ?? test.id}
+                  className="flex items-start gap-2 p-2 bg-white rounded-lg border border-slate-200 group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-slate-800 leading-tight line-clamp-2">{test.name}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {test.duration && (
+                        <span className="flex items-center gap-0.5 text-[10px] text-slate-400">
+                          <Clock className="h-2.5 w-2.5" />
+                          {test.duration}
+                        </span>
+                      )}
+                      {test.status === "processing" && (
+                        <Loader2 className="h-2.5 w-2.5 text-brand-500 animate-spin" />
+                      )}
+                      {test.status === "completed" && (
+                        <CheckCircle2 className="h-2.5 w-2.5 text-emerald-500" />
+                      )}
+                      {test.status === "failed" && (
+                        <XCircle className="h-2.5 w-2.5 text-rose-500" />
+                      )}
+                    </div>
+                    {result && (
+                      <button
+                        onClick={() => handleViewResult(test, result)}
+                        className="mt-1 flex items-center gap-1 text-[10px] text-brand-600 hover:text-brand-800 transition-colors"
+                      >
+                        <FileText className="h-2.5 w-2.5" />
+                        View report
+                      </button>
+                    )}
+                  </div>
+                  {/* Remove button — derived from orderedTests, not local state */}
+                  <button
+                    onClick={() => {
+                      savedScrollRef.current = browserScrollRef.current?.scrollTop ?? 0
+                      onRemoveTest(test.id)
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-rose-500 flex-shrink-0 mt-0.5"
+                    aria-label="Remove test"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )
+            })
+          )}
+        </div>
+
+        {/* Cart footer — desktop version */}
+        <div className="hidden md:block flex-shrink-0 px-3 py-3 border-t border-slate-200 space-y-2">
+          {orderedTests.length > 0 && (
+            <div className="space-y-1 text-[10px] text-slate-500">
+              <div className="flex justify-between">
+                <span>Tests ordered</span>
+                <span className="font-medium text-slate-700">{orderedTests.length}</span>
+              </div>
+              {maxTurnaround && (
+                <div className="flex justify-between">
+                  <span>Turnaround</span>
+                  <span className="font-medium text-slate-700 text-right max-w-[120px] line-clamp-1">{maxTurnaround}</span>
+                </div>
+              )}
+            </div>
+          )}
+          {orderedTests.length === 0 && (
+            <p className="text-[10px] text-amber-600 text-center">
+              No tests ordered — diagnosis accuracy may be affected.
+            </p>
+          )}
+          <Button
+            onClick={onProceedToDiagnosis}
+            className="w-full h-8 text-[11px] bg-brand-600 hover:bg-brand-700 text-white rounded-lg gap-1.5"
+          >
+            <Stethoscope className="h-3.5 w-3.5" />
+            Proceed to Diagnosis
+            <ArrowRight className="h-3 w-3" />
+          </Button>
+        </div>
+
+        {/* Cart footer — mobile: slim strip showing count + proceed */}
+        <div className="md:hidden flex-shrink-0 px-3 py-2 border-t border-slate-200 flex items-center gap-2">
+          <span className="text-[11px] text-slate-500 flex-1">
+            {orderedTests.length === 0
+              ? "No tests ordered yet"
+              : `${orderedTests.length} test${orderedTests.length !== 1 ? "s" : ""} ordered`}
+          </span>
+          <Button
+            onClick={onProceedToDiagnosis}
+            className="h-8 px-3 text-[11px] bg-brand-600 hover:bg-brand-700 text-white rounded-lg gap-1"
+          >
+            Diagnose
+            <ArrowRight className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
 
       <TestResultModal
         isOpen={isResultModalOpen}
