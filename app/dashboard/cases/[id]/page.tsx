@@ -37,6 +37,7 @@ export default function CasePage() {
   const [viewingHistory, setViewingHistory] = useState(false)
   const [showAllAttempts, setShowAllAttempts] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isStarting, setIsStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
@@ -71,8 +72,10 @@ export default function CasePage() {
 
   const handleStartCase = async () => {
     try {
-      // For now we still use the legacy start API if needed, 
-      // but we primarily care about the UI transitioning to started.
+      setIsStarting(true)
+      // Small delay for smoother transition feel
+      await new Promise(resolve => setTimeout(resolve, 800))
+
       const response = await fetch(`/api/cases/${params.id}/start`, {
         method: 'POST',
         headers: {
@@ -91,6 +94,8 @@ export default function CasePage() {
       console.error('Error starting case:', error);
       // Fallback: just start it locally if API fails
       setCaseStarted(true);
+    } finally {
+      setIsStarting(false)
     }
   }
 
@@ -193,11 +198,28 @@ export default function CasePage() {
 
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Main Anonymized Patient Card */}
-          <PatientCard
-            patient={caseData.patient}
-            caseTitle={caseData.displayTitle || caseData.title}
-            onStartCase={handleStartCase}
-          />
+          <div className="relative">
+            <PatientCard
+              patient={caseData.patient}
+              caseTitle={caseData.displayTitle || caseData.title}
+              onStartCase={handleStartCase}
+            />
+            
+            {isStarting && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center rounded-2xl animate-in fade-in duration-300">
+                <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100 flex flex-col items-center gap-4">
+                  <div className="relative">
+                    <div className="h-12 w-12 rounded-full border-4 border-brand-100 border-t-brand-600 animate-spin" />
+                    <Play className="absolute inset-0 m-auto h-4 w-4 text-brand-600 animate-pulse" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-slate-900">Preparing Simulation</p>
+                    <p className="text-[11px] text-slate-500">Entering clinical environment...</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Discreet history link if attempts exist */}
           {attempts.length > 0 && (
