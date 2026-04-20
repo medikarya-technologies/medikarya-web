@@ -1,43 +1,45 @@
 import { MetadataRoute } from 'next'
 
-const blogSlugs = [
-    'ai-revolutionizing-medical-education',
-    'feynman-technique-clinical-reasoning',
-    'sepsis-case-based-approach',
-    'why-medical-students-need-simulation',
-    'breaking-down-diagnostic-process',
-    'future-ai-assisted-diagnosis',
+const blogPosts: { slug: string; lastModified: string }[] = [
+    { slug: 'ai-revolutionizing-medical-education',    lastModified: '2025-03-10' },
+    { slug: 'feynman-technique-clinical-reasoning',    lastModified: '2025-03-10' },
+    { slug: 'sepsis-case-based-approach',              lastModified: '2025-03-10' },
+    { slug: 'why-medical-students-need-simulation',    lastModified: '2025-03-10' },
+    { slug: 'breaking-down-diagnostic-process',        lastModified: '2025-03-10' },
+    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2025-03-10' },
+]
+
+const staticRoutes: { path: string; lastModified: string; priority: number }[] = [
+    { path: '',              lastModified: '2026-04-20', priority: 1.0 },
+    { path: '/about',        lastModified: '2026-04-20', priority: 0.8 },
+    { path: '/blog',         lastModified: '2026-04-20', priority: 0.9 },
+    { path: '/contact',      lastModified: '2025-12-01', priority: 0.6 },
+    { path: '/privacy',      lastModified: '2025-12-01', priority: 0.3 },
+    { path: '/terms',        lastModified: '2025-12-01', priority: 0.3 },
+    { path: '/cookies',      lastModified: '2025-12-01', priority: 0.3 },
+    { path: '/tutorials',    lastModified: '2026-04-20', priority: 0.8 },
+    { path: '/case-studies', lastModified: '2026-04-20', priority: 0.8 },
+    { path: '/contribute',   lastModified: '2026-01-01', priority: 0.7 },
+    { path: '/api-docs',     lastModified: '2026-01-01', priority: 0.5 },
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.medikarya.in'
 
-    const staticRoutes = [
-        '',
-        '/about',
-        '/blog',
-        '/contact',
-        '/privacy',
-        '/terms',
-        '/cookies',
-        '/tutorials',
-        '/case-studies',
-        '/contribute',
-        '/api-docs',
-    ].map((route) => ({
-        url: `${baseUrl}${route}`,
-        lastModified: new Date(),
+    const staticEntries: MetadataRoute.Sitemap = staticRoutes.map(({ path, lastModified, priority }) => ({
+        url: `${baseUrl}${path}`,
+        lastModified: new Date(lastModified),
         changeFrequency: 'weekly' as const,
-        priority: route === '' ? 1 : 0.8,
+        priority,
     }))
 
-    const blogRoutes = blogSlugs.map((slug) => ({
+    const blogEntries: MetadataRoute.Sitemap = blogPosts.map(({ slug, lastModified }) => ({
         url: `${baseUrl}/blog/${slug}`,
-        lastModified: new Date(),
+        lastModified: new Date(lastModified),
         changeFrequency: 'monthly' as const,
         priority: 0.7,
     }))
 
-    return [...staticRoutes, ...blogRoutes]
+    return [...staticEntries, ...blogEntries]
 }
 
