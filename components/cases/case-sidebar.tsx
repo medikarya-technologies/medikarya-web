@@ -61,30 +61,37 @@ export interface CaseSidebarProps {
 
 // ─── Vital dot logic ─────────────────────────────────────────────────────────
 
-function getVitalDot(key: string, value: number): "green" | "amber" | "red" {
-  switch (key) {
-    case "hr":
-      if (value > 120 || value < 60) return "red"
-      return "green"
-    case "temp":
-      if (value > 39.0) return "red"
-      if (value > 38.0 || value < 36.0) return "amber"
-      return "green"
-    case "spo2":
-      if (value < 95) return "red"
-      if (value < 97) return "amber"
-      return "green"
-    case "bp_sys":
-      if (value > 160 || value < 80) return "red"
-      if (value > 140 || value < 90) return "amber"
-      return "green"
-    case "rr":
-      if (value > 40 || value < 10) return "red"
-      if (value > 30 || value < 12) return "amber"
-      return "green"
-    default:
-      return "green"
+function getVitalDot(key: string, value: number, age: number): "green" | "amber" | "red" {
+  // Adult thresholds (default)
+  let thresholds = {
+    hr: { normal: [60, 100], amber: [50, 120] },
+    rr: { normal: [12, 20], amber: [10, 25] },
+    temp: { normal: [36.1, 37.5], amber: [36.0, 38.0] },
+    spo2: { normal: [95, 100], amber: [92, 94] },
+    bp_sys: { normal: [90, 140], amber: [80, 160] },
   }
+
+  // Basic pediatric adjustments
+  if (age < 1) { // Infant
+    thresholds.hr = { normal: [100, 160], amber: [80, 180] }
+    thresholds.rr = { normal: [30, 50], amber: [25, 60] }
+    thresholds.bp_sys = { normal: [70, 100], amber: [60, 110] }
+  } else if (age < 5) { // Preschool
+    thresholds.hr = { normal: [80, 120], amber: [70, 140] }
+    thresholds.rr = { normal: [20, 30], amber: [15, 35] }
+    thresholds.bp_sys = { normal: [80, 110], amber: [70, 120] }
+  } else if (age < 12) { // School age
+    thresholds.hr = { normal: [70, 110], amber: [60, 120] }
+    thresholds.rr = { normal: [18, 24], amber: [14, 30] }
+    thresholds.bp_sys = { normal: [90, 120], amber: [80, 130] }
+  }
+
+  const t = (thresholds as any)[key]
+  if (!t) return "green"
+
+  if (value >= t.normal[0] && value <= t.normal[1]) return "green"
+  if (value >= t.amber[0] && value <= t.amber[1]) return "amber"
+  return "red"
 }
 
 const DOT_CLASSES = {
@@ -144,7 +151,7 @@ function SectionLabel({
 
 // ─── Vitals section — two different layouts ───────────────────────────────────
 
-function VitalsDesktop({ vs }: { vs: VitalSigns | undefined }) {
+function VitalsDesktop({ vs, age }: { vs: VitalSigns | undefined; age: number }) {
   if (!vs) return <p className="text-[11px] text-slate-400 italic px-3 pb-2">No vitals recorded</p>
 
   const rows = [
@@ -203,7 +210,7 @@ function VitalsDesktop({ vs }: { vs: VitalSigns | undefined }) {
   return (
     <div className="px-3 pb-2 space-y-1.5">
       {rows.map((row) => {
-        const color = getVitalDot(row.key, row.value)
+        const color = getVitalDot(row.key, row.value, age)
         const Icon = row.icon
         return (
           <div key={row.key} className="flex items-center justify-between text-[11px]">
@@ -223,75 +230,78 @@ function VitalsDesktop({ vs }: { vs: VitalSigns | undefined }) {
   )
 }
 
-function VitalsMobile({ vs }: { vs: VitalSigns | undefined }) {
+function VitalsMobile({ vs, age }: { vs: VitalSigns | undefined; age: number }) {
   if (!vs) return <p className="text-sm text-slate-400 italic px-4 pb-3">No vitals recorded</p>
 
-  const cards = [
+  const rows = [
     vs.bloodPressure?.systolic && {
       key: "bp_sys",
       value: vs.bloodPressure.systolic,
-      label: "BP",
+      icon: Heart,
+      label: "Blood Pressure",
       display: `${vs.bloodPressure.systolic}/${vs.bloodPressure.diastolic}`,
       unit: vs.bloodPressure.unit || "mmHg",
     },
     vs.heartRate?.value && {
       key: "hr",
       value: vs.heartRate.value,
-      label: "Heart rate",
+      icon: Activity,
+      label: "Heart Rate",
       display: String(vs.heartRate.value),
       unit: vs.heartRate.unit || "bpm",
     },
     vs.temperature?.value && {
       key: "temp",
       value: vs.temperature.value,
-      label: "Temp",
+      icon: Thermometer,
+      label: "Temperature",
       display: String(vs.temperature.value),
       unit: vs.temperature.unit || "°C",
     },
     vs.respiratoryRate?.value && {
       key: "rr",
       value: vs.respiratoryRate.value,
-      label: "Resp. rate",
+      icon: Wind,
+      label: "Respiratory Rate",
       display: String(vs.respiratoryRate.value),
       unit: "/min",
     },
     vs.oxygenSaturation?.value && {
       key: "spo2",
       value: vs.oxygenSaturation.value,
-      label: "SpO₂",
+      icon: Droplets,
+      label: "SpO₂ Saturation",
       display: String(vs.oxygenSaturation.value),
       unit: "%",
     },
   ].filter(Boolean) as {
     key: string
     value: number
+    icon: any
     label: string
     display: string
     unit: string
   }[]
 
-  if (cards.length === 0)
+  if (rows.length === 0)
     return <p className="text-sm text-slate-400 italic px-4 pb-3">No vitals recorded</p>
 
   return (
-    <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-      {cards.map((card) => {
-        const color = getVitalDot(card.key, card.value)
+    <div className="px-4 pb-4 space-y-3">
+      {rows.map((row) => {
+        const color = getVitalDot(row.key, row.value, age)
+        const Icon = row.icon
         return (
-          <div
-            key={card.key}
-            className={cn(
-              "rounded-xl border px-3 py-2.5",
-              DOT_BG_CLASSES[color]
-            )}
-          >
-            <p className={cn("text-[10px] font-semibold uppercase tracking-wider mb-0.5", DOT_TEXT_CLASSES[color])}>
-              {card.label}
-            </p>
-            <p className="text-lg font-bold text-slate-900 leading-none">
-              {card.display}
-            </p>
-            <p className="text-[10px] text-slate-500 mt-0.5">{card.unit}</p>
+          <div key={row.key} className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-3 text-slate-500">
+              <StatusDot color={color} size="md" />
+              <Icon className="h-4 w-4" />
+              <span>{row.label}</span>
+            </div>
+            <span className="font-semibold text-slate-900">
+              {row.display}{" "}
+              <span className="text-slate-400 text-xs">{row.unit}</span>
+            </span>
           </div>
         )
       })}
@@ -340,9 +350,9 @@ function SidebarContent({
       {/* ── Vitals ──────────────────────────────────────────────── */}
       <SectionLabel mobile={mobile}>Vital Signs</SectionLabel>
       {mobile ? (
-        <VitalsMobile vs={patient.vitalSigns} />
+        <VitalsMobile vs={patient.vitalSigns} age={patient.age} />
       ) : (
-        <VitalsDesktop vs={patient.vitalSigns} />
+        <VitalsDesktop vs={patient.vitalSigns} age={patient.age} />
       )}
 
       <SectionDivider />

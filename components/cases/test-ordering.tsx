@@ -318,9 +318,14 @@ export function TestOrdering({
         >
         {/* Cart items list body */}
           {orderedTests.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <FlaskConical className="h-8 w-8 text-slate-200 mb-2" />
-              <p className="text-[11px] text-slate-400">No tests ordered yet</p>
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                <FlaskConical className="h-6 w-6 text-slate-300" />
+              </div>
+              <p className="text-xs font-medium text-slate-900 mb-1">No tests ordered</p>
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Add investigations from the list on the left to confirm your diagnosis.
+              </p>
             </div>
           ) : (
             orderedTests.map((test) => {
@@ -393,12 +398,24 @@ export function TestOrdering({
             </div>
           )}
           {orderedTests.length === 0 && (
-            <p className="text-[10px] text-amber-600 text-center">
-              No tests ordered — diagnosis accuracy may be affected.
-            </p>
+            <div className="p-2 bg-amber-50 rounded-lg border border-amber-100 flex items-start gap-2">
+              <AlertCircle className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
+              <p className="text-[9px] text-amber-700 leading-tight">
+                Ordering tests helps validate your hypotheses and improves diagnostic accuracy.
+              </p>
+            </div>
           )}
           <Button
-            onClick={onProceedToDiagnosis}
+            onClick={() => {
+              if (orderedTests.length === 0) {
+                toast({
+                  title: "No tests ordered",
+                  description: "Proceeding without tests may affect your accuracy score. Are you sure?",
+                  variant: "destructive",
+                })
+              }
+              onProceedToDiagnosis()
+            }}
             className="w-full h-8 text-[11px] bg-brand-600 hover:bg-brand-700 text-white rounded-lg gap-1.5"
           >
             <Stethoscope className="h-3.5 w-3.5" />

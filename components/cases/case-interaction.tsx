@@ -452,7 +452,7 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
                   {step.label}
                 </button>
                 {idx < STEP_META.length - 1 && (
-                  <span className="text-slate-300 text-xs">›</span>
+                  <span className="text-slate-300 text-xs mx-0.5 select-none font-bold">›</span>
                 )}
               </div>
             )
@@ -500,9 +500,11 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
           {/* Objective strip — desktop/tablet only; bottom tab bar covers this on mobile */}
-          <div className="hidden md:flex flex-shrink-0 bg-white border-b border-slate-100 px-4 h-9 items-center gap-2">
-            <Brain className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-            <p className="text-[11px] text-slate-500 truncate">{caseObjective}</p>
+          <div className="hidden md:flex flex-shrink-0 bg-white border-b border-slate-100 px-4 h-9 items-center gap-2.5">
+            <div className="flex items-center justify-center w-5 h-5 rounded-full bg-slate-50 border border-slate-100 flex-shrink-0">
+              <Brain className="h-3 w-3 text-brand-500" />
+            </div>
+            <p className="text-[11px] font-medium text-slate-500 truncate">{caseObjective}</p>
           </div>
 
           {/* Warning banner (one at a time) — appears below objective */}
