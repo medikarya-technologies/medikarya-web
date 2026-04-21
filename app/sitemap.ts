@@ -1,12 +1,12 @@
 import { MetadataRoute } from 'next'
 
 const blogPosts: { slug: string; lastModified: string }[] = [
-    { slug: 'ai-revolutionizing-medical-education',    lastModified: '2025-03-10' },
-    { slug: 'feynman-technique-clinical-reasoning',    lastModified: '2025-03-10' },
-    { slug: 'sepsis-case-based-approach',              lastModified: '2025-03-10' },
-    { slug: 'why-medical-students-need-simulation',    lastModified: '2025-03-10' },
-    { slug: 'breaking-down-diagnostic-process',        lastModified: '2025-03-10' },
-    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2025-03-10' },
+    { slug: 'ai-revolutionizing-medical-education',    lastModified: '2025-02-01' },
+    { slug: 'feynman-technique-clinical-reasoning',    lastModified: '2025-01-15' },
+    { slug: 'sepsis-case-based-approach',              lastModified: '2025-01-10' },
+    { slug: 'why-medical-students-need-simulation',    lastModified: '2024-12-01' },
+    { slug: 'breaking-down-diagnostic-process',        lastModified: '2024-12-10' },
+    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2024-11-01' },
 ]
 
 const staticRoutes: { path: string; lastModified: string; priority: number }[] = [
@@ -37,7 +37,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         url: `${baseUrl}/blog/${slug}`,
         lastModified: new Date(lastModified),
         changeFrequency: 'monthly' as const,
-        priority: 0.7,
+        priority: 0.8,
     }))
 
     return [...staticEntries, ...blogEntries]
