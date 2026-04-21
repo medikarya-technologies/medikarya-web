@@ -31,7 +31,18 @@ export const metadata: Metadata = {
     template: "%s | MediKarya"
   },
   description: "Gain clinical confidence before your first real patient. Simulate consults, order diagnostics, and get instant feedback with our advanced AI medical education platform.",
-  keywords: ["Medical Education", "AI Patient Simulation", "Clinical Training", "Medical Students", "Diagnosis Practice"],
+  keywords: [
+    "AI patient simulation for medical students",
+    "clinical reasoning practice MBBS",
+    "virtual patient cases medical education",
+    "diagnostic reasoning training India",
+    "medical student simulation platform",
+    "OSCE preparation online",
+    "AI medical education platform India",
+    "clinical training for MBBS students",
+    "differential diagnosis practice",
+    "MediKarya"
+  ],
   authors: [{ name: "MediKarya Team" }], // Replace with actual author if known
   creator: "MediKarya",
   openGraph: {
@@ -100,6 +111,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             easing="ease"
             speed={200}
             shadow="0 0 10px #2563EB,0 0 5px #2563EB"
+          />
+          {/* Organization + WebSite JSON-LD structured data */}
+          <Script
+            id="json-ld-org"
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify([
+                {
+                  "@context": "https://schema.org",
+                  "@type": "Organization",
+                  "name": "MediKarya",
+                  "url": "https://www.medikarya.in",
+                  "logo": "https://www.medikarya.in/medikarya.svg",
+                  "description": "AI-powered clinical simulation platform helping medical students in India practice patient consultations, order diagnostics, and develop clinical reasoning skills.",
+                  "foundingDate": "2024",
+                  "areaServed": "IN",
+                  "sameAs": []
+                },
+                {
+                  "@context": "https://schema.org",
+                  "@type": "WebSite",
+                  "name": "MediKarya",
+                  "url": "https://www.medikarya.in",
+                  "description": "AI patient simulation platform for medical students — practice clinical reasoning, diagnostics, and case-based learning.",
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": "https://www.medikarya.in/blog?q={search_term_string}",
+                    "query-input": "required name=search_term_string"
+                  }
+                }
+              ])
+            }}
           />
           <Script id="clarity-script" strategy="afterInteractive">
             {`

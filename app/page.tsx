@@ -1,8 +1,33 @@
 import dynamic from "next/dynamic"
+import type { Metadata } from "next"
 import { Navbar } from "@/components/flowai/navbar"
 import { Hero } from "@/components/flowai/hero"
 import ProblemsSection from "@/components/flowai/sections/problems-section"
 import { SmoothScroller } from "@/components/smooth-scroller"
+
+export const metadata: Metadata = {
+  title: "MediKarya — AI Patient Simulation for Medical Students",
+  description: "Practice clinical reasoning with AI-powered virtual patients. Order diagnostics, take history, get instant expert feedback. Built for MBBS students in India.",
+  alternates: {
+    canonical: "https://www.medikarya.in/",
+  },
+  keywords: [
+    "AI patient simulation",
+    "clinical reasoning for medical students",
+    "virtual patient cases MBBS",
+    "medical student simulation India",
+    "OSCE preparation AI",
+    "diagnostic reasoning practice",
+    "AI clinical training platform",
+    "MediKarya",
+  ],
+  openGraph: {
+    title: "MediKarya — AI Patient Simulation for Medical Students",
+    description: "Practice clinical reasoning with AI-powered virtual patients. Order diagnostics, take history, get instant expert feedback.",
+    url: "https://www.medikarya.in/",
+    type: "website",
+  },
+}
 
 // Lazy Load Heavy Sections (Below the fold)
 const FeaturesBento = dynamic(() => import("@/components/flowai/sections/features-bento"), {
