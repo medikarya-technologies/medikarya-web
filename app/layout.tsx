@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     icon: "/icon.svg",
     apple: "/medikarya.png",
   },
-  generator: 'v0.app'
+  generator: 'Next.js'
 }
 
 export const viewport = {
@@ -97,6 +97,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="en" className="scroll-smooth">
+        <head>
+          {/* Preconnect hints — warm up TCP/TLS before JS requests these origins */}
+          <link rel="preconnect" href="https://clerk.medikarya.in" />
+          <link rel="dns-prefetch" href="https://clerk.medikarya.in" />
+          <link rel="preconnect" href="https://scripts.clarity.ms" crossOrigin="anonymous" />
+          <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
+        </head>
         <body
           className={cn(geistSans.variable, geistMono.variable, geistSans.className)}
           suppressHydrationWarning={true}

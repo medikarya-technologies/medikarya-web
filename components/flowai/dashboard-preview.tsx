@@ -10,8 +10,8 @@ export function DashboardPreview() {
 
   const [isPlaying, setIsPlaying] = useState(false)
 
-  // This would be your actual video thumbnail
-  const videoThumbnail = "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2400&q=80"
+  // Gradient placeholder — replaces the 470 KiB Unsplash external image fetch
+  const videoThumbnail = null
 
   return (
     <section id="video-demo" className="py-24 sm:py-32 bg-slate-50 relative overflow-hidden flex flex-col items-center">
@@ -77,8 +77,12 @@ export function DashboardPreview() {
             {!isPlaying ? (
               <>
                 <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105 opacity-90"
-                  style={{ backgroundImage: `url(${videoThumbnail})` }}
+                  className="absolute inset-0 transition-transform duration-1000 group-hover:scale-105"
+                  style={{
+                    background: videoThumbnail
+                      ? `url(${videoThumbnail}) center/cover no-repeat`
+                      : "linear-gradient(135deg, #0f172a 0%, #1e3a5f 30%, #1a4a6e 60%, #0f172a 100%)"
+                  }}
                 />
                 <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/10 transition-colors duration-500" />
 
@@ -109,11 +113,17 @@ export function DashboardPreview() {
                 <p className="text-sm text-slate-300">02:14 • Diagnosis Simulation</p>
               </div>
               <div className="flex gap-4">
-                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors">
-                  <Volume2 className="w-5 h-5" />
+                <button
+                  aria-label="Toggle volume"
+                  className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors"
+                >
+                  <Volume2 className="w-5 h-5" aria-hidden="true" />
                 </button>
-                <button className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors">
-                  <Maximize2 className="w-5 h-5" />
+                <button
+                  aria-label="Fullscreen"
+                  className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors"
+                >
+                  <Maximize2 className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
