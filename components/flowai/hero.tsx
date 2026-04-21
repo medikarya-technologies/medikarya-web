@@ -99,27 +99,23 @@ export function Hero() {
           </div>
         </motion.div>
 
-        {/* Headline: The Challenge */}
-        <motion.h1
-          variants={contentVariants}
-          custom={1}
+        {/* Headline: The Challenge — plain element for instant LCP paint */}
+        <h1
           className="text-balance text-4xl font-extrabold tracking-tight sm:text-5xl md:text-7xl text-slate-900 mb-8 leading-[1.05]"
         >
           Gain Clinical Confidence <br className="hidden md:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-accent-600">
             Before The First Patient
           </span>
-        </motion.h1>
+        </h1>
 
         {/* Description: The Solution */}
-        <motion.p
-          variants={contentVariants}
-          custom={2}
+        <p
           className="text-pretty text-lg leading-relaxed text-slate-600 sm:text-xl max-w-2xl mx-auto px-4 mb-10"
         >
           Simulate patient consults, order diagnostics, and interpret results in a risk-free environment.
           <strong className="font-semibold text-slate-800"> Bridge the gap between textbooks and the wards.</strong>
-        </motion.p>
+        </p>
 
         {/* Buttons: The Action */}
         <motion.div
@@ -164,7 +160,7 @@ export function Hero() {
             window.scrollTo({ top: window.innerHeight * 0.8, behavior: 'smooth' })
           }}
         >
-          <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400">
+          <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">
             The Problem
           </span>
           <div className="w-px h-8 bg-slate-300 relative overflow-hidden">

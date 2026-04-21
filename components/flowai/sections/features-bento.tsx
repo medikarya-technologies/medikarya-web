@@ -52,7 +52,7 @@ export default function FeaturesBento() {
                         </defs>
                         {/* Desktop Path */}
                         <motion.path
-                            d="M 56.5 -10 V 40 Q 56.5 120 150 120 L 50% 120 L 50% 180"
+                            d="M 56.5 -10 V 40 Q 56.5 120 150 120 L 200 120 L 200 180"
                             fill="none"
                             stroke="url(#circuit-gradient)"
                             strokeWidth="2"
@@ -62,7 +62,7 @@ export default function FeaturesBento() {
                         />
                         {/* Mobile Path */}
                         <motion.path
-                            d="M 18 -10 V 40 Q 18 120 100 120 L 50% 120 L 50% 180"
+                            d="M 18 -10 V 40 Q 18 120 100 120 L 200 120 L 200 180"
                             fill="none"
                             stroke="url(#circuit-gradient)"
                             strokeWidth="4"
@@ -70,7 +70,7 @@ export default function FeaturesBento() {
                             className="lg:hidden"
                             style={{ pathLength: shouldReduceMotion ? 1 : pathDraw, opacity: shouldReduceMotion ? 1 : pathOpacity }}
                         />
-                        <motion.circle cx="50%" cy="180" r="4" fill="#3b82f6" style={{ scale: shouldReduceMotion ? 1 : pathDraw, opacity: shouldReduceMotion ? 1 : pathOpacity }} />
+                        <motion.circle cx="200" cy="180" r="4" fill="#3b82f6" style={{ scale: shouldReduceMotion ? 1 : pathDraw, opacity: shouldReduceMotion ? 1 : pathOpacity }} />
                     </svg>
                 </div>
             </div>
@@ -200,7 +200,7 @@ export default function FeaturesBento() {
                                             { label: "Empathy", val: 92, color: "bg-brand-300" }
                                         ].map((stat, i) => (
                                             <div key={i}>
-                                                <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase mb-1">
+                                                <div className="flex justify-between text-[10px] text-slate-500 font-bold uppercase mb-1">
                                                     <span>{stat.label}</span>
                                                     <span className="text-slate-700">{stat.val}%</span>
                                                 </div>

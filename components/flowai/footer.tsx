@@ -35,22 +35,22 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-brand-50 hover:text-brand-400 transition-colors" asChild>
-                <a href="https://x.com/Medikaryain" target="_blank" rel="noopener noreferrer">
+                <a href="https://x.com/Medikaryain" target="_blank" rel="noopener noreferrer" aria-label="Follow MediKarya on X (Twitter)">
                   <Twitter className="h-4 w-4" />
                 </a>
               </Button>
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-brand-50 hover:text-brand-700 transition-colors" asChild>
-                <a href="https://www.linkedin.com/company/medikarya" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.linkedin.com/company/medikarya" target="_blank" rel="noopener noreferrer" aria-label="Follow MediKarya on LinkedIn">
                   <Linkedin className="h-4 w-4" />
                 </a>
               </Button>
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-pink-50 hover:text-pink-600 transition-colors" asChild>
-                <a href="https://www.instagram.com/medikarya.in/" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.instagram.com/medikarya.in/" target="_blank" rel="noopener noreferrer" aria-label="Follow MediKarya on Instagram">
                   <Instagram className="h-4 w-4" />
                 </a>
               </Button>
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-colors" asChild>
-                <a href="https://www.youtube.com/channel/UCyH4fMcICK2ghsKZqM6wOBg" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.youtube.com/channel/UCyH4fMcICK2ghsKZqM6wOBg" target="_blank" rel="noopener noreferrer" aria-label="Subscribe to MediKarya on YouTube">
                   <Youtube className="h-4 w-4" />
                 </a>
               </Button>
