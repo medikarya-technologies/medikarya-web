@@ -55,8 +55,6 @@ export function Hero() {
   return (
     <motion.section
       ref={containerRef}
-      initial="hidden"
-      animate="visible"
       style={{ opacity, scale, y }}
       onMouseMove={handleMouseMove}
       className={cn(
