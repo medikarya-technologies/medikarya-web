@@ -22,7 +22,7 @@ const contributors = [
     {
         name: "Dr. Apoorva Nagar",
         role: "Clinical Advisor & Case Validator",
-        institution: "Doon University",
+        institution: "Santosh University",
         tag: "Faculty",
         Icon: Stethoscope,
         iconBg: "bg-blue-50",
