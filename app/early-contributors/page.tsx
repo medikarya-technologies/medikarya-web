@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 const contributors = [
     {
-        name: "Dr. Apporva",
+        name: "Dr. Apoorva Nagar",
         role: "Clinical Advisor & Case Validator",
         institution: "Doon University",
         tag: "Faculty",
