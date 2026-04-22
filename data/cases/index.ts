@@ -7,6 +7,7 @@ export interface CaseMetadata {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   estimatedTime: number;
   tags: string[];
+  description?: string;
   displayTitle: string;
   displayDescription: string;
   displayTags: string[];

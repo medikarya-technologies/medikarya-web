@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react"
+import { Twitter, Linkedin, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react"
 
 import { useScrollAnimation } from "@/lib/scroll-animation"
 import { cn } from "@/lib/utils"
@@ -82,13 +82,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Platform Overview
+                <Link href="/contribute" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Become a Contributor
                 </Link>
               </li>
               <li>
-                <Link href="/contribute" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Become a Contributor
+                <Link href="/early-contributors" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Early Contributors
                 </Link>
               </li>
             </ul>
