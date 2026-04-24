@@ -139,13 +139,19 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
   const [chatHistory, setChatHistory] = useState<any[]>([])
   const [diagnosisSubmitted, setDiagnosisSubmitted] = useState(false)
   const [feedback, setFeedback] = useState<any>(null)
-  const [startTime, setStartTime] = useState<number | null>(null)
   const [historyGathered, setHistoryGathered] = useState<string[]>([])
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isPatientInfoOpen, setIsPatientInfoOpen] = useState(false)
   const [softWarning, setSoftWarning] = useState<string | null>(null)
   const [adaptiveNudge, setAdaptiveNudge] = useState<string | null>(null)
   const [isEvaluating, setIsEvaluating] = useState(false)
+
+  // ─── Timer refs (not state — avoids re-renders and persists correctly) ──
+  // sessionStartRef: when THIS page load began (reset on every mount)
+  // savedElapsedRef: cumulative seconds from all PREVIOUS sessions (from localStorage)
+  // Together they give accurate total time without runaway when backing out.
+  const sessionStartRef = useRef<number>(Date.now())
+  const savedElapsedRef = useRef<number>(0)
 
   // ─── Restore from localStorage ──────────────────────────────────────────
   useEffect(() => {
@@ -164,19 +170,37 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
         }
         if (parsed.diagnosisSubmitted) setDiagnosisSubmitted(parsed.diagnosisSubmitted)
         if (parsed.feedback) setFeedback(parsed.feedback)
-        if (parsed.startTime) setStartTime(parsed.startTime)
-        else setStartTime(Date.now())
         if (parsed.historyGathered) setHistoryGathered(parsed.historyGathered)
-      } else {
-        setStartTime(Date.now())
+        // Restore cumulative elapsed seconds from previous sessions.
+        // sessionStartRef resets to now, so we only count NEW time from this visit.
+        if (typeof parsed.elapsedSeconds === "number") {
+          savedElapsedRef.current = parsed.elapsedSeconds
+        }
       }
+      // Always reset the session clock to now regardless of whether we restored data
+      sessionStartRef.current = Date.now()
     } catch (e) {
       console.error("Failed to load case progress", e)
-      setStartTime(Date.now())
+      sessionStartRef.current = Date.now()
     } finally {
       setIsInitialized(true)
     }
   }, [STORAGE_KEY])
+
+  // ─── Page Visibility API — pause timer when tab is hidden ───────────────
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab going background: freeze the elapsed counter
+        savedElapsedRef.current += Math.floor((Date.now() - sessionStartRef.current) / 1000)
+      } else {
+        // Tab coming back: reset session clock so we only count active time
+        sessionStartRef.current = Date.now()
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [])
 
   // ─── Persist to localStorage ─────────────────────────────────────────────
   useEffect(() => {
@@ -186,6 +210,8 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
         const { icon, ...rest } = test
         return rest
       })
+      // Compute cumulative elapsed seconds at save time (not stored as absolute timestamp)
+      const currentElapsed = savedElapsedRef.current + Math.floor((Date.now() - sessionStartRef.current) / 1000)
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
@@ -195,7 +221,7 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
           chatHistory,
           diagnosisSubmitted,
           feedback,
-          startTime,
+          elapsedSeconds: currentElapsed,
           historyGathered,
           lastSaved: new Date().toISOString(),
         })
@@ -203,7 +229,7 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
     } catch (e) {
       console.error("Failed to save case progress", e)
     }
-  }, [activeTab, orderedTests, testResults, chatHistory, diagnosisSubmitted, feedback, startTime, historyGathered, isInitialized, STORAGE_KEY])
+  }, [activeTab, orderedTests, testResults, chatHistory, diagnosisSubmitted, feedback, historyGathered, isInitialized, STORAGE_KEY])
 
   // ─── Coverage & nudge ───────────────────────────────────────────────────
   const coverage = computeHistoryCoverage(chatHistory)
@@ -278,7 +304,10 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
     setIsEvaluating(true)
     setDiagnosisSubmitted(true)
     try {
-      const timeTakenSeconds = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0
+      // Compute total active time: previous sessions + current session
+      const rawSeconds = savedElapsedRef.current + Math.floor((Date.now() - sessionStartRef.current) / 1000)
+      // Safety cap: max 3 hours (10800s) — prevents any runaway value reaching the DB
+      const timeTakenSeconds = Math.min(rawSeconds, 10800)
       const sanitizedOrderedTests = orderedTests.map(({ icon, ...rest }) => rest)
       const aiFeedback = await evaluateCase(diagnosis, sanitizedOrderedTests, chatHistory, caseData, timeTakenSeconds)
       setFeedback(aiFeedback)
