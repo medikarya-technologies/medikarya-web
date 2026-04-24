@@ -236,15 +236,15 @@ export default function CasePage() {
                 </div>
                </div>
                
-               <div className="flex gap-3">
+               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                  <Button 
                    variant="outline" 
                    size="sm"
                    onClick={() => handleReviewAttempt(attempts[0])}
-                   className="rounded-xl border-slate-200 hover:bg-white hover:text-brand-600 group"
+                   className="rounded-xl border-slate-200 hover:bg-white hover:text-brand-600 group w-full sm:w-auto"
                  >
-                   <Eye className="w-4 h-4 mr-2 text-slate-400 group-hover:text-brand-500" />
-                   {attempts[0].feedback_json ? "Review Last Feedback" : "Legacy Attempt (No Replay)"}
+                   <Eye className="w-4 h-4 mr-2 text-slate-400 group-hover:text-brand-500 flex-shrink-0" />
+                   {attempts[0].feedback_json ? "Review Last Feedback" : "Legacy Attempt"}
                  </Button>
 
                  {attempts.length > 1 && (
@@ -252,7 +252,7 @@ export default function CasePage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAllAttempts(!showAllAttempts)}
-                    className="rounded-xl text-slate-500 hover:text-slate-900"
+                    className="rounded-xl text-slate-500 hover:text-slate-900 w-full sm:w-auto"
                    >
                     {showAllAttempts ? "Hide History" : "View All Attempts"}
                     {showAllAttempts ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
