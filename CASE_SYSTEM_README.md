@@ -1,361 +1,311 @@
-# MediKarya Case Interaction System
+# MediKarya — Case System Reference
 
-## Overview
-Complete implementation of the AI-powered medical case interaction system where students can practice clinical reasoning through realistic patient scenarios.
+> **Status:** Fully implemented and live at [medikarya.in](https://www.medikarya.in). This document describes the complete, production case flow — not a future plan.
 
-## 🎯 Complete User Flow
+---
 
-### 1. **Case Selection** (`/dashboard/cases`)
-- Students browse available cases by category (Cardiology, Neurology, etc.)
-- Filter by difficulty level (Beginner, Intermediate, Advanced)
-- Search cases by symptoms or keywords
-- Click "Start Case" to begin
+## Table of Contents
 
-### 2. **Patient Card** (`/dashboard/cases/[id]`)
-- **Hospital-style patient card** displays:
-  - Patient demographics (name, age, gender, MRN)
-  - Chief complaint
-  - Vital signs (BP, HR, Temperature, RR, SpO₂)
-  - Known allergies
-  - Current medications
-- Click "Start Case" to enter the interactive session
+1. [Overview](#1-overview)
+2. [Complete User Flow](#2-flow)
+3. [Case Data Architecture](#3-case-data)
+4. [File Structure](#4-files)
+5. [API Routes](#5-api)
+6. [Key Components](#6-components)
+7. [Attempt History & Replay](#7-history)
+8. [Admin — Case Management](#8-admin)
+9. [Adding a New Case](#9-adding)
 
-### 3. **Case Interaction** (Main Interface)
-Three-tab interface for comprehensive clinical evaluation:
+---
 
-#### **Tab 1: Patient Interview** (AI Chat)
-- **AI Patient Personality**: Each case has unique patient personality traits
-- **Natural Conversation**: Students ask questions like:
-  - "When did the symptoms start?"
-  - "Do you have any allergies?"
-  - "Any history of smoking?"
-  - "Have you had any surgeries?"
-- **Realistic Responses**: AI responds in character based on:
-  - Patient's medical history
-  - Social history
-  - Current symptoms
-  - Personality traits (anxious, cooperative, etc.)
-- **Suggested Questions**: Quick-start prompts for students
+## 1. Overview {#1-overview}
 
-#### **Tab 2: Tests & Imaging**
-- **Available Tests**:
-  - **Laboratory**: CBC, BMP, Troponin, BNP, Lipid Panel, D-Dimer
-  - **Imaging**: Chest X-Ray, ECG, Echocardiogram, CT Chest/Head, Stress Test
-- **Real-time Results**: Tests process and return results within seconds
-- **Detailed Reports**: Each test includes:
-  - Summary
-  - Individual values with normal ranges
-  - Clinical interpretation
-  - Critical findings (if any)
-- **Test Status Tracking**: Processing → Completed → View Results
+The case system is the core of MediKarya. A "case" is a structured clinical scenario where a student:
+1. Reviews a patient's presenting information
+2. Conducts a simulated consultation (AI-powered patient chat)
+3. Orders investigations from a real test library
+4. Submits a diagnosis and management plan
+5. Receives a scored evaluation with structured feedback
 
-#### **Tab 3: Diagnosis Submission**
-- **Primary Diagnosis**: Main diagnosis field
-- **Differential Diagnoses**: Up to 5 alternative diagnoses
-- **Clinical Reasoning**: Explain diagnostic thought process
-- **Treatment Plan**: Describe management strategy
-- **Medications**: List prescribed medications with dosages
+Everything — the patient's responses, the scoring, the feedback — is driven by the case's JSON configuration. No case logic is hardcoded in the engine.
 
-### 4. **AI Feedback** (Post-Submission)
-Comprehensive performance evaluation:
+---
 
-#### **Diagnosis Comparison**
-- Shows correct diagnosis vs. student's diagnosis
-- Visual indicators for correctness
+## 2. Complete User Flow {#2-flow}
 
-#### **Performance Score** (0-100%)
-Calculated based on:
-- Diagnosis accuracy (40 points)
-- History taking thoroughness (20 points)
-- Appropriate test ordering (20 points)
-- Clinical reasoning quality (10 points)
-- Treatment plan completeness (10 points)
+### Step 1 — Case Library (`/dashboard/cases`)
+- Students browse available cases by specialty and difficulty
+- Each card shows: case title, difficulty badge, speciality, estimated time, and whether it's been attempted before
 
-#### **Strengths Identified**
-- What the student did well
-- Positive reinforcement
+### Step 2 — Case Detail (`/dashboard/cases/[id]`)
+- A **patient card** displays an anonymised view: demographics, chief complaint, vitals, allergies, medications
+- If the student has previous attempts, stats and a "Review Last Feedback" / "View All Attempts" section are shown
+- Click "Start Case" → loads the active simulation
 
-#### **Areas for Improvement**
-- Specific suggestions for better performance
-- Missed diagnostic steps
-- Alternative approaches
+### Step 3 — Active Simulation (`CaseInteraction`)
 
-#### **Testing Efficiency Analysis**
-- Appropriate tests ordered
-- Unnecessary tests (cost-effectiveness)
-- Missed critical tests
+Three-tab interface, navigable via a pill-style bottom navigation bar:
 
-#### **XP Reward**
-- Students earn XP based on case difficulty and performance
-- Contributes to level progression
+#### Tab 1 — Patient Interview
+- AI patient (powered by `ChatEngine` + Groq) responds in character
+- Patient generates a natural opening sentence when the case starts (via `GET /api/chat/patient/opening`)
+- Student types questions; AI responds in 1–2 sentences, in character
+- A real-time **history coverage indicator** shows the student's progress and nudges them toward investigation when sufficient history has been taken
+- The "Ready to Investigate" CTA only appears after a minimum score threshold **AND** minimum message count to prevent premature prompting
 
-## 📁 File Structure
+#### Tab 2 — Tests & Imaging
+- Full categorised test library (Laboratory, Imaging, Special)
+- Student selects tests to order — each displays a result card with values, normal ranges, status flags
+- Test results are **pre-scripted in the case JSON**, not dynamically generated — ensuring consistent, medically accurate results tied to the case's actual diagnosis
+- Test count badge visible on the navigation tab
+
+#### Tab 3 — Diagnosis
+- Single primary diagnosis field
+- Management plan (multi-line)
+- "Submit Diagnosis" triggers the evaluation pipeline
+
+### Step 4 — Evaluation & Feedback (`CaseFeedback`)
+- The 4-layer evaluation engine runs (see `EVALUATION_ENGINE.md` for full detail)
+- Score breakdown shown across 5 domains: Clinical Reasoning (30), History (25), Diagnosis (15), Testing (20), Management (10)
+- Correct diagnosis revealed
+- Strengths and improvements from the LLM
+- Testing efficiency: appropriate vs. unnecessary vs. missed tests
+- XP earned displayed
+- Options: "Try Again" or "Back to Cases"
+
+---
+
+## 3. Case Data Architecture {#3-case-data}
+
+Each case is a TypeScript object conforming to the `CaseData` type (`data/cases/index.ts`). Key fields:
+
+```typescript
+{
+  id: string                      // unique slug, e.g. "riya-sharma-gastroenteritis"
+  title: string                   // internal title
+  displayTitle: string            // shown to student before start
+  category: string                // specialty, e.g. "Paediatrics"
+  difficulty: "Beginner" | "Intermediate" | "Advanced"
+  xpReward: number                // base XP (scaled by score on completion)
+
+  patient: {
+    name: string                  // patient's full name
+    age: number
+    gender: string
+    chiefComplaint: string
+    vitalSigns: { bp, hr, temp, rr, spo2 }
+    allergies: string[]
+    medications: string[]
+    final_diagnosis: string       // shown in feedback after submission
+  }
+
+  patient_text_brief: string      // narrative paragraph for AI patient memory
+  patient_facts: Record<string, string>  // structured facts for AI responses
+  ai_role: {
+    speaker: string               // e.g. "Mother of patient", "Patient"
+    first_person_description: string
+  }
+  ai_examples: Array<{ doctor: string, patient: string }>  // few-shot conversation examples
+
+  tests: Array<{
+    id: string
+    name: string
+    category: string
+    result: { summary, values, interpretation, criticalFindings }
+  }>
+
+  evaluation_config: {
+    history: { required_questions, important_questions, red_flag_questions }
+    testing: { testing_required, core_tests, optional_tests, distractor_tests, dangerous_tests }
+    diagnosis: { accepted_primary, must_include_keywords }
+    management: { core_steps, dangerous_steps }
+    red_flags: Array<{ intent, intent_patterns, keywords, present_in_case, critical }>
+  }
+}
+```
+
+---
+
+## 4. File Structure {#4-files}
 
 ```
 app/
 ├── dashboard/
 │   └── cases/
-│       ├── [id]/
-│       │   └── page.tsx          # Case detail page with routing
-│       └── page.tsx               # Cases list page
-
-components/
-└── cases/
-    ├── patient-card.tsx           # Hospital-style patient information card
-    ├── case-interaction.tsx       # Main case interface with tabs
-    ├── ai-patient-chat.tsx        # AI patient conversation interface
-    ├── patient-presentation.tsx   # Sidebar patient info summary
-    ├── test-ordering.tsx          # Test/imaging ordering system
-    ├── diagnosis-submission.tsx   # Diagnosis and treatment submission
-    └── case-feedback.tsx          # AI-generated feedback display
-
-api/
+│       ├── page.tsx                    # Case library (browse all cases)
+│       └── [id]/
+│           └── page.tsx               # Pre-start screen + attempt history
+│
+app/api/
+├── cases/
+│   ├── route.ts                        # GET /api/cases — list all cases
+│   └── [id]/
+│       ├── route.ts                    # GET /api/cases/[id] — single case data
+│       └── start/
+│           └── route.ts               # POST /api/cases/[id]/start — mark started
 ├── chat/
 │   └── patient/
-│       └── route.ts               # AI patient chat endpoint
+│       ├── route.ts                    # POST /api/chat/patient — patient reply
+│       └── opening/
+│           └── route.ts               # GET /api/chat/patient/opening — opening line
 ├── tests/
 │   └── generate-result/
-│       └── route.ts               # Test result generation endpoint
-└── diagnosis/
-    └── feedback/
-        └── route.ts               # Diagnosis feedback generation endpoint
+│       └── route.ts                   # POST /api/tests/generate-result — test result
+└── clerk-webhook/
+    └── route.ts                        # POST — handles user creation webhook from Clerk
+
+app/actions/
+└── evaluate.ts                         # Server action: runs evaluation + saves to Supabase
+
+components/cases/
+├── patient-card.tsx                    # Anonymised patient info card (pre-start)
+├── case-interaction.tsx               # Main 3-tab simulation interface (orchestrator)
+├── ai-patient-chat.tsx                # Chat UI and message rendering
+├── patient-presentation.tsx           # Sidebar: vitals, demographics during simulation
+├── test-ordering.tsx                  # Test library + result cards
+├── diagnosis-submission.tsx           # Diagnosis + management submission form
+└── case-feedback.tsx                  # Post-submission feedback display
+
+engine/
+├── chatEngine.ts                       # ChatEngine class: patient chat + opening
+└── evaluation/
+    ├── EvaluationEngine.ts            # 4-layer evaluation orchestrator
+    ├── DeterministicScorer.ts         # Algorithmic: testing + history coverage
+    ├── IntentExtractor.ts             # Intent mapping, specificity, redundancy
+    ├── ReasoningPromptBuilder.ts      # Builds LLM system prompt for evaluation
+    └── types.ts                        # Shared TypeScript interfaces
+
+data/
+└── cases/
+    └── index.ts                        # All case data + CaseData type definition
+
+cases/
+├── types.ts                            # CaseResponse and shared case types
+└── lib/
+    └── red-flag-detector.ts           # Tiered red flag penalty resolution (Layer 4)
 ```
-
-## 🔧 Technical Implementation
-
-### Components
-
-#### **PatientCard**
-- Displays comprehensive patient information
-- Hospital-style layout with vital signs
-- Color-coded allergies and medications
-- "Start Case" action button
-
-#### **CaseInteraction**
-- Main orchestrator component
-- Manages state for chat, tests, and diagnosis
-- Tab navigation between different sections
-- Tracks student progress throughout case
-
-#### **AIPatientChat**
-- Real-time chat interface
-- Message history with timestamps
-- Typing indicators
-- Suggested questions for guidance
-- Calls `/api/chat/patient` for AI responses
-
-#### **TestOrdering**
-- Categorized test library (Laboratory/Imaging)
-- Search and filter functionality
-- Real-time test status tracking
-- Results display with clinical interpretation
-- Calls `/api/tests/generate-result` for results
-
-#### **DiagnosisSubmission**
-- Multi-field diagnosis form
-- Dynamic differential diagnosis list
-- Clinical reasoning text area
-- Treatment plan and medication management
-- Validation before submission
-
-#### **CaseFeedback**
-- Score visualization with progress bar
-- Diagnosis comparison
-- Strengths and improvements lists
-- Testing efficiency metrics
-- XP reward display
-- Navigation to next case or back to cases
-
-### API Routes
-
-#### **POST /api/chat/patient**
-```typescript
-// Request
-{
-  message: string,
-  caseData: CaseData,
-  chatHistory: Message[]
-}
-
-// Response
-{
-  response: string,
-  timestamp: string
-}
-```
-
-#### **POST /api/tests/generate-result**
-```typescript
-// Request
-{
-  test: Test,
-  caseData: CaseData
-}
-
-// Response
-{
-  results: {
-    summary: string,
-    values: Array<{parameter, value, unit, normalRange, status}>,
-    interpretation: string,
-    criticalFindings: string[]
-  },
-  timestamp: string
-}
-```
-
-#### **POST /api/diagnosis/feedback**
-```typescript
-// Request
-{
-  diagnosis: Diagnosis,
-  orderedTests: Test[],
-  chatHistory: Message[],
-  caseData: CaseData
-}
-
-// Response
-{
-  feedback: {
-    correctDiagnosis: string,
-    studentDiagnosis: string,
-    isCorrect: boolean,
-    score: number,
-    feedback: {
-      strengths: string[],
-      improvements: string[],
-      testingEfficiency: {...}
-    }
-  },
-  timestamp: string
-}
-```
-
-## 🚀 Next Steps for Production
-
-### 1. **AI Integration**
-Replace mock responses with actual AI API calls:
-- **OpenAI GPT-4** or **Anthropic Claude** for patient chat
-- **Structured outputs** for test results generation
-- **Comprehensive evaluation** for feedback generation
-
-Example OpenAI integration:
-```typescript
-const response = await fetch("https://api.openai.com/v1/chat/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-  },
-  body: JSON.stringify({
-    model: "gpt-4",
-    messages: [
-      {
-        role: "system",
-        content: `You are a patient named ${patient.name}...`
-      },
-      ...chatHistory,
-      { role: "user", content: message }
-    ]
-  })
-})
-```
-
-### 2. **Database Integration**
-Store and track:
-- Case data and configurations
-- Student progress and attempts
-- Test results and chat history
-- Performance analytics
-- XP and achievements
-
-Suggested schema:
-```typescript
-// Cases table
-- id, title, category, difficulty, patient_data, ai_personality, correct_diagnosis
-
-// Case Attempts table
-- id, user_id, case_id, started_at, completed_at, score, diagnosis, feedback
-
-// Test Orders table
-- id, attempt_id, test_id, ordered_at, results
-
-// Chat Messages table
-- id, attempt_id, role, content, timestamp
-```
-
-### 3. **Case Library**
-Create diverse medical cases:
-- Multiple specialties (Cardiology, Neurology, Pediatrics, etc.)
-- Various difficulty levels
-- Different patient demographics
-- Realistic clinical scenarios
-- Evidence-based correct diagnoses
-
-### 4. **Enhanced Features**
-- **Time tracking**: Monitor how long students spend on each section
-- **Hints system**: Provide progressive hints if student is stuck
-- **Peer comparison**: Show how student performed vs. others
-- **Case replay**: Review previous attempts
-- **Bookmarking**: Save cases for later
-- **Notes**: Allow students to take notes during case
-
-### 5. **Analytics Dashboard**
-Track student performance:
-- Cases completed by category
-- Average scores by difficulty
-- Common mistakes
-- Test ordering patterns
-- Time to diagnosis
-- Improvement over time
-
-## 🎨 UI/UX Features
-
-- **Clean, medical-themed design**
-- **Responsive layout** (mobile-friendly)
-- **Smooth animations** and transitions
-- **Loading states** for all async operations
-- **Error handling** with user-friendly messages
-- **Accessibility** considerations
-- **Color-coded** information (vital signs, test results)
-- **Visual feedback** for user actions
-
-## 🔐 Security Considerations
-
-- **Authentication required**: All routes protected with Clerk
-- **User-specific data**: Cases tied to authenticated users
-- **Rate limiting**: Prevent API abuse
-- **Input validation**: Sanitize all user inputs
-- **Secure API keys**: Environment variables for AI services
-
-## 📊 Performance Optimizations
-
-- **Lazy loading**: Components load on demand
-- **Optimistic updates**: Immediate UI feedback
-- **Caching**: Store frequently accessed case data
-- **Debouncing**: Search and filter operations
-- **Code splitting**: Reduce initial bundle size
-
-## ✅ Current Status
-
-**Fully Implemented:**
-- ✅ Complete case interaction flow
-- ✅ Patient card with hospital-style layout
-- ✅ AI patient chat interface
-- ✅ Test ordering and results system
-- ✅ Diagnosis submission form
-- ✅ Comprehensive feedback system
-- ✅ API routes with mock data
-- ✅ Navigation between components
-- ✅ Responsive design
-- ✅ Loading states and error handling
-
-**Ready for:**
-- 🔄 AI API integration (OpenAI/Anthropic)
-- 🔄 Database setup and integration
-- 🔄 Case library creation
-- 🔄 Production deployment
 
 ---
 
-**Note**: All API routes currently use mock data. Replace the mock functions with actual AI API calls and database queries for production use.
+## 5. API Routes {#5-api}
+
+### `GET /api/cases`
+Returns the array of all available cases (summary view — patient info anonymised).
+
+### `GET /api/cases/[id]`
+Returns full case data including test library and evaluation config (used by the client).
+
+### `POST /api/cases/[id]/start`
+Marks the case as started (timestamps for analytics). Returns updated case data.
+
+### `POST /api/chat/patient`
+Sends the doctor's message to `ChatEngine.processRequest()` and returns the patient's response.
+
+```typescript
+// Request
+{ message: string, caseData: CaseData }
+
+// Response
+{ response: string, timestamp: string, source: "ai" }
+```
+
+### `GET /api/chat/patient/opening?caseId=[id]`
+Returns the AI-generated opening sentence for the patient.
+
+```typescript
+// Response
+{ opening: string }
+```
+
+### `POST /api/tests/generate-result`
+Returns the pre-scripted result for an ordered test (looked up from `caseData.tests` by test ID — no live generation).
+
+```typescript
+// Request
+{ testId: string, caseData: CaseData }
+
+// Response
+{ result: { summary, values, interpretation, criticalFindings } }
+```
+
+### `POST (server action) evaluateCase`
+Called from the client after diagnosis submission. Runs the full 4-layer evaluation, saves the attempt to `case_attempts`, and updates the user's streak in `user_profiles`.
+
+---
+
+## 6. Key Components {#6-components}
+
+### `CaseInteraction` (orchestrator)
+Manages all simulation state: active tab, chat messages, ordered tests, diagnosis form, and the submission flow. Handles:
+- Timer logic (cumulative elapsed seconds, persisted to localStorage — survives back-navigation)
+- Adaptive nudge CTA (minimum score ≥ 3 + minimum 4 user messages before "Proceed" banner appears)
+- Mobile navigation with safe-area padding (`env(safe-area-inset-bottom)`)
+- 100dvh height to avoid browser chrome overlap
+
+### `AIPatientChat`
+Renders the conversation thread. Calls `/api/chat/patient/opening` on mount, then `/api/chat/patient` on each student message. Handles typing indicators, timestamps, and scroll-to-bottom.
+
+### `TestOrdering`
+Displays the case's test library grouped by category. Each ordered test is added to the cart; results are fetched via `/api/tests/generate-result`. Results display values with normal range comparison and status colour-coding.
+
+### `DiagnosisSubmission`
+Collects primary diagnosis (required) and management plan (optional). Validates non-empty before allowing submission. The "Submit Diagnosis" button triggers `evaluateCase`.
+
+### `CaseFeedback`
+Receives the `FinalEvaluationResult` and renders the full debrief: domain score bars, correct vs. submitted diagnosis, strengths/improvements, testing efficiency, XP earned. Supports a `mode="history"` for replaying past attempts.
+
+### `PatientCard`
+Pre-start screen. Shows anonymised patient data (name, age, vitals). The `isStarting` overlay plays a loading animation while the case loads. On return visits, shows attempt history stats and action buttons.
+
+---
+
+## 7. Attempt History & Replay {#7-history}
+
+Every completed case is saved to the `case_attempts` Supabase table with:
+- Score, XP earned, time taken
+- `feedback_json` — the full `FinalEvaluationResult` object
+
+On the case detail page (`/dashboard/cases/[id]`), if previous attempts exist:
+- Last score and total attempt count are shown
+- "Review Last Feedback" opens the most recent attempt in `CaseFeedback` replay mode
+- "View All Attempts" expands a grid of all past attempts, each clickable to replay
+
+Replay uses `CaseFeedback` with `mode="history"` — same component, same UI, fed historical data.
+
+---
+
+## 8. Admin — Case Management {#8-admin}
+
+Admins (role set in `user_profiles.role`) can access `/admin` which includes:
+- View all registered users and their scores
+- Promote/demote user roles (with confirmation dialog to prevent accidental self-demotion)
+- View aggregate attempt statistics
+
+Cases themselves are currently edited directly in `data/cases/index.ts`. A case editor UI is a planned future feature.
+
+---
+
+## 9. Adding a New Case {#9-adding}
+
+1. Open `data/cases/index.ts`
+2. Add a new entry to the `cases` array conforming to the `CaseData` type
+3. Define:
+   - `patient` demographics and vitals
+   - `patient_text_brief` — a narrative the AI uses to answer questions in character
+   - `patient_facts` — key-value pairs for specific clinical details (e.g. `{ "duration_of_vomiting": "2 days" }`)
+   - `ai_role` — who is speaking (patient, mother, father, etc.)
+   - `ai_examples` — 3–5 example doctor/patient exchanges for tone calibration
+   - `tests` — pre-scripted results for every test in the case's test library
+   - `evaluation_config` — required history questions, test classifications, accepted diagnoses, red flags
+
+4. The case is automatically available in the case library — no route or component changes needed.
+
+**Key principles:**
+- `testing_required: false` gives full test marks for ordering nothing (correct restraint)
+- `red_flags` with `present_in_case: false` are non-penalised (student should screen but not penalised for missing an absent finding)
+- `accepted_primary` strings are normalised for case-insensitive matching
+
+---
+
+*This document reflects MediKarya v2.0 (April 2026).*  
+*All features described are fully implemented and live in production.*
