@@ -1,12 +1,12 @@
 import { MetadataRoute } from 'next'
 
 const blogPosts: { slug: string; lastModified: string }[] = [
-    { slug: 'ai-revolutionizing-medical-education',    lastModified: '2025-02-01' },
-    { slug: 'feynman-technique-clinical-reasoning',    lastModified: '2025-01-15' },
-    { slug: 'sepsis-case-based-approach',              lastModified: '2025-01-10' },
-    { slug: 'why-medical-students-need-simulation',    lastModified: '2024-12-01' },
-    { slug: 'breaking-down-diagnostic-process',        lastModified: '2024-12-10' },
-    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2024-11-01' },
+    { slug: 'ai-revolutionizing-medical-education',    lastModified: '2026-04-23' },
+    { slug: 'feynman-technique-clinical-reasoning',    lastModified: '2026-04-20' },
+    { slug: 'sepsis-case-based-approach',              lastModified: '2026-04-18' },
+    { slug: 'why-medical-students-need-simulation',    lastModified: '2026-04-16' },
+    { slug: 'breaking-down-diagnostic-process',        lastModified: '2026-04-14' },
+    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2026-04-12' },
 ]
 
 const staticRoutes: { path: string; lastModified: string; priority: number }[] = [
