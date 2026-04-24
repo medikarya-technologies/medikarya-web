@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { supabaseServer } from "@/lib/supabase/server"
+import { isAdminUser } from "../actions"
 import {
     Clock, ShieldCheck, Users,
     AlertCircle, ChevronRight, Activity, Calendar, Trophy, Timer, ChevronLeft
@@ -39,7 +40,7 @@ const AVATAR_COLORS = [
 export default async function AdminAttemptsPage() {
     const { userId } = await auth()
 
-    if (!userId || userId !== process.env.ADMIN_CLERK_USER_ID) {
+    if (!(await isAdminUser(userId))) {
         redirect("/")
     }
 
@@ -50,20 +51,21 @@ export default async function AdminAttemptsPage() {
             .select("*")
             .order("created_at", { ascending: false }),
         supabaseServer
-            .from("beta_users")
-            .select("id, name, email, clerk_user_id"),
+            .from("user_profiles")
+            .select("clerk_user_id, full_name, email, role, current_streak"),
         supabaseServer
             .from("cases")
             .select("id, title")
     ])
 
     const attempts = attemptsRes.data || []
-    const betaUsers = usersRes.data || []
+    const profileUsers = usersRes.data || []
     const casesData = casesRes.data || []
 
     // Helper maps for resolution
     const caseMap = new Map(casesData.map(c => [c.id, c.title]))
-    const userMap = new Map(betaUsers.map(u => [u.clerk_user_id, u]))
+    // Map clerk_user_id → profile (name, email)
+    const userMap = new Map(profileUsers.map(u => [u.clerk_user_id, { name: u.full_name, email: u.email, role: u.role }]))
 
     // Group attempts by user
     const groupedAttempts: Record<string, any[]> = {}

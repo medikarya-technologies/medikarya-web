@@ -118,15 +118,20 @@ export async function evaluateCase(
                                 .eq("clerk_user_id", userId);
                         }
                     } else {
-                        // Profile doesn't exist yet, create one
+                        // Safety fallback: profile doesn't exist yet
+                        // (normally the Clerk webhook pre-creates it on signup)
                         await supabaseServer
                             .from("user_profiles")
                             .insert({
                                 clerk_user_id: userId,
+                                role: "student",
                                 current_streak: 1,
                                 longest_streak: 1,
                                 last_active_date: todayStr
-                            });
+                            })
+                            // If the webhook already created the row, don't overwrite anything
+                            .onConflict("clerk_user_id")
+                            .ignore()
                     }
                 } catch (streakErr) {
                     console.error("Failed to update user streak:", streakErr);
