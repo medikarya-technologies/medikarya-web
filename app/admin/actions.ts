@@ -4,30 +4,32 @@ import { auth } from "@clerk/nextjs/server"
 import { supabaseServer } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
-function isAdmin(userId: string | null) {
-    return userId && userId === process.env.ADMIN_CLERK_USER_ID
+// Check admin role from Supabase — no hardcoded env var needed
+export async function isAdminUser(userId: string | null): Promise<boolean> {
+    if (!userId) return false
+    const { data } = await supabaseServer
+        .from("user_profiles")
+        .select("role")
+        .eq("clerk_user_id", userId)
+        .single()
+    return data?.role === "admin"
 }
 
-export async function approveUser(id: string) {
+export async function setUserRole(clerkUserId: string, newRole: "student" | "admin") {
     const { userId } = await auth()
-    if (!isAdmin(userId)) throw new Error("Unauthorized")
+    if (!(await isAdminUser(userId))) throw new Error("Unauthorized")
 
-    await supabaseServer
-        .from("beta_users")
-        .update({ approved: true })
-        .eq("id", id)
+    // Prevent admins from demoting themselves — would cause instant lockout
+    if (clerkUserId === userId && newRole === "student") {
+        throw new Error("You cannot remove your own admin role")
+    }
 
-    revalidatePath("/admin")
-}
+    const { error } = await supabaseServer
+        .from("user_profiles")
+        .update({ role: newRole, updated_at: new Date().toISOString() })
+        .eq("clerk_user_id", clerkUserId)
 
-export async function revokeUser(id: string) {
-    const { userId } = await auth()
-    if (!isAdmin(userId)) throw new Error("Unauthorized")
-
-    await supabaseServer
-        .from("beta_users")
-        .update({ approved: false })
-        .eq("id", id)
+    if (error) throw new Error(error.message)
 
     revalidatePath("/admin")
 }
