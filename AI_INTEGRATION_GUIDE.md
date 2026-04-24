@@ -1,444 +1,289 @@
-# AI Integration Guide for MediKarya Case System
+# MediKarya — AI Integration Reference
 
-## Overview
-This guide explains how to integrate actual AI services (OpenAI, Anthropic, etc.) to replace the mock responses in the case interaction system.
-
-## 🔑 Environment Variables
-
-Add to your `.env.local`:
-```bash
-# OpenAI
-OPENAI_API_KEY=sk-...
-
-# Or Anthropic Claude
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Or other AI providers
-GOOGLE_AI_API_KEY=...
-```
-
-## 🤖 AI Patient Chat Integration
-
-### File: `app/api/chat/patient/route.ts`
-
-Replace the mock response with OpenAI:
-
-```typescript
-import OpenAI from "openai"
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
-
-export async function POST(request: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-  const { message, caseData, chatHistory } = await request.json()
-
-  // Build system prompt with patient personality
-  const systemPrompt = `You are a patient in a medical simulation. Your details:
-
-Name: ${caseData.patient.name}
-Age: ${caseData.patient.age}
-Gender: ${caseData.patient.gender}
-Chief Complaint: ${caseData.patient.chiefComplaint}
-
-Medical History: ${caseData.aiPersonality.medicalHistory}
-Social History: ${caseData.aiPersonality.socialHistory}
-Current Symptoms: ${caseData.aiPersonality.presentingSymptoms}
-Personality Traits: ${caseData.aiPersonality.traits.join(", ")}
-
-IMPORTANT INSTRUCTIONS:
-1. Respond naturally as this patient would
-2. Show appropriate concern and emotion based on personality traits
-3. Answer questions accurately based on your condition
-4. Don't volunteer information unless specifically asked
-5. Be cooperative but realistic
-6. If you don't know something, say so naturally
-7. Keep responses concise (2-3 sentences max)
-8. Use natural language, not medical jargon`
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...chatHistory.map(msg => ({
-          role: msg.role === "user" ? "user" : "assistant",
-          content: msg.content
-        })),
-        { role: "user", content: message }
-      ],
-      temperature: 0.8,
-      max_tokens: 200,
-      presence_penalty: 0.6,
-      frequency_penalty: 0.3
-    })
-
-    const aiResponse = completion.choices[0].message.content
-
-    return NextResponse.json({
-      response: aiResponse,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error("OpenAI API error:", error)
-    return NextResponse.json(
-      { error: "Failed to generate response" },
-      { status: 500 }
-    )
-  }
-}
-```
-
-### Alternative: Anthropic Claude
-
-```typescript
-import Anthropic from "@anthropic-ai/sdk"
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-})
-
-const message = await anthropic.messages.create({
-  model: "claude-3-5-sonnet-20241022",
-  max_tokens: 200,
-  system: systemPrompt,
-  messages: [
-    ...chatHistory.map(msg => ({
-      role: msg.role === "user" ? "user" : "assistant",
-      content: msg.content
-    })),
-    { role: "user", content: message }
-  ]
-})
-
-const aiResponse = message.content[0].text
-```
-
-## 🧪 Test Results Generation
-
-### File: `app/api/tests/generate-result/route.ts`
-
-```typescript
-import OpenAI from "openai"
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
-
-export async function POST(request: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-  const { test, caseData } = await request.json()
-
-  const systemPrompt = `You are a medical laboratory system generating realistic test results.
-
-Patient Information:
-- Age: ${caseData.patient.age}
-- Gender: ${caseData.patient.gender}
-- Chief Complaint: ${caseData.patient.chiefComplaint}
-- Vital Signs: ${JSON.stringify(caseData.patient.vitalSigns)}
-- Actual Diagnosis: ${caseData.correctDiagnosis || "Acute Myocardial Infarction"}
-
-Test Requested: ${test.name} (${test.category})
-
-Generate realistic test results that are:
-1. Consistent with the patient's actual diagnosis
-2. Medically accurate
-3. Include normal ranges
-4. Flag abnormal values
-5. Provide clinical interpretation
-6. Note any critical findings
-
-Return ONLY valid JSON in this exact format:
-{
-  "summary": "Brief test summary",
-  "values": [
-    {
-      "parameter": "Test parameter name",
-      "value": "Numeric value",
-      "unit": "Unit of measurement",
-      "normalRange": "Normal range",
-      "status": "normal|high|low|critical"
-    }
-  ],
-  "interpretation": "Clinical interpretation of results",
-  "criticalFindings": ["Array of critical findings if any"]
-}`
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Generate results for ${test.name}` }
-      ],
-      temperature: 0.3, // Lower temperature for more consistent results
-      response_format: { type: "json_object" }
-    })
-
-    const results = JSON.parse(completion.choices[0].message.content)
-
-    return NextResponse.json({
-      results,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error("OpenAI API error:", error)
-    return NextResponse.json(
-      { error: "Failed to generate test results" },
-      { status: 500 }
-    )
-  }
-}
-```
-
-## 📊 Diagnosis Feedback Generation
-
-### File: `app/api/diagnosis/feedback/route.ts`
-
-```typescript
-import OpenAI from "openai"
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
-
-export async function POST(request: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-  const { diagnosis, orderedTests, chatHistory, caseData } = await request.json()
-
-  const systemPrompt = `You are an expert medical educator providing feedback on a student's clinical case performance.
-
-CASE INFORMATION:
-Correct Diagnosis: ${caseData.correctDiagnosis || "Acute Myocardial Infarction"}
-Patient: ${caseData.patient.age}y ${caseData.patient.gender}
-Chief Complaint: ${caseData.patient.chiefComplaint}
-
-STUDENT'S PERFORMANCE:
-Primary Diagnosis: ${diagnosis.primaryDiagnosis}
-Differential Diagnoses: ${diagnosis.differentialDiagnoses.join(", ")}
-Clinical Reasoning: ${diagnosis.clinicalReasoning}
-Treatment Plan: ${diagnosis.treatmentPlan}
-Tests Ordered: ${orderedTests.map(t => t.name).join(", ")}
-Questions Asked: ${chatHistory.filter(m => m.role === "user").length}
-
-EVALUATION CRITERIA:
-1. Diagnosis Accuracy (40 points)
-2. History Taking (20 points)
-3. Test Ordering Appropriateness (20 points)
-4. Clinical Reasoning (10 points)
-5. Treatment Plan (10 points)
-
-Provide comprehensive, constructive feedback that:
-- Evaluates diagnostic accuracy
-- Identifies strengths in their approach
-- Suggests specific improvements
-- Analyzes test ordering efficiency
-- Recommends learning resources
-
-Return ONLY valid JSON in this exact format:
-{
-  "correctDiagnosis": "The correct diagnosis",
-  "studentDiagnosis": "Student's diagnosis",
-  "isCorrect": true/false,
-  "score": 0-100,
-  "feedback": {
-    "strengths": ["Array of specific strengths"],
-    "improvements": ["Array of specific areas to improve"],
-    "testingEfficiency": {
-      "appropriateTests": number,
-      "unnecessaryTests": number,
-      "missedTests": ["Array of missed critical tests"]
-    }
-  },
-  "recommendations": ["Array of learning recommendations"]
-}`
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "Generate comprehensive feedback for this case." }
-      ],
-      temperature: 0.5,
-      response_format: { type: "json_object" }
-    })
-
-    const feedback = JSON.parse(completion.choices[0].message.content)
-
-    // TODO: Save feedback to database for analytics
-    // await saveFeedbackToDatabase(userId, caseData.id, feedback)
-
-    return NextResponse.json({
-      feedback,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.error("OpenAI API error:", error)
-    return NextResponse.json(
-      { error: "Failed to generate feedback" },
-      { status: 500 }
-    )
-  }
-}
-```
-
-## 📦 Installation
-
-### OpenAI
-```bash
-npm install openai
-```
-
-### Anthropic
-```bash
-npm install @anthropic-ai/sdk
-```
-
-### Google AI
-```bash
-npm install @google/generative-ai
-```
-
-## 🎯 Best Practices
-
-### 1. **Error Handling**
-Always wrap AI calls in try-catch blocks and provide fallback responses:
-
-```typescript
-try {
-  const response = await openai.chat.completions.create({...})
-  return response
-} catch (error) {
-  console.error("AI API error:", error)
-  // Return fallback or mock response
-  return generateMockResponse(input)
-}
-```
-
-### 2. **Rate Limiting**
-Implement rate limiting to prevent abuse:
-
-```typescript
-import { Ratelimit } from "@upstash/ratelimit"
-import { Redis } from "@upstash/redis"
-
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, "1 m"), // 10 requests per minute
-})
-
-const { success } = await ratelimit.limit(userId)
-if (!success) {
-  return NextResponse.json(
-    { error: "Rate limit exceeded" },
-    { status: 429 }
-  )
-}
-```
-
-### 3. **Caching**
-Cache AI responses for identical inputs:
-
-```typescript
-import { Redis } from "@upstash/redis"
-
-const redis = Redis.fromEnv()
-const cacheKey = `chat:${caseId}:${messageHash}`
-
-// Check cache first
-const cached = await redis.get(cacheKey)
-if (cached) return cached
-
-// Generate new response
-const response = await openai.chat.completions.create({...})
-
-// Cache for 1 hour
-await redis.setex(cacheKey, 3600, response)
-```
-
-### 4. **Cost Monitoring**
-Track token usage and costs:
-
-```typescript
-const completion = await openai.chat.completions.create({...})
-
-const usage = completion.usage
-console.log(`Tokens used: ${usage.total_tokens}`)
-console.log(`Estimated cost: $${(usage.total_tokens / 1000) * 0.03}`)
-
-// Save to database for analytics
-await saveUsageMetrics(userId, usage)
-```
-
-### 5. **Prompt Engineering**
-- Be specific and clear in system prompts
-- Use examples for complex outputs
-- Set appropriate temperature (0.3-0.5 for factual, 0.7-0.9 for creative)
-- Limit max_tokens to control costs
-- Use structured outputs (JSON mode) when possible
-
-## 🔄 Migration Steps
-
-1. **Install AI SDK**
-   ```bash
-   npm install openai
-   ```
-
-2. **Add API Key**
-   ```bash
-   echo "OPENAI_API_KEY=your-key-here" >> .env.local
-   ```
-
-3. **Update API Routes**
-   - Replace mock functions with AI calls
-   - Test each endpoint individually
-   - Monitor for errors and edge cases
-
-4. **Test Thoroughly**
-   - Test with various patient scenarios
-   - Verify response quality
-   - Check error handling
-   - Monitor response times
-
-5. **Deploy**
-   - Set environment variables in production
-   - Monitor costs and usage
-   - Set up alerts for errors
-
-## 💰 Cost Estimation
-
-### OpenAI GPT-4 Turbo Pricing (as of 2024)
-- Input: $0.01 per 1K tokens
-- Output: $0.03 per 1K tokens
-
-### Estimated Costs per Case:
-- Patient Chat (10 messages): ~$0.05
-- Test Results (5 tests): ~$0.10
-- Feedback Generation: ~$0.05
-- **Total per case: ~$0.20**
-
-### Monthly Estimates:
-- 100 students × 10 cases/month = 1,000 cases
-- **Monthly cost: ~$200**
-
-## 🚀 Next Steps
-
-1. Choose your AI provider (OpenAI recommended)
-2. Set up API keys
-3. Replace mock functions in API routes
-4. Test with sample cases
-5. Monitor performance and costs
-6. Optimize prompts based on results
-7. Scale gradually
+> **Status:** AI is **fully integrated and live** — Groq's Llama-3.3-70b-versatile model powers both the patient chat and the evaluation engine. This document describes the actual implemented architecture.
 
 ---
 
-**Note**: Start with a small number of test cases to validate the AI responses before full deployment. Monitor costs closely during initial rollout.
+## Table of Contents
+
+1. [Provider & Model](#1-provider)
+2. [Environment Setup](#2-env)
+3. [Integration Point 1 — Patient Chat Engine](#3-chat)
+4. [Integration Point 2 — Evaluation Engine](#4-eval)
+5. [Session History Management](#5-history)
+6. [Temperature Strategy](#6-temperature)
+7. [Cost Profile](#7-cost)
+8. [Error Handling & Fallbacks](#8-fallback)
+9. [Adding a New AI Integration Point](#9-adding)
+
+---
+
+## 1. Provider & Model {#1-provider}
+
+| Attribute | Value |
+|---|---|
+| **Provider** | [Groq](https://groq.com) |
+| **Model** | `llama-3.3-70b-versatile` |
+| **SDK** | `groq-sdk` (installed) |
+| **API Key env var** | `GROQ_API_KEY` |
+
+Groq was chosen over OpenAI/Anthropic for three reasons:
+- **Inference speed**: Groq's LPU hardware produces ~10× faster token generation than GPU-based APIs, which matters for real-time patient chat
+- **Cost**: Significantly cheaper per token than GPT-4-class models
+- **Quality**: Llama-3.3-70b provides sufficient reasoning for clinical evaluation and patient roleplay at this scale
+
+---
+
+## 2. Environment Setup {#2-env}
+
+Only one key is required:
+
+```bash
+# .env.local
+GROQ_API_KEY=gsk_...
+```
+
+No OpenAI, Anthropic, or Google AI keys are used. The system does **not** require any additional AI provider setup.
+
+---
+
+## 3. Integration Point 1 — Patient Chat Engine {#3-chat}
+
+**File:** `engine/chatEngine.ts`  
+**Used by:** `app/api/chat/patient/route.ts`, `app/api/chat/patient/opening/route.ts`
+
+### How it works
+
+The `ChatEngine` class handles all patient-side conversation. It:
+1. Builds a system prompt from the case's `patient_text_brief`, `patient_facts`, `ai_role`, and `ai_examples` fields
+2. Maintains an in-memory session history per `userId:caseId` key (last 12 messages / ~6 exchanges)
+3. Sends the history + new message to Groq and returns the response
+
+### Opening Generation
+
+When a case starts, `GET /api/chat/patient/opening` calls `ChatEngine.generateOpening()` which generates a single emotional opening sentence — the first thing the patient says when the student enters the room.
+
+```typescript
+// engine/chatEngine.ts
+
+static async generateOpening(caseData: CaseData): Promise<string>
+// Returns: "Doctor, please help — my chest hasn't stopped hurting since last night."
+```
+
+The opening is generated at temperature **0.7** (more expressive, human-sounding).
+
+### Per-message Responses
+
+```typescript
+static async processRequest(
+    message: string,    // doctor's question
+    caseData: CaseData, // full case object
+    userId: string      // Clerk user ID (used as session key)
+): Promise<CaseResponse | { error: string, status: number }>
+```
+
+Generated at temperature **0.4** (balanced: natural but consistent).
+
+Max tokens per response: **120** — enforced to keep responses short, realistic patient answers.
+
+### Patient Memory Construction
+
+The system prompt is built from the case data, not hardcoded:
+
+```
+You are roleplaying as a patient in a medical consultation.
+
+CRITICAL INSTRUCTIONS:
+- ONLY answer what is asked. NEVER provide a summary of your whole condition.
+- If asked "What happened?", mention only the MOST important symptom.
+- Keep answers VERY SHORT (1 sentence).
+- Act like a worried parent/patient, not a medical case report.
+
+PATIENT CONTEXT:
+[role] [patient_text_brief] [patient_facts] [ai_examples]
+```
+
+This means no case data is hardcoded into the engine — only the case JSON controls the patient's responses.
+
+### API Route Contract
+
+**POST `/api/chat/patient`**
+
+```typescript
+// Request body
+{
+  message: string,      // doctor's question text
+  caseData: CaseData,   // full case object (fetched by client from /api/cases/[id])
+  userId: string        // passed by API route from auth()
+}
+
+// Response
+{
+  response: string,     // patient's reply (1 sentence)
+  timestamp: string,    // ISO timestamp
+  source: "ai"
+}
+```
+
+**GET `/api/chat/patient/opening?caseId=[id]`**
+
+```typescript
+// Response
+{
+  opening: string   // patient's first sentence
+}
+```
+
+---
+
+## 4. Integration Point 2 — Evaluation Engine {#4-eval}
+
+**File:** `engine/evaluation/EvaluationEngine.ts`  
+**Called via:** `app/actions/evaluate.ts` (Next.js server action, not an API route)
+
+The evaluation engine makes **one Groq API call** per case submission. It is called with the full chat transcript, diagnosis, management plan, and the case configuration.
+
+### LLM Call Details
+
+```typescript
+const completion = await groq.chat.completions.create({
+    messages: [
+        { role: "system", content: systemPrompt },  // built by ReasoningPromptBuilder
+        { role: "user", content: "Evaluate this student's performance." }
+    ],
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.1,              // near-deterministic for consistent grading
+    response_format: { type: "json_object" }
+})
+```
+
+Temperature **0.1** — maximally consistent grading. The LLM must return structured JSON matching this schema:
+
+```json
+{
+  "reasoningScore": 0-30,
+  "historyQualityScore": 0-7.5,
+  "diagnosisScore": 0-15,
+  "managementScore": 0-10,
+  "missedRedFlags": ["intent_slug", ...],
+  "feedback": {
+    "strengths": ["...", "..."],
+    "improvements": ["...", "..."]
+  }
+}
+```
+
+All values are hard-clamped to their ceilings in code regardless of what the LLM returns.
+
+### LLM call is conditional for history scoring
+
+The `historyQualityScore` is only requested when the deterministic history score is in the borderline range (8–14 out of 17.5). If the student clearly passed or failed the history section algorithmically, the LLM's history score is zeroed out to avoid noise. See `EVALUATION_ENGINE.md` for full details.
+
+### System Prompt Construction
+
+Built by `engine/evaluation/ReasoningPromptBuilder.ts`. The prompt includes:
+- Full consultation transcript (doctor questions + patient responses)
+- Student's submitted diagnosis and management plan
+- Coverage gaps (required questions the student missed — passed for context, NOT as a score anchor)
+- List of critical red flags from the case
+- Explicit score ceiling instructions to prevent score inflation
+- Case-specific correct diagnosis and core management steps
+
+---
+
+## 5. Session History Management {#5-history}
+
+The `ChatEngine` uses an **in-memory `Map`** keyed by `userId:caseId` to maintain conversation context across HTTP requests (Next.js server actions run in the same Node.js process during a session).
+
+```typescript
+private static sessionHistories: Map<string, Array<{role, content}>> = new Map()
+private static readonly MAX_HISTORY_MESSAGES = 12  // last 6 doctor-patient exchanges
+```
+
+**Implications:**
+- History is **not persisted to the database** — it lives only for the duration of the Node.js process
+- History is **scoped per user per case** — concurrent users don't interfere
+- History is **trimmed to the last 12 messages** to control token usage
+- A server restart (or Vercel cold start) clears all histories — this is acceptable since the patient transcript is re-sent from the client when submitting
+
+---
+
+## 6. Temperature Strategy {#6-temperature}
+
+| Use case | Temperature | Reason |
+|---|---|---|
+| Patient opening sentence | 0.7 | More expressive, emotional, varied |
+| Patient conversation | 0.4 | Natural but consistent across similar questions |
+| Evaluation grading | 0.1 | Maximally consistent — same performance should get same score |
+
+---
+
+## 7. Cost Profile {#7-cost}
+
+Based on Groq pricing (substantially cheaper than OpenAI GPT-4):
+
+| Use | Tokens (approx.) | Cost per case |
+|---|---|---|
+| Opening generation | ~300 in / ~40 out | ~$0.0001 |
+| Patient chat (10 exchanges) | ~800 in / ~200 out | ~$0.001 |
+| Evaluation LLM call | ~2000 in / ~400 out | ~$0.003 |
+| **Total per case** | | **~$0.004** |
+
+At 1,000 cases/month: **~$4/month** in AI costs.
+
+> Groq pricing updates frequently — verify at [groq.com/pricing](https://groq.com/pricing).
+
+---
+
+## 8. Error Handling & Fallbacks {#8-fallback}
+
+### Chat Engine
+If Groq fails, the route returns a 500 error to the client. The UI shows an error state with a retry option.
+
+### Evaluation Engine
+If the Groq call fails during evaluation, `EvaluationEngine.ts` catches the error and uses conservative fallback scores:
+
+| Domain | Fallback |
+|---|---|
+| Clinical Reasoning | 10 / 30 |
+| Diagnosis | 5 / 15 |
+| Management | 0 / 10 |
+| History Quality | 3 / 7.5 (if needed) or 0 |
+
+The student is shown a message explaining that AI evaluation was incomplete. The deterministic scores (test ordering, history coverage) are unaffected.
+
+---
+
+## 9. Adding a New AI Integration Point {#9-adding}
+
+If you need to add a new Groq-powered feature:
+
+```typescript
+import { Groq } from "groq-sdk"
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+
+const result = await groq.chat.completions.create({
+    messages: [
+        { role: "system", content: yourSystemPrompt },
+        { role: "user", content: userInput }
+    ],
+    model: "llama-3.3-70b-versatile",
+    temperature: 0.1,   // lower = more consistent
+    max_completion_tokens: 200,
+    // Use json_object mode if you need structured output:
+    response_format: { type: "json_object" }
+})
+
+const content = result.choices[0]?.message?.content
+```
+
+Always:
+1. Wrap in try/catch with a defined fallback
+2. Clamp/validate any numeric scores returned by the LLM before using them
+3. Use `temperature: 0.1` for grading/scoring; `0.4–0.7` for generative/creative tasks
+
+---
+
+*This document reflects MediKarya v2.0 (April 2026).*  
+*AI provider: Groq. Model: llama-3.3-70b-versatile.*
