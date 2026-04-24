@@ -21,6 +21,8 @@ import {
   Brain,
   User,
   Award,
+  ArrowRight,
+  ChevronRight,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -381,7 +383,7 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
     .toUpperCase()
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
+    <div className="h-[100dvh] flex flex-col overflow-hidden bg-slate-50">
 
       {/* ── TOP BAR ───────────────────────────────────────────────────────── */}
       <div className="h-[52px] flex-shrink-0 bg-white/95 backdrop-blur-sm border-b border-slate-200 flex items-center px-3 gap-2 z-50 shadow-sm">
@@ -601,47 +603,101 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
         </div>
       </div>
 
-      {/* ── MOBILE BOTTOM TAB BAR (hidden on md+) ───────────────────────── */}
-      <div className="md:hidden flex-shrink-0 bg-white border-t border-slate-200 flex items-stretch h-[60px] z-40 shadow-[0_-1px_8px_rgba(0,0,0,0.06)]">
-        {STEP_META.map((step) => {
-          const StepIcon = step.icon
-          const isActive = activeTab === step.value
-          const isCompleted =
-            (step.value === "chat" && chatHistory.filter((m) => m.role === "user").length > 0 && activeTab !== "chat") ||
-            (step.value === "tests" && orderedTests.length > 0 && activeTab === "diagnosis")
-          const testsBadge = step.value === "tests" && orderedTests.length > 0
+      {/* ── Mobile Next-Step CTA — only shows when user is ready to advance ── */}
+      {activeTab === "chat" && testsAdvisable && (
+        <div className="md:hidden flex-shrink-0 border-t border-brand-100 bg-gradient-to-r from-brand-50 to-cyan-50 px-4 py-2 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-300">
+          <div className="flex items-center gap-2 min-w-0">
+            <CheckCircle2 className="h-3.5 w-3.5 text-brand-600 flex-shrink-0" />
+            <p className="text-xs font-medium text-brand-700 truncate">Good history — ready to investigate</p>
+          </div>
+          <button
+            onClick={() => handleTabChange("tests")}
+            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-brand-600 active:bg-brand-700 transition-colors"
+          >
+            Order Tests <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+      {activeTab === "tests" && testResults.length > 0 && (
+        <div className="md:hidden flex-shrink-0 border-t border-violet-100 bg-gradient-to-r from-violet-50 to-purple-50 px-4 py-2 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-2 duration-300">
+          <div className="flex items-center gap-2 min-w-0">
+            <CheckCircle2 className="h-3.5 w-3.5 text-violet-600 flex-shrink-0" />
+            <p className="text-xs font-medium text-violet-700 truncate">Results in — time to diagnose</p>
+          </div>
+          <button
+            onClick={() => handleTabChange("diagnosis")}
+            className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-violet-600 active:bg-violet-700 transition-colors"
+          >
+            Diagnose <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+      )}
 
-          return (
-            <button
-              key={step.value}
-              onClick={() => handleTabChange(step.value)}
-              className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 relative transition-colors",
-                isActive ? "text-brand-600" : "text-slate-400"
-              )}
-            >
-              {/* Active indicator bar at top */}
-              {isActive && (
-                <span className="absolute top-0 left-1/4 right-1/4 h-[2px] bg-brand-600 rounded-b-full" />
-              )}
-              <div className="relative">
-                {isCompleted ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                ) : (
-                  <StepIcon className={cn("h-5 w-5", isActive ? "text-brand-600" : "text-slate-400")} />
+      {/* ── MOBILE BOTTOM TAB BAR (hidden on md+) ───────────────────────── */}
+      {/* env(safe-area-inset-bottom) prevents overlap with iOS/Android browser chrome */}
+      <div
+        className="md:hidden flex-shrink-0 bg-white border-t-2 border-slate-100 z-40"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)", boxShadow: "0 -4px 20px rgba(0,0,0,0.08)" }}
+      >
+        <div className="flex items-center h-[60px] px-2 gap-0">
+          {STEP_META.map((step, idx) => {
+            const StepIcon = step.icon
+            const isActive = activeTab === step.value
+            const isCompleted =
+              (step.value === "chat" && chatHistory.filter((m) => m.role === "user").length > 0 && activeTab !== "chat") ||
+              (step.value === "tests" && orderedTests.length > 0 && activeTab === "diagnosis")
+            const testsBadge = step.value === "tests" && orderedTests.length > 0 && !isActive
+
+            return (
+              <div key={step.value} className="flex items-center flex-1 min-w-0">
+                {/* Chevron separator between steps */}
+                {idx > 0 && (
+                  <ChevronRight className={cn(
+                    "h-4 w-4 flex-shrink-0 transition-colors",
+                    isActive ? "text-brand-300" : "text-slate-200"
+                  )} />
                 )}
-                {testsBadge && (
-                  <span className="absolute -top-1 -right-1.5 h-3.5 min-w-3.5 px-0.5 rounded-full bg-brand-600 text-white text-[9px] font-bold flex items-center justify-center">
-                    {orderedTests.length}
+
+                <button
+                  onClick={() => handleTabChange(step.value)}
+                  className={cn(
+                    "flex-1 flex flex-col items-center justify-center gap-0.5 rounded-2xl py-2 transition-all duration-200 active:scale-95",
+                    isActive
+                      ? "bg-brand-600 text-white shadow-sm"
+                      : isCompleted
+                      ? "text-emerald-600"
+                      : "text-slate-400"
+                  )}
+                >
+                  <div className="relative flex items-center gap-1">
+                    {isCompleted ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <>
+                        <span className={cn(
+                          "text-[9px] font-black leading-none",
+                          isActive ? "text-white/60" : "text-slate-300"
+                        )}>{step.step}</span>
+                        <StepIcon className="h-4 w-4" />
+                      </>
+                    )}
+                    {testsBadge && (
+                      <span className="absolute -top-1.5 -right-2 h-4 min-w-4 px-0.5 rounded-full bg-orange-500 text-white text-[9px] font-bold flex items-center justify-center">
+                        {orderedTests.length}
+                      </span>
+                    )}
+                  </div>
+                  <span className={cn(
+                    "text-[10px] font-semibold leading-none",
+                    isActive ? "text-white" : isCompleted ? "text-emerald-600" : "text-slate-400"
+                  )}>
+                    {step.label}
                   </span>
-                )}
+                </button>
               </div>
-              <span className={cn("text-[10px] font-medium leading-none", isActive ? "text-brand-600" : "text-slate-400")}>
-                {step.label}
-              </span>
-            </button>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
       {/* ── Evaluation overlay ─────────────────────────────────────────────── */}
