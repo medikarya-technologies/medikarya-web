@@ -27,10 +27,11 @@ const articles: Record<string, {
         title: "How AI is Revolutionizing Medical Education",
         category: "AI in Medicine",
         categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
-        date: "February 2025",
-        isoDate: "2025-02-01",
-        author: "MediKarya Team",
+        date: "April 23, 2026",
+        isoDate: "2026-04-23",
+        author: "MediKarya Founding Team",
         readTime: "8 min read",
+        wordCount: 1120,
         fullArticle: true,
         keywords: ["AI medical education", "AI patient simulation", "clinical reasoning AI", "medical student training AI", "artificial intelligence healthcare education"],
         intro: "Artificial intelligence is no longer a futuristic concept in medicine — it is actively changing how medical students learn clinical reasoning, pattern recognition, and diagnostic accuracy right now.",
@@ -60,10 +61,11 @@ const articles: Record<string, {
         title: "The Feynman Technique for Clinical Reasoning",
         category: "Study Tips",
         categoryColor: "bg-emerald-50 text-emerald-700 border-emerald-100",
-        date: "January 2025",
-        isoDate: "2025-01-15",
-        author: "MediKarya Team",
+        date: "April 20, 2026",
+        isoDate: "2026-04-20",
+        author: "MediKarya Founding Team",
         readTime: "7 min read",
+        wordCount: 930,
         fullArticle: true,
         keywords: ["Feynman technique medical students", "clinical reasoning study tips", "how to learn clinical medicine", "medical student study methods"],
         intro: "Nobel physicist Richard Feynman had a deceptively simple rule for understanding anything deeply: if you can't explain it to a child, you don't understand it yet. This principle translates remarkably well into clinical medicine.",
@@ -91,10 +93,11 @@ const articles: Record<string, {
         title: "Understanding Sepsis: A Case-Based Approach",
         category: "Clinical Reasoning",
         categoryColor: "bg-red-50 text-red-700 border-red-100",
-        date: "January 2025",
-        isoDate: "2025-01-10",
-        author: "MediKarya Team",
+        date: "April 18, 2026",
+        isoDate: "2026-04-18",
+        author: "MediKarya Founding Team",
         readTime: "10 min read",
+        wordCount: 980,
         fullArticle: true,
         keywords: ["sepsis case study medical students", "sepsis clinical reasoning", "sepsis MBBS case based learning", "sepsis diagnosis practice"],
         intro: "Sepsis kills approximately 11 million people annually and remains one of medicine's most time-critical diagnoses. The challenge is that it often presents subtly — and by the time it looks obvious, the window for intervention can be closing.",
@@ -123,10 +126,11 @@ const articles: Record<string, {
         title: "Why Medical Students Need Simulation Training",
         category: "Medical Education",
         categoryColor: "bg-purple-50 text-purple-700 border-purple-100",
-        date: "December 2024",
-        isoDate: "2024-12-01",
-        author: "MediKarya Team",
+        date: "April 16, 2026",
+        isoDate: "2026-04-16",
+        author: "MediKarya Founding Team",
         readTime: "7 min read",
+        wordCount: 870,
         fullArticle: true,
         keywords: ["medical simulation training", "why simulation for medical students", "MBBS simulation learning", "patient simulation MBBS India", "clinical simulation benefits"],
         intro: "The transition from classroom to clinic is one of the steepest learning curves in any profession. Simulation doesn't eliminate that curve — but it gives you essential practice before the stakes are real.",
@@ -154,10 +158,11 @@ const articles: Record<string, {
         title: "Breaking Down the Diagnostic Process",
         category: "Clinical Reasoning",
         categoryColor: "bg-red-50 text-red-700 border-red-100",
-        date: "December 2024",
-        isoDate: "2024-12-10",
-        author: "MediKarya Team",
+        date: "April 14, 2026",
+        isoDate: "2026-04-14",
+        author: "MediKarya Founding Team",
         readTime: "9 min read",
+        wordCount: 1050,
         fullArticle: true,
         keywords: ["diagnostic process medical students", "clinical reasoning frameworks", "differential diagnosis practice", "System 1 System 2 clinical reasoning", "how doctors diagnose"],
         intro: "How do experienced clinicians arrive at a diagnosis so quickly? The answer usually isn't encyclopaedic knowledge — it's a combination of pattern recognition, systematic frameworks, and calibrated uncertainty that takes years to develop. Here's how it works.",
@@ -186,10 +191,11 @@ const articles: Record<string, {
         title: "The Future of Healthcare: AI-Assisted Diagnosis",
         category: "AI in Medicine",
         categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
-        date: "November 2024",
-        isoDate: "2024-11-01",
-        author: "MediKarya Team",
+        date: "April 12, 2026",
+        isoDate: "2026-04-12",
+        author: "MediKarya Founding Team",
         readTime: "6 min read",
+        wordCount: 450,
         fullArticle: true,
         keywords: ["AI assisted diagnosis", "AI in healthcare India", "future of AI in medicine", "AI doctor tools medical students", "AI clinical decision support"],
         intro: "There is a phrase circulating in medical education conferences right now: AI won't replace doctors, but doctors who use AI will replace those who don't. The conversation has shifted from whether AI will change medicine to how fast and how deeply.",
@@ -264,22 +270,78 @@ export default async function BlogArticlePage({ params }: Props) {
         "headline": article.title,
         "description": article.intro,
         "keywords": article.keywords.join(", "),
-        "author": { "@type": "Organization", "name": article.author },
+        "articleSection": article.category,
+        "inLanguage": "en-IN",
+        "genre": "Medical Education",
+        "author": {
+            "@type": "Person",
+            "name": article.author,
+            "url": `${BASE_URL}/about`,
+            "affiliation": {
+                "@type": "Organization",
+                "name": "MediKarya",
+                "url": BASE_URL
+            }
+        },
         "publisher": {
             "@type": "Organization",
             "name": "MediKarya",
             "url": BASE_URL,
-            "logo": { "@type": "ImageObject", "url": `${BASE_URL}/medikarya.svg` }
+            "logo": {
+                "@type": "ImageObject",
+                "url": `${BASE_URL}/medikarya.svg`,
+                "width": 200,
+                "height": 200
+            }
         },
-        "image": OG_IMAGE,
+        "image": {
+            "@type": "ImageObject",
+            "url": OG_IMAGE,
+            "width": 1200,
+            "height": 630
+        },
         "url": `${BASE_URL}/blog/${slug}`,
         "datePublished": article.isoDate,
-        "mainEntityOfPage": { "@type": "WebPage", "@id": `${BASE_URL}/blog/${slug}` }
+        "dateModified": article.isoDate,
+        "wordCount": article.wordCount ?? 800,
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": `${BASE_URL}/blog/${slug}`
+        },
+        "isPartOf": {
+            "@type": "Blog",
+            "@id": `${BASE_URL}/blog`,
+            "name": "MediKarya Insights",
+            "publisher": {
+                "@type": "Organization",
+                "name": "MediKarya"
+            }
+        },
+        "about": article.keywords.slice(0, 3).map((k: string) => ({
+            "@type": "Thing",
+            "name": k
+        })),
+        "audience": {
+            "@type": "Audience",
+            "audienceType": "Medical students, MBBS students, clinical educators, healthcare professionals"
+        },
+        "educationalLevel": "Undergraduate",
+    }
+
+    const breadcrumbLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": BASE_URL },
+            { "@type": "ListItem", "position": 2, "name": "Blog", "item": `${BASE_URL}/blog` },
+            { "@type": "ListItem", "position": 3, "name": article.title, "item": `${BASE_URL}/blog/${slug}` }
+        ]
     }
 
     return (
         <main className="min-h-screen flex flex-col bg-white">
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
             <div className="flex-1 relative">
                 <div className="absolute inset-0 -z-10 bg-gradient-to-b from-blue-50/60 via-white to-white" />
 

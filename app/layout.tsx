@@ -132,9 +132,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "url": "https://www.medikarya.in",
                   "logo": "https://www.medikarya.in/medikarya.svg",
                   "description": "AI-powered clinical simulation platform helping medical students in India practice patient consultations, order diagnostics, and develop clinical reasoning skills.",
-                  "foundingDate": "2024",
+                  "foundingDate": "2026",
                   "areaServed": "IN",
-                  "sameAs": []
+                  "knowsAbout": [
+                    "Clinical Reasoning",
+                    "Medical Education",
+                    "AI in Healthcare",
+                    "Diagnostic Simulation",
+                    "MBBS Training",
+                    "Case-Based Learning"
+                  ],
+                  "sameAs": [
+                    "https://www.linkedin.com/company/medikarya",
+                    "https://www.reddit.com/r/medicalschool"
+                  ]
                 },
                 {
                   "@context": "https://schema.org",

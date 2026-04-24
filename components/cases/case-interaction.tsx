@@ -235,7 +235,10 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
 
   // ─── Coverage & nudge ───────────────────────────────────────────────────
   const coverage = computeHistoryCoverage(chatHistory)
-  const testsAdvisable = coverage.score >= 2
+  const userMessageCount = chatHistory.filter((m) => m.role === "user").length
+  // Require score >= 3 (3 of 4 areas covered) AND at least 4 questions asked
+  // This prevents a single detailed first question from triggering the CTA too early
+  const testsAdvisable = coverage.score >= 3 && userMessageCount >= 4
   const diagnosisAdvisable = coverage.score >= 3 && testResults.length >= 1
 
   useEffect(() => {
