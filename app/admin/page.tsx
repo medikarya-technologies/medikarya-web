@@ -33,18 +33,20 @@ const AVATAR_COLORS = [
 export default async function AdminPage() {
     const { userId } = await auth()
 
-    if (!(await isAdminUser(userId))) {
+    // Parallelize admin check + user list fetch
+    const [isAdmin, { data: users, error }] = await Promise.all([
+        isAdminUser(userId),
+        supabaseServer
+            .from("user_profiles")
+            .select("clerk_user_id, full_name, email, role, current_streak, longest_streak, last_active_date, created_at")
+            .order("created_at", { ascending: false })
+    ])
+
+    if (!isAdmin) {
         redirect("/")
     }
 
-    // Pass the current user's ID down so RoleToggleButton knows who "self" is
     const currentUserId = userId!
-
-    const { data: users, error } = await supabaseServer
-        .from("user_profiles")
-        .select("clerk_user_id, full_name, email, role, current_streak, longest_streak, last_active_date, created_at")
-        .order("created_at", { ascending: false })
-
     const total = users?.length ?? 0
     const admins = users?.filter(u => u.role === "admin").length ?? 0
     const students = users?.filter(u => u.role === "student").length ?? 0

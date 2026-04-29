@@ -7,8 +7,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Check, Loader2, ArrowLeft, Building2, Mail } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
 import Link from "next/link"
 
 export default function ContactClient() {
@@ -63,11 +61,11 @@ export default function ContactClient() {
             </header>
             <div className="container mx-auto px-4 flex-grow flex items-center justify-center relative z-10 py-12">
                 <div className="w-full max-w-lg">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: "easeOut" }}>
+                    <div className="animate-fade-in-up">
                         <div className="text-center mb-8">
                             <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-md mb-6 ring-1 ring-slate-100">
                                 <div className="flex h-12 w-12 items-center justify-center">
-                                    <img src="https://www.medikarya.in/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
+                                    <img src="/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
                                 </div>
                             </div>
                             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl mb-3">
@@ -122,7 +120,7 @@ export default function ContactClient() {
                             )}
                         </Card>
                         <div className="mt-8 text-center text-sm text-slate-500">Trusted by educators for realistic AI simulations</div>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,12 +1,8 @@
 "use client"
 
 import { SignIn } from "@clerk/nextjs"
-import { cn } from "@/lib/utils"
-import { useScrollAnimation } from "@/lib/scroll-animation"
 
 export default function LoginClient() {
-  const { ref, isVisible } = useScrollAnimation()
-
   return (
     <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-brand-50 via-white to-accent-50">
       {/* Background decorative elements */}
@@ -33,16 +29,12 @@ export default function LoginClient() {
 
       <div className="relative mx-auto max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
         <div
-          ref={ref}
-          className={cn(
-            "relative overflow-hidden rounded-2xl sm:rounded-3xl border bg-white/80 shadow-xl backdrop-blur-md p-4 sm:p-6 md:p-8 lg:p-10 transition-all duration-1000 ease-out mx-auto my-auto",
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          )}
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl border bg-white/80 shadow-xl backdrop-blur-md p-4 sm:p-6 md:p-8 lg:p-10 mx-auto my-auto animate-fade-in-up"
         >
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8">
             <div className="mx-auto mb-4 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center">
-              <img src="https://www.medikarya.in/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
+              <img src="/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Welcome back</h1>
             <p className="text-sm sm:text-base text-slate-600">Sign in to continue your medical education journey</p>
