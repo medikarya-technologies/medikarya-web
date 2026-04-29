@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/select"
 import { Check, Loader2, ArrowLeft, PenTool } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { motion } from "framer-motion"
 import Link from "next/link"
 
 export default function ContributeForm() {
@@ -73,11 +72,8 @@ export default function ContributeForm() {
             {/* Main content */}
             <div className="relative z-10 flex-1 flex items-center justify-center px-4 py-10 sm:py-16">
                 <div className="w-full max-w-md">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, ease: "easeOut" }}
-                        className="space-y-6"
+                    <div
+                        className="space-y-6 animate-fade-in-up"
                     >
                         {/* Header */}
                         <div className="text-center space-y-3">
@@ -194,7 +190,7 @@ export default function ContributeForm() {
                                 </form>
                             )}
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
         </div>

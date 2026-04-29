@@ -2,8 +2,13 @@ import dynamic from "next/dynamic"
 import type { Metadata } from "next"
 import { Navbar } from "@/components/flowai/navbar"
 import { Hero } from "@/components/flowai/hero"
-import ProblemsSection from "@/components/flowai/sections/problems-section"
 import { SmoothScroller } from "@/components/smooth-scroller"
+
+// Lazy-load heavy below-the-fold sections
+const ProblemsSection = dynamic(
+  () => import("@/components/flowai/sections/problems-section"),
+  { loading: () => <div className="h-[300vh] w-full" /> }
+)
 
 export const metadata: Metadata = {
   title: "MediKarya — AI Patient Simulation for Medical Students",
@@ -42,6 +47,7 @@ const FAQSection = dynamic(() => import("@/components/flowai/sections/faq"), {
 const Footer = dynamic(() => import("@/components/flowai/footer").then(mod => mod.Footer), {
   loading: () => <div className="h-[300px] w-full bg-slate-900 animate-pulse" />
 })
+
 
 export default function Page() {
   return (

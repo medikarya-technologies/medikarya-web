@@ -22,12 +22,14 @@ export default async function DashboardRootLayout({
     // This is a no-op if the Clerk webhook already created it (onConflict + ignore).
     // It only does real work when the webhook missed the user.
     try {
+        // Parallelize currentUser fetch with the auth() we already did
         const user = await currentUser()
         const email = user?.emailAddresses?.[0]?.emailAddress ?? null
         const fullName =
             [user?.firstName, user?.lastName].filter(Boolean).join(" ") || null
 
-        await supabaseServer
+        // Fire-and-forget the upsert — don't block rendering
+        supabaseServer
             .from("user_profiles")
             .upsert(
                 {
@@ -40,9 +42,13 @@ export default async function DashboardRootLayout({
                 },
                 { onConflict: "clerk_user_id", ignoreDuplicates: true }
             )
+            .then(() => {}) // intentionally fire-and-forget
+            .catch((err: unknown) => {
+                console.error("[DashboardLayout] Failed to sync user_profile:", err)
+            })
     } catch (err) {
         // Non-fatal — log and continue so the user still reaches the dashboard
-        console.error("[DashboardLayout] Failed to sync user_profile:", err)
+        console.error("[DashboardLayout] currentUser() failed:", err)
     }
 
     return <>{children}</>
