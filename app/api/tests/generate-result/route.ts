@@ -4,14 +4,11 @@ import { getCaseModule } from "@/cases/registry"
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate the user
-    const { userId } = await auth()
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      )
+    // Allow both authenticated and guest users
+    try {
+      await auth()
+    } catch {
+      // Guest access — no session
     }
 
     const body = await request.json()

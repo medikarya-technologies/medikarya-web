@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, Play } from "lucide-react"
+import { ArrowRight, Play, Stethoscope } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { motion, useMotionTemplate, useMotionValue, useScroll, useTransform, Variants } from "framer-motion"
@@ -119,7 +119,7 @@ export function Hero() {
         <motion.div
           variants={contentVariants}
           custom={3}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 mb-16"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 mb-10"
         >
           <Button
             asChild
@@ -149,10 +149,50 @@ export function Hero() {
           </Button>
         </motion.div>
 
-        {/* Story Bridge: The Connection */}
+        {/* Standalone Try-a-Case CTA — visually distinct */}
         <motion.div
           variants={contentVariants}
           custom={4}
+          className="flex justify-center px-4 mb-16"
+        >
+          <Link
+            href="/try"
+            className="group relative flex items-center gap-4 rounded-2xl border border-brand-200/80 bg-gradient-to-r from-brand-50/80 via-white to-cyan-50/80 backdrop-blur-sm px-6 py-4 shadow-md shadow-brand-500/5 transition-all duration-300 hover:scale-[1.01]"
+          >
+            {/* Pulsing glow ring behind the icon */}
+            <div className="relative flex-shrink-0">
+              <motion.div
+                className="absolute -inset-1 rounded-full bg-brand-400/20"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0, 0.4] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 shadow-md shadow-brand-600/30">
+                <Stethoscope className="h-5 w-5 text-white" />
+              </div>
+            </div>
+
+            {/* Text */}
+            <div className="text-left">
+              <p className="text-sm font-bold text-slate-900 leading-tight">
+                Try a Case Right Now
+                <ArrowRight className="inline-block ml-1.5 h-3.5 w-3.5 text-brand-500 transition-transform group-hover:translate-x-1" />
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Solve a real clinical scenario — completely free, no account needed
+              </p>
+            </div>
+
+            {/* Badge */}
+            <span className="hidden sm:inline-flex flex-shrink-0 items-center rounded-full bg-brand-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
+              Free
+            </span>
+          </Link>
+        </motion.div>
+
+        {/* Story Bridge: The Connection */}
+        <motion.div
+          variants={contentVariants}
+          custom={5}
           className="flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
           onClick={() => {
             window.scrollTo({ top: window.innerHeight * 0.8, behavior: 'smooth' })

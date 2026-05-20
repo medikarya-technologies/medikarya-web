@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils"
 interface CaseInteractionProps {
   caseData: any
   onExit: () => void
+  guestId?: string
 }
 
 // ─── History Coverage Heuristic ─────────────────────────────────────────────
@@ -130,7 +131,7 @@ const STEP_META = [
   },
 ]
 
-export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
+export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionProps) {
   const caseId = (caseData as any).id || caseData.patient.name.toLowerCase().replace(/\s+/g, "-")
   const STORAGE_KEY = `medikarya-case-storage-${caseId}`
 
@@ -314,7 +315,7 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
       // Safety cap: max 3 hours (10800s) — prevents any runaway value reaching the DB
       const timeTakenSeconds = Math.min(rawSeconds, 10800)
       const sanitizedOrderedTests = orderedTests.map(({ icon, ...rest }) => rest)
-      const aiFeedback = await evaluateCase(diagnosis, sanitizedOrderedTests, chatHistory, caseData, timeTakenSeconds)
+      const aiFeedback = await evaluateCase(diagnosis, sanitizedOrderedTests, chatHistory, caseData, timeTakenSeconds, guestId)
       setFeedback(aiFeedback)
     } catch (error) {
       console.error("Evaluation failed", error)
@@ -369,6 +370,7 @@ export function CaseInteraction({ caseData, onExit }: CaseInteractionProps) {
             window.location.reload()
           }
         }}
+        guestMode={!!guestId}
       />
     )
   }

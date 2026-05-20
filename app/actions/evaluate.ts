@@ -9,7 +9,8 @@ export async function evaluateCase(
     orderedTests: any[],
     chatHistory: any[],
     caseData: any,
-    timeTaken: number = 0 // timeTaken in seconds
+    timeTaken: number = 0, // timeTaken in seconds
+    guestId?: string
 ) {
     try {
         console.log("Evaluating case for:", caseData.patient.name);
@@ -26,7 +27,7 @@ export async function evaluateCase(
         // Attempt to insert result to Supabase
         try {
             const { userId } = await auth();
-            if (userId) {
+            if (userId || guestId) {
                 // Determine case_id
                 const caseId = caseData.id || caseData.patient.name.toLowerCase().replace(/\s+/g, '-');
 
@@ -39,25 +40,33 @@ export async function evaluateCase(
                     timestamp: new Date().toISOString()
                 };
 
+                const insertPayload: Record<string, any> = {
+                    case_id: caseId,
+                    score: Math.round(result.score),
+                    xp_earned: finalXpEarned,
+                    time_taken: timeTaken,
+                    feedback_json: persistedFeedback,
+                    completed_at: new Date().toISOString()
+                };
+
+                if (userId) {
+                    insertPayload.user_id = userId;
+                } else if (guestId) {
+                    insertPayload.guest_id = guestId;
+                }
+
                 const { error: dbError } = await supabaseServer
                     .from("case_attempts")
-                    .insert({
-                        user_id: userId,
-                        case_id: caseId,
-                        score: Math.round(result.score),
-                        xp_earned: finalXpEarned,
-                        time_taken: timeTaken,
-                        feedback_json: persistedFeedback,
-                        completed_at: new Date().toISOString()
-                    });
+                    .insert(insertPayload);
 
                 if (dbError) {
                     console.error("Supabase insert error:", dbError);
                 } else {
-                    console.log("Successfully saved case_attempt to Supabase for User:", userId, "Case:", caseId);
+                    console.log("Successfully saved case_attempt to Supabase for", userId ? `User: ${userId}` : `Guest: ${guestId}`, "Case:", caseId);
                 }
 
-                // --- Streak Tracking Logic ---
+                // --- Streak Tracking Logic (only for authenticated users) ---
+                if (userId) {
                 try {
                     // Fetch current user profile
                     const { data: profile } = await supabaseServer
@@ -137,6 +146,7 @@ export async function evaluateCase(
                     console.error("Failed to update user streak:", streakErr);
                 }
                 // --- End Streak Logic ---
+                }
 
             } else {
                 console.log("No authenticated user, skipping Supabase insert.");
