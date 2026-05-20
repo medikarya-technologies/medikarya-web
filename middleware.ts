@@ -16,6 +16,7 @@ const isAuthRoute = createRouteMatcher([
 // Public routes that should NEVER trigger Clerk auth/redirects (important for SEO/Googlebot)
 const isPublicRoute = createRouteMatcher([
     "/",
+    "/try(.*)",
     "/contact(.*)",
     "/about(.*)",
     "/blog(.*)",
@@ -28,6 +29,10 @@ const isPublicRoute = createRouteMatcher([
     "/api-docs(.*)",
     "/api/webhook(.*)",
     "/api/clerk-webhook(.*)",
+    "/api/cases(.*)",
+    "/api/chat(.*)",
+    "/api/tests(.*)",
+    "/api/diagnosis(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

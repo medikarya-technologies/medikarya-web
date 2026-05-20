@@ -5,16 +5,18 @@ import { ChatEngine } from "../../../../engine/chatEngine";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    let currentUserId = "guest";
+    try {
+      const { userId } = await auth();
+      if (userId) currentUserId = userId;
+    } catch {
+      // Guest access — auth() may throw when no session exists
     }
 
     const body = await request.json();
     const { message, caseData } = body;
 
-    const result = await ChatEngine.processRequest(message, caseData, userId);
+    const result = await ChatEngine.processRequest(message, caseData, currentUserId);
 
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });

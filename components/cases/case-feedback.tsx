@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
   CheckCircle2,
   XCircle,
@@ -132,6 +133,7 @@ interface CaseFeedbackProps {
   onExit: () => void
   onReset?: () => void
   mode?: 'live' | 'history'
+  guestMode?: boolean
 }
 
 function ProgressHeader({ step, total }: { step: number; total: number }) {
@@ -153,7 +155,7 @@ function ProgressHeader({ step, total }: { step: number; total: number }) {
   );
 }
 
-function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, mode }: {
+function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, mode, guestMode }: {
   onPrev: () => void;
   onNext: () => void;
   isFirst: boolean;
@@ -161,6 +163,7 @@ function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, mode }: {
   onExit: () => void;
   onReset?: () => void;
   mode?: 'live' | 'history';
+  guestMode?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between mt-10">
@@ -174,13 +177,28 @@ function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, mode }: {
       </Button>
 
       {isLast ? (
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={onExit} className="gap-2">
-            <Home className="w-4 h-4" /> Dashboard
-          </Button>
-          <Button onClick={onReset || (() => window.location.reload())} className="gap-2 bg-slate-900 hover:bg-slate-800 text-white">
-            <RotateCcw className="w-4 h-4" /> {mode === 'history' ? 'Re-attempt Case' : 'Try Again'}
-          </Button>
+        <div className="flex flex-col gap-3 items-end">
+          {guestMode && (
+            <div className="w-full p-4 rounded-xl bg-gradient-to-r from-brand-50 to-cyan-50 border border-brand-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900">Enjoyed this case?</p>
+                <p className="text-xs text-slate-500">Create a free account to access all cases, track your progress, and earn XP.</p>
+              </div>
+              <Button asChild size="sm" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-5 flex-shrink-0 shadow-sm">
+                <Link href="/signup">Create Free Account</Link>
+              </Button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            {!guestMode && (
+              <Button variant="ghost" onClick={onExit} className="gap-2">
+                <Home className="w-4 h-4" /> Dashboard
+              </Button>
+            )}
+            <Button onClick={onReset || (() => window.location.reload())} className="gap-2 bg-slate-900 hover:bg-slate-800 text-white">
+              <RotateCcw className="w-4 h-4" /> {mode === 'history' ? 'Re-attempt Case' : 'Try Again'}
+            </Button>
+          </div>
         </div>
       ) : (
         <Button onClick={onNext} className="gap-2 bg-slate-900 hover:bg-slate-800 text-white">
@@ -286,7 +304,8 @@ export function CaseFeedback({
   orderedTests, 
   onExit, 
   onReset,
-  mode = 'live'
+  mode = 'live',
+  guestMode = false
 }: CaseFeedbackProps) {
   const [step, setStep] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -708,6 +727,7 @@ export function CaseFeedback({
           onExit={onExit}
           onReset={onReset}
           mode={mode}
+          guestMode={guestMode}
         />
       </div>
     </div>
