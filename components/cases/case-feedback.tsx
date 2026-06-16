@@ -132,6 +132,7 @@ interface CaseFeedbackProps {
   orderedTests: any[]
   onExit: () => void
   onReset?: () => void
+  onQuizStart?: () => void
   mode?: 'live' | 'history'
   guestMode?: boolean
 }
@@ -155,13 +156,14 @@ function ProgressHeader({ step, total }: { step: number; total: number }) {
   );
 }
 
-function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, mode, guestMode }: {
+function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, onQuizStart, mode, guestMode }: {
   onPrev: () => void;
   onNext: () => void;
   isFirst: boolean;
   isLast: boolean;
   onExit: () => void;
   onReset?: () => void;
+  onQuizStart?: () => void;
   mode?: 'live' | 'history';
   guestMode?: boolean;
 }) {
@@ -178,6 +180,25 @@ function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, mode, guestMode
 
       {isLast ? (
         <div className="flex flex-col gap-3 items-end">
+          {/* Quiz CTA — only in live mode, not history replay */}
+          {onQuizStart && mode !== 'history' && (
+            <div className="w-full p-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-amber-400" />
+                  Strengthen Your Weak Areas
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">5 personalized NEET PG questions targeting your knowledge gaps</p>
+              </div>
+              <Button
+                onClick={onQuizStart}
+                size="sm"
+                className="rounded-full bg-white hover:bg-slate-100 text-slate-900 px-5 flex-shrink-0 shadow-sm font-semibold gap-1.5"
+              >
+                Take Quiz <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          )}
           {guestMode && (
             <div className="w-full p-4 rounded-xl bg-gradient-to-r from-brand-50 to-cyan-50 border border-brand-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="min-w-0">
@@ -304,6 +325,7 @@ export function CaseFeedback({
   orderedTests, 
   onExit, 
   onReset,
+  onQuizStart,
   mode = 'live',
   guestMode = false
 }: CaseFeedbackProps) {
@@ -726,6 +748,7 @@ export function CaseFeedback({
           isLast={step === totalSteps - 1}
           onExit={onExit}
           onReset={onReset}
+          onQuizStart={onQuizStart}
           mode={mode}
           guestMode={guestMode}
         />

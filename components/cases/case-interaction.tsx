@@ -7,6 +7,7 @@ import { AIPatientChat } from "./ai-patient-chat"
 import { TestOrdering } from "./test-ordering"
 import { DiagnosisSubmission } from "./diagnosis-submission"
 import { CaseFeedback } from "./case-feedback"
+import { CaseQuiz } from "./case-quiz"
 import { CaseSidebar } from "./case-sidebar"
 import { evaluateCase } from "@/app/actions/evaluate"
 import { extractHistoryFacts } from "@/lib/extract-history-facts"
@@ -148,6 +149,9 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
   const [softWarning, setSoftWarning] = useState<string | null>(null)
   const [adaptiveNudge, setAdaptiveNudge] = useState<string | null>(null)
   const [isEvaluating, setIsEvaluating] = useState(false)
+  const [showQuiz, setShowQuiz] = useState(false)
+  const [quizData, setQuizData] = useState<any>(null)
+  const quizPromiseRef = useRef<Promise<any> | null>(null)
 
   // ─── Timer refs (not state — avoids re-renders and persists correctly) ──
   // sessionStartRef: when THIS page load began (reset on every mount)
@@ -174,6 +178,13 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
         if (parsed.diagnosisSubmitted) setDiagnosisSubmitted(parsed.diagnosisSubmitted)
         if (parsed.feedback) setFeedback(parsed.feedback)
         if (parsed.historyGathered) setHistoryGathered(parsed.historyGathered)
+        // Restore quiz state
+        if (parsed.showQuiz) setShowQuiz(parsed.showQuiz)
+        if (parsed.quizData) {
+          setQuizData(parsed.quizData)
+          // Re-create a resolved promise from stored data so CaseQuiz loads instantly
+          quizPromiseRef.current = Promise.resolve(parsed.quizData)
+        }
         // Restore cumulative elapsed seconds from previous sessions.
         // sessionStartRef resets to now, so we only count NEW time from this visit.
         if (typeof parsed.elapsedSeconds === "number") {
@@ -226,13 +237,15 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
           feedback,
           elapsedSeconds: currentElapsed,
           historyGathered,
+          showQuiz,
+          quizData,
           lastSaved: new Date().toISOString(),
         })
       )
     } catch (e) {
       console.error("Failed to save case progress", e)
     }
-  }, [activeTab, orderedTests, testResults, chatHistory, diagnosisSubmitted, feedback, historyGathered, isInitialized, STORAGE_KEY])
+  }, [activeTab, orderedTests, testResults, chatHistory, diagnosisSubmitted, feedback, historyGathered, showQuiz, quizData, isInitialized, STORAGE_KEY])
 
   // ─── Coverage & nudge ───────────────────────────────────────────────────
   const coverage = computeHistoryCoverage(chatHistory)
@@ -317,6 +330,30 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
       const sanitizedOrderedTests = orderedTests.map(({ icon, ...rest }) => rest)
       const aiFeedback = await evaluateCase(diagnosis, sanitizedOrderedTests, chatHistory, caseData, timeTakenSeconds, guestId)
       setFeedback(aiFeedback)
+
+      // ── Background quiz pre-generation ──────────────────────────────────
+      // Fire immediately after evaluation — quiz will be ready by the time
+      // the student finishes reading feedback (typically 1-3 minutes).
+      const testNames = sanitizedOrderedTests.map((t: any) => t.name || t.id || '')
+      quizPromiseRef.current = fetch('/api/quiz/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feedback: aiFeedback,
+          caseData,
+          orderedTestNames: testNames,
+        }),
+      })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('Quiz generation failed')))
+        .then(data => {
+          // Capture resolved data for localStorage persistence
+          setQuizData(data)
+          return data
+        })
+        .catch(err => {
+          console.error('Background quiz generation failed:', err)
+          return { questions: [], knowledgeGaps: [] }
+        })
     } catch (error) {
       console.error("Evaluation failed", error)
       setFeedback({
@@ -354,6 +391,46 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
     }
   }
 
+  // ─── Quiz screen ──────────────────────────────────────────────────────────
+  if (diagnosisSubmitted && feedback && showQuiz) {
+    const caseIdForSave = (caseData as any).id || caseData.patient.name.toLowerCase().replace(/\s+/g, "-")
+    const caseTitle = caseData.displayTitle || caseData.title || caseData.patient?.name || 'Case'
+    return (
+      <CaseQuiz
+        quizPromise={quizPromiseRef.current}
+        caseData={caseData}
+        caseScore={feedback.score || 0}
+        caseTitle={caseTitle}
+        onComplete={async (results) => {
+          // Persist quiz results via API route (NOT server action)
+          // Server actions trigger Next.js router cache revalidation which
+          // remounts the page and resets showQuiz state.
+          try {
+            await fetch('/api/quiz/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ caseId: caseIdForSave, quizResults: results }),
+            })
+          } catch (e) {
+            console.error('Failed to save quiz results:', e)
+          }
+        }}
+        onSkip={() => setShowQuiz(false)}
+        onExit={onExit}
+        onViewFeedback={() => setShowQuiz(false)}
+        onReset={() => {
+          try {
+            localStorage.removeItem(STORAGE_KEY)
+            window.location.reload()
+          } catch {
+            window.location.reload()
+          }
+        }}
+        guestMode={!!guestId}
+      />
+    )
+  }
+
   // ─── Feedback screen ─────────────────────────────────────────────────────
   if (diagnosisSubmitted && feedback) {
     return (
@@ -370,6 +447,7 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
             window.location.reload()
           }
         }}
+        onQuizStart={() => setShowQuiz(true)}
         guestMode={!!guestId}
       />
     )
