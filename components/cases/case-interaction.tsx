@@ -332,10 +332,12 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
       setFeedback(aiFeedback)
 
       // ── Background quiz pre-generation ──────────────────────────────────
-      // Fire immediately after evaluation — quiz will be ready by the time
-      // the student finishes reading feedback (typically 1-3 minutes).
+      // Fire 3s after evaluation completes — avoids Groq rate limits since
+      // both eval and quiz use the same API key and model.
       const testNames = sanitizedOrderedTests.map((t: any) => t.name || t.id || '')
-      quizPromiseRef.current = fetch('/api/quiz/generate', {
+      const quizAbort = new AbortController()
+      const quizTimeout = setTimeout(() => quizAbort.abort(), 45_000) // 45s safety net
+      quizPromiseRef.current = new Promise(resolve => setTimeout(resolve, 3000)).then(() => fetch('/api/quiz/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -343,17 +345,20 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
           caseData,
           orderedTestNames: testNames,
         }),
+        signal: quizAbort.signal,
       })
-        .then(r => r.ok ? r.json() : Promise.reject(new Error('Quiz generation failed')))
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(`Quiz API returned ${r.status}`)))
         .then(data => {
+          clearTimeout(quizTimeout)
           // Capture resolved data for localStorage persistence
           setQuizData(data)
           return data
         })
         .catch(err => {
+          clearTimeout(quizTimeout)
           console.error('Background quiz generation failed:', err)
           return { questions: [], knowledgeGaps: [] }
-        })
+        }))
     } catch (error) {
       console.error("Evaluation failed", error)
       setFeedback({
