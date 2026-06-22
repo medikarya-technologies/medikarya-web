@@ -325,20 +325,24 @@ export class QuizGenerator {
 
         // Adjust to hit exactly totalQuestions
         while (allocated > totalQuestions) {
-            // Remove from lowest-priority gap that has > 1 question
+            let trimmed = false;
+            // First pass: remove from lowest-priority gap that has > 1 question
             for (let i = gaps.length - 1; i >= 0; i--) {
                 if (gaps[i].questionCount > 1) {
                     gaps[i].questionCount--;
                     allocated--;
+                    trimmed = true;
                     break;
                 }
             }
-            // Safety: if all gaps have 1 question and still over, remove from last
-            if (allocated > totalQuestions) {
-                const last = gaps[gaps.length - 1];
-                if (last.questionCount > 0) {
-                    last.questionCount--;
-                    allocated--;
+            // Second pass: if all gaps have exactly 1, remove from lowest-priority gap
+            if (!trimmed) {
+                for (let i = gaps.length - 1; i >= 0; i--) {
+                    if (gaps[i].questionCount > 0) {
+                        gaps[i].questionCount--;
+                        allocated--;
+                        break;
+                    }
                 }
             }
         }
@@ -386,7 +390,15 @@ export class QuizGenerator {
         // Student's mistakes for distractor generation
         const studentMistakes: string[] = [];
         if (!feedback.isCorrect && feedback.studentDiagnosis) {
-            studentMistakes.push(`Student's wrong diagnosis: "${feedback.studentDiagnosis}" (correct: "${feedback.correctDiagnosis}")`);
+            const diag = feedback.studentDiagnosis.trim();
+            // Only include if it looks like a real medical term:
+            // Must have 3+ chars AND either contain a space (multi-word) or look medical
+            const looksValid = diag.length >= 3 && (diag.includes(' ') || /^[a-zA-Z]+[- ][a-zA-Z]+/.test(diag) || /itis|osis|emia|emia|oma|algia|pathy|plasty|ectomy|scopy/i.test(diag));
+            if (looksValid) {
+                studentMistakes.push(`Student's wrong diagnosis: "${diag}" (correct: "${feedback.correctDiagnosis}")`);
+            } else {
+                studentMistakes.push(`Student provided an incorrect/unspecified diagnosis (correct: "${feedback.correctDiagnosis}")`);
+            }
         }
         if (orderedTestNames.length > 0) {
             studentMistakes.push(`Tests student ordered: ${orderedTestNames.join(', ')}`);
@@ -558,20 +570,51 @@ Return STRICTLY valid JSON — no markdown, no extra text, no code fences:
 
             const groq = new Groq({ apiKey });
 
-            const completion = await groq.chat.completions.create({
-                messages: [
-                    { role: "system", content: prompt },
-                    { role: "user", content: "Generate the MCQs now." },
-                ],
-                model: "llama-3.3-70b-versatile",
-                temperature: 0.3,
-                response_format: { type: "json_object" },
-            });
+            // Race the LLM call against a 30-second timeout
+            const timeoutMs = 30_000;
 
-            const content = completion.choices[0]?.message?.content;
+            const doCall = async (useJsonMode: boolean) => {
+                const completionPromise = groq.chat.completions.create({
+                    messages: [
+                        { role: "system", content: prompt },
+                        { role: "user", content: "Generate the MCQs now." },
+                    ],
+                    model: "llama-3.3-70b-versatile",
+                    temperature: 0.3,
+                    ...(useJsonMode ? { response_format: { type: "json_object" as const } } : {}),
+                });
+
+                const timeoutPromise = new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error(`Quiz LLM call timed out after ${timeoutMs}ms`)), timeoutMs)
+                );
+
+                return Promise.race([completionPromise, timeoutPromise]);
+            };
+
+            let content: string | null = null;
+
+            // Attempt 1: with JSON mode
+            try {
+                const completion = await doCall(true);
+                content = completion.choices[0]?.message?.content || null;
+            } catch (firstErr: any) {
+                // Groq json_validate_failed — retry without strict JSON mode
+                console.warn(`QuizGenerator: JSON mode failed (${firstErr.message?.slice(0, 80)}), retrying without JSON mode...`);
+                const completion = await doCall(false);
+                content = completion.choices[0]?.message?.content || null;
+            }
+
             if (!content) throw new Error("Empty LLM response for quiz generation");
 
-            const parsed = JSON.parse(content);
+            // Extract JSON from response (handles markdown code fences)
+            let jsonStr = content;
+            const fenceMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+            if (fenceMatch) jsonStr = fenceMatch[1];
+            // Also try finding raw JSON object
+            const braceMatch = jsonStr.match(/\{[\s\S]*\}/);
+            if (braceMatch) jsonStr = braceMatch[0];
+
+            const parsed = JSON.parse(jsonStr);
             const questions: GeneratedMCQ[] = (parsed.questions || []).map(
                 (q: any, index: number) => ({
                     id: q.id || `q${index + 1}`,
