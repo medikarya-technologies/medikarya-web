@@ -579,7 +579,7 @@ Return STRICTLY valid JSON — no markdown, no extra text, no code fences:
                         { role: "system", content: prompt },
                         { role: "user", content: "Generate the MCQs now." },
                     ],
-                    model: "llama-3.3-70b-versatile",
+                    model: "openai/gpt-oss-120b",
                     temperature: 0.3,
                     ...(useJsonMode ? { response_format: { type: "json_object" as const } } : {}),
                 });
