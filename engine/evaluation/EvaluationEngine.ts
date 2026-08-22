@@ -119,7 +119,7 @@ export class EvaluationEngine {
                     { role: "system", content: systemPrompt },
                     { role: "user", content: "Evaluate this student's performance." },
                 ],
-                model: "llama-3.3-70b-versatile",
+                model: "openai/gpt-oss-120b",
                 temperature: 0.1,
                 response_format: { type: "json_object" },
             });

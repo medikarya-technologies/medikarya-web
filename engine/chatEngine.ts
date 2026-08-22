@@ -50,13 +50,18 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
             const groq = new Groq({ apiKey });
             const result = await groq.chat.completions.create({
                 messages: [{ role: "user", content: prompt }],
-                model: "llama-3.3-70b-versatile",
+                model: "qwen/qwen3.6-27b",
                 temperature: 0.7,
-                max_completion_tokens: 80,
+                max_completion_tokens: 4096,
+                reasoning_format: "hidden",
+                reasoning_effort: "none",
                 stream: false
-            });
+            } as any);
 
             let line = result.choices[0]?.message?.content?.trim() || "";
+            // Strip thinking/reasoning tags if present
+            line = line.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+            line = line.replace(/<think>[\s\S]*/gi, "").trim();
             // Strip any roleplay prefix like "Patient:" or quotes
             line = line.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
             line = line.replace(/^["']|["']$/g, "").trim();
@@ -113,8 +118,9 @@ CRITICAL INSTRUCTIONS:
 - ONLY answer what is asked. NEVER provide a summary of your whole condition unless explicitly asked "Tell me everything".
 - If asked "What happened?", mention only the MOST important symptom (e.g. "He's vomiting"), do not list everything (diarrhea, fever, etc) unless asked specifically about them.
 - Keep answers VERY SHORT (1 sentence).
-- Do not use bullet points.
 - Act like a worried parent/patient, not a medical case report.
+- CLINICAL SAFETY: Do NOT invent, assume, or make up any medical symptoms, clinical facts, lab results, or history not explicitly provided in the PATIENT CONTEXT. If asked about a symptom not mentioned, deny having it naturally (e.g., "No, I haven't had any fever").
+- SOCIAL ROLEPLAY: For non-medical, personal, or conversational questions (e.g., hobbies, daily routine, school allowance), you are encouraged to improvise realistic, natural details in character to keep the conversation realistic.
 
 PATIENT CONTEXT (Use this to answer questions, but do not recite it):
 ${compiledMemory}
@@ -141,16 +147,28 @@ ${compiledMemory}
 
             const chatCompletion = await groq.chat.completions.create({
                 messages,
-                model: "llama-3.3-70b-versatile",
+                model: "qwen/qwen3.6-27b",
                 temperature: 0.4,
-                max_completion_tokens: 120,
+                max_completion_tokens: 4096,
+                reasoning_format: "hidden",
+                reasoning_effort: "none",
                 stream: false
-            });
+            } as any);
 
             let text = chatCompletion.choices[0]?.message?.content?.trim() || "I don't know.";
+            // Strip thinking/reasoning tags if present
+            text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+            text = text.replace(/<think>[\s\S]*/gi, "").trim();
+
+            // Strip prefixes and quotes
+            text = text.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
+            text = text.replace(/^["'“”‘’]|["'“”‘’]$/g, "").trim();
 
             text = text.split("\n")[0].trim();
-            text = text.replace(/^(patient|mother|father|guardian)\s*:\s*/i, "").trim();
+            
+            // Second pass in case prefix/quotes were nested
+            text = text.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
+            text = text.replace(/^["'“”‘’]|["'“”‘’]$/g, "").trim();
 
             const finalResponse = text || "I don't know.";
 
