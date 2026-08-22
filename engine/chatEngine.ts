@@ -50,10 +50,11 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
             const groq = new Groq({ apiKey });
             const result = await groq.chat.completions.create({
                 messages: [{ role: "user", content: prompt }],
-                model: "qwen/qwen3-32b",
+                model: "qwen/qwen3.6-27b",
                 temperature: 0.7,
-                max_completion_tokens: 1024,
+                max_completion_tokens: 4096,
                 reasoning_format: "hidden",
+                reasoning_effort: "none",
                 stream: false
             } as any);
 
@@ -146,10 +147,11 @@ ${compiledMemory}
 
             const chatCompletion = await groq.chat.completions.create({
                 messages,
-                model: "qwen/qwen3-32b",
+                model: "qwen/qwen3.6-27b",
                 temperature: 0.4,
-                max_completion_tokens: 1024,
+                max_completion_tokens: 4096,
                 reasoning_format: "hidden",
+                reasoning_effort: "none",
                 stream: false
             } as any);
 

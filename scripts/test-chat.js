@@ -1,45 +1,37 @@
 const { loadEnvConfig } = require('@next/env');
 loadEnvConfig(process.cwd());
 const { Groq } = require("groq-sdk");
-
-const dummyCase = {
-    id: "migraine-case",
-    patient: { name: "Alex" },
-    patient_text_brief: "You are Alex, a 20-year-old college student experiencing severe, throbbing left-sided headaches for 3 months, worse this time. You feel nauseous and sensitive to light.",
-    patient_facts: {
-        "Onset": "3 months ago, but this episode started 2 days ago and is much worse",
-        "Location": "Left-sided throbbing pain",
-        "Associated symptoms": "Nausea, flashes of light before pain, light sensitivity"
-    },
-    ai_role: {
-        speaker: "patient",
-        first_person_description: "Alex, an anxious college student"
-    },
-    ai_examples: [
-        { doctor: "Hello, what brings you here?", patient: "Doctor, my head has been pounding since yesterday and I can't stand the light." }
-    ]
-};
+const fs = require('fs');
+const path = require('path');
 
 async function testChat() {
     const apiKey = process.env.GROQ_API_KEY;
     const groq = new Groq({ apiKey });
 
-    // Let's build patient memory
-    const facts = Object.entries(dummyCase.patient_facts || {})
-        .map(([k, v]) => `${k}: ${v}`)
+    const filePath = path.join(__dirname, '../data/cases/non-toxic-nodular-goitre-neck-swelling.json');
+    const rawData = fs.readFileSync(filePath, 'utf-8');
+    const caseData = JSON.parse(rawData);
+
+    const facts = Object.entries(caseData.patient_facts || {})
+        .map(([k, v]) => {
+            if (typeof v === 'object' && v !== null) {
+                return `${k}:\n${JSON.stringify(v, null, 2)}`;
+            }
+            return `${k}: ${v}`;
+        })
         .join("\n");
 
-    const examples = (dummyCase.ai_examples || [])
+    const examples = (caseData.ai_examples || [])
         .map(ex => `"${ex.patient}"`)
         .join("\n");
 
-    const role = `You are speaking as: Alex, an anxious college student`;
+    const role = `You are speaking as: ${caseData.ai_role.first_person_description}`;
 
     const compiledMemory = `
 ${role}
 
 PATIENT NARRATIVE:
-${dummyCase.patient_text_brief}
+${caseData.patient_text_brief}
 
 KNOWN MEDICAL DETAILS:
 ${facts}
@@ -56,9 +48,9 @@ CRITICAL INSTRUCTIONS:
 - ONLY answer what is asked. NEVER provide a summary of your whole condition unless explicitly asked "Tell me everything".
 - If asked "What happened?", mention only the MOST important symptom (e.g. "He's vomiting"), do not list everything (diarrhea, fever, etc) unless asked specifically about them.
 - Keep answers VERY SHORT (1 sentence).
-- Do not use bullet points.
 - Act like a worried parent/patient, not a medical case report.
-- DO NOT invent, assume, or make up any facts, symptoms, or medical details not explicitly provided in the PATIENT CONTEXT. If asked about something not mentioned in the context, say you don't know, don't remember, or haven't checked.
+- CLINICAL SAFETY: Do NOT invent, assume, or make up any medical symptoms, clinical facts, lab results, or history not explicitly provided in the PATIENT CONTEXT. If asked about a symptom not mentioned, deny having it naturally (e.g., "No, I haven't had any fever").
+- SOCIAL ROLEPLAY: For non-medical, personal, or conversational questions (e.g., hobbies, daily routine, school allowance), you are encouraged to improvise realistic, natural details in character to keep the conversation realistic.
 
 PATIENT CONTEXT (Use this to answer questions, but do not recite it):
 ${compiledMemory}
@@ -73,17 +65,18 @@ ${compiledMemory}
     try {
         const chatCompletion = await groq.chat.completions.create({
             messages,
-            model: "qwen/qwen3-32b",
+            model: "qwen/qwen3.6-27b",
             temperature: 0.4,
-            max_completion_tokens: 1024, // Let's increase this!
-            reasoning_format: "hidden", // Hide reasoning so we only get the clean output!
+            max_completion_tokens: 4096,
+            reasoning_format: "hidden", // Hide reasoning
+            reasoning_effort: "none", // Set reasoning effort to none!
             stream: false
         });
 
-        console.log("\nRAW LLM Output with hidden reasoning:");
+        console.log("\nRAW LLM Output with reasoning_effort: low:");
         console.log(JSON.stringify(chatCompletion.choices[0]?.message?.content));
     } catch (e) {
-        console.error("Failed with reasoning_format: hidden", e.message);
+        console.error("Failed", e.message);
     }
 }
 

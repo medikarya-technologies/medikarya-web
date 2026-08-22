@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils"
 import { motion, useScroll, useTransform, useMotionTemplate, useMotionValue, AnimatePresence, useReducedMotion } from "framer-motion"
 import { useRef, MouseEvent, useState } from "react"
-import { Activity, CheckCircle, MessageSquare, ArrowRight, User } from "lucide-react"
+import { Activity, CheckCircle, MessageSquare, ArrowRight, User, BookOpen, HelpCircle } from "lucide-react"
 
 export default function FeaturesBento() {
     const shouldReduceMotion = useReducedMotion()
@@ -220,6 +220,12 @@ export default function FeaturesBento() {
                         </div>
                     </div>
 
+                    {/* BENTO 3: Personalized MCQ Quiz Card */}
+                    <MockQuizCard />
+
+                    {/* BENTO 4: Curriculum-Aligned Case Library Card */}
+                    <CaseLibraryCard />
+
                 </div>
             </div>
         </section>
@@ -343,7 +349,7 @@ function InteractivePatientCard() {
                                                 transition={{ delay: 0.5 }}
                                                 className="inline-flex items-center gap-1.5 bg-emerald-100/50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest self-start"
                                             >
-                                                <CheckCircle className="w-3 h-3" />
+                                                <CheckCircle className="w-3.5 h-3.5" />
                                                 Clinical Insight Unlocked
                                             </motion.div>
                                         </div>
@@ -373,6 +379,107 @@ function InteractivePatientCard() {
                         {status === "success" ? "You identified the radiation pattern." : "Dynamic conversations with real patients."}
                     </p>
                 </div>
+            </div>
+        </div>
+    )
+}
+
+function MockQuizCard() {
+    const [selected, setSelected] = useState<number | null>(null)
+
+    return (
+        <div className="md:col-span-1 min-h-[480px] rounded-[2rem] bg-indigo-50/50 border border-indigo-100 p-2 shadow-lg relative overflow-hidden group hover:border-indigo-200 transition-all">
+            <div className="h-full w-full bg-white rounded-[1.5rem] border border-white/50 overflow-hidden flex flex-col justify-between shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
+                
+                {/* Content Area */}
+                <div className="p-8 flex-1 flex flex-col justify-start relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2.5 bg-indigo-50 rounded-xl border border-indigo-100 shadow-sm">
+                            <HelpCircle className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 tracking-tight">Adaptive MCQs</h3>
+                    </div>
+                    <p className="text-slate-600 text-sm leading-relaxed mb-6">
+                        Whenever you make a mistake in a case, our generator maps your diagnostic gaps and drafts progressive questions to reinforce the knowledge.
+                    </p>
+                </div>
+
+                {/* Mock Quiz UI */}
+                <div className="px-6 pb-8 bg-slate-50 border-t border-slate-100 p-6 flex flex-col gap-3">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Dynamic Assessment</div>
+                    <div className="text-xs font-semibold text-slate-800 leading-snug">
+                        Which of the following is the most appropriate next step for an inferior wall MI?
+                    </div>
+                    
+                    <div className="flex flex-col gap-2">
+                        {[
+                            { id: 1, text: "Prescribe oral NSAIDs", correct: false },
+                            { id: 2, text: "Emergent coronary angiography", correct: true },
+                            { id: 3, text: "Observe in wards for 24h", correct: false }
+                        ].map((opt) => (
+                            <button
+                                key={opt.id}
+                                onClick={() => setSelected(opt.id)}
+                                className={cn(
+                                    "w-full text-left p-2.5 rounded-lg text-xs border transition-all duration-200 flex items-center justify-between",
+                                    selected === opt.id
+                                        ? opt.correct
+                                            ? "border-emerald-200 bg-emerald-50 text-emerald-800 font-medium"
+                                            : "border-red-200 bg-red-50 text-red-700"
+                                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                                    )}
+                            >
+                                <span>{opt.text}</span>
+                                {selected === opt.id && (
+                                    opt.correct ? (
+                                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    ) : (
+                                        <span className="text-[10px] font-bold text-red-500 uppercase">Incorrect</span>
+                                    )
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    )
+}
+
+function CaseLibraryCard() {
+    return (
+        <div className="md:col-span-2 min-h-[480px] rounded-[2rem] bg-slate-100 border border-slate-200 p-2 shadow-lg relative overflow-hidden group hover:border-slate-300 transition-all">
+            <div className="h-full w-full bg-white rounded-[1.5rem] border border-white/50 overflow-hidden flex flex-col justify-between shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                
+                {/* Text Section */}
+                <div className="p-8 md:p-10 flex-1 flex flex-col justify-center relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
+                            <BookOpen className="w-5 h-5 text-slate-700" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 tracking-tight">Syllabus-Aligned Library</h3>
+                    </div>
+                    <p className="text-slate-600 text-sm md:text-base leading-relaxed mb-6 max-w-xl">
+                        Practice real-world clinical cases mapped to the standard MBBS curriculum. Diagnose and manage conditions across core clinical departments:
+                    </p>
+                    
+                    {/* Departement Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
+                        {[
+                            { name: "Pediatrics", desc: "Neonatal Jaundice, Dehydration", color: "from-blue-500/10 to-cyan-500/10 text-blue-800 border-blue-200" },
+                            { name: "Obstetrics & Gynecology", desc: "Pregnancy Anemia, Pre-eclampsia", color: "from-rose-500/10 to-pink-500/10 text-rose-800 border-rose-200" },
+                            { name: "General Medicine", desc: "Severe Migraine, Chest Pain", color: "from-indigo-500/10 to-violet-500/10 text-indigo-800 border-indigo-200" },
+                            { name: "Gastroenterology", desc: "Viral Gastroenteritis, Colitis", color: "from-emerald-500/10 to-teal-500/10 text-emerald-800 border-emerald-200" }
+                        ].map((dept, idx) => (
+                            <div key={idx} className={cn("p-3 rounded-xl border bg-gradient-to-r flex flex-col gap-1", dept.color)}>
+                                <span className="font-bold text-xs">{dept.name}</span>
+                                <span className="text-[10px] opacity-80 leading-tight">{dept.desc}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
             </div>
         </div>
     )
