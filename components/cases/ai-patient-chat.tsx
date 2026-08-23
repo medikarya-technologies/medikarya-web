@@ -56,10 +56,15 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
 
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
   }, [messages])
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [])
 
   // Reset hint dismissed state when the nudge changes
   useEffect(() => {
@@ -192,10 +197,13 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
       onMessageSent(fallback)
     } finally {
       setIsLoading(false)
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 50)
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -302,9 +310,10 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
         {/* Input row */}
         <div className="flex gap-2 px-3 pb-3">
           <Input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Ask the patient a question…"
             disabled={isLoading}
             className="flex-1 bg-slate-50 border-slate-200 focus:border-brand-300 focus:ring-brand-100 text-sm h-9"
