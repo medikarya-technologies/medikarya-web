@@ -13,7 +13,7 @@
 //   - Difficulty follows a fixed ladder: recall → application → vignette → trap → integration
 //   - Student's actual mistakes are fed to LLM for use as distractors
 
-import { Groq } from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { FinalEvaluationResult } from "./types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -565,44 +565,31 @@ Return STRICTLY valid JSON — no markdown, no extra text, no code fences:
 
     private static async callLLM(prompt: string): Promise<GeneratedMCQ[]> {
         try {
-            const apiKey = process.env.GROQ_API_KEY;
-            if (!apiKey) throw new Error("Missing GROQ_API_KEY");
+            const apiKey = process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
-            const groq = new Groq({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({
+                model: "gemini-3.1-flash-lite",
+                generationConfig: {
+                    temperature: 0.3,
+                    responseMimeType: "application/json",
+                },
+            });
 
             // Race the LLM call against a 30-second timeout
             const timeoutMs = 30_000;
 
-            const doCall = async (useJsonMode: boolean) => {
-                const completionPromise = groq.chat.completions.create({
-                    messages: [
-                        { role: "system", content: prompt },
-                        { role: "user", content: "Generate the MCQs now." },
-                    ],
-                    model: "openai/gpt-oss-120b",
-                    temperature: 0.3,
-                    ...(useJsonMode ? { response_format: { type: "json_object" as const } } : {}),
-                });
+            const completionPromise = model.generateContent(
+                `${prompt}\n\nGenerate the MCQs now.`
+            );
 
-                const timeoutPromise = new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error(`Quiz LLM call timed out after ${timeoutMs}ms`)), timeoutMs)
-                );
+            const timeoutPromise = new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error(`Quiz LLM call timed out after ${timeoutMs}ms`)), timeoutMs)
+            );
 
-                return Promise.race([completionPromise, timeoutPromise]);
-            };
-
-            let content: string | null = null;
-
-            // Attempt 1: with JSON mode
-            try {
-                const completion = await doCall(true);
-                content = completion.choices[0]?.message?.content || null;
-            } catch (firstErr: any) {
-                // Groq json_validate_failed — retry without strict JSON mode
-                console.warn(`QuizGenerator: JSON mode failed (${firstErr.message?.slice(0, 80)}), retrying without JSON mode...`);
-                const completion = await doCall(false);
-                content = completion.choices[0]?.message?.content || null;
-            }
+            const result = await Promise.race([completionPromise, timeoutPromise]);
+            const content = result.response.text();
 
             if (!content) throw new Error("Empty LLM response for quiz generation");
 

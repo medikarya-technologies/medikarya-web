@@ -10,7 +10,7 @@
 //                                               missedRedFlags (semantic)
 //   Layer 4: Red Flag Resolver      → tiered penalty (full/partial/none)
 
-import { Groq } from "groq-sdk";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { IntentExtractor } from "./IntentExtractor";
 import { DeterministicScorer } from "./DeterministicScorer";
 import { ReasoningPromptBuilder } from "./ReasoningPromptBuilder";
@@ -97,10 +97,17 @@ export class EvaluationEngine {
 
         let llmResult: LLMReasoningResult;
         try {
-            const apiKey = process.env.GROQ_API_KEY;
-            if (!apiKey) throw new Error("Missing GROQ_API_KEY");
+            const apiKey = process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
-            const groq = new Groq({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({
+                model: "gemini-3.8-flash",
+                generationConfig: {
+                    temperature: 0.1,
+                    responseMimeType: "application/json",
+                },
+            });
 
             const systemPrompt = ReasoningPromptBuilder.buildPrompt({
                 extracted,
@@ -114,17 +121,11 @@ export class EvaluationEngine {
                 caseData,
             });
 
-            const completion = await groq.chat.completions.create({
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: "Evaluate this student's performance." },
-                ],
-                model: "openai/gpt-oss-120b",
-                temperature: 0.1,
-                response_format: { type: "json_object" },
-            });
+            const result = await model.generateContent(
+                `${systemPrompt}\n\nEvaluate this student's performance. Return a JSON object with keys: reasoningScore, historyQualityScore, diagnosisScore, managementScore, missedRedFlags (array), feedback (object with strengths and improvements arrays).`
+            );
 
-            const content = completion.choices[0]?.message?.content;
+            const content = result.response.text();
             if (!content) throw new Error("Empty LLM response");
 
             const parsed = JSON.parse(content) as any;
