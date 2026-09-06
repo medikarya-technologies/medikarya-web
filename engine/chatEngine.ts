@@ -1,6 +1,6 @@
 import { CaseData } from '../data/cases/index';
 import { CaseResponse } from '../cases/types';
-import { Groq } from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export class ChatEngine {
 
@@ -42,26 +42,16 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
 `.trim();
 
         try {
-            const apiKey = process.env.GROQ_API_KEY;
+            const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) return isGuardian
                 ? `Doctor, please help — something is wrong with my ${caseData.patient.name}.`
                 : "Doctor, I'm not feeling well at all.";
 
-            const groq = new Groq({ apiKey });
-            const result = await groq.chat.completions.create({
-                messages: [{ role: "user", content: prompt }],
-                model: "qwen/qwen3.6-27b",
-                temperature: 0.7,
-                max_completion_tokens: 4096,
-                reasoning_format: "hidden",
-                reasoning_effort: "none",
-                stream: false
-            } as any);
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+            const result = await model.generateContent(prompt);
+            let line = result.response.text().trim();
 
-            let line = result.choices[0]?.message?.content?.trim() || "";
-            // Strip thinking/reasoning tags if present
-            line = line.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-            line = line.replace(/<think>[\s\S]*/gi, "").trim();
             // Strip any roleplay prefix like "Patient:" or quotes
             line = line.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
             line = line.replace(/^["']|["']$/g, "").trim();
@@ -131,44 +121,40 @@ ${compiledMemory}
         let history = this.sessionHistories.get(historyKey) || [];
         history = history.filter(h => h.content?.trim());
 
-        const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-            { role: "system", content: systemPrompt },
-            ...history.map(msg => ({ role: msg.role, content: msg.content })),
-            { role: "user", content: message }
-        ];
-
         try {
-            const apiKey = process.env.GROQ_API_KEY;
+            const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) {
-                return { error: "Missing GROQ_API_KEY", status: 500 };
+                return { error: "Missing GEMINI_API_KEY", status: 500 };
             }
 
-            const groq = new Groq({ apiKey });
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({
+                model: "gemini-3.1-flash-lite",
+                systemInstruction: systemPrompt,
+            });
 
-            const chatCompletion = await groq.chat.completions.create({
-                messages,
-                model: "qwen/qwen3.6-27b",
-                temperature: 0.4,
-                max_completion_tokens: 4096,
-                reasoning_format: "hidden",
-                reasoning_effort: "none",
-                stream: false
-            } as any);
+            // Build Gemini chat history from session history
+            const chatHistory = history.map(msg => ({
+                role: msg.role === "assistant" ? "model" : "user" as "user" | "model",
+                parts: [{ text: msg.content }],
+            }));
 
-            let text = chatCompletion.choices[0]?.message?.content?.trim() || "I don't know.";
-            // Strip thinking/reasoning tags if present
-            text = text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-            text = text.replace(/<think>[\s\S]*/gi, "").trim();
+            const chat = model.startChat({
+                history: chatHistory,
+                generationConfig: { temperature: 0.4, maxOutputTokens: 256 },
+            });
+
+            const result = await chat.sendMessage(message);
+            let text = result.response.text().trim() || "I don't know.";
 
             // Strip prefixes and quotes
             text = text.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
-            text = text.replace(/^["'“”‘’]|["'“”‘’]$/g, "").trim();
-
+            text = text.replace(/^["'""'']|["'""'']$/g, "").trim();
             text = text.split("\n")[0].trim();
-            
+
             // Second pass in case prefix/quotes were nested
             text = text.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
-            text = text.replace(/^["'“”‘’]|["'“”‘’]$/g, "").trim();
+            text = text.replace(/^["'""'']|["'""'']$/g, "").trim();
 
             const finalResponse = text || "I don't know.";
 
