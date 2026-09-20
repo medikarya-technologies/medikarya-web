@@ -49,7 +49,11 @@ export class ReasoningPromptBuilder {
 
         const evalConfig = caseData.evaluation_config;
         const acceptedDx: string = evalConfig?.diagnosis?.accepted_primary?.join(", ")
-            ?? caseData.patient?.final_diagnosis ?? "N/A";
+            ?? caseData.patient?.final_diagnosis
+            ?? caseData.diagnosis
+            ?? caseData.displayTitle
+            ?? caseData.title
+            ?? "N/A";
         const keywords: string = evalConfig?.diagnosis?.must_include_keywords?.join(", ") ?? "";
 
         // ── Format coverage gaps (NO numeric score) ──────────────────────────

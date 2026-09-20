@@ -17,6 +17,8 @@ import {
   Brain,
   Stethoscope,
   Activity,
+  Droplets,
+  ShieldAlert,
   Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -36,13 +38,17 @@ export function PracticeCases({ initialCases }: { initialCases?: CaseMetadata[] 
 
   // Map case categories to their display names and icons
   const categoryMap = {
-    'Gastroenterology': { id: 'gastroenterology', icon: Stethoscope, description: 'Digestive system and liver disorders' },
+    'Nephrology': { id: 'nephrology', icon: Stethoscope, description: 'Kidney diseases, hypertension, and renal disorders' },
+    'Infectious Disease': { id: 'infectious-disease', icon: ShieldAlert, description: 'Infections, tropical medicine, and communicable diseases' },
     'Cardiology': { id: 'cardiology', icon: Heart, description: 'Heart and cardiovascular system' },
+    'Haematology': { id: 'haematology', icon: Droplets, description: 'Blood disorders, anaemia, and coagulation' },
     'Neurology': { id: 'neurology', icon: Brain, description: 'Nervous system and brain disorders' },
+    'Pediatrics': { id: 'pediatrics', icon: Users, description: 'Medical care of infants, children, and adolescents' },
+    'Obstetrics & Gynecology': { id: 'obstetrics-gynecology', icon: Users, description: 'Maternal, fetal, and reproductive health' },
+    'Internal Medicine': { id: 'internal-medicine', icon: BookOpen, description: 'Adult diseases, endocrinology, and systemic conditions' },
+    'Gastroenterology': { id: 'gastroenterology', icon: Stethoscope, description: 'Digestive system and abdominal disorders' },
     'Pulmonology': { id: 'pulmonology', icon: Activity, description: 'Respiratory system and lungs' },
-    'Emergency Medicine': { id: 'emergency', icon: Stethoscope, description: 'Acute medical conditions' },
-    'General Medicine': { id: 'general', icon: BookOpen, description: 'Common medical conditions' },
-    'Pediatrics': { id: 'pediatrics', icon: Users, description: 'Medical care of infants, children, and adolescents' }
+    'Emergency Medicine': { id: 'emergency', icon: Stethoscope, description: 'Acute and urgent medical conditions' },
   } as const
 
   // Enhance case data with UI-specific properties
@@ -90,7 +96,11 @@ export function PracticeCases({ initialCases }: { initialCases?: CaseMetadata[] 
     const matchesSearch = titleMatch || tagMatch
     
     const matchesCategory = selectedCategory === "all" ||
-      (case_.category && categoryMap[case_.category as keyof typeof categoryMap]?.id === selectedCategory)
+      (case_.category && (
+        categoryMap[case_.category as keyof typeof categoryMap]?.id === selectedCategory ||
+        case_.category.toLowerCase().replace(/[^a-z0-9]/g, '-') === selectedCategory ||
+        case_.category.toLowerCase().includes(selectedCategory)
+      ))
     const matchesDifficulty = selectedDifficulty === "all" ||
       case_.difficulty.toLowerCase() === selectedDifficulty.toLowerCase()
 

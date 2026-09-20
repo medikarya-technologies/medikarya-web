@@ -351,6 +351,16 @@ export function CaseFeedback({
     }
   }, [feedback.score, step]);
 
+  // Resolve correct diagnosis with robust fallback chain
+  const resolvedCorrectDiagnosis =
+    feedback?.correctDiagnosis ||
+    caseData?.evaluation_config?.diagnosis?.accepted_primary?.[0] ||
+    caseData?.patient?.final_diagnosis ||
+    caseData?.diagnosis ||
+    caseData?.displayTitle ||
+    caseData?.title ||
+    "Clinical Diagnosis";
+
   // --- Build Decision Consequence Chain ---
   const consequenceChain: Array<{action: string, effect: string, outcome: string, type: 'success'|'warning'|'danger'}> = [];
 
@@ -358,14 +368,14 @@ export function CaseFeedback({
     if (feedback.isCorrect) {
       consequenceChain.push({
         action: "Synthesised clinical findings accurately",
-        effect: `Correctly identified ${feedback.correctDiagnosis}`,
+        effect: `Correctly identified ${resolvedCorrectDiagnosis}`,
         outcome: "+15 Diagnosis Score",
         type: "success"
       });
     } else {
       consequenceChain.push({
         action: "Misinterpreted clinical findings",
-        effect: `Diagnosed ${feedback.studentDiagnosis || "unknown"} instead of ${feedback.correctDiagnosis}`,
+        effect: `Diagnosed ${feedback.studentDiagnosis || "unknown"} instead of ${resolvedCorrectDiagnosis}`,
         outcome: "0 Diagnosis Score",
         type: "danger"
       });
@@ -470,7 +480,7 @@ export function CaseFeedback({
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
             <p className="text-slate-500 text-sm uppercase tracking-wide font-semibold mb-1">Actual Diagnosis</p>
             <p className="text-xl font-medium text-brand-600 flex items-center gap-2">
-              {feedback.correctDiagnosis}
+              {resolvedCorrectDiagnosis}
               {feedback.isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
             </p>
           </div>

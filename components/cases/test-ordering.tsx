@@ -72,13 +72,15 @@ export function TestOrdering({
   }, [orderedTests])
 
   useEffect(() => {
-    if (!caseData?.patient?.investigations) return
+    if (!caseData?.patient?.investigations && !caseData?.tests) return
 
     const tests: any[] = []
-    const investigations = caseData.patient.investigations
+    const investigations = caseData?.patient?.investigations || {}
 
     const sourceTests =
-      investigations.tests && investigations.tests.length > 0
+      caseData?.tests && caseData.tests.length > 0
+        ? caseData.tests
+        : investigations.tests && investigations.tests.length > 0
         ? investigations.tests
         : investigations.allowed_tests || []
 
@@ -90,36 +92,51 @@ export function TestOrdering({
         if (typeof testItem === "string") {
           testName = testItem
         } else {
-          testName = testItem.name
+          testName = testItem.name || ""
           const { name, ...rest } = testItem
           extraProps = rest
         }
 
-        let category = "laboratory"
+        let category = extraProps.category?.toLowerCase() || "laboratory"
         let icon = FlaskConical
-        let duration = "2–4 hrs"
+        let duration = extraProps.duration || "2–4 hrs"
 
-        if (testName.toLowerCase().includes("microscopy") || testName.toLowerCase().includes("iem")) {
+        const lowerName = testName.toLowerCase()
+        if (lowerName.includes("microscopy") || lowerName.includes("iem")) {
           icon = Scan
-        } else if (testName.toLowerCase().includes("elisa")) {
+        } else if (lowerName.includes("elisa")) {
           icon = Droplets
         } else if (
-          testName.toLowerCase().includes("x-ray") ||
-          testName.toLowerCase().includes("ct ") ||
-          testName.toLowerCase().includes("ultrasound")
+          lowerName.includes("x-ray") ||
+          lowerName.includes("ct ") ||
+          lowerName.includes("ultrasound") ||
+          lowerName.includes("echocardiogram") ||
+          lowerName.includes("echocardiography")
         ) {
           category = "imaging"
           icon = Scan
+        } else if (lowerName.includes("ecg") || lowerName.includes("electrocardiogram")) {
+          category = "cardiology"
+          icon = Stethoscope
+        }
+
+        // Determine stable test ID
+        let testId = `inv-${index}`
+        if (typeof testItem === "object" && testItem?.id) {
+          testId = testItem.id
+        } else if (caseData?.tests && Array.isArray(caseData.tests)) {
+          const matched = caseData.tests.find((t: any) => t.name?.toLowerCase() === lowerName || t.id?.toLowerCase() === lowerName)
+          if (matched?.id) testId = matched.id
         }
 
         tests.push({
-          id: `inv-${index}`,
           name: testName,
           category,
           icon,
           duration,
           description: testName,
           ...extraProps,
+          id: testId,
         })
       })
     }

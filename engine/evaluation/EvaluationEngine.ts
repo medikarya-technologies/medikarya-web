@@ -234,7 +234,12 @@ export class EvaluationEngine {
             finalScore,
             isCorrect,
             studentDiagnosis: studentDx,
-            correctDiagnosis: caseData.patient?.final_diagnosis ?? "",
+            correctDiagnosis: caseData.patient?.final_diagnosis 
+                || caseData.evaluation_config?.diagnosis?.accepted_primary?.[0]
+                || caseData.diagnosis
+                || caseData.displayTitle
+                || caseData.title
+                || "Clinical Diagnosis",
 
             testingScore:    deterministic.testingScore,
             reasoningScore:  llmResult.reasoningScore,

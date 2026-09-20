@@ -31,7 +31,10 @@ export async function POST(request: NextRequest) {
     const correctDiagnosis =
       caseData?.evaluation_config?.diagnosis?.accepted_primary?.[0] ??
       caseData?.patient?.final_diagnosis ??
-      "Not specified"
+      caseData?.diagnosis ??
+      caseData?.displayTitle ??
+      caseData?.title ??
+      "Clinical Diagnosis"
 
     const prompt = `You are an expert medical educator evaluating a student's clinical case performance.
 

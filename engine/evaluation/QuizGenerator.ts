@@ -548,11 +548,15 @@ Return STRICTLY valid JSON — no markdown, no extra text, no code fences:
 
     private static async generateHighPerformerQuiz(caseData: any): Promise<QuizGenerationResult> {
         const patient = caseData.patient || {};
+        const diagName = patient.final_diagnosis 
+            || caseData.evaluation_config?.diagnosis?.accepted_primary?.[0]
+            || caseData.title 
+            || 'clinical';
         const prompt = this.buildHighPerformerPrompt(caseData);
         const questions = await this.callLLM(prompt);
 
         const challengeGap: KnowledgeGap = {
-            concept: `Advanced ${patient.final_diagnosis || 'clinical'} concepts`,
+            concept: `Advanced ${diagName} concepts`,
             relatedWeaknesses: ['High performer challenge'],
             priority: 10,
             questionCount: 3,

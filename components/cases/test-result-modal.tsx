@@ -23,6 +23,7 @@ import {
   X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ECGStrip } from "./ecg-strip"
 
 interface TestResultModalProps {
   isOpen: boolean
@@ -108,21 +109,44 @@ export function TestResultModal({ isOpen, onClose, test, result }: TestResultMod
               <p className="text-brand-800 text-xs sm:text-sm leading-relaxed">{result.summary || result.results?.summary || "Results pending..."}</p>
             </div>
 
-            {/* Test Image */}
-            {test.imageUrl && (
-              <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
-                <div className="p-2 sm:p-3 border-b border-slate-200">
+            {/* ECG Strip — rendered only when ecg_parameters are present */}
+            {(result.ecg_parameters || result.results?.ecg_parameters) && (
+              <ECGStrip
+                params={result.ecg_parameters ?? result.results?.ecg_parameters}
+                criticalFindings={result.criticalFindings ?? result.results?.criticalFindings}
+              />
+            )}
+
+            {/* Test Image / Visual Findings */}
+            {Boolean(
+              test?.imageUrl ||
+              test?.image ||
+              result?.imageUrl ||
+              result?.image ||
+              result?.results?.imageUrl ||
+              result?.results?.image ||
+              result?._meta?.imageUrl
+            ) && (
+              <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-900/5">
+                <div className="p-2 sm:p-3 border-b border-slate-200 bg-white">
                   <h3 className="font-semibold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-brand-600" />
                     Microscopy / Imaging Findings
                   </h3>
                 </div>
-                <div className="relative aspect-video w-full bg-black/5">
-                  {/* Use Next.js Image if available, otherwise standard img */}
+                <div className="relative aspect-video w-full bg-black/90 flex items-center justify-center p-2">
                   <img
-                    src={test.imageUrl}
-                    alt={test.name}
-                    className="w-full h-full object-contain"
+                    src={
+                      test?.imageUrl ||
+                      test?.image ||
+                      result?.imageUrl ||
+                      result?.image ||
+                      result?.results?.imageUrl ||
+                      result?.results?.image ||
+                      result?._meta?.imageUrl
+                    }
+                    alt={result?.imageAlt || test?.name || "Medical Imaging"}
+                    className="max-h-[380px] w-auto max-w-full rounded object-contain shadow"
                   />
                 </div>
               </div>

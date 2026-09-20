@@ -26,11 +26,27 @@ export async function POST(request: NextRequest) {
       // Match by test.id — stable, exact, no substring tricks
       const testId: string = test.id
 
-      if (!testId) {
-        console.warn("[generate-result] test.id is missing — cannot look up rule:", test)
-      }
+      let rule = testId ? investigationLogic[testId] : undefined
 
-      const rule = testId ? investigationLogic[testId] : undefined
+      // Fallback: match by test name or slug if testId was inv-X or didn't match directly
+      if (!rule && (test.name || testId)) {
+        const targetName = (test.name || "").toLowerCase().trim()
+        const targetId = (testId || "").toLowerCase().trim()
+        const matchKey = Object.keys(investigationLogic).find((k) => {
+          const kLower = k.toLowerCase().trim()
+          const entry = investigationLogic[k]
+          const entryName = (typeof entry === "object" && entry?._meta?.name ? entry._meta.name : "").toLowerCase().trim()
+          return (
+            kLower === targetId ||
+            kLower === targetName ||
+            entryName === targetName ||
+            (targetName && (kLower.includes(targetName) || targetName.includes(kLower)))
+          )
+        })
+        if (matchKey) {
+          rule = investigationLogic[matchKey]
+        }
+      }
 
       if (rule !== undefined) {
         if (typeof rule === "function") {
@@ -43,7 +59,7 @@ export async function POST(request: NextRequest) {
           results = rule
         }
       } else {
-        console.log(`[generate-result] No module rule for test.id="${testId}" — falling through to mock`)
+        console.log(`[generate-result] No module rule for test.id="${testId}" test.name="${test.name}" — falling through to mock`)
       }
     }
 

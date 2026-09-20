@@ -362,7 +362,13 @@ export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionPr
     } catch (error) {
       console.error("Evaluation failed", error)
       setFeedback({
-        correctDiagnosis: caseData.patient.final_diagnosis,
+        correctDiagnosis:
+          caseData?.patient?.final_diagnosis ||
+          caseData?.evaluation_config?.diagnosis?.accepted_primary?.[0] ||
+          caseData?.diagnosis ||
+          caseData?.displayTitle ||
+          caseData?.title ||
+          "Clinical Diagnosis",
         studentDiagnosis: diagnosis.primaryDiagnosis,
         isCorrect: false,
         score: 0,
