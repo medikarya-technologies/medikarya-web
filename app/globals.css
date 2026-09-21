@@ -65,25 +65,25 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --background: oklch(0.185 0.012 255);
+  --foreground: oklch(0.945 0.006 255);
+  --card: oklch(0.245 0.014 255);
+  --card-foreground: oklch(0.945 0.006 255);
+  --popover: oklch(0.245 0.014 255);
+  --popover-foreground: oklch(0.945 0.006 255);
   --primary: oklch(0.985 0 0);
   --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --secondary: oklch(0.28 0.014 255);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  --muted: oklch(0.28 0.014 255);
+  --muted-foreground: oklch(0.72 0.012 255);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --border: oklch(0.32 0.015 255);
+  --input: oklch(0.32 0.015 255);
+  --ring: oklch(0.5 0.05 240);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -98,22 +98,22 @@
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
   /* Dark Mode Brand (Inverted or Adjusted) - Keeping similar hues but ensuring visibility */
-  --brand-50: oklch(0.12 0.06 240);
-  --brand-100: oklch(0.20 0.08 240);
-  --brand-200: oklch(0.30 0.12 240);
-  --brand-300: oklch(0.40 0.16 240);
-  --brand-400: oklch(0.50 0.18 240);
-  --brand-500: oklch(0.60 0.16 240);
-  --brand-600: oklch(0.70 0.12 240);
-  --brand-700: oklch(0.80 0.08 240);
-  --brand-800: oklch(0.88 0.05 240);
-  --brand-900: oklch(0.94 0.03 240);
-  --brand-950: oklch(0.97 0.01 240);
+  --brand-50: oklch(0.26 0.05 240);
+  --brand-100: oklch(0.3 0.07 240);
+  --brand-200: oklch(0.36 0.09 240);
+  --brand-300: oklch(0.46 0.12 240);
+  --brand-400: oklch(0.7 0.13 240);
+  --brand-500: oklch(0.64 0.16 240);
+  --brand-600: oklch(0.6 0.17 240);
+  --brand-700: oklch(0.8 0.1 240);
+  --brand-800: oklch(0.86 0.07 240);
+  --brand-900: oklch(0.92 0.04 240);
+  --brand-950: oklch(0.96 0.02 240);
 
   /* Dark Mode Accent */
-  --accent-50: oklch(0.12 0.05 190);
-  --accent-100: oklch(0.20 0.07 190);
-  --accent-200: oklch(0.30 0.11 190);
+  --accent-50: oklch(0.26 0.05 190);
+  --accent-100: oklch(0.3 0.07 190);
+  --accent-200: oklch(0.36 0.09 190);
   --accent-300: oklch(0.40 0.15 190);
   --accent-400: oklch(0.50 0.17 190);
   --accent-500: oklch(0.60 0.15 190);
@@ -122,6 +122,41 @@
   --accent-800: oklch(0.88 0.05 190);
   --accent-900: oklch(0.94 0.03 190);
   --accent-950: oklch(0.97 0.01 190);
+
+  /* The encounter tokens, which the redesigned screens are drawn from. Surfaces read darkest to lightest:
+     the desk (the page), the console (rails and top bars), the sheet (cards). The monitor is darker than
+     all of them, so it still reads as a screen. */
+  --color-enc-desk: oklch(0.185 0.012 255);
+  --color-enc-console: oklch(0.215 0.013 255);
+  --color-enc-console-hover: oklch(0.26 0.014 255);
+  --color-enc-sheet: oklch(0.245 0.014 255);
+  --color-enc-line: oklch(0.3 0.014 255);
+  --color-enc-line-strong: oklch(0.36 0.016 255);
+  --color-enc-ink: oklch(0.945 0.006 255);
+  --color-enc-ink-2: oklch(0.77 0.012 255);
+  --color-enc-ink-3: oklch(0.63 0.014 255);
+  --color-enc-fill: oklch(0.5 0.02 255);
+  --color-enc-scrim: oklch(0 0 0);
+
+  --color-enc-scope: oklch(0.14 0.012 255);
+  --color-enc-scope-raised: oklch(0.185 0.013 255);
+  --color-enc-scope-line: oklch(0.26 0.014 255);
+
+  /* status colours are used for text and for fills with white text, so they sit in the middle */
+  --color-enc-ok: oklch(0.66 0.15 155);
+  --color-enc-ok-soft: oklch(0.29 0.05 155);
+  --color-enc-warn: oklch(0.74 0.14 75);
+  --color-enc-warn-soft: oklch(0.31 0.05 80);
+  --color-enc-crit: oklch(0.66 0.2 25);
+  --color-enc-crit-soft: oklch(0.3 0.06 25);
+
+  /* the training panel is already a dark green: a little deeper here so it does not glow */
+  --color-enc-grow: oklch(0.33 0.075 162);
+  --color-enc-grow-line: oklch(0.44 0.07 162);
+
+  --shadow-enc-sheet: 0 1px 2px oklch(0 0 0 / 0.4), 0 0 0 1px oklch(1 0 0 / 0.03);
+  --shadow-enc-lift: 0 4px 14px oklch(0 0 0 / 0.45), 0 0 0 1px oklch(1 0 0 / 0.04);
+  --shadow-enc-dock: 0 -12px 28px -20px oklch(0 0 0 / 0.7);
 }
 
 @theme inline {
@@ -189,6 +224,104 @@
   --color-accent-800: var(--accent-800);
   --color-accent-900: var(--accent-900);
   --color-accent-950: var(--accent-950);
+}
+
+/*
+ * Encounter workspace (the bedside simulation screen).
+ *
+ * Four surfaces, darkest to lightest, so every zone reads as its own thing without
+ * a single decorative colour:
+ *   scope    the patient monitor: the only dark surface, and the only place with channel colours
+ *   console  the chrome around the work: top bar and patient rail
+ *   desk     the working surface behind the content
+ *   sheet    the content itself (white)
+ * One accent (the brand blue) marks what the student does. Green / amber / red are
+ * reserved for clinical status and nothing else.
+ */
+@theme {
+  --color-enc-scope: oklch(0.2 0.014 255);
+  --color-enc-scope-raised: oklch(0.245 0.015 255);
+  --color-enc-scope-line: oklch(0.31 0.015 255);
+  --color-enc-scope-dim: oklch(0.7 0.02 250);
+  --color-enc-ecg: oklch(0.84 0.19 152);
+  --color-enc-spo2: oklch(0.83 0.1 215);
+  --color-enc-rr: oklch(0.87 0.14 95);
+  --color-enc-nibp: oklch(0.96 0.005 250);
+  --color-enc-scope-warn: oklch(0.83 0.15 80);
+  --color-enc-scope-crit: oklch(0.72 0.19 25);
+
+  --color-enc-console: oklch(0.948 0.008 250);
+  --color-enc-console-hover: oklch(0.928 0.01 250);
+  --color-enc-desk: oklch(0.977 0.004 250);
+  --color-enc-sheet: oklch(1 0 0);
+
+  /* The training panel on the dashboard: the student's own progress, on the brand's green (the logo's leaf)
+     instead of the monitor's black. Three channel colours for the numerals, and a band for each case's score. */
+  --color-enc-grow: oklch(0.4 0.09 162);
+  --color-enc-grow-line: oklch(0.52 0.085 162);
+  --color-enc-grow-dim: oklch(0.88 0.05 162);
+  --color-enc-grow-ink: oklch(0.99 0.01 162);
+  --color-enc-grow-a: oklch(0.95 0.16 122);
+
+  --color-enc-line: oklch(0.915 0.008 250);
+  --color-enc-line-strong: oklch(0.865 0.01 250);
+
+  --color-enc-ink: oklch(0.25 0.02 255);
+  --color-enc-ink-2: oklch(0.45 0.02 255);
+  --color-enc-ink-3: oklch(0.58 0.016 255);
+  /* a strong fill that carries white text (a badge, an active chip), and the scrim behind a drawer or a spinner */
+  --color-enc-fill: oklch(0.25 0.02 255);
+  --color-enc-scrim: oklch(0.25 0.02 255);
+
+  --color-enc-ok: oklch(0.52 0.14 155);
+  --color-enc-ok-soft: oklch(0.96 0.03 155);
+  --color-enc-warn: oklch(0.55 0.14 65);
+  --color-enc-warn-soft: oklch(0.97 0.04 88);
+  --color-enc-crit: oklch(0.55 0.21 27);
+  --color-enc-crit-soft: oklch(0.965 0.03 25);
+
+  --shadow-enc-sheet: 0 1px 2px oklch(0.25 0.02 255 / 0.05), 0 0 0 1px oklch(0.25 0.02 255 / 0.02);
+  --shadow-enc-lift: 0 4px 14px oklch(0.25 0.02 255 / 0.09), 0 0 0 1px oklch(0.25 0.02 255 / 0.03);
+  --shadow-enc-dock: 0 -12px 28px -20px oklch(0.25 0.02 255 / 0.35);
+}
+
+@keyframes enc-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.enc-live-dot {
+  animation: enc-live 1.6s ease-in-out infinite;
+}
+
+/* The patient portrait: the chest rises at the real respiratory rate, the eyes blink. */
+@keyframes enc-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(var(--enc-breath, -2px)); }
+}
+
+@keyframes enc-blink {
+  0%, 91%, 100% { transform: scaleY(0); }
+  94.5% { transform: scaleY(1); }
+}
+
+.enc-breathe {
+  animation: enc-breathe var(--enc-breath-period, 4s) ease-in-out infinite;
+}
+
+.enc-blink {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  transform: scaleY(0);
+  animation: enc-blink 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enc-breathe,
+  .enc-blink,
+  .enc-live-dot {
+    animation: none;
+  }
 }
 
 @layer base {
@@ -304,3 +437,131 @@ html {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+/* ── Dark theme for the older screens ────────────────────────────────────────
+   See lib/theme.ts for where dark applies. The quiz, the feedback screens and the classic flow are written
+   in raw Tailwind colours; these lines remap them for dark instead of rewriting those files. */
+.dark {
+  --color-slate-50: oklch(0.235 0.014 255);
+  --color-slate-100: oklch(0.27 0.015 255);
+  --color-slate-200: oklch(0.32 0.016 255);
+  --color-slate-300: oklch(0.4 0.016 255);
+  --color-slate-400: oklch(0.58 0.016 255);
+  --color-slate-500: oklch(0.68 0.016 255);
+  --color-slate-600: oklch(0.76 0.014 255);
+  --color-slate-700: oklch(0.84 0.012 255);
+  --color-slate-800: oklch(0.9 0.01 255);
+  --color-slate-900: oklch(0.95 0.008 255);
+  --color-slate-950: oklch(0.97 0.005 255);
+
+  --color-red-50: oklch(0.27 0.04 25);
+  --color-red-100: oklch(0.31 0.06 25);
+  --color-red-200: oklch(0.38 0.08 25);
+  --color-red-700: oklch(0.8 0.12 25);
+  --color-red-800: oklch(0.86 0.09 25);
+  --color-red-900: oklch(0.91 0.06 25);
+
+  --color-rose-50: oklch(0.27 0.04 15);
+  --color-rose-100: oklch(0.31 0.06 15);
+  --color-rose-200: oklch(0.38 0.08 15);
+  --color-rose-700: oklch(0.8 0.12 15);
+  --color-rose-800: oklch(0.86 0.09 15);
+  --color-rose-900: oklch(0.91 0.06 15);
+
+  --color-orange-50: oklch(0.27 0.04 55);
+  --color-orange-100: oklch(0.31 0.06 55);
+  --color-orange-200: oklch(0.38 0.08 55);
+  --color-orange-700: oklch(0.8 0.12 55);
+  --color-orange-800: oklch(0.86 0.09 55);
+  --color-orange-900: oklch(0.91 0.06 55);
+
+  --color-amber-50: oklch(0.27 0.04 80);
+  --color-amber-100: oklch(0.31 0.06 80);
+  --color-amber-200: oklch(0.38 0.08 80);
+  --color-amber-700: oklch(0.8 0.12 80);
+  --color-amber-800: oklch(0.86 0.09 80);
+  --color-amber-900: oklch(0.91 0.06 80);
+
+  --color-yellow-50: oklch(0.27 0.04 95);
+  --color-yellow-100: oklch(0.31 0.06 95);
+  --color-yellow-200: oklch(0.38 0.08 95);
+  --color-yellow-700: oklch(0.8 0.12 95);
+  --color-yellow-800: oklch(0.86 0.09 95);
+  --color-yellow-900: oklch(0.91 0.06 95);
+
+  --color-green-50: oklch(0.27 0.04 150);
+  --color-green-100: oklch(0.31 0.06 150);
+  --color-green-200: oklch(0.38 0.08 150);
+  --color-green-700: oklch(0.8 0.12 150);
+  --color-green-800: oklch(0.86 0.09 150);
+  --color-green-900: oklch(0.91 0.06 150);
+
+  --color-emerald-50: oklch(0.27 0.04 165);
+  --color-emerald-100: oklch(0.31 0.06 165);
+  --color-emerald-200: oklch(0.38 0.08 165);
+  --color-emerald-700: oklch(0.8 0.12 165);
+  --color-emerald-800: oklch(0.86 0.09 165);
+  --color-emerald-900: oklch(0.91 0.06 165);
+
+  --color-cyan-50: oklch(0.27 0.04 210);
+  --color-cyan-100: oklch(0.31 0.06 210);
+  --color-cyan-200: oklch(0.38 0.08 210);
+  --color-cyan-700: oklch(0.8 0.12 210);
+  --color-cyan-800: oklch(0.86 0.09 210);
+  --color-cyan-900: oklch(0.91 0.06 210);
+
+  --color-blue-50: oklch(0.27 0.04 255);
+  --color-blue-100: oklch(0.31 0.06 255);
+  --color-blue-200: oklch(0.38 0.08 255);
+  --color-blue-700: oklch(0.8 0.12 255);
+  --color-blue-800: oklch(0.86 0.09 255);
+  --color-blue-900: oklch(0.91 0.06 255);
+
+  --color-indigo-50: oklch(0.27 0.04 275);
+  --color-indigo-100: oklch(0.31 0.06 275);
+  --color-indigo-200: oklch(0.38 0.08 275);
+  --color-indigo-700: oklch(0.8 0.12 275);
+  --color-indigo-800: oklch(0.86 0.09 275);
+  --color-indigo-900: oklch(0.91 0.06 275);
+
+  --color-violet-50: oklch(0.27 0.04 295);
+  --color-violet-100: oklch(0.31 0.06 295);
+  --color-violet-200: oklch(0.38 0.08 295);
+  --color-violet-700: oklch(0.8 0.12 295);
+  --color-violet-800: oklch(0.86 0.09 295);
+  --color-violet-900: oklch(0.91 0.06 295);
+
+  --color-purple-50: oklch(0.27 0.04 310);
+  --color-purple-100: oklch(0.31 0.06 310);
+  --color-purple-200: oklch(0.38 0.08 310);
+  --color-purple-700: oklch(0.8 0.12 310);
+  --color-purple-800: oklch(0.86 0.09 310);
+  --color-purple-900: oklch(0.91 0.06 310);
+
+  --color-pink-50: oklch(0.27 0.04 350);
+  --color-pink-100: oklch(0.31 0.06 350);
+  --color-pink-200: oklch(0.38 0.08 350);
+  --color-pink-700: oklch(0.8 0.12 350);
+  --color-pink-800: oklch(0.86 0.09 350);
+  --color-pink-900: oklch(0.91 0.06 350);
+}
+
+/* white surfaces become the sheet, and the two fills that pair a blue with white text keep it readable */
+.dark .bg-white { background-color: var(--color-enc-sheet); }
+.dark .hover\:bg-white:hover { background-color: var(--color-enc-console-hover); }
+.dark .bg-white\/95 { background-color: color-mix(in oklab, var(--color-enc-sheet) 95%, transparent); }
+.dark .bg-white\/90 { background-color: color-mix(in oklab, var(--color-enc-sheet) 90%, transparent); }
+.dark .bg-white\/70 { background-color: color-mix(in oklab, var(--color-enc-sheet) 70%, transparent); }
+.dark .hover\:bg-brand-700:hover,
+.dark .active\:bg-brand-700:active { background-color: oklch(0.66 0.17 240); }
+.dark .to-brand-800 { --tw-gradient-to: oklch(0.42 0.15 240); }
+
+/* The dark slate fills that carry white text (the Continue buttons, the number badges, the result banner) stay
+   dark enough for it: mirrored like the other greys they would turn light, and white on light cannot be read. */
+.dark .bg-slate-900 { background-color: oklch(0.5 0.02 255); }
+.dark .bg-slate-700 { background-color: oklch(0.46 0.02 255); }
+.dark .hover\:bg-slate-800:hover { background-color: oklch(0.56 0.02 255); }
+.dark .border-slate-900 { border-color: oklch(0.5 0.02 255); }
+.dark .from-slate-900 { --tw-gradient-from: oklch(0.32 0.02 255); }
+.dark .via-slate-800 { --tw-gradient-via: oklch(0.36 0.02 255); }
+.dark .to-slate-800 { --tw-gradient-to: oklch(0.36 0.02 255); }
+.dark .to-slate-900 { --tw-gradient-to: oklch(0.32 0.02 255); }

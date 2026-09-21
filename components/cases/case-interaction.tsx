@@ -9,6 +9,9 @@ import { DiagnosisSubmission } from "./diagnosis-submission"
 import { CaseFeedback } from "./case-feedback"
 import { CaseQuiz } from "./case-quiz"
 import { CaseSidebar } from "./case-sidebar"
+import dynamic from "next/dynamic"
+import { isSimulationCase } from "@/lib/simulation/case-schema"
+import type { EncounterTourConfig } from "@/lib/tour/tour-storage"
 import { evaluateCase } from "@/app/actions/evaluate"
 import { extractHistoryFacts } from "@/lib/extract-history-facts"
 import {
@@ -39,7 +42,24 @@ interface CaseInteractionProps {
   caseData: any
   onExit: () => void
   guestId?: string
+  /** Walk the student through the bedside screen (only the simulation encounter has one). */
+  tour?: EncounterTourConfig
 }
+
+// The simulation encounter (real-time engine, 183-test catalog, ECG synthesis,
+// scorer) is only needed for simulation cases. Loading it on demand keeps it out
+// of the first-load bundle of every legacy case and of the public /try page.
+const SimulationInteraction = dynamic(
+  () => import("./simulation-interaction").then((m) => m.SimulationInteraction),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-screen items-center justify-center bg-enc-desk">
+        <p className="animate-pulse text-[14px] font-medium text-enc-ink-2">Preparing clinical environment...</p>
+      </div>
+    ),
+  }
+)
 
 // ─── History Coverage Heuristic ─────────────────────────────────────────────
 function computeHistoryCoverage(chatHistory: any[]): {
@@ -132,7 +152,17 @@ const STEP_META = [
   },
 ]
 
-export function CaseInteraction({ caseData, onExit, guestId }: CaseInteractionProps) {
+/**
+ * Simulation cases (those carrying the simulation core — initial state, event
+ * rules, action consequences) run as a real-time encounter. Every other case
+ * keeps the classic three-step flow below, unchanged.
+ */
+export function CaseInteraction(props: CaseInteractionProps) {
+  if (isSimulationCase(props.caseData)) return <SimulationInteraction {...props} />
+  return <LegacyCaseInteraction {...props} />
+}
+
+function LegacyCaseInteraction({ caseData, onExit, guestId }: CaseInteractionProps) {
   const caseId = (caseData as any).id || caseData.patient.name.toLowerCase().replace(/\s+/g, "-")
   const STORAGE_KEY = `medikarya-case-storage-${caseId}`
 

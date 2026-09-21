@@ -2,37 +2,31 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { getCases } from "@/data/cases";
+import { buildDashboardStats, NO_STATS, summariseAttempts, type CaseProgress, type DashboardStats } from "@/lib/library/case-library";
+import { computeMilestones, type Milestone } from "@/lib/library/milestones";
 
-export async function getDashboardStats() {
+/**
+ * Everything the dashboard home and the profile page need about the signed-in student, in one go: the
+ * numbers, and what they have done on each case. Two small queries (attempts, streak) run alongside the
+ * case list, which is kept for a minute. Names come from that list rather than a third query, and the
+ * per-case progress is read from the same attempts, not a second query for them.
+ */
+export async function getDashboardData(): Promise<{ stats: DashboardStats; progress: Record<string, CaseProgress>; milestones: Milestone[] }> {
+    const empty = { stats: NO_STATS, progress: {}, milestones: [] as Milestone[] };
     try {
         // Always derive userId from the server-side session — never from client input
         const { userId } = await auth();
-        if (!userId) {
-            return {
-                totalXP: 0,
-                casesSolved: 0,
-                streakDays: 0,
-                recentCases: []
-            };
-        }
+        if (!userId) return empty;
 
-        // Run all three DB queries in parallel for faster dashboard loads
-        const [attemptsResult, profileResult, casesResult] = await Promise.all([
+        const [attemptsResult, profileResult, cases] = await Promise.all([
             supabaseServer
                 .from("case_attempts")
                 .select("id, case_id, score, xp_earned, time_taken, created_at")
                 .eq("user_id", userId)
                 .order("created_at", { ascending: false }),
-
-            supabaseServer
-                .from("user_profiles")
-                .select("current_streak")
-                .eq("clerk_user_id", userId)
-                .maybeSingle(),
-
-            supabaseServer
-                .from("cases")
-                .select("id, title"),
+            supabaseServer.from("user_profiles").select("current_streak").eq("clerk_user_id", userId).maybeSingle(),
+            getCases(),
         ]);
 
         if (attemptsResult.error) {
@@ -43,50 +37,20 @@ export async function getDashboardStats() {
             console.error("Error fetching user profile for streak:", profileResult.error);
         }
 
-        const attempts = attemptsResult.data ?? [];
-        const profile = profileResult.data;
-        const casesData = casesResult.data ?? [];
-
-        // Build case title lookup map
-        const caseMap = new Map<string, string>();
-        casesData.forEach(c => caseMap.set(c.id, c.title));
-
-        const stats = {
-            totalXP: 0,
-            casesSolved: 0,
-            streakDays: profile?.current_streak || 0,
-            recentCases: [] as any[]
+        const rows = attemptsResult.data ?? [];
+        const titles = new Map(cases.map((c) => [c.id, c.title]));
+        return {
+            stats: buildDashboardStats(rows, (id) => titles.get(id), profileResult.data?.current_streak || 0),
+            progress: summariseAttempts(rows),
+            milestones: computeMilestones({ attempts: rows, cases: cases.map((c) => ({ id: c.id, category: c.category })) }),
         };
-
-        if (attempts.length === 0) {
-            return stats;
-        }
-
-        // Tally XP and unique cases solved
-        const uniqueCases = new Set<string>();
-        for (const attempt of attempts) {
-            stats.totalXP += attempt.xp_earned || 0;
-            uniqueCases.add(attempt.case_id);
-        }
-        stats.casesSolved = uniqueCases.size;
-
-        // Format recent 5 cases
-        stats.recentCases = attempts.slice(0, 5).map(attempt => {
-            const minutes = Math.floor((attempt.time_taken || 0) / 60);
-            const seconds = (attempt.time_taken || 0) % 60;
-            const timeTakenStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-            return {
-                id: attempt.id,
-                title: caseMap.get(attempt.case_id) || attempt.case_id,
-                score: attempt.score || 0,
-                xpEarned: attempt.xp_earned || 0,
-                timeTaken: timeTakenStr,
-            };
-        });
-
-        return stats;
     } catch (err) {
         console.error("Dashboard stats action failed:", err);
-        return { totalXP: 0, casesSolved: 0, streakDays: 0, recentCases: [] };
+        return empty;
     }
+}
+
+/** Kept for callers that only want the numbers. */
+export async function getDashboardStats(): Promise<DashboardStats> {
+    return (await getDashboardData()).stats;
 }

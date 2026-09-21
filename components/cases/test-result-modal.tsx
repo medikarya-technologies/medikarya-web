@@ -24,15 +24,31 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ECGStrip } from "./ecg-strip"
+import dynamic from "next/dynamic"
+import type { InvestigationOrder } from "@/lib/simulation/case-resolvers"
+
+// Loaded on demand: only simulation cases open the interpret → reveal viewer.
+const SimulationResultView = dynamic(() => import("./simulation-result-view").then((m) => m.SimulationResultView), {
+  ssr: false,
+})
 
 interface TestResultModalProps {
   isOpen: boolean
   onClose: () => void
   test: any
   result: any
+  /**
+   * Simulation cases pass the order instead of a pre-baked result: the viewer
+   * resolves the result from the case + event log, and runs the interpret →
+   * reveal workflow. Must be rendered inside <ClinicalEventProvider>.
+   */
+  simulationOrder?: InvestigationOrder | null
 }
 
-export function TestResultModal({ isOpen, onClose, test, result }: TestResultModalProps) {
+export function TestResultModal({ isOpen, onClose, test, result, simulationOrder }: TestResultModalProps) {
+  if (simulationOrder !== undefined) {
+    return <SimulationResultView order={simulationOrder} open={isOpen} onClose={onClose} />
+  }
   if (!result) return null
 
   const getStatusIcon = (status: string) => {

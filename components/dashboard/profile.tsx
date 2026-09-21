@@ -1,296 +1,131 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+// Who you are on MediKarya. Identity comes from the sign-in (Clerk), which is also where it is edited (the "Manage
+// account" button opens Clerk's own profile). The page is short on purpose: how you are doing lives on the Progress
+// page, and this only says where you stand in one card, with the way there. Nothing here is made up (it used to show
+// fixed figures, level 12, 47 cases, 87%, to everyone).
+//
+// Three cards. On a wide screen the identity card stands on the left, as tall as the other two stacked on the right;
+// below that they sit in a row of two under a full-width identity card, and on a phone in one column.
+
+import Link from "next/link"
+import { ArrowRight, Settings2 } from "lucide-react"
+import { useClerk, useUser } from "@clerk/nextjs"
+import { NO_STATS, summarise, type DashboardStats, type LibraryCase, type ProgressMap } from "@/lib/library/case-library"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  User,
-  Award,
-  Calendar,
-  MapPin,
-  GraduationCap,
-  Briefcase,
-  Edit,
-  Save,
-  Camera,
-  Star,
-  Trophy,
-  TrendingUp,
-  Clock,
-  Target,
-  BookOpen,
-  Activity
-} from "lucide-react"
+import { Eyebrow, Paper } from "@/components/cases/encounter-ui"
+import { ThemeChoice } from "@/components/theme-toggle"
+import { PageContainer, PageHeader, SECONDARY_BUTTON } from "./dashboard-ui"
+import { useDisplayName } from "./use-display-name"
 import { cn } from "@/lib/utils"
-import { useUser } from "@clerk/nextjs" // Import useUser
 
-export function Profile() {
-  const { user, isLoaded, isSignedIn } = useUser();
+interface Props {
+  initialStats?: DashboardStats
+  /** The library, to say how many of its cases have been tried. */
+  cases?: LibraryCase[]
+  progress?: ProgressMap
+  /** Shown instead of the signed-in user's name (the dev preview). */
+  userName?: string
+}
 
-  const userProfile = {
-    name: user?.fullName || "",
-    title: "",
-    email: user?.primaryEmailAddress?.emailAddress || "",
-    phone: user?.primaryPhoneNumber?.phoneNumber || "",
-    location: "",
-    institution: "",
-    graduationYear: "",
-    joinDate: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "",
-    bio: "",
-    stats: {
-      casesCompleted: 47,
-      totalXP: 2840,
-      currentLevel: 12,
-      achievements: 8,
-      studyStreak: 12,
-      avgScore: 87
-    }
-  }
+function Detail({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-[11px] font-semibold tracking-[0.09em] text-enc-ink-3 uppercase">{label}</dt>
+      <dd className="mt-1 text-[14px] break-words text-enc-ink">{children}</dd>
+    </div>
+  )
+}
 
-  const recentActivity = [
-    { id: 1, action: "Completed case", details: "Acute Chest Pain - 45M", time: "2 hours ago", xp: 150 },
-    { id: 2, action: "Earned achievement", details: "Speed Demon", time: "1 day ago", xp: 100 },
-    { id: 3, action: "Completed case", details: "Pediatric Fever - 6F", time: "2 days ago", xp: 120 },
-    { id: 4, action: "Started new streak", details: "7-day streak milestone", time: "5 days ago", xp: 50 }
-  ]
+function Figure({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-[11px] font-semibold tracking-[0.09em] text-enc-ink-3 uppercase">{label}</dt>
+      <dd className="mt-1.5 font-mono text-[20px] leading-none font-medium text-enc-ink tabular-nums">{value}</dd>
+    </div>
+  )
+}
 
-  if (!isLoaded) {
-    return <div className="p-8 text-center">Loading profile...</div>;
-  }
+const OPEN_PROGRESS = "inline-flex items-center gap-1 rounded text-[13px] font-medium text-brand-700 outline-none hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-300"
+
+export function Profile({ initialStats, cases = [], progress = {}, userName }: Props) {
+  const { user } = useUser()
+  const { openUserProfile } = useClerk()
+  const me = useDisplayName(userName)
+
+  const stats: DashboardStats = initialStats ?? NO_STATS
+  const summary = summarise(cases, progress)
+
+  const email = user?.primaryEmailAddress?.emailAddress
+  const phone = user?.primaryPhoneNumber?.phoneNumber
+  const since = user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN", { month: "long", year: "numeric" }) : undefined
 
   return (
-    <div className="p-4 lg:p-8 space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Profile</h1>
-        <p className="text-slate-600 max-w-2xl mx-auto">
-          Manage your personal information and view your learning journey.
-        </p>
+    <PageContainer>
+      <PageHeader
+        eyebrow="Account"
+        title="Profile"
+        description="Who you are on MediKarya."
+        actions={
+          <Button variant="outline" className={cn(SECONDARY_BUTTON)} onClick={() => user && openUserProfile()} disabled={!user}>
+            <Settings2 className="h-4 w-4" strokeWidth={1.9} />
+            Manage account
+          </Button>
+        }
+      />
+
+      <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <Paper className="p-5 sm:p-6 md:col-span-2 xl:col-span-1 xl:row-span-2">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 ring-1 ring-enc-line-strong">
+              <AvatarImage src={me.imageUrl} alt={me.name} />
+              <AvatarFallback className="bg-enc-console text-[20px] font-semibold text-enc-ink-2">{me.initials}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <h2 className="truncate text-[20px] leading-tight font-semibold text-enc-ink">{me.name || "Your name"}</h2>
+              <p className="mt-0.5 text-[13.5px] text-enc-ink-3">Medical student</p>
+            </div>
+          </div>
+          {email || phone || since ? (
+            <dl className="mt-5 grid gap-x-8 gap-y-4 border-t border-enc-line pt-5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-1">
+              {email && <Detail label="Email">{email}</Detail>}
+              {phone && <Detail label="Phone">{phone}</Detail>}
+              {since && <Detail label="Member since">{since}</Detail>}
+            </dl>
+          ) : (
+            <p className="mt-5 border-t border-enc-line pt-5 text-[13.5px] text-enc-ink-3">Your details appear here once you are signed in.</p>
+          )}
+        </Paper>
+
+        <Paper className="p-5">
+          <Eyebrow>Appearance</Eyebrow>
+          <div className="mt-3">
+            <ThemeChoice />
+          </div>
+          <p className="mt-3 text-[13px] leading-relaxed text-enc-ink-3">Dark is easier on the eyes for late-night study. It applies to the dashboard and the cases. System follows your device.</p>
+        </Paper>
+
+        {/* four figures in a row once the card is wide enough, two by two before that */}
+        <Paper className="@container p-5">
+          <div className="flex items-center justify-between gap-3">
+            <Eyebrow>Your record</Eyebrow>
+            <Link href="/dashboard/progress" className={OPEN_PROGRESS}>
+              Open progress <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          </div>
+          {stats.attempts > 0 ? (
+            <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-5 @lg:grid-cols-4">
+              <Figure label="Total XP" value={stats.totalXP.toLocaleString("en-US")} />
+              <Figure label="Cases done" value={summary.total > 0 ? `${summary.attempted} of ${summary.total}` : String(summary.attempted)} />
+              <Figure label="Streak" value={`${stats.streakDays} ${stats.streakDays === 1 ? "day" : "days"}`} />
+              <Figure label="Average score" value={stats.averageScore === null ? "—" : `${Math.round(stats.averageScore)}%`} />
+            </dl>
+          ) : (
+            <p className="mt-3 text-[13.5px] leading-relaxed text-enc-ink-2">You have not finished a case yet. Your XP, streak and skills appear on the Progress page as you go.</p>
+          )}
+        </Paper>
       </div>
-
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Profile Overview */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-            <CardContent className="p-6 text-center space-y-4">
-              <div className="relative mx-auto">
-                <Avatar className="h-24 w-24 mx-auto ring-4 ring-brand-200">
-                  <AvatarImage src={user?.imageUrl || "/placeholder-user.jpg"} alt={userProfile.name} />
-                  <AvatarFallback className="bg-gradient-to-br from-brand-100 to-accent-100 text-slate-600 text-2xl font-semibold">
-                    {userProfile.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  size="sm"
-                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-brand-600 hover:bg-brand-700 p-0"
-                >
-                  <Camera className="h-4 w-4 text-white" />
-                </Button>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">{userProfile.name}</h2>
-                <p className="text-slate-600">{userProfile.title}</p>
-                <Badge className="mt-2 bg-brand-100 text-brand-700">Level {userProfile.stats.currentLevel}</Badge>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">{userProfile.stats.totalXP.toLocaleString()}</div>
-                  <div className="text-xs text-slate-600">Total XP</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-slate-900">{userProfile.stats.achievements}</div>
-                  <div className="text-xs text-slate-600">Achievements</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-slate-900">
-                <Activity className="h-5 w-5 text-brand-600" />
-                Quick Stats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Cases Completed</span>
-                <span className="font-semibold text-slate-900">{userProfile.stats.casesCompleted}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Study Streak</span>
-                <span className="font-semibold text-slate-900">{userProfile.stats.studyStreak} days</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Average Score</span>
-                <span className="font-semibold text-slate-900">{userProfile.stats.avgScore}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-600">Member Since</span>
-                <span className="font-semibold text-slate-900">{userProfile.joinDate}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Profile Details */}
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-white/50 backdrop-blur-sm">
-              <TabsTrigger value="personal">Personal Info</TabsTrigger>
-              <TabsTrigger value="academic">Academic</TabsTrigger>
-              <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="personal" className="space-y-6">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900">
-                    <User className="h-5 w-5 text-brand-600" />
-                    Personal Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input
-                        id="name"
-                        value={userProfile.name}
-                        className="bg-white/50 border-slate-200"
-                        readOnly
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        value={userProfile.email}
-                        className="bg-white/50 border-slate-200"
-                        readOnly
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={userProfile.phone}
-                        className="bg-white/50 border-slate-200"
-                        readOnly
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={userProfile.location}
-                        className="bg-white/50 border-slate-200"
-                        readOnly
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      value={userProfile.bio}
-                      className="bg-white/50 border-slate-200 min-h-[100px]"
-                      readOnly
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="academic" className="space-y-6">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900">
-                    <GraduationCap className="h-5 w-5 text-brand-600" />
-                    Academic Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="institution">Medical Institution</Label>
-                    <Input
-                      id="institution"
-                      value={userProfile.institution}
-                      className="bg-white/50 border-slate-200"
-                      readOnly
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="graduation">Expected Graduation</Label>
-                    <Input
-                      id="graduation"
-                      value={userProfile.graduationYear}
-                      className="bg-white/50 border-slate-200"
-                      readOnly
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-slate-900">{userProfile.stats.casesCompleted}</div>
-                      <div className="text-xs text-slate-600">Cases Completed</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-slate-900">{userProfile.stats.avgScore}%</div>
-                      <div className="text-xs text-slate-600">Average Score</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="activity" className="space-y-6">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900">
-                    <Clock className="h-5 w-5 text-brand-600" />
-                    Recent Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50/80">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center flex-shrink-0">
-                        {activity.action.includes("case") ? (
-                          <BookOpen className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Trophy className="h-4 w-4 text-amber-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium text-slate-900 text-sm">{activity.action}</div>
-                        <div className="text-xs text-slate-600">{activity.details}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs font-medium text-green-600">+{activity.xp} XP</div>
-                        <div className="text-xs text-slate-500">{activity.time}</div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </div>
+    </PageContainer>
   )
 }

@@ -85,13 +85,13 @@ export function InstallPrompt() {
 
   return (
     <>
-      <Button 
-        onClick={handleInstallClick} 
-        variant="outline" 
-        className="w-full justify-start text-brand-700 border-brand-200 bg-brand-50 hover:bg-brand-100 hover:text-brand-800 rounded-xl"
+      <Button
+        onClick={handleInstallClick}
+        variant="outline"
+        className="h-9 w-full justify-start gap-2.5 rounded-lg border-enc-line-strong bg-enc-sheet px-2.5 text-[13px] font-medium text-enc-ink-2 shadow-none hover:bg-enc-console-hover hover:text-enc-ink"
       >
-        <Download className="mr-3 h-4 w-4" />
-        Install App
+        <Download className="h-4 w-4 text-enc-ink-3" strokeWidth={1.9} />
+        Install the app
       </Button>
 
       <Dialog open={showIOSDialog} onOpenChange={setShowIOSDialog}>
@@ -110,7 +110,7 @@ export function InstallPrompt() {
               </div>
               <div className="text-slate-700">
                 <span className="font-semibold block">Step 1</span>
-                Tap the **Share** button at the bottom of your screen.
+                Tap the <strong className="font-semibold">Share</strong> button at the bottom of your screen.
               </div>
             </div>
             
@@ -120,7 +120,7 @@ export function InstallPrompt() {
               </div>
               <div className="text-slate-700">
                 <span className="font-semibold block">Step 2</span>
-                Scroll down and tap **Add to Home Screen**.
+                Scroll down and tap <strong className="font-semibold">Add to Home Screen</strong>.
               </div>
             </div>
           </div>

@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, type ReactNode, type RefObject } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Send, Loader2, User, Mic, MicOff, Lightbulb, X } from "lucide-react"
+import { Send, Loader2, User, Mic, MicOff, Lightbulb, X, ArrowUpRight, CornerDownLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/clarity"
 
@@ -29,6 +29,14 @@ interface AIPatientChatProps {
   chatHistory?: Message[]
   coverage?: HistoryCoverage
   adaptiveNudge?: string | null
+  /**
+   * "bedside" is the encounter workspace's own layout (a transcript on the desk, a docked
+   * composer with the suggested questions above it). The classic layout is unchanged.
+   */
+  variant?: "classic" | "bedside"
+  /** Bedside layout: who is speaking, and their portrait beside each of their lines. */
+  patientName?: string
+  patientAvatar?: ReactNode
 }
 
 // Two icebreaker chips shown only before the student sends their first message
@@ -37,7 +45,7 @@ const ICEBREAKERS = [
   "How long has this been going on?",
 ]
 
-export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, adaptiveNudge }: AIPatientChatProps) {
+export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, adaptiveNudge, variant = "classic", patientName = "Patient", patientAvatar }: AIPatientChatProps) {
   const [openingLoading, setOpeningLoading] = useState(true)
 
   const userMsgCount = (chatHistory || []).filter((m) => m.role === "user").length
@@ -212,6 +220,33 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
 
   const showHint = adaptiveNudge && !hintDismissed
 
+  if (variant === "bedside") {
+    return (
+      <BedsideChatView
+        messages={messages}
+        isLoading={isLoading || openingLoading}
+        input={input}
+        setInput={setInput}
+        onSend={handleSendMessage}
+        onKeyDown={handleKeyDown}
+        showIcebreakers={showIcebreakers}
+        onPick={(question) => {
+          setInput(question)
+          trackEvent("Suggested_Question_Clicked")
+          inputRef.current?.focus()
+        }}
+        hint={showHint ? (adaptiveNudge ?? null) : null}
+        onDismissHint={() => setHintDismissed(true)}
+        isListening={isListening}
+        onToggleListening={toggleListening}
+        inputRef={inputRef}
+        endRef={messagesEndRef}
+        patientName={patientName}
+        patientAvatar={patientAvatar}
+      />
+    )
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0">
 
@@ -337,6 +372,193 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Bedside layout ──────────────────────────────────────────────────────────
+// Two surfaces: the transcript on the desk (patient lines on white paper, yours in the
+// accent tint), and the composer docked below it. The suggested questions live in the
+// dock, labelled, so they read as prompts and never as part of the conversation.
+
+interface BedsideChatViewProps {
+  messages: Message[]
+  isLoading: boolean
+  input: string
+  setInput: (value: string) => void
+  onSend: () => void
+  onKeyDown: (e: React.KeyboardEvent) => void
+  showIcebreakers: boolean
+  onPick: (question: string) => void
+  hint: string | null
+  onDismissHint: () => void
+  isListening: boolean
+  onToggleListening: () => void
+  inputRef: RefObject<HTMLInputElement | null>
+  endRef: RefObject<HTMLDivElement | null>
+  patientName: string
+  patientAvatar?: ReactNode
+}
+
+const clock = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+
+function BedsideChatView({
+  messages,
+  isLoading,
+  input,
+  setInput,
+  onSend,
+  onKeyDown,
+  showIcebreakers,
+  onPick,
+  hint,
+  onDismissHint,
+  isListening,
+  onToggleListening,
+  inputRef,
+  endRef,
+  patientName,
+  patientAvatar,
+}: BedsideChatViewProps) {
+  const avatar = (
+    <div className="mb-0.5 h-8 w-8 shrink-0">
+      {patientAvatar ?? (
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-enc-console text-enc-ink-3">
+          <User className="h-4 w-4" />
+        </span>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-enc-desk">
+      {/* ── Transcript ──────────────────────────────────────────────── */}
+      <div className="min-h-0 flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }} data-lenis-prevent>
+        <div className="mx-auto w-full max-w-[760px] space-y-5 px-5 py-6">
+          {messages.length > 0 && (
+            <div className="flex items-center gap-3 text-[11px] text-enc-ink-3">
+              <span className="h-px flex-1 bg-enc-line-strong" />
+              <span className="font-medium tracking-wide">Interview started {clock(messages[0].timestamp)}</span>
+              <span className="h-px flex-1 bg-enc-line-strong" />
+            </div>
+          )}
+
+          {messages.map((message) =>
+            message.role === "assistant" ? (
+              <div key={message.id} className="flex items-end gap-2.5">
+                {avatar}
+                <div className="max-w-[78%] min-w-0">
+                  <div className="mb-1 flex items-baseline gap-2">
+                    <span className="text-[12px] font-semibold text-enc-ink">{patientName}</span>
+                    <span className="font-mono text-[11px] text-enc-ink-3 tabular-nums">{clock(message.timestamp)}</span>
+                  </div>
+                  <div className="rounded-2xl rounded-bl-md border border-enc-line bg-enc-sheet px-4 py-2.5 text-[15px] leading-relaxed text-enc-ink shadow-enc-sheet">
+                    <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div key={message.id} className="flex justify-end">
+                <div className="max-w-[78%] min-w-0">
+                  <div className="mb-1 flex items-baseline justify-end gap-2">
+                    <span className="font-mono text-[11px] text-enc-ink-3 tabular-nums">{clock(message.timestamp)}</span>
+                    <span className="text-[12px] font-semibold text-enc-ink-2">You</span>
+                  </div>
+                  <div className="rounded-2xl rounded-br-md border border-brand-200 bg-brand-50 px-4 py-2.5 text-[15px] leading-relaxed text-enc-ink">
+                    <p className="break-words whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+
+          {isLoading && (
+            <div className="flex items-end gap-2.5">
+              {avatar}
+              <div className="rounded-2xl rounded-bl-md border border-enc-line bg-enc-sheet px-4 py-3 shadow-enc-sheet" aria-label="The patient is answering">
+                <span className="flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-enc-ink-3" style={{ animationDelay: "0ms" }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-enc-ink-3" style={{ animationDelay: "150ms" }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-enc-ink-3" style={{ animationDelay: "300ms" }} />
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div ref={endRef} />
+        </div>
+      </div>
+
+      {/* ── Composer dock ───────────────────────────────────────────── */}
+      <div className="shrink-0 border-t border-enc-line-strong bg-enc-sheet shadow-enc-dock">
+        <div className="mx-auto w-full max-w-[760px] space-y-3 px-5 py-3.5">
+          {hint && (
+            <div className="flex items-start gap-2 rounded-lg border border-enc-warn/25 bg-enc-warn-soft px-3 py-2 text-[13px] leading-snug text-enc-warn">
+              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" />
+              <p className="flex-1">{hint}</p>
+              <button onClick={onDismissHint} className="shrink-0 opacity-70 hover:opacity-100" aria-label="Dismiss">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {showIcebreakers && (
+            <div>
+              <p className="mb-1.5 text-[11px] font-semibold tracking-[0.09em] text-enc-ink-3 uppercase">Suggested questions</p>
+              <div className="flex flex-wrap gap-2">
+                {ICEBREAKERS.map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    onClick={() => onPick(question)}
+                    className="group inline-flex items-center gap-1.5 rounded-lg border border-enc-line-strong bg-enc-sheet px-3 py-1.5 text-[13px] text-enc-ink-2 transition-colors outline-none hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-300"
+                  >
+                    {question}
+                    <ArrowUpRight className="h-3.5 w-3.5 text-enc-ink-3 group-hover:text-brand-600" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div data-tour="chat-input" className="flex items-center gap-1.5 rounded-xl border border-enc-line-strong bg-enc-sheet p-1.5 pl-4 shadow-enc-sheet transition focus-within:border-brand-400 focus-within:ring-4 focus-within:ring-brand-100">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              placeholder="Ask the patient a question…"
+              disabled={isLoading}
+              aria-label="Ask the patient a question"
+              className="h-9 min-w-0 flex-1 bg-transparent text-[15px] text-enc-ink outline-none placeholder:text-enc-ink-3 disabled:opacity-60"
+            />
+            <button
+              type="button"
+              onClick={onToggleListening}
+              title={isListening ? "Stop listening" : "Start voice input"}
+              aria-label={isListening ? "Stop listening" : "Start voice input"}
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-enc-ink-3 transition-colors hover:bg-enc-console hover:text-enc-ink",
+                isListening && "bg-enc-crit-soft text-enc-crit hover:bg-enc-crit-soft hover:text-enc-crit"
+              )}
+            >
+              {isListening ? <MicOff className="h-[18px] w-[18px]" /> : <Mic className="h-[18px] w-[18px]" />}
+            </button>
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={!input.trim() || isLoading}
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-enc-line-strong disabled:text-enc-ink-3"
+            >
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Send
+            </button>
+          </div>
+          <p className="flex items-center gap-1 text-[11px] text-enc-ink-3">
+            <CornerDownLeft className="h-3 w-3" /> Enter to send. Everything you ask and every answer you get is part of your record.
+          </p>
         </div>
       </div>
     </div>

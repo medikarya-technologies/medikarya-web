@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
+    "dev:webpack": "node scripts/dev.mjs --webpack",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test:sim": "node scripts/run-sim-tests.mjs",
+    "check:cases": "ts-node --project scripts/tsconfig.migrate.json scripts/migrate-cases.ts --dry-run"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.33.7",

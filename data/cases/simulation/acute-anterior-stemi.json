@@ -1,0 +1,2024 @@
+{
+  "id": "acute-anterior-stemi",
+  "title": "Acute Anterior STEMI",
+  "category": "Cardiology",
+  "difficulty": "Advanced",
+  "estimatedTime": 25,
+  "xpReward": 100,
+  "tags": ["stemi", "acute coronary syndrome", "chest pain", "emergency", "reperfusion", "simulation"],
+  "displayTitle": "58-year-old man with severe chest pain and sweating",
+  "displayDescription": "A middle-aged man arrives in the emergency department clutching his chest, grey and sweating. Every minute counts — work him up, act on what you find, and decide before he decides for you.",
+  "displayTags": ["live simulation", "cardiology", "time-critical", "emergency"],
+  "status": "published",
+
+  "setting": "ED · Resus Bay 3",
+
+  "objective": "Manage a 58-year-old man with acute severe chest pain in a real-time emergency: recognise the ECG pattern, protect him from harm, and commit to reperfusion inside the critical window.",
+
+  "learning_objectives": [
+    "Obtain and interpret a 12-lead ECG within 10 minutes of arrival in a patient with chest pain",
+    "Recognise the ECG pattern of an acute anterior ST-elevation myocardial infarction (proximal LAD occlusion)",
+    "Distinguish antiplatelet therapy from reperfusion — aspirin does not restore coronary flow",
+    "Choose and activate a reperfusion strategy without waiting for troponin",
+    "Identify drugs that are unsafe in a low-output state (IV beta-blockers, nitrates) and manage cardiogenic shock and VT"
+  ],
+
+  "patient": {
+    "name": "Raghav Malhotra",
+    "age": 58,
+    "gender": "Male",
+    "mrn": "ED-0417-58",
+    "admissionDate": "2026-09-20T09:42:00.000Z",
+    "chiefComplaint": "Severe crushing central chest pain for about 90 minutes, with sweating and nausea.",
+    "vitalSigns": {
+      "bloodPressure": { "systolic": 94, "diastolic": 62, "unit": "mmHg" },
+      "heartRate": { "value": 112, "unit": "bpm" },
+      "respiratoryRate": { "value": 24, "unit": "breaths/min" },
+      "temperature": { "value": 36.8, "unit": "°C" },
+      "oxygenSaturation": { "value": 91, "unit": "%" }
+    },
+    "allergies": [],
+    "currentMedications": [
+      "Amlodipine 5 mg once daily",
+      "Metformin 500 mg twice daily",
+      "Atorvastatin 20 mg at night (often forgets)"
+    ],
+    "final_diagnosis": "Acute anterior ST-elevation myocardial infarction (proximal LAD occlusion)",
+    "investigations": { "allowed_tests": [], "tests": [] }
+  },
+
+  "patient_text_brief": "I am Raghav Malhotra, a 58-year-old man who runs a small hardware shop in Delhi. About an hour and a half ago I was carrying a heavy box of stock up the stairs at my shop when I got a crushing, heavy pain in the middle of my chest, like someone sitting on it. It spreads into my left arm and my jaw. I broke into a cold sweat and felt sick, and I have been breathless. It has not eased at all with resting — it is the worst pain of my life, about 9 out of 10. My son drove me here. Over the last two months I have had a few episodes of tightness in my chest when I walk fast, which settled when I rested; I never told anyone. I have had high blood pressure and diabetes for about eight years and high cholesterol. I smoke about 20 cigarettes a day and have done for 30 years. My father died suddenly of a heart attack at 52. I take amlodipine, metformin and atorvastatin, but I often forget the atorvastatin. I have no allergies. I have never had surgery, a stroke, bleeding problems or a head injury, and I do not take blood thinners. I drink a little alcohol at weekends and do not use drugs.",
+
+  "patient_facts": {
+    "identity": {
+      "name": "Raghav Malhotra",
+      "age_years": 58,
+      "gender": "male",
+      "occupation": "Owns a hardware shop",
+      "location": "Delhi"
+    },
+    "chief_complaint": "Severe crushing central chest pain for about 90 minutes, with sweating and nausea.",
+    "pain": {
+      "onset": "About 90 minutes ago while carrying a heavy box up the stairs at his shop; it started with effort but did not settle when he stopped",
+      "site": "Centre of the chest, behind the breastbone",
+      "character": "Crushing, heavy — 'like an elephant sitting on my chest'",
+      "radiation": "Left arm and jaw",
+      "severity": "9 out of 10, the worst pain of his life",
+      "duration": "Continuous for about 90 minutes without any relief",
+      "aggravating": "Nothing makes it worse. Not affected by breathing or by moving. Not affected by position.",
+      "relieving": "Nothing has helped. Resting did not help. He has taken no tablets for it.",
+      "pleuritic": "No. It does not change when he breathes in.",
+      "positional": "No. Lying flat does not change it.",
+      "tearing_or_back_pain": "No. It is not tearing and does not go through to his back."
+    },
+    "associated_symptoms": {
+      "positive": [
+        "Profuse cold sweating",
+        "Nausea (has not vomited)",
+        "Shortness of breath",
+        "Feeling of impending doom"
+      ],
+      "negative": [
+        "No palpitations",
+        "No fainting or loss of consciousness",
+        "No cough, no fever",
+        "No leg swelling or calf pain",
+        "No recent long journey, immobilisation or surgery",
+        "No haemoptysis",
+        "No vomiting blood, no black stools",
+        "No weakness or numbness of face, arm or leg, no speech difficulty"
+      ]
+    },
+    "timeline": {
+      "two_months_ago": "Began having episodes of chest tightness on brisk walking or climbing stairs, lasting a few minutes and settling with rest. He ignored them.",
+      "today_about_90_min_ago": "Sudden severe chest pain while carrying stock up the stairs; did not settle.",
+      "arrival": "Brought to the emergency department by his son."
+    },
+    "past_history": {
+      "hypertension": "About 8 years, on amlodipine 5 mg. His usual blood pressure is around 150/90.",
+      "diabetes": "Type 2 for about 8 years, on metformin. Not well controlled.",
+      "dyslipidaemia": "High cholesterol; on atorvastatin 20 mg but often forgets it.",
+      "previous_cardiac_history": "None known. Never had an ECG or stress test.",
+      "surgeries": "None",
+      "bleeding_or_stroke": "No stroke, no TIA, no brain surgery or head injury. No bleeding disorder. No stomach ulcer or GI bleeding. No blood thinners.",
+      "recent_surgery_or_trauma": "None"
+    },
+    "medications": [
+      "Amlodipine 5 mg once daily",
+      "Metformin 500 mg twice daily",
+      "Atorvastatin 20 mg at night (often forgets)"
+    ],
+    "allergies": "No known drug allergies. He has taken aspirin before without any problem.",
+    "family_history": "Father died suddenly of a heart attack at age 52. Mother has diabetes.",
+    "social_history": {
+      "smoking": "About 20 cigarettes a day for 30 years (30 pack-years)",
+      "alcohol": "Occasional, weekends only",
+      "recreational_drugs": "None. No cocaine, no stimulants.",
+      "erectile_dysfunction_medication": "Does not take sildenafil or similar drugs.",
+      "diet_and_exercise": "Fried food, little exercise, works long hours"
+    },
+    "general_physical_examination": {
+      "appearance": "Anxious, pale, sweating heavily, sitting bolt upright clutching his chest; speaking in short sentences",
+      "pulse": "112 bpm, regular, low volume",
+      "blood_pressure": "94/62 mmHg (right arm)",
+      "respiratory_rate": "24 breaths/min",
+      "temperature": "36.8 °C",
+      "oxygen_saturation": "91% on room air",
+      "peripheries": "Cool and clammy; capillary refill about 3 seconds"
+    }
+  },
+
+  "ai_role": {
+    "speaker": "patient",
+    "first_person_description": "58-year-old man, Raghav Malhotra, in severe chest pain, sweating and breathless, brought to the emergency department by his son",
+    "age_group": "middle-aged",
+    "can_speak_for_self": true,
+    "language_style": "Plain, direct English with the odd Hindi word. Short sentences because he is in pain and slightly breathless.",
+    "emotional_tone": "Frightened and in agony. Keeps asking whether he is having a heart attack and whether he will be alright.",
+    "key_constraints": [
+      "Answer only what is asked, in one or two short sentences.",
+      "Do not name a diagnosis or use medical jargon — you are a shopkeeper, not a doctor.",
+      "Do not volunteer the risk factors or the earlier episodes of tightness unless asked directly.",
+      "You are in severe pain: it is fine to say you are in pain, are sweating, and feel sick.",
+      "Never claim symptoms or history that are not in the patient facts; deny them naturally.",
+      "If asked to rate the pain, say 9 out of 10."
+    ]
+  },
+
+  "ai_examples": [
+    { "doctor": "What brings you in today?", "patient": "Doctor, my chest — it's crushing, I can't take it. Please help me." },
+    { "doctor": "Where exactly is the pain?", "patient": "Right in the middle of my chest, behind the bone." },
+    { "doctor": "Does it go anywhere else?", "patient": "Yes, down my left arm and up into my jaw." },
+    { "doctor": "Have you had anything like this before?", "patient": "Not like this. Some tightness when I walk fast, for a couple of months, but it went away when I rested." },
+    { "doctor": "Do you smoke?", "patient": "Twenty a day, for thirty years." },
+    { "doctor": "Any bleeding problems, or a stroke in the past?", "patient": "No, nothing like that. No blood thinners either." }
+  ],
+
+  "tests": [],
+
+  "evaluation_config": {
+    "history": { "required_questions": [], "important_questions": [], "red_flag_questions": [] },
+    "testing": { "testing_required": true, "core_tests": ["ecg_12_lead"], "optional_tests": [], "distractor_tests": [], "dangerous_tests": [] },
+    "diagnosis": {
+      "accepted_primary": ["Acute anterior ST-elevation myocardial infarction", "Anterior STEMI", "STEMI"],
+      "must_include_keywords": []
+    },
+    "management": { "core_steps": [], "dangerous_steps": [] },
+    "red_flags": []
+  },
+
+  "questions": [],
+
+  "discussion": {
+    "keyPoints": [
+      "In chest pain, a 12-lead ECG within 10 minutes of arrival is the test that decides everything. The diagnosis of STEMI is made on the ECG — not on troponin.",
+      "Anterior STEMI is usually a proximal LAD occlusion. Look for ST elevation in V1–V4 (often with hyperacute T waves and loss of R waves), often extending to I and aVL, with reciprocal ST depression in the inferior leads.",
+      "Aspirin and P2Y12 inhibitors are antiplatelet therapy. They do NOT restore coronary flow. Only reperfusion — primary PCI or fibrinolysis — does.",
+      "Where a PCI-capable centre is available, primary PCI is the preferred strategy. Activate the cath lab as soon as STEMI is recognised; do not wait for troponin, and do not delay for CT imaging.",
+      "Fibrinolysis is appropriate when PCI cannot be delivered within about 120 minutes of diagnosis and there are no contraindications.",
+      "Low blood pressure, cool peripheries and pulmonary crackles mean a low-output state (Killip class II–III). Avoid IV beta-blockers and nitrates; treat the cause with reperfusion, and support the circulation if shock develops.",
+      "Sustained VT with a pulse and haemodynamic compromise needs synchronised cardioversion. VT here is a symptom of ongoing ischaemia — only reperfusion prevents its return.",
+      "Screen for contraindications to fibrinolysis and anticoagulation (previous stroke, bleeding, recent surgery, suspected aortic dissection) before giving them."
+    ],
+    "references": [
+      "Rao SV, et al. 2025 ACC/AHA/ACEP/NAEMSP/SCAI Guideline for the Management of Patients With Acute Coronary Syndromes. Circulation. 2025.",
+      "Byrne RA, et al. 2023 ESC Guidelines for the management of acute coronary syndromes. Eur Heart J. 2023;44:3720–3826.",
+      "Thygesen K, et al. Fourth Universal Definition of Myocardial Infarction (2018). Circulation. 2018;138:e618–e651."
+    ]
+  },
+
+  "walkthrough": "### Expert Walkthrough: Acute Anterior STEMI\n\n**1. The first ten minutes**\n\n* A middle-aged smoker with hypertension, diabetes and a strong family history has 90 minutes of crushing central chest pain radiating to the arm and jaw, with sweating and nausea. This is an acute coronary syndrome until proven otherwise.\n* The single most valuable action is a **12-lead ECG within 10 minutes**. Attach monitoring and IV access at the same time.\n\n**2. The ECG**\n\n* ST elevation in **V1–V4** with hyperacute T waves and QS complexes, extending to **I and aVL**, with **reciprocal ST depression in II, III and aVF**. This is an acute anterior STEMI from a **proximal LAD occlusion** — a large territory of myocardium at risk.\n\n**3. Haemodynamics change the drugs**\n\n* BP 94/62 (his usual is about 150/90), cool peripheries and crackles: a low-output state. Do **not** give IV beta-blockers or nitrates here. Cautious analgesia; oxygen only because SpO₂ is around 90%.\n\n**4. Antiplatelet therapy is not reperfusion**\n\n* Aspirin 300 mg and a P2Y12 inhibitor, plus heparin, are right — but they do not open the artery.\n* **Activate the cath lab now.** Do not wait for troponin. Do not send him for CT.\n\n**5. Reperfusion strategy**\n\n* A 24/7 cath lab is on site, so **primary PCI** is preferred. Fibrinolysis is reserved for when PCI cannot be delivered within about 120 minutes.\n\n**6. If he deteriorates**\n\n* Progressive ischaemia leads to pump failure, then VT. Sustained VT with a pulse and shock: synchronised cardioversion, support the pressure, and — above all — get him to the cath lab. Without reperfusion the VT will come back.\n\n**7. After reperfusion**\n\n* CCU admission, dual antiplatelet therapy, high-intensity statin, ACE inhibitor, beta-blocker once stable, echo for LV function, and secondary prevention.",
+
+  "appearance": {
+    "pallor": 2,
+    "sweating": 3,
+    "expression": "pain",
+    "note": "Anxious, pale and sweating heavily, sitting bolt upright and clutching his chest.",
+    "variants": [
+      {
+        "when": { "state": "reperfused" },
+        "pallor": 1,
+        "sweating": 1,
+        "expression": "tired",
+        "note": "Much calmer, colour returning, pain largely gone. Still tired."
+      },
+      {
+        "when": { "state": "cardiogenic_shock" },
+        "pallor": 3,
+        "cyanosis": 1,
+        "sweating": 3,
+        "expression": "drowsy",
+        "note": "Grey, drowsy and drenched in sweat. Barely rousable to voice; breathing fast and shallow."
+      },
+      {
+        "when": { "state": "worsening_ischemia" },
+        "pallor": 3,
+        "sweating": 3,
+        "expression": "distress",
+        "note": "Greyer and more sweaty. Frightened, and keeps asking if he is dying."
+      }
+    ]
+  },
+  "clinical_constraints": {
+    "recommended_actions": 10,
+    "critical_window_minutes": 15,
+    "hard_time_limit_minutes": 25,
+    "time_scale": 1
+  },
+
+  "assist_config": {
+    "mode": "intermediate",
+    "allowed": ["highlight_abnormal", "explain_abnormal", "ecg_interpretation_hint", "radiology_impression", "socratic_hint"],
+    "disabled": ["reveal_diagnosis", "management_guidance"],
+    "costs": {
+      "highlight_abnormal": { "independent_penalty": 1 },
+      "explain_abnormal": { "independent_penalty": 2 },
+      "ecg_interpretation_hint": { "independent_penalty": 3 },
+      "radiology_impression": { "independent_penalty": 3 },
+      "socratic_hint": { "independent_penalty": 3 },
+      "diagnostic_hint": { "independent_penalty": 5 },
+      "management_guidance": { "independent_penalty": 7 }
+    }
+  },
+
+  "initial_state": {
+    "state": "acute_presentation",
+    "rhythm": "sinus_tachycardia",
+    "rate": 112,
+    "systolic": 94,
+    "diastolic": 62,
+    "spo2": 91,
+    "rr": 24,
+    "temperature": 36.8,
+    "consciousness": "anxious",
+    "stability": "unstable",
+    "flags": {
+      "ongoing_ischemia": true,
+      "ecg_obtained": false,
+      "stemi_recognized_by_student": false,
+      "myocardial_injury_confirmed": false,
+      "aspirin_given": false,
+      "antiplatelet_therapy_started": false,
+      "p2y12_loaded": false,
+      "anticoagulant_given": false,
+      "oxygen_given": false,
+      "analgesia_given": false,
+      "iv_access_obtained": false,
+      "continuous_monitoring": false,
+      "shock_assessment_done": false,
+      "cath_lab_activated": false,
+      "reperfusion_strategy_initiated": false,
+      "pci_started": false,
+      "fibrinolysis_given": false,
+      "reperfusion_achieved": false,
+      "vt_terminated": false,
+      "unsafe_nitrate_given": false,
+      "immediate_deterioration": false
+    }
+  },
+
+  "action_consequences": [
+    {
+      "action": "aspirin_300mg",
+      "sets": { "aspirin_given": true, "antiplatelet_therapy_started": true },
+      "trajectory_note": "Aspirin 300 mg chewed. Antiplatelet therapy started — this does NOT restore coronary flow. The artery is still occluded."
+    },
+    {
+      "action": "p2y12_loading",
+      "sets": { "p2y12_loaded": true, "antiplatelet_therapy_started": true },
+      "trajectory_note": "P2Y12 inhibitor loaded. More antiplatelet effect — but still no reperfusion."
+    },
+    {
+      "action": "heparin_ufh_bolus",
+      "sets": { "anticoagulant_given": true },
+      "trajectory_note": "Heparin bolus given. Anticoagulation helps prevent thrombus propagation; it does not open the artery."
+    },
+    { "action": "ecg_12_lead_ordered", "sets": { "ecg_obtained": true } },
+    { "action": "stemi_recognized_by_student", "sets": { "stemi_recognized_by_student": true } },
+    { "action": "confirms_myocardial_injury", "sets": { "myocardial_injury_confirmed": true } },
+    { "action": "peripheral_perfusion_performed", "sets": { "shock_assessment_done": true } },
+    {
+      "action": "iv_access",
+      "sets": { "iv_access_obtained": true },
+      "trajectory_note": "Two large-bore IV cannulae in place; bloods sent."
+    },
+    {
+      "action": "continuous_monitoring",
+      "sets": { "continuous_monitoring": true },
+      "trajectory_note": "Continuous ECG, SpO₂ and NIBP monitoring established."
+    },
+    {
+      "action": "oxygen_supplemental",
+      "when": { "parameter": "spo2", "lt": 94 },
+      "sets": { "oxygen_given": true },
+      "physiological_changes": { "spo2_delta": "+4", "rr_delta": "-1" },
+      "trajectory_note": "Oxygen started; SpO₂ is improving. Reasonable here — oxygen is recommended when SpO₂ is below 90%, and he has pulmonary congestion."
+    },
+    {
+      "action": "oxygen_supplemental",
+      "when": { "parameter": "spo2", "gte": 94 },
+      "sets": { "oxygen_given": true },
+      "trajectory_note": "Oxygen given, but his SpO₂ was already 94% or higher — routine oxygen is not recommended unless SpO₂ is below 90%."
+    },
+    {
+      "action": "high_flow_oxygen",
+      "sets": { "oxygen_given": true },
+      "physiological_changes": { "spo2_delta": "+5", "rr_delta": "-2" },
+      "trajectory_note": "High-flow oxygen started; SpO₂ improves."
+    },
+    {
+      "action": "morphine_iv",
+      "sets": { "analgesia_given": true },
+      "physiological_changes": { "bp_delta": "-6/-4", "rr_delta": "-2" },
+      "trajectory_note": "Morphine titrated: the pain eases a little, but BP drifts down. In a low-output state use small doses, and remember opioids can delay oral antiplatelet absorption."
+    },
+    {
+      "action": "gtn_sublingual",
+      "when": { "any": [{ "parameter": "sbp", "lt": 100 }, { "state": "cardiogenic_shock" }] },
+      "sets": { "unsafe_nitrate_given": true },
+      "physiological_changes": { "bp_delta": "-14/-10", "hr_delta": "+6" },
+      "safety_penalty": true,
+      "trajectory_note": "GTN in a hypotensive patient. His systolic was already 94 — some 55 mmHg below his usual — and the nitrate dropped it further. Nitrates are contraindicated when the blood pressure is low."
+    },
+    {
+      "action": "gtn_sublingual",
+      "when": { "parameter": "sbp", "gte": 100 },
+      "physiological_changes": { "bp_delta": "-8/-5" },
+      "trajectory_note": "GTN given: partial relief of pain and a modest drop in BP."
+    },
+    {
+      "action": "metoprolol_iv",
+      "when": { "any": [{ "parameter": "sbp", "lt": 100 }, { "state": "cardiogenic_shock" }] },
+      "sets": { "immediate_deterioration": true },
+      "safety_penalty": true,
+      "trajectory_note": "IV beta-blocker in a patient with low blood pressure and pulmonary congestion — contraindicated. It removes the compensatory drive holding his output up."
+    },
+    {
+      "action": "metoprolol_iv",
+      "when": { "parameter": "sbp", "gte": 100 },
+      "trajectory_note": "Beta-blocker given. Reasonable only once a patient is stable with no signs of heart failure or low output."
+    },
+    {
+      "action": "furosemide_iv",
+      "physiological_changes": { "bp_delta": "-8/-4", "spo2_delta": "+1" },
+      "trajectory_note": "Furosemide 40 mg IV: the crackles ease slightly but the BP drifts lower. Diuretics treat congestion when perfusion is adequate — reperfusion is the priority."
+    },
+    {
+      "action": "fluid_bolus_250ml",
+      "physiological_changes": { "bp_delta": "+3/+2", "spo2_delta": "-2", "rr_delta": "+2" },
+      "trajectory_note": "250 mL bolus: the BP barely moves and the crackles worsen. This is pump failure, not hypovolaemia — treat the cause."
+    },
+    {
+      "action": "atorvastatin_80mg",
+      "trajectory_note": "High-intensity statin loaded — appropriate early in an acute coronary syndrome."
+    },
+    { "action": "ondansetron_4mg", "trajectory_note": "Nausea settles." },
+    {
+      "action": "activate_cath_lab",
+      "sets": { "cath_lab_activated": true, "reperfusion_strategy_initiated": true },
+      "trajectory_note": "Cath lab activated — the STEMI pathway is running and the team is being called in. Activation alone does not open the artery: the patient still has to go for PCI."
+    },
+    {
+      "action": "primary_pci_initiated",
+      "when": { "flag": "cath_lab_activated", "is": true },
+      "sets": { "pci_started": true, "reperfusion_strategy_initiated": true },
+      "trajectory_note": "To the cath lab for primary PCI. Access is gained and the wire is heading for the LAD."
+    },
+    {
+      "action": "primary_pci_initiated",
+      "when": { "flag": "cath_lab_activated", "is": false },
+      "sets": { "cath_lab_activated": true, "pci_started": true, "reperfusion_strategy_initiated": true },
+      "trajectory_note": "Straight to the cath lab for primary PCI (the team is called in with him). Activating the STEMI pathway first is faster."
+    },
+    {
+      "action": "fibrinolysis_given",
+      "sets": { "fibrinolysis_given": true, "reperfusion_strategy_initiated": true },
+      "trajectory_note": "Tenecteplase given. With a 24/7 cath lab available, primary PCI is preferred; lysis is reserved for when PCI cannot be delivered within about 120 minutes."
+    },
+    {
+      "action": "reperfusion_achieved",
+      "sets": { "reperfusion_achieved": true, "ongoing_ischemia": false }
+    },
+    {
+      "action": "synchronised_cardioversion",
+      "when": { "parameter": "rhythm", "in": ["vt_sustained"] },
+      "sets": { "vt_terminated": true },
+      "physiological_changes": { "rhythm": "sinus_tachycardia", "hr_set": 124, "bp_delta": "+12/+8", "consciousness": "drowsy" },
+      "trajectory_note": "Sedated and cardioverted (synchronised): sinus rhythm restored. He is still in cardiogenic shock — the VT will return unless the ischaemia is treated."
+    },
+    {
+      "action": "synchronised_cardioversion",
+      "when": { "not": { "parameter": "rhythm", "in": ["vt_sustained"] } },
+      "trajectory_note": "There is no VT to cardiovert. A shock in sinus rhythm is not indicated."
+    },
+    {
+      "action": "defibrillation",
+      "when": { "parameter": "rhythm", "in": ["vt_sustained", "vf"] },
+      "sets": { "vt_terminated": true },
+      "physiological_changes": { "rhythm": "sinus_tachycardia", "hr_set": 126, "bp_delta": "+10/+6", "consciousness": "drowsy" },
+      "trajectory_note": "Shock delivered: sinus rhythm restored. A pulse-present VT is better treated with a synchronised shock — but it worked. He remains shocked and needs reperfusion."
+    },
+    {
+      "action": "defibrillation",
+      "when": { "not": { "parameter": "rhythm", "in": ["vt_sustained", "vf"] } },
+      "physiological_changes": { "hr_delta": "+6" },
+      "safety_penalty": true,
+      "trajectory_note": "An unsynchronised shock was delivered to a patient who is not in VT or VF. Do not shock a non-shockable rhythm."
+    },
+    {
+      "action": "norepinephrine_infusion",
+      "when": { "parameter": "sbp", "lt": 90 },
+      "physiological_changes": { "bp_delta": "+22/+14" },
+      "trajectory_note": "Norepinephrine started: the mean pressure improves. This is a bridge only — the artery has to be opened."
+    },
+    {
+      "action": "norepinephrine_infusion",
+      "when": { "parameter": "sbp", "gte": 90 },
+      "trajectory_note": "Vasopressor started although he is not yet in shock. Not indicated at this pressure."
+    },
+    {
+      "action": "amiodarone_300mg",
+      "trajectory_note": "Amiodarone loaded: it may reduce recurrence of VT, but it does not treat the cause."
+    }
+  ],
+
+  "event_rules": [
+    {
+      "id": "early_ischemic_progression",
+      "when": {
+        "all": [
+          { "time_elapsed_gte_minutes": 8 },
+          { "flag": "ongoing_ischemia", "is": true },
+          { "flag": "ecg_obtained", "is": false }
+        ]
+      },
+      "transition": "increasing_ischemia",
+      "physiological_changes": { "hr_delta": "+8", "rhythm": "pvc_occasional" },
+      "narrative": null
+    },
+    {
+      "id": "critical_window_no_reperfusion",
+      "when": {
+        "all": [
+          { "time_elapsed_gte_minutes": 15 },
+          { "flag": "reperfusion_strategy_initiated", "is": false },
+          { "flag": "ongoing_ischemia", "is": true }
+        ]
+      },
+      "transition": "worsening_ischemia",
+      "physiological_changes": {
+        "hr_delta": "+10",
+        "bp_delta": "-14/-8",
+        "spo2_delta": "-3",
+        "rhythm": "pvc_frequent"
+      },
+      "narrative": "The nurse says the pain is worsening and the patient looks greyer. He is more sweaty, keeps asking if he is dying, and the monitor shows more frequent ventricular ectopics. BP now {bp}, SpO₂ {spo2}%."
+    },
+    {
+      "id": "major_deterioration",
+      "when": {
+        "all": [
+          { "time_elapsed_gte_minutes": 20 },
+          { "flag": "reperfusion_strategy_initiated", "is": false },
+          { "state": "worsening_ischemia" }
+        ]
+      },
+      "transition": "cardiogenic_shock",
+      "physiological_changes": {
+        "hr_set": 178,
+        "bp_delta": "-14/-10",
+        "spo2_delta": "-5",
+        "rhythm": "vt_sustained",
+        "consciousness": "altered",
+        "stability": "critical"
+      },
+      "narrative": "Patient acutely deteriorating. BP {bp}. VT on the monitor. Call for the crash team."
+    },
+    {
+      "id": "beta_blocker_crash",
+      "when": {
+        "all": [
+          { "flag": "immediate_deterioration", "is": true },
+          { "not": { "state": "cardiogenic_shock" } }
+        ]
+      },
+      "transition": "cardiogenic_shock",
+      "physiological_changes": {
+        "hr_set": 176,
+        "bp_delta": "-26/-18",
+        "spo2_delta": "-4",
+        "rhythm": "vt_sustained",
+        "consciousness": "altered",
+        "stability": "critical"
+      },
+      "narrative": "Shortly after the beta-blocker his blood pressure falls to {bp} and the monitor shows VT. He is drowsy and grey. Call for the crash team."
+    },
+    {
+      "id": "cath_lab_stall",
+      "when": {
+        "all": [
+          { "minutes_since_flag": { "flag": "cath_lab_activated", "gte": 8 } },
+          { "flag": "pci_started", "is": false },
+          { "flag": "fibrinolysis_given", "is": false },
+          { "flag": "ongoing_ischemia", "is": true },
+          { "not": { "state": "cardiogenic_shock" } }
+        ]
+      },
+      "transition": "worsening_ischemia",
+      "physiological_changes": {
+        "hr_delta": "+10",
+        "bp_delta": "-12/-8",
+        "spo2_delta": "-3",
+        "rhythm": "pvc_frequent"
+      },
+      "narrative": "The cath lab team is ready and waiting for you to send him — meanwhile the pain is worsening and he is greyer. BP {bp}. Ischaemic time is still running."
+    },
+    {
+      "id": "vt_recurrence",
+      "when": {
+        "all": [
+          { "minutes_since_flag": { "flag": "vt_terminated", "gte": 3 } },
+          { "flag": "reperfusion_achieved", "is": false },
+          { "flag": "pci_started", "is": false }
+        ]
+      },
+      "transition": "cardiogenic_shock",
+      "sets": { "vt_terminated": false },
+      "physiological_changes": {
+        "hr_set": 180,
+        "bp_delta": "-14/-10",
+        "rhythm": "vt_sustained",
+        "consciousness": "altered"
+      },
+      "narrative": "The VT has come back — BP {bp}. The rhythm keeps returning because the artery is still occluded."
+    },
+    {
+      "id": "pci_reperfusion",
+      "when": {
+        "all": [
+          { "minutes_since_flag": { "flag": "pci_started", "gte": 6 } },
+          { "flag": "ongoing_ischemia", "is": true }
+        ]
+      },
+      "transition": "reperfused",
+      "emits": "reperfusion_achieved",
+      "physiological_changes": {
+        "hr_set": 88,
+        "bp_delta": "+22/+12",
+        "spo2_delta": "+5",
+        "rr_delta": "-6",
+        "rhythm": "sinus_normal",
+        "consciousness": "alert",
+        "stability": "stable"
+      },
+      "narrative": "The LAD is open — TIMI 3 flow restored. A short run of accelerated idioventricular rhythm (a classic reperfusion sign), then sinus rhythm. The pain is easing and the ST segments are settling. BP {bp}, HR {hr}."
+    },
+    {
+      "id": "lysis_reperfusion",
+      "when": {
+        "all": [
+          { "minutes_since_flag": { "flag": "fibrinolysis_given", "gte": 10 } },
+          { "flag": "ongoing_ischemia", "is": true }
+        ]
+      },
+      "transition": "reperfused",
+      "emits": "reperfusion_achieved",
+      "physiological_changes": {
+        "hr_set": 92,
+        "bp_delta": "+18/+10",
+        "spo2_delta": "+4",
+        "rr_delta": "-5",
+        "rhythm": "sinus_normal",
+        "consciousness": "alert",
+        "stability": "stable"
+      },
+      "narrative": "Signs of reperfusion after lysis: the pain has eased and the ST elevation has fallen by more than half. He still needs transfer for angiography (pharmaco-invasive strategy). BP {bp}, HR {hr}."
+    }
+  ],
+
+  "state_thresholds": [
+    { "parameter": "spo2", "lt": 85, "trigger": "critical_hypoxia" },
+    { "parameter": "map", "lt": 65, "trigger": "shock_state" },
+    { "parameter": "rhythm", "eq": "vt_sustained", "trigger": "cardiac_arrest_risk" },
+    { "parameter": "rhythm", "eq": "vf", "trigger": "cardiac_arrest_risk" }
+  ],
+
+  "recognition_rules": [
+    {
+      "id": "recognise_stemi",
+      "action": "stemi_recognized_by_student",
+      "sources": ["interpretation", "differential", "diagnosis"],
+      "any_of": [
+        "stemi",
+        "st elevation",
+        "st segment elevation",
+        "st elevation myocardial infarction",
+        "anterior mi",
+        "anterior myocardial infarction",
+        "acute mi",
+        "acute myocardial infarction",
+        "tombstone"
+      ]
+    }
+  ],
+
+  "examination": [
+    {
+      "id": "general_inspection",
+      "label": "General inspection",
+      "region": "general",
+      "findings": "Anxious, pale and sweating heavily, sitting bolt upright and clutching his chest. Speaking in short sentences. Not cyanosed.",
+      "findings_by_state": [
+        { "when": { "state": "cardiogenic_shock" }, "findings": "Grey, drowsy and drenched in sweat. Barely rousable to voice; breathing fast and shallow. Cool, mottled skin." },
+        { "when": { "state": "reperfused" }, "findings": "Much calmer, colour returning, pain largely gone. Still tired and a little breathless." }
+      ]
+    },
+    {
+      "id": "pulse",
+      "label": "Pulse",
+      "region": "cardiovascular",
+      "findings": "Radial pulse {hr}/min, regular, low volume.",
+      "findings_by_state": [
+        { "when": { "state": "cardiogenic_shock" }, "findings": "Thready and fast at {hr}/min; barely palpable at the wrist." },
+        { "when": { "state": "worsening_ischemia" }, "findings": "Radial pulse {hr}/min, low volume, with frequent irregular extra beats." }
+      ]
+    },
+    {
+      "id": "blood_pressure_both_arms",
+      "label": "Blood pressure, both arms",
+      "region": "cardiovascular",
+      "findings": "Right arm {bp}; left arm within 4 mmHg — no significant inter-arm difference."
+    },
+    {
+      "id": "jvp",
+      "label": "JVP",
+      "region": "cardiovascular",
+      "findings": "JVP not elevated (no more than 3 cm above the sternal angle). No Kussmaul sign."
+    },
+    {
+      "id": "heart_sounds",
+      "label": "Heart sounds",
+      "region": "cardiovascular",
+      "findings": "S1 soft, S2 normal, and a third heart sound (S3 gallop). No murmur and no pericardial rub."
+    },
+    {
+      "id": "chest_auscultation",
+      "label": "Chest auscultation",
+      "region": "respiratory",
+      "findings": "Fine bibasal inspiratory crackles extending to the mid-zones on both sides. No wheeze. Good air entry; percussion note resonant.",
+      "findings_by_state": [
+        { "when": { "state": "cardiogenic_shock" }, "findings": "Coarse crackles throughout both lung fields; he is working hard to breathe." },
+        { "when": { "state": "reperfused" }, "findings": "Crackles now confined to the bases and clearing." }
+      ]
+    },
+    {
+      "id": "peripheral_perfusion",
+      "label": "Peripheral perfusion",
+      "region": "extremities",
+      "findings": "Cool, clammy hands and feet. Capillary refill about 3 seconds.",
+      "findings_by_state": [
+        { "when": { "state": "cardiogenic_shock" }, "findings": "Cold, mottled limbs; capillary refill over 5 seconds." },
+        { "when": { "state": "reperfused" }, "findings": "Warmer peripheries; capillary refill about 2 seconds." }
+      ]
+    },
+    {
+      "id": "peripheral_pulses",
+      "label": "Peripheral pulses",
+      "region": "extremities",
+      "findings": "Radial, brachial, femoral and dorsalis pedis pulses all present and symmetrical, low volume. No radio-femoral delay."
+    },
+    {
+      "id": "chest_wall_palpation",
+      "label": "Chest wall palpation",
+      "region": "respiratory",
+      "findings": "No chest wall tenderness — pressing does not reproduce the pain. No rash or skin lesions."
+    },
+    {
+      "id": "abdomen",
+      "label": "Abdomen",
+      "region": "abdomen",
+      "findings": "Soft and non-tender, no guarding, no pulsatile mass, no organomegaly. Bowel sounds present."
+    },
+    {
+      "id": "calves_legs",
+      "label": "Calves and legs",
+      "region": "extremities",
+      "findings": "Calves soft and non-tender. No swelling, no asymmetry, no pitting oedema."
+    },
+    {
+      "id": "neuro_screen",
+      "label": "Neurological screen",
+      "region": "neuro",
+      "findings": "GCS 15, orientated. No focal deficit. Pupils equal and reactive.",
+      "findings_by_state": [
+        { "when": { "state": "cardiogenic_shock" }, "findings": "GCS 12 (E3 V4 M5): drowsy and confused; moves all four limbs." }
+      ]
+    }
+  ],
+
+  "investigation_results": {
+    "ecg_12_lead": {
+      "turnaround_minutes": 0.5,
+      "summary": "12-lead ECG recorded.",
+      "critical_findings": ["ST-segment elevation V1–V4 with reciprocal inferior change — STEMI criteria met"],
+      "interpretation": "Acute anterior STEMI. ST elevation in V1–V4 (maximum about 4.5 mm in V3) with hyperacute T waves and loss of R-wave progression (QS complexes in V1–V3). ST elevation and Q waves also in I and aVL, with reciprocal ST depression in II, III and aVF — a proximal LAD occlusion (proximal to the first diagonal). Activate the cath lab now; do not wait for troponin.",
+      "hint": "Look at the ST segment — the stretch between the QRS and the T wave — and compare it with the baseline. Which leads have it raised, and which leads facing them show the opposite?",
+      "ecg": {
+        "pr_ms": 158,
+        "qrs_ms": 98,
+        "qt_ms": 344,
+        "axis_deg": 30,
+        "leads": {
+          "I":   { "q": 0.08, "r": 0.5, "st": 0.12, "t": 0.25 },
+          "II":  { "st": -0.06, "t": 0.3 },
+          "III": { "st": -0.12, "t": 0.1 },
+          "aVL": { "q": 0.15, "r": 0.3, "st": 0.18, "t": 0.2 },
+          "aVF": { "st": -0.09, "t": 0.2 },
+          "V1":  { "qs": 0.7, "st": 0.18, "t": 0.45 },
+          "V2":  { "qs": 0.9, "st": 0.40, "t": 0.7 },
+          "V3":  { "qs": 0.7, "st": 0.45, "t": 0.6 },
+          "V4":  { "r": 0.5, "s": 0.3, "q": 0.15, "st": 0.30, "t": 0.5 },
+          "V5":  { "r": 0.9, "st": 0.12, "t": 0.35 },
+          "V6":  { "r": 0.8, "st": 0.05, "t": 0.3 }
+        }
+      },
+      "variants": [
+        {
+          "when": { "flag": "reperfusion_achieved", "is": true },
+          "summary": "Repeat 12-lead ECG recorded.",
+          "critical_findings": [],
+          "interpretation": "Reperfusion: ST elevation has resolved by more than 70% with the evolution of T-wave inversion in V2–V4 (reperfusion T waves) and established Q waves. Reciprocal changes have resolved. Consistent with a successfully reperfused anterior infarct.",
+          "hint": "Compare with the first ECG: what has happened to the ST segments and to the T waves?",
+          "ecg": {
+            "pr_ms": 160,
+            "qrs_ms": 98,
+            "qt_ms": 380,
+            "axis_deg": 30,
+            "leads": {
+              "I":   { "q": 0.08, "r": 0.5, "st": 0.02, "t": 0.2 },
+              "aVL": { "q": 0.15, "r": 0.3, "st": 0.03, "t": 0.1 },
+              "V1":  { "qs": 0.7, "st": 0.04, "t": 0.1 },
+              "V2":  { "qs": 0.9, "st": 0.10, "t": -0.25 },
+              "V3":  { "qs": 0.7, "st": 0.12, "t": -0.35 },
+              "V4":  { "r": 0.5, "s": 0.3, "q": 0.15, "st": 0.08, "t": -0.3 },
+              "V5":  { "r": 0.9, "st": 0.03, "t": 0.15 },
+              "V6":  { "r": 0.8, "st": 0.02, "t": 0.2 }
+            }
+          }
+        }
+      ]
+    },
+
+    "troponin_i": {
+      "turnaround_minutes": 6,
+      "value": 4.82,
+      "status": "critical",
+      "note": "Confirms myocardial injury — but the STEMI diagnosis and the decision to reperfuse are made on the ECG. Never wait for troponin.",
+      "state_consequence": "confirms_myocardial_injury",
+      "critical_findings": ["Troponin I markedly elevated (4.82 ng/mL) — myocardial injury"],
+      "interpretation": "Markedly raised troponin I confirms acute myocardial injury. In a patient with STEMI criteria on the ECG it supports the diagnosis but must not delay reperfusion."
+    },
+    "hs_troponin_i": {
+      "turnaround_minutes": 8,
+      "value": 2840,
+      "status": "critical",
+      "note": "Confirms myocardial injury. Not needed to make the decision to reperfuse.",
+      "state_consequence": "confirms_myocardial_injury",
+      "critical_findings": ["hs-Troponin I markedly elevated — myocardial injury"],
+      "interpretation": "Markedly raised high-sensitivity troponin I confirms acute myocardial injury. It must not delay reperfusion in a STEMI."
+    },
+    "hs_troponin_t": {
+      "turnaround_minutes": 8,
+      "value": 680,
+      "status": "critical",
+      "note": "Confirms myocardial injury. Not needed to make the decision to reperfuse.",
+      "state_consequence": "confirms_myocardial_injury",
+      "critical_findings": ["hs-Troponin T markedly elevated — myocardial injury"],
+      "interpretation": "Markedly raised high-sensitivity troponin T confirms acute myocardial injury. It must not delay reperfusion in a STEMI."
+    },
+    "ck_mb": {
+      "turnaround_minutes": 10,
+      "value": 14.2,
+      "status": "high",
+      "note": "Raised, consistent with myocardial injury. Less sensitive than troponin."
+    },
+    "cbc": {
+      "turnaround_minutes": 8,
+      "values": {
+        "hb": { "value": 14.1, "status": "normal", "note": "A baseline haemoglobin matters before anticoagulation and fibrinolysis." },
+        "wbc": { "value": 12.8, "status": "high", "note": "Mild stress leucocytosis — common in acute MI." },
+        "plt": { "value": 268, "status": "normal", "note": "A normal platelet count: no thrombocytopenia to complicate heparin or lysis." }
+      },
+      "interpretation": "Mild leucocytosis from the stress response. Normal haemoglobin and platelets."
+    },
+    "bmp": {
+      "turnaround_minutes": 8,
+      "values": {
+        "na": { "value": 138 },
+        "k": { "value": 4.1, "status": "normal", "note": "Normal potassium — important because hypokalaemia would make ventricular arrhythmias more likely." },
+        "cl": { "value": 102 },
+        "hco3": { "value": 20, "status": "low", "note": "Mildly low bicarbonate — early lactic acidosis from poor perfusion." },
+        "bun": { "value": 18 },
+        "creat": { "value": 1.1, "status": "normal", "note": "Normal renal function — relevant for contrast and drug dosing." },
+        "glucose": { "value": 214, "status": "high", "note": "Hyperglycaemia: known type 2 diabetes plus the stress response." }
+      },
+      "interpretation": "Mild metabolic acidosis, stress hyperglycaemia. Renal function and potassium are normal."
+    },
+    "electrolytes": {
+      "turnaround_minutes": 6,
+      "values": {
+        "k": { "value": 4.1, "status": "normal", "note": "Normal potassium." },
+        "hco3": { "value": 20, "status": "low", "note": "Mildly low bicarbonate — early lactic acidosis." }
+      }
+    },
+    "renal_function": {
+      "turnaround_minutes": 8,
+      "values": { "creat": { "value": 1.1 }, "egfr": { "value": 74, "status": "normal" }, "bun": { "value": 18 } }
+    },
+    "glucose_random": {
+      "turnaround_minutes": 2,
+      "value": 214,
+      "status": "high",
+      "note": "Stress hyperglycaemia on a background of type 2 diabetes."
+    },
+    "pt_inr": {
+      "turnaround_minutes": 10,
+      "values": { "pt": { "value": 12.1 }, "inr": { "value": 1.0 } },
+      "interpretation": "Normal coagulation: no coagulopathy to complicate heparin or fibrinolysis."
+    },
+    "aptt": { "turnaround_minutes": 10, "value": 29, "status": "normal" },
+    "abg": {
+      "turnaround_minutes": 3,
+      "values": {
+        "ph": { "value": 7.34, "status": "low", "note": "Mild acidaemia." },
+        "pco2": { "value": 33 },
+        "po2": { "value": 62, "status": "low", "note": "Hypoxaemia on room air — consistent with pulmonary congestion." },
+        "hco3": { "value": 19, "status": "low" },
+        "be": { "value": -5, "status": "low" },
+        "sao2": { "value": 91, "status": "low" }
+      },
+      "interpretation": "Hypoxaemia with a mild metabolic acidosis (respiratory compensation). Pulmonary congestion with early hypoperfusion."
+    },
+    "lactate": {
+      "turnaround_minutes": 3,
+      "value": 3.1,
+      "status": "high",
+      "note": "Raised lactate signals tissue hypoperfusion — a low-output state."
+    },
+    "nt_probnp": {
+      "turnaround_minutes": 15,
+      "value": 2140,
+      "status": "high",
+      "note": "Raised natriuretic peptide: acute LV dysfunction and congestion."
+    },
+    "d_dimer": {
+      "turnaround_minutes": 12,
+      "value": 0.72,
+      "status": "high",
+      "note": "Non-specific — commonly raised in acute MI. A raised D-dimer here would only pull you away from the diagnosis the ECG has already made."
+    },
+    "lipid_profile": {
+      "turnaround_minutes": 30,
+      "values": {
+        "tc": { "value": 236, "status": "high" },
+        "ldl": { "value": 158, "status": "high" },
+        "hdl": { "value": 34, "status": "low" },
+        "tg": { "value": 218, "status": "high" }
+      },
+      "interpretation": "Atherogenic dyslipidaemia. Not needed acutely — treat with a high-intensity statin regardless."
+    },
+    "hba1c": {
+      "turnaround_minutes": 45,
+      "value": 8.9,
+      "status": "high",
+      "note": "Poorly controlled diabetes over the last three months."
+    },
+
+    "cxr_portable": {
+      "turnaround_minutes": 8,
+      "summary": "Portable AP chest film.",
+      "report": {
+        "technique": "Portable AP film, semi-erect.",
+        "findings": "Cardiac size is normal for an AP film. Upper-lobe vessel diversion and septal (Kerley B) lines at both bases. The mediastinum is not widened and the aortic knuckle is normal. No pneumothorax and no pleural effusion. No focal consolidation.",
+        "impression": "Early pulmonary venous congestion / interstitial oedema. No mediastinal widening, pneumothorax or consolidation."
+      },
+      "hint": "Look for the pattern of the pulmonary veins, then the mediastinum. What does the lung field tell you about the left ventricle, and is there any sign of an aortic problem?"
+    },
+    "cxr_pa": {
+      "turnaround_minutes": 15,
+      "summary": "PA chest film.",
+      "report": {
+        "technique": "PA erect.",
+        "findings": "Normal cardiac size. Upper-lobe diversion and Kerley B lines at the bases. Mediastinum not widened. No pneumothorax or effusion.",
+        "impression": "Early pulmonary venous congestion. No mediastinal widening."
+      }
+    },
+    "echo_pocus": {
+      "turnaround_minutes": 5,
+      "summary": "Focused bedside echocardiogram.",
+      "report": {
+        "technique": "Focused transthoracic views (parasternal long/short axis, apical four-chamber, subcostal).",
+        "findings": "Akinesis of the anterior wall, septum and apex. Estimated LVEF about 35%. Right ventricle normal in size and function. No pericardial effusion. No significant mitral regurgitation. Aortic root not dilated.",
+        "impression": "Anterior and apical akinesis with moderately reduced LV function, consistent with an LAD-territory infarct. No tamponade, no RV involvement."
+      },
+      "hint": "Look at how each wall of the left ventricle moves, then check for fluid around the heart and the size of the right ventricle."
+    },
+    "echo_tte": {
+      "turnaround_minutes": 30,
+      "summary": "Transthoracic echocardiogram.",
+      "report": {
+        "technique": "Standard transthoracic study.",
+        "findings": "Anterior wall, septum and apex akinetic. LVEF about 35%. Normal RV. No pericardial effusion. Trivial mitral regurgitation. No aortic dissection flap seen in the aortic root.",
+        "impression": "LAD-territory regional wall-motion abnormality with moderately impaired LV systolic function."
+      }
+    },
+
+    "ct_aortogram": {
+      "turnaround_minutes": 30,
+      "summary": "CT aortic angiogram.",
+      "report": {
+        "technique": "Contrast-enhanced CT angiography of the aorta.",
+        "findings": "No aortic dissection or intramural haematoma. Normal calibre thoracic aorta.",
+        "impression": "No acute aortic syndrome."
+      },
+      "interpretation": "No dissection — but the scan cost him the better part of half an hour while the ECG had already made the diagnosis."
+    },
+    "ctpa": {
+      "turnaround_minutes": 30,
+      "summary": "CT pulmonary angiogram.",
+      "report": {
+        "technique": "Contrast-enhanced CT pulmonary angiography.",
+        "findings": "No filling defect in the pulmonary arteries. Bilateral septal thickening in keeping with interstitial oedema.",
+        "impression": "No pulmonary embolism. Early pulmonary oedema."
+      },
+      "interpretation": "No embolism — a scan that took time from a patient whose ECG had already shown the diagnosis."
+    }
+  },
+
+  "socratic_hints": [
+    {
+      "id": "no_ecg",
+      "when": { "all": [{ "time_elapsed_gte_minutes": 3 }, { "flag": "ecg_obtained", "is": false }] },
+      "hint": "This man has severe chest pain and is grey and sweating. What is the single fastest test that could change what you do in the next ten minutes?"
+    },
+    {
+      "id": "ecg_unrecognised",
+      "when": { "all": [{ "flag": "ecg_obtained", "is": true }, { "flag": "stemi_recognized_by_student", "is": false }] },
+      "hint": "Go through the ECG one territory at a time. Compare each ST segment with the baseline — which leads are different, and which leads facing them show the opposite change?"
+    },
+    {
+      "id": "dangerous_drugs",
+      "when": { "all": [{ "parameter": "sbp", "lt": 100 }, { "flag": "shock_assessment_done", "is": false }] },
+      "hint": "His blood pressure is low and his hands are cold. Before you reach for a familiar chest-pain drug, what does his perfusion tell you about which ones are safe?"
+    },
+    {
+      "id": "recognised_no_reperfusion",
+      "when": { "all": [{ "flag": "stemi_recognized_by_student", "is": true }, { "flag": "reperfusion_strategy_initiated", "is": false }] },
+      "hint": "You have recognised what the ECG is showing. What actually restores flow through an occluded artery — and how long can the myocardium wait?"
+    },
+    {
+      "id": "antiplatelet_only",
+      "when": { "all": [{ "flag": "antiplatelet_therapy_started", "is": true }, { "flag": "reperfusion_strategy_initiated", "is": false }] },
+      "hint": "You have started antiplatelet therapy. Does that open the blocked artery? What is the next step?"
+    },
+    {
+      "id": "lab_ready",
+      "when": { "all": [{ "flag": "cath_lab_activated", "is": true }, { "flag": "pci_started", "is": false }, { "flag": "fibrinolysis_given", "is": false }] },
+      "hint": "The cath lab is ready and waiting. Activation alone does not open the artery — what is the next step?"
+    },
+    {
+      "id": "shock_vt",
+      "when": { "state": "cardiogenic_shock" },
+      "hint": "He is in VT and shocked. What treats the rhythm right now — and what treats the reason it happened?"
+    },
+    {
+      "id": "general",
+      "when": { "time_elapsed_gte_minutes": 2 },
+      "hint": "Take a breath. Which three life-threatening causes of chest pain must you exclude first, and which of them would change your treatment in the next ten minutes?"
+    }
+  ],
+
+  "vital_explanations": {
+    "hr": "HR is fast: pain and catecholamines, but mostly the failing anterior wall — a smaller stroke volume forces the heart to beat faster to keep output up.",
+    "bp": "BP 94/62 is well below his usual of about 150/90. With cool hands and crackles this is a low-output state, and it decides which drugs are safe — avoid beta-blockers and nitrates.",
+    "spo2": "SpO₂ is low because fluid has backed up into the lungs (pulmonary congestion) as the left ventricle fails.",
+    "rr": "He is breathing fast because of pulmonary congestion, pain and acidosis."
+  },
+
+  "scoring_rubric": {
+    "weights": {
+      "clinical_reasoning": 0.35,
+      "investigation_accuracy": 0.2,
+      "management": 0.3,
+      "efficiency": 0.15
+    },
+    "diagnosis": {
+      "ground_truth": "Acute anterior ST-elevation myocardial infarction (proximal LAD occlusion)",
+      "accepted": [
+        "anterior stemi",
+        "anterior st elevation myocardial infarction",
+        "anterior st segment elevation myocardial infarction",
+        "acute anterior mi",
+        "anterior myocardial infarction",
+        "anterior wall mi",
+        "anterior wall myocardial infarction",
+        "stemi",
+        "st elevation myocardial infarction",
+        "st segment elevation myocardial infarction",
+        "lad occlusion",
+        "acute mi",
+        "acute myocardial infarction"
+      ]
+    },
+    "safety_penalty_points": 15,
+
+    "items": [
+      {
+        "id": "cr_recognise_ecg",
+        "label": "Recognised ST-elevation MI on the ECG",
+        "domain": "clinical_reasoning",
+        "weight": 20,
+        "critical": true,
+        "met_when": {
+          "interpretation_mentions": {
+            "testId": "ecg_12_lead",
+            "any_of": ["stemi", "st elevation", "st segment elevation", "acute mi", "myocardial infarction", "anterior mi", "tombstone"]
+          }
+        },
+        "partial_when": { "flag": "stemi_recognized_by_student", "is": true },
+        "partial_credit": 0.5,
+        "did_well": "Recognised the ST elevation on the ECG",
+        "missed": "Did not recognise the STEMI pattern on the ECG",
+        "knowledge_gap": "stemi_ecg_recognition"
+      },
+      {
+        "id": "cr_territory",
+        "label": "Localised the infarct to the anterior wall (V1–V4 / LAD)",
+        "domain": "clinical_reasoning",
+        "weight": 10,
+        "met_when": {
+          "interpretation_mentions": {
+            "testId": "ecg_12_lead",
+            "any_of": ["anterior", "v1", "v2", "v3", "v4", "lad", "septal", "left anterior descending", "precordial", "chest leads"]
+          }
+        },
+        "did_well": "Localised the infarct to the anterior wall (V1–V4)",
+        "missed": "Did not localise the infarct territory (anterior, V1–V4 / LAD)",
+        "knowledge_gap": "stemi_ecg_recognition"
+      },
+      {
+        "id": "cr_reciprocal",
+        "label": "Noted the reciprocal ST depression in the inferior leads",
+        "domain": "clinical_reasoning",
+        "weight": 4,
+        "met_when": {
+          "interpretation_mentions": {
+            "testId": "ecg_12_lead",
+            "any_of": ["reciprocal", "st depression", "inferior depression", "ii iii avf", "iii and avf"]
+          }
+        },
+        "did_well": "Noted the reciprocal ST depression"
+      },
+      {
+        "id": "cr_haemodynamics",
+        "label": "Assessed perfusion and haemodynamic stability",
+        "domain": "clinical_reasoning",
+        "weight": 14,
+        "critical": true,
+        "met_when": { "flag": "shock_assessment_done", "is": true },
+        "partial_when": { "any": [{ "performed": ["pulse", "chest_auscultation", "jvp"] }] },
+        "partial_credit": 0.4,
+        "did_well": "Assessed perfusion and haemodynamic stability",
+        "missed": "Did not assess haemodynamic stability (peripheral perfusion, JVP, chest)",
+        "knowledge_gap": "killip_shock_recognition"
+      },
+      {
+        "id": "cr_dissection_screen",
+        "label": "Screened for aortic dissection (both-arm BP / pulses) before antithrombotics",
+        "domain": "clinical_reasoning",
+        "weight": 6,
+        "met_when": { "any": [{ "performed": "blood_pressure_both_arms" }, { "performed": "peripheral_pulses" }] },
+        "did_well": "Screened for aortic dissection before anticoagulating",
+        "missed": "Did not screen for aortic dissection (bilateral arm BP, pulses) before antithrombotics",
+        "knowledge_gap": "dissection_screen"
+      },
+      {
+        "id": "hx_pain_features",
+        "label": "Characterised the pain (site, radiation, character, severity)",
+        "domain": "clinical_reasoning",
+        "weight": 6,
+        "met_when": {
+          "asked_about": ["radiat", "spread", "arm", "jaw", "neck", "character", "describe the pain", "what does it feel", "heavy", "crushing", "pressure", "tight", "severity", "how bad", "out of 10", "scale"]
+        },
+        "did_well": "Characterised the pain thoroughly"
+      },
+      {
+        "id": "hx_onset",
+        "label": "Established the onset and duration of the pain",
+        "domain": "clinical_reasoning",
+        "weight": 6,
+        "met_when": {
+          "asked_about": ["when did", "how long", "onset", "start", "began", "since when", "how many hours", "minutes ago", "what time", "duration"]
+        },
+        "did_well": "Established when the pain started",
+        "missed": "Did not establish when the pain began — the ischaemic time drives the reperfusion strategy",
+        "knowledge_gap": "reperfusion_strategy_choice"
+      },
+      {
+        "id": "hx_associated",
+        "label": "Asked about associated symptoms (sweating, nausea, breathlessness)",
+        "domain": "clinical_reasoning",
+        "weight": 4,
+        "met_when": {
+          "asked_about": ["sweat", "nausea", "vomit", "breath", "palpitation", "dizz", "faint", "syncope", "collapse"]
+        }
+      },
+      {
+        "id": "hx_risk_factors",
+        "label": "Explored cardiovascular risk factors",
+        "domain": "clinical_reasoning",
+        "weight": 5,
+        "met_when": {
+          "asked_about": ["smok", "diabet", "cholesterol", "hypertension", "blood pressure", "family history", "father", "risk factor", "medication", "tablets", "previous", "before"]
+        },
+        "did_well": "Explored his cardiovascular risk factors"
+      },
+      {
+        "id": "hx_safety_screen",
+        "label": "Screened for contraindications to antithrombotics and lysis",
+        "domain": "clinical_reasoning",
+        "weight": 7,
+        "met_when": {
+          "asked_about": ["allerg", "bleed", "stroke", "surgery", "operation", "blood thinner", "anticoag", "head injury", "ulcer", "warfarin"]
+        },
+        "did_well": "Screened for allergies, bleeding and stroke before antithrombotics",
+        "missed": "Did not screen for allergy, bleeding or stroke history before antithrombotics or lysis",
+        "knowledge_gap": "fibrinolysis_contraindications"
+      },
+      {
+        "id": "hx_mimics",
+        "label": "Screened for chest-pain mimics (tearing pain, pleuritic pain, leg swelling)",
+        "domain": "clinical_reasoning",
+        "weight": 4,
+        "met_when": {
+          "asked_about": ["tearing", "back", "pleuritic", "breathing in", "lying flat", "leg swelling", "long journey", "travel", "cocaine"]
+        }
+      },
+      {
+        "id": "cr_diagnosis",
+        "label": "Named acute anterior STEMI as the primary diagnosis",
+        "domain": "clinical_reasoning",
+        "weight": 20,
+        "critical": true,
+        "met_when": {
+          "diagnosis_matches": ["anterior stemi", "anterior st elevation", "anterior mi", "anterior myocardial infarction", "anterior wall", "stemi", "st elevation myocardial infarction", "st segment elevation", "acute mi", "acute myocardial infarction", "lad occlusion"]
+        },
+        "did_well": "Reached the correct diagnosis: acute anterior STEMI",
+        "missed": "Did not name STEMI as the primary diagnosis",
+        "knowledge_gap": "stemi_ecg_recognition"
+      },
+      {
+        "id": "cr_dx_slot1",
+        "label": "Ranked STEMI as the most likely diagnosis",
+        "domain": "clinical_reasoning",
+        "weight": 12,
+        "met_when": {
+          "differential_slot": {
+            "slot": 1,
+            "matches": ["stemi", "st elevation", "st segment elevation", "anterior mi", "anterior myocardial infarction", "acute mi", "acute myocardial infarction", "myocardial infarction"]
+          }
+        },
+        "partial_when": {
+          "differential_contains": ["stemi", "st elevation", "st segment elevation", "anterior mi", "anterior myocardial infarction", "acute mi", "acute myocardial infarction", "myocardial infarction"]
+        },
+        "partial_credit": 0.4,
+        "did_well": "Ranked STEMI as the most likely diagnosis",
+        "missed": "STEMI was not ranked as the most likely diagnosis"
+      },
+      {
+        "id": "cr_dx_alternative",
+        "label": "Offered a sensible important alternative",
+        "domain": "clinical_reasoning",
+        "weight": 5,
+        "met_when": {
+          "differential_slot": {
+            "slot": 2,
+            "matches": ["pericarditis", "myopericarditis", "takotsubo", "stress cardiomyopathy", "nstemi", "unstable angina", "myocarditis", "lv aneurysm", "early repolarisation", "early repolarization", "lbbb", "acute coronary syndrome", "brugada"]
+          }
+        },
+        "partial_when": {
+          "differential_contains": ["pericarditis", "myopericarditis", "takotsubo", "stress cardiomyopathy", "nstemi", "unstable angina", "myocarditis", "lv aneurysm", "early repolarisation", "early repolarization", "lbbb", "acute coronary syndrome"]
+        },
+        "partial_credit": 0.4,
+        "did_well": "Offered a sensible alternative diagnosis"
+      },
+      {
+        "id": "cr_dx_cant_miss",
+        "label": "Named a can't-miss diagnosis (aortic dissection, PE, tension pneumothorax)",
+        "domain": "clinical_reasoning",
+        "weight": 8,
+        "met_when": {
+          "differential_slot": {
+            "slot": 3,
+            "matches": ["aortic dissection", "dissection", "pulmonary embolism", "pe", "tension pneumothorax", "pneumothorax", "tamponade", "oesophageal rupture", "esophageal rupture", "boerhaave"]
+          }
+        },
+        "partial_when": {
+          "differential_contains": ["aortic dissection", "dissection", "pulmonary embolism", "pe", "tension pneumothorax", "pneumothorax", "tamponade", "oesophageal rupture", "esophageal rupture", "boerhaave"]
+        },
+        "partial_credit": 0.5,
+        "did_well": "Named a can't-miss diagnosis in the differential",
+        "missed": "Did not consider a can't-miss alternative (dissection, PE, pneumothorax)",
+        "knowledge_gap": "dissection_screen"
+      },
+      {
+        "id": "cr_reasoning_text",
+        "label": "Justified the diagnosis with ECG findings and the clinical picture",
+        "domain": "clinical_reasoning",
+        "weight": 8,
+        "met_when": {
+          "all": [
+            { "reasoning_mentions": ["st elevation", "st segment elevation", "v1", "v2", "v3", "v4", "anterior", "lad", "stemi"] },
+            { "reasoning_mentions": ["chest pain", "crushing", "sweat", "diaphores", "radiat", "risk factor", "smok", "diabet", "hypertension", "pain"] }
+          ]
+        },
+        "partial_when": {
+          "any": [
+            { "reasoning_mentions": ["st elevation", "st segment elevation", "v1", "v2", "v3", "v4", "anterior", "lad", "stemi"] },
+            { "reasoning_mentions": ["chest pain", "crushing", "sweat", "diaphores", "radiat", "risk factor", "smok", "diabet", "hypertension"] }
+          ]
+        },
+        "partial_credit": 0.5,
+        "did_well": "Justified the diagnosis with the ECG and the clinical picture"
+      },
+
+      {
+        "id": "inv_ecg",
+        "label": "Ordered a 12-lead ECG",
+        "domain": "investigation_accuracy",
+        "weight": 40,
+        "critical": true,
+        "met_when": { "ordered": "ecg_12_lead" },
+        "did_well": "Ordered a 12-lead ECG",
+        "missed": "Never ordered a 12-lead ECG — the single most important test in chest pain",
+        "knowledge_gap": "ecg_within_10_minutes"
+      },
+      {
+        "id": "inv_troponin",
+        "label": "Sent a troponin to confirm myocardial injury",
+        "domain": "investigation_accuracy",
+        "weight": 12,
+        "met_when": { "ordered": ["troponin_i", "hs_troponin_i", "hs_troponin_t"] },
+        "did_well": "Sent a troponin (to confirm injury, not to decide on reperfusion)",
+        "missed": "No cardiac biomarker sent"
+      },
+      {
+        "id": "inv_baseline_bloods",
+        "label": "Sent baseline bloods (CBC and renal function/electrolytes) before antithrombotics",
+        "domain": "investigation_accuracy",
+        "weight": 10,
+        "met_when": {
+          "all": [
+            { "ordered": "cbc" },
+            { "ordered": ["bmp", "electrolytes", "renal_function"] }
+          ]
+        },
+        "partial_when": { "any": [{ "ordered": "cbc" }, { "ordered": ["bmp", "electrolytes", "renal_function"] }] },
+        "partial_credit": 0.5,
+        "did_well": "Sent baseline bloods before antithrombotics"
+      },
+      {
+        "id": "inv_coagulation",
+        "label": "Checked coagulation before anticoagulation or lysis",
+        "domain": "investigation_accuracy",
+        "weight": 6,
+        "met_when": { "any": [{ "ordered": "pt_inr" }, { "ordered": "aptt" }] }
+      },
+      {
+        "id": "inv_cxr",
+        "label": "Chest X-ray for pulmonary oedema and the mediastinum",
+        "domain": "investigation_accuracy",
+        "weight": 8,
+        "met_when": { "ordered": ["cxr_portable", "cxr_pa"] },
+        "did_well": "Ordered a chest X-ray for pulmonary oedema and the mediastinum"
+      },
+      {
+        "id": "inv_echo",
+        "label": "Bedside echo for LV function, effusion and RV involvement",
+        "domain": "investigation_accuracy",
+        "weight": 8,
+        "met_when": { "ordered": ["echo_pocus", "echo_tte"] },
+        "did_well": "Used echo to assess LV function and exclude tamponade"
+      },
+      {
+        "id": "inv_gas_lactate",
+        "label": "Assessed oxygenation and perfusion (ABG / lactate)",
+        "domain": "investigation_accuracy",
+        "weight": 4,
+        "met_when": { "any": [{ "ordered": "abg" }, { "ordered": "lactate" }, { "ordered": "vbg" }] }
+      },
+
+      {
+        "id": "mg_aspirin",
+        "label": "Gave aspirin (antiplatelet therapy)",
+        "domain": "management",
+        "weight": 12,
+        "critical": true,
+        "met_when": { "gave": "aspirin_300mg" },
+        "partial_when": { "plan_mentions": ["aspirin"] },
+        "partial_credit": 0.6,
+        "did_well": "Gave aspirin (antiplatelet therapy)",
+        "missed": "Did not give aspirin",
+        "knowledge_gap": "antiplatelet_vs_reperfusion"
+      },
+      {
+        "id": "mg_p2y12",
+        "label": "Loaded a P2Y12 inhibitor",
+        "domain": "management",
+        "weight": 6,
+        "met_when": { "gave": "p2y12_loading" },
+        "partial_when": { "plan_mentions": ["ticagrelor", "clopidogrel", "prasugrel", "p2y12", "dual antiplatelet", "dapt"] },
+        "partial_credit": 0.6,
+        "did_well": "Loaded a P2Y12 inhibitor"
+      },
+      {
+        "id": "mg_anticoagulant",
+        "label": "Gave parenteral anticoagulation",
+        "domain": "management",
+        "weight": 6,
+        "met_when": { "gave": "heparin_ufh_bolus" },
+        "partial_when": { "plan_mentions": ["heparin", "anticoag", "enoxaparin", "bivalirudin"] },
+        "partial_credit": 0.6,
+        "did_well": "Gave anticoagulation"
+      },
+      {
+        "id": "mg_reperfusion_decision",
+        "label": "Initiated a reperfusion pathway",
+        "domain": "management",
+        "weight": 30,
+        "critical": true,
+        "met_when": {
+          "any": [
+            { "gave": "activate_cath_lab" },
+            { "gave": "primary_pci_initiated" },
+            { "gave": "fibrinolysis_given" }
+          ]
+        },
+        "partial_when": {
+          "plan_mentions": ["primary pci", "pci", "cath lab", "angioplasty", "fibrinolysis", "thrombolysis", "tenecteplase", "reperfusion"]
+        },
+        "partial_credit": 0.35,
+        "did_well": "Initiated a reperfusion pathway",
+        "missed": "No reperfusion pathway initiated",
+        "knowledge_gap": "antiplatelet_vs_reperfusion"
+      },
+      {
+        "id": "mg_prefers_pci",
+        "label": "Chose primary PCI — the preferred strategy with a cath lab on site",
+        "domain": "management",
+        "weight": 8,
+        "met_when": { "any": [{ "gave": "primary_pci_initiated" }, { "gave": "activate_cath_lab" }] },
+        "partial_when": { "gave": "fibrinolysis_given" },
+        "partial_credit": 0.5,
+        "did_well": "Chose primary PCI — the preferred strategy with a cath lab on site",
+        "missed": "Did not choose primary PCI although a 24/7 cath lab was available",
+        "knowledge_gap": "reperfusion_strategy_choice"
+      },
+      {
+        "id": "mg_reperfusion_achieved",
+        "label": "Restored coronary flow before the encounter ended",
+        "domain": "management",
+        "weight": 12,
+        "met_when": { "flag": "reperfusion_achieved", "is": true },
+        "did_well": "Reperfusion achieved — coronary flow restored",
+        "missed": "Reperfusion was not completed before the encounter ended",
+        "knowledge_gap": "dont_delay_reperfusion"
+      },
+      {
+        "id": "mg_monitoring",
+        "label": "Ordered continuous monitoring",
+        "domain": "management",
+        "weight": 5,
+        "met_when": { "flag": "continuous_monitoring", "is": true },
+        "did_well": "Attached continuous monitoring",
+        "missed": "No continuous monitoring order"
+      },
+      {
+        "id": "mg_iv_access",
+        "label": "Established IV access",
+        "domain": "management",
+        "weight": 3,
+        "met_when": { "flag": "iv_access_obtained", "is": true }
+      },
+      {
+        "id": "mg_analgesia",
+        "label": "Provided analgesia",
+        "domain": "management",
+        "weight": 3,
+        "met_when": { "flag": "analgesia_given", "is": true },
+        "partial_when": { "plan_mentions": ["morphine", "fentanyl", "analgesi", "pain relief"] },
+        "partial_credit": 0.5
+      },
+      {
+        "id": "mg_statin",
+        "label": "Started a high-intensity statin",
+        "domain": "management",
+        "weight": 3,
+        "met_when": { "any": [{ "gave": "atorvastatin_80mg" }, { "plan_mentions": ["statin", "atorvastatin"] }] }
+      },
+      {
+        "id": "mg_post_care",
+        "label": "Planned post-reperfusion care and secondary prevention",
+        "domain": "management",
+        "weight": 5,
+        "met_when": {
+          "plan_mentions": ["ccu", "icu", "coronary care", "admit", "dual antiplatelet", "dapt", "ace inhibitor", "acei", "arb", "secondary prevention", "cardiac rehab", "echo", "lv function", "smoking cessation"]
+        },
+        "did_well": "Planned post-reperfusion care and secondary prevention"
+      },
+
+      {
+        "id": "ef_ecg_time",
+        "label": "ECG recorded within 10 minutes of arrival",
+        "domain": "efficiency",
+        "weight": 30,
+        "graded": { "measure": { "ordered": "ecg_12_lead" }, "full_within_minutes": 10, "zero_after_minutes": 25 },
+        "did_well": "Obtained the ECG within the 10-minute target",
+        "missed": "The ECG was delayed beyond the 10-minute target",
+        "knowledge_gap": "ecg_within_10_minutes"
+      },
+      {
+        "id": "ef_ecg_early_action",
+        "label": "Ordered the ECG within the first three actions",
+        "domain": "efficiency",
+        "weight": 10,
+        "met_when": { "ordered": "ecg_12_lead", "within_actions": 3 },
+        "did_well": "Ordered the ECG within the first three actions"
+      },
+      {
+        "id": "ef_reperfusion_time",
+        "label": "Committed to a reperfusion pathway inside the critical window",
+        "domain": "efficiency",
+        "weight": 30,
+        "critical": true,
+        "graded": {
+          "measure": { "any": [{ "gave": "activate_cath_lab" }, { "gave": "primary_pci_initiated" }, { "gave": "fibrinolysis_given" }] },
+          "full_within_minutes": 10,
+          "zero_after_minutes": 25
+        },
+        "did_well": "Activated the reperfusion pathway inside the critical window",
+        "missed": "Reperfusion was not started inside the critical window — ischaemic time kept running",
+        "knowledge_gap": "dont_delay_reperfusion"
+      },
+      {
+        "id": "ef_budget",
+        "label": "Stayed close to the recommended number of orders",
+        "domain": "efficiency",
+        "weight": 15,
+        "met_when": { "budgeted_actions_lte": 15 },
+        "missed": "Ordered far more than this case needed"
+      },
+      {
+        "id": "ef_no_deterioration",
+        "label": "Acted before the patient deteriorated",
+        "domain": "efficiency",
+        "weight": 15,
+        "met_when": {
+          "not": {
+            "any": [
+              { "rule_fired": "critical_window_no_reperfusion" },
+              { "rule_fired": "beta_blocker_crash" },
+              { "rule_fired": "cath_lab_stall" },
+              { "rule_fired": "major_deterioration" }
+            ]
+          }
+        },
+        "did_well": "Acted before the patient deteriorated",
+        "missed": "The patient deteriorated while reperfusion was delayed"
+      }
+    ],
+
+    "penalties": [
+      {
+        "id": "pen_stress_test",
+        "label": "Ordered a stress test in acute MI (contraindicated)",
+        "domain": "investigation_accuracy",
+        "points": 40,
+        "critical": true,
+        "when": { "ordered": ["exercise_stress_test", "stress_echo", "myocardial_perfusion_scan"] },
+        "knowledge_gap": "stress_testing_contraindications"
+      },
+      {
+        "id": "pen_delaying_imaging",
+        "label": "Ordered advanced imaging that delays reperfusion in a clear STEMI",
+        "domain": "investigation_accuracy",
+        "points": 12,
+        "max_points": 30,
+        "per_match": true,
+        "when": { "ordered": ["ct_aortogram", "ctpa", "ct_head_noncontrast", "ct_chest", "mri_brain", "cardiac_mri", "ct_coronary_angiography", "pet_ct"] },
+        "knowledge_gap": "dont_delay_reperfusion"
+      },
+      {
+        "id": "pen_low_value_tests",
+        "label": "Ordered low-value tests unrelated to the presentation",
+        "domain": "investigation_accuracy",
+        "points": 4,
+        "max_points": 16,
+        "per_match": true,
+        "when": { "ordered": ["d_dimer", "esr", "tsh", "uric_acid", "vitamin_d", "amylase", "hiv_test", "hbsag", "urinalysis", "psa", "anti_ccp", "ana", "hb_electrophoresis"] }
+      },
+      {
+        "id": "pen_fluid_loading",
+        "label": "Gave a fluid bolus to a patient with pulmonary congestion",
+        "domain": "management",
+        "points": 8,
+        "when": { "gave": "fluid_bolus_250ml" }
+      },
+      {
+        "id": "pen_vt_untreated",
+        "label": "Sustained VT was left untreated",
+        "domain": "management",
+        "points": 25,
+        "critical": true,
+        "when": {
+          "all": [
+            { "any": [{ "rule_fired": "major_deterioration" }, { "rule_fired": "beta_blocker_crash" }, { "rule_fired": "vt_recurrence" }] },
+            { "flag": "vt_terminated", "is": false },
+            { "flag": "reperfusion_achieved", "is": false }
+          ]
+        },
+        "knowledge_gap": "vt_shock_management"
+      }
+    ],
+
+    "misconceptions": [
+      {
+        "id": "m_stress_test",
+        "title": "Stress testing in acute MI",
+        "priority": 100,
+        "when": { "ordered": ["exercise_stress_test", "stress_echo", "myocardial_perfusion_scan"] },
+        "error": "You ordered a stress test in a patient with an acute myocardial infarction.",
+        "why_it_mattered": "Provoking further ischaemia in a patient with an occluded artery is dangerous. The ECG had already made the diagnosis; stress testing is for stable, low-risk chest pain.",
+        "knowledge_gap": "stress_testing_contraindications"
+      },
+      {
+        "id": "m_aspirin_not_reperfusion",
+        "title": "Aspirin is not reperfusion",
+        "priority": 95,
+        "when": {
+          "all": [
+            { "flag": "aspirin_given", "is": true },
+            { "flag": "reperfusion_strategy_initiated", "is": false }
+          ]
+        },
+        "error": "You gave aspirin (correct) but did not initiate reperfusion. In STEMI, antiplatelet therapy and reperfusion are distinct — aspirin alone does not restore coronary flow.",
+        "why_it_mattered": "Without reperfusion the ischaemic clock kept running — myocardium at risk was not salvaged.",
+        "knowledge_gap": "antiplatelet_vs_reperfusion"
+      },
+      {
+        "id": "m_beta_blocker_shock",
+        "title": "IV beta-blocker in a low-output state",
+        "priority": 92,
+        "when": { "flag": "immediate_deterioration", "is": true },
+        "error": "You gave an IV beta-blocker to a patient with low blood pressure, cool peripheries and pulmonary congestion.",
+        "why_it_mattered": "His tachycardia was compensation for a failing pump. Removing it dropped his cardiac output and tipped him into cardiogenic shock and VT.",
+        "knowledge_gap": "beta_blocker_contraindications"
+      },
+      {
+        "id": "m_nitrate_hypotension",
+        "title": "Nitrate in a hypotensive patient",
+        "priority": 85,
+        "when": { "flag": "unsafe_nitrate_given", "is": true },
+        "error": "You gave sublingual GTN to a patient whose systolic pressure was already 94 mmHg — far below his usual.",
+        "why_it_mattered": "Nitrates lower preload and blood pressure. In a low-output state that can precipitate collapse; they are contraindicated when the pressure is low or there is right-ventricular infarction.",
+        "knowledge_gap": "nitrates_in_hypotension"
+      },
+      {
+        "id": "m_recognised_no_action",
+        "title": "Recognised the STEMI but never acted on it",
+        "priority": 80,
+        "when": {
+          "all": [
+            { "flag": "stemi_recognized_by_student", "is": true },
+            { "flag": "reperfusion_strategy_initiated", "is": false }
+          ]
+        },
+        "error": "You recognised the STEMI but never committed to reperfusion.",
+        "why_it_mattered": "The diagnosis only matters if it changes what happens next. Every minute of delay is myocardium lost.",
+        "knowledge_gap": "dont_delay_reperfusion"
+      },
+      {
+        "id": "m_waiting_on_ct",
+        "title": "Delaying reperfusion for advanced imaging",
+        "priority": 70,
+        "when": { "ordered": ["ct_aortogram", "ctpa", "ct_head_noncontrast", "ct_chest", "mri_brain", "cardiac_mri", "ct_coronary_angiography"] },
+        "error": "You sent a patient with a clear STEMI for advanced imaging.",
+        "why_it_mattered": "Imaging took time the myocardium did not have. When the ECG shows STEMI, reperfusion should not wait for CT.",
+        "knowledge_gap": "dont_delay_reperfusion"
+      },
+      {
+        "id": "m_no_ecg",
+        "title": "No 12-lead ECG",
+        "priority": 60,
+        "when": { "not": { "ordered": "ecg_12_lead" } },
+        "error": "You did not record a 12-lead ECG. In chest pain, the ECG within 10 minutes of arrival is the test that decides everything.",
+        "why_it_mattered": "Without it the STEMI stayed invisible, and every decision after that was made without the one piece of information that mattered most.",
+        "knowledge_gap": "ecg_within_10_minutes"
+      }
+    ],
+
+    "expert_impressions": [
+      {
+        "testId": "ecg_12_lead",
+        "title": "Expert ECG interpretation",
+        "text": "Sinus tachycardia. Acute anterior STEMI: ST elevation in V1–V4 (maximum about 4.5 mm in V3) with hyperacute T waves and QS complexes in V1–V3; ST elevation and Q waves in I and aVL with reciprocal ST depression in II, III and aVF. A proximal LAD occlusion — a large territory at risk. Activate the cath lab; do not wait for troponin."
+      },
+      {
+        "testId": "cxr_portable",
+        "title": "Expert radiology impression",
+        "text": "Early pulmonary venous congestion with interstitial oedema (upper-lobe diversion, Kerley B lines). Cardiac size normal for an AP film. No mediastinal widening, pneumothorax or effusion."
+      },
+      {
+        "testId": "echo_pocus",
+        "title": "Expert echo impression",
+        "text": "Anterior, septal and apical akinesis with LVEF about 35%: an LAD-territory infarct. Normal right ventricle, no pericardial effusion — no tamponade and no RV involvement."
+      }
+    ],
+
+    "key_learning_points": [
+      "The ECG makes the diagnosis of STEMI — record it within 10 minutes of arrival.",
+      "Antiplatelet therapy is not reperfusion. Only primary PCI or fibrinolysis restores flow.",
+      "Do not wait for troponin, and do not delay for CT, when the ECG shows STEMI.",
+      "Low BP, cool peripheries and crackles mean a low-output state: avoid beta-blockers and nitrates.",
+      "Sustained VT with shock needs synchronised cardioversion — and reperfusion to stop it returning."
+    ]
+  },
+
+  "reinforcement": {
+    "antiplatelet_vs_reperfusion": {
+      "title": "Antiplatelet therapy vs reperfusion",
+      "summary": "Aspirin and P2Y12 inhibitors reduce clot propagation; only PCI or fibrinolysis restores flow.",
+      "questions": [
+        {
+          "id": "avr_1",
+          "stem": "A 55-year-old man has 40 minutes of crushing chest pain. The ECG shows 4 mm ST elevation in V1–V4. He has been given aspirin 300 mg and clopidogrel 600 mg. Which statement is most accurate?",
+          "options": [
+            "The antiplatelet drugs will restore flow in the occluded artery within minutes, so reperfusion can wait for troponin",
+            "The antiplatelet drugs limit thrombus propagation but do not open the artery; a reperfusion strategy must still be started now",
+            "Reperfusion is only needed if the pain persists 30 minutes after the antiplatelet loading",
+            "Antiplatelet therapy is the treatment of choice when the symptoms began more than an hour ago"
+          ],
+          "correctIndex": 1,
+          "explanation": "Antiplatelet therapy is adjunctive. It does not lyse the existing thrombus. In STEMI the occluded artery must be reopened by primary PCI or fibrinolysis, ideally as fast as possible.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        },
+        {
+          "id": "avr_2",
+          "stem": "Which combination correctly describes the roles of aspirin and primary PCI in acute STEMI?",
+          "options": [
+            "Aspirin restores coronary flow; PCI is only needed if aspirin fails",
+            "Aspirin and PCI both restore flow, but aspirin acts more slowly",
+            "Aspirin reduces thrombus growth and platelet aggregation; PCI mechanically restores flow in the culprit artery",
+            "Aspirin is contraindicated before PCI because it increases bleeding at the access site"
+          ],
+          "correctIndex": 2,
+          "explanation": "Aspirin is an antiplatelet agent that limits thrombus propagation. Primary PCI mechanically opens the culprit artery. They are complementary, not interchangeable.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        },
+        {
+          "id": "avr_3",
+          "stem": "A patient with STEMI has received aspirin and heparin. The cath lab is 12 minutes away. The registrar says 'he is treated, we can send him for a CT while we wait'. What is the best response?",
+          "options": [
+            "Agree — the medications have stabilised him",
+            "Disagree — antiplatelets and heparin do not restore flow; activate the cath lab now and do not delay for imaging",
+            "Agree, but only if the CT is a coronary CT angiogram",
+            "Disagree — the correct next step is to wait for the troponin result"
+          ],
+          "correctIndex": 1,
+          "explanation": "Medications are not reperfusion. The priority is to get the patient to the cath lab. Imaging that does not change immediate management only adds delay.",
+          "category": "Cardiology",
+          "difficulty": "trap"
+        }
+      ]
+    },
+    "stemi_ecg_recognition": {
+      "title": "Recognising STEMI on the ECG",
+      "summary": "ST elevation in contiguous leads defines STEMI; the territory tells you the artery.",
+      "questions": [
+        {
+          "id": "ser_1",
+          "stem": "An ECG shows ST elevation in V1–V4 with ST depression in II, III and aVF. Which artery is most likely occluded?",
+          "options": ["Right coronary artery", "Left circumflex artery", "Left anterior descending artery", "Left main stem only, with no other vessel involved"],
+          "correctIndex": 2,
+          "explanation": "ST elevation in V1–V4 indicates an anterior wall infarct, supplied by the LAD. Reciprocal ST depression in the inferior leads is typical of a proximal LAD occlusion.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        },
+        {
+          "id": "ser_2",
+          "stem": "Which finding on the ECG BEST supports the diagnosis of acute STEMI rather than acute pericarditis?",
+          "options": [
+            "Diffuse concave ST elevation with PR depression",
+            "Regional ST elevation with reciprocal ST depression",
+            "ST elevation in aVR only",
+            "Widespread ST elevation without any Q waves ever"
+          ],
+          "correctIndex": 1,
+          "explanation": "STEMI produces regional ST elevation with reciprocal depression in opposing leads. Pericarditis gives diffuse concave ST elevation with PR depression and no reciprocal change (other than in aVR).",
+          "category": "Cardiology",
+          "difficulty": "application"
+        },
+        {
+          "id": "ser_3",
+          "stem": "What is the recommended target for recording a 12-lead ECG in a patient presenting with suspected acute coronary syndrome?",
+          "options": ["Within 10 minutes of first medical contact", "Within 30 minutes of arrival", "After the first troponin result is available", "Within 2 hours of arrival"],
+          "correctIndex": 0,
+          "explanation": "Guidelines recommend a 12-lead ECG within 10 minutes of first medical contact in a patient with suspected ACS, because the ECG identifies STEMI and triggers immediate reperfusion.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        }
+      ]
+    },
+    "ecg_within_10_minutes": {
+      "title": "The 10-minute ECG",
+      "summary": "The ECG decides the pathway; do not wait for anything else.",
+      "questions": [
+        {
+          "id": "ecg10_1",
+          "stem": "A 60-year-old presents with 30 minutes of chest pain and a normal initial troponin. What should happen next?",
+          "options": [
+            "Discharge; a normal troponin excludes ACS",
+            "Record a 12-lead ECG immediately, because a normal troponin at 30 minutes cannot exclude STEMI",
+            "Repeat the troponin in 6 hours before doing anything else",
+            "Arrange an outpatient stress test"
+          ],
+          "correctIndex": 1,
+          "explanation": "Troponin takes hours to rise. STEMI is diagnosed on the ECG, which must be recorded immediately in any patient with suspected ACS.",
+          "category": "Cardiology",
+          "difficulty": "trap"
+        },
+        {
+          "id": "ecg10_2",
+          "stem": "In suspected acute coronary syndrome, which single test most directly determines whether the patient needs immediate reperfusion?",
+          "options": ["Troponin", "Chest X-ray", "12-lead ECG", "D-dimer"],
+          "correctIndex": 2,
+          "explanation": "The 12-lead ECG identifies ST-segment elevation and triggers the reperfusion pathway. Troponin confirms injury but is not required for the decision.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        }
+      ]
+    },
+    "beta_blocker_contraindications": {
+      "title": "Beta-blockers in acute MI",
+      "summary": "IV beta-blockers are harmful when there are signs of heart failure, low output or a risk of cardiogenic shock.",
+      "questions": [
+        {
+          "id": "bb_1",
+          "stem": "A patient with anterior STEMI has BP 92/60, HR 116, cool peripheries and bibasal crackles. Which drug should be AVOIDED?",
+          "options": ["Aspirin", "Primary PCI", "IV metoprolol", "Heparin"],
+          "correctIndex": 2,
+          "explanation": "IV beta-blockers are contraindicated with signs of heart failure or a low-output state; they can precipitate cardiogenic shock. Reperfusion, aspirin and heparin are appropriate.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        },
+        {
+          "id": "bb_2",
+          "stem": "Which of the following is a risk factor for cardiogenic shock that argues against giving an early IV beta-blocker in STEMI?",
+          "options": [
+            "Age under 40",
+            "Systolic pressure above 140 mmHg",
+            "Heart rate above 110/min with systolic pressure below 120 mmHg",
+            "A normal chest X-ray"
+          ],
+          "correctIndex": 2,
+          "explanation": "Tachycardia with a low systolic pressure signals a compensating, low-output state. Early IV beta-blockade removes that compensation and increases the risk of shock.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        }
+      ]
+    },
+    "nitrates_in_hypotension": {
+      "title": "Nitrates in acute MI",
+      "summary": "Nitrates lower preload and BP; contraindicated in hypotension and right-ventricular infarction.",
+      "questions": [
+        {
+          "id": "nit_1",
+          "stem": "In acute MI, sublingual GTN is CONTRAINDICATED when:",
+          "options": [
+            "The pain is severe",
+            "The systolic blood pressure is below 90 mmHg or much lower than the patient's usual",
+            "The patient is a smoker",
+            "The ECG shows anterior ST elevation"
+          ],
+          "correctIndex": 1,
+          "explanation": "Nitrates cause vasodilatation and can precipitate profound hypotension. They are contraindicated with low blood pressure, right-ventricular infarction, or recent use of a phosphodiesterase-5 inhibitor.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        },
+        {
+          "id": "nit_2",
+          "stem": "A patient with an inferior STEMI develops hypotension after GTN. Which additional finding would most explain his marked sensitivity to nitrates?",
+          "options": ["Right-ventricular infarction", "Mitral regurgitation", "Left bundle branch block", "Pulmonary embolism"],
+          "correctIndex": 0,
+          "explanation": "The right ventricle is preload-dependent. In right-ventricular infarction, reducing preload with nitrates can cause severe hypotension.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        }
+      ]
+    },
+    "dont_delay_reperfusion": {
+      "title": "Do not delay reperfusion",
+      "summary": "Time is myocardium: do not wait for troponin, and do not delay for imaging.",
+      "questions": [
+        {
+          "id": "ddr_1",
+          "stem": "A patient with STEMI on the ECG has a pending troponin. What is the correct approach?",
+          "options": [
+            "Wait for the troponin result before deciding on reperfusion",
+            "Activate the cath lab now — the ECG is sufficient and troponin must not delay reperfusion",
+            "Start reperfusion only if the troponin is more than ten times the upper limit",
+            "Repeat the ECG in an hour before acting"
+          ],
+          "correctIndex": 1,
+          "explanation": "STEMI is diagnosed on the ECG plus the clinical picture. Reperfusion should not wait for biomarkers.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        },
+        {
+          "id": "ddr_2",
+          "stem": "A patient with STEMI has a pending CT aortogram requested to 'rule out dissection first'. There is no tearing pain, no inter-arm BP difference and no widened mediastinum. What is the best approach?",
+          "options": [
+            "Wait for the CT result before any antithrombotic or reperfusion decision",
+            "Proceed with the STEMI pathway — the clinical screen is reassuring and CT would delay reperfusion",
+            "Order a coronary CT angiogram as well",
+            "Repeat the troponin before deciding"
+          ],
+          "correctIndex": 1,
+          "explanation": "Dissection should be screened for clinically (pain character, pulses, inter-arm BP, chest X-ray). With a clear STEMI and a reassuring screen, imaging that delays reperfusion is not justified.",
+          "category": "Cardiology",
+          "difficulty": "vignette"
+        }
+      ]
+    },
+    "reperfusion_strategy_choice": {
+      "title": "Primary PCI or fibrinolysis?",
+      "summary": "PCI is preferred when it can be delivered promptly; lysis when it cannot.",
+      "questions": [
+        {
+          "id": "rsc_1",
+          "stem": "A patient with STEMI presents to a hospital with a 24/7 cath lab. Symptom onset was 90 minutes ago and there are no contraindications to either strategy. What is the preferred reperfusion strategy?",
+          "options": ["Fibrinolysis, because it is quicker to start", "Primary PCI", "Medical therapy alone", "Delayed PCI after 48 hours"],
+          "correctIndex": 1,
+          "explanation": "Primary PCI is the preferred strategy when it can be delivered promptly. Fibrinolysis is reserved for when PCI cannot be delivered within about 120 minutes of diagnosis.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        },
+        {
+          "id": "rsc_2",
+          "stem": "Which of the following is an ABSOLUTE contraindication to fibrinolysis?",
+          "options": [
+            "Age over 75",
+            "A previous haemorrhagic stroke",
+            "Controlled hypertension",
+            "Current use of aspirin"
+          ],
+          "correctIndex": 1,
+          "explanation": "Previous intracranial haemorrhage is an absolute contraindication. Age, controlled hypertension and aspirin use are not.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        }
+      ]
+    },
+    "killip_shock_recognition": {
+      "title": "Recognising a low-output state",
+      "summary": "Hypotension, cool peripheries and crackles mean pump failure — and change which drugs are safe.",
+      "questions": [
+        {
+          "id": "ksr_1",
+          "stem": "In acute MI, which combination of findings indicates a low-output (pre-shock) state?",
+          "options": [
+            "Warm peripheries, normal BP, clear chest",
+            "Low BP, cool clammy peripheries and bibasal crackles",
+            "Bradycardia with warm peripheries",
+            "Isolated tachycardia in a patient in severe pain"
+          ],
+          "correctIndex": 1,
+          "explanation": "Hypotension with cool clammy peripheries and pulmonary crackles indicates pump failure with poor perfusion. It changes drug choices and the urgency of reperfusion.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        }
+      ]
+    },
+    "stress_testing_contraindications": {
+      "title": "Stress testing",
+      "summary": "Stress testing is for stable patients — never in acute MI.",
+      "questions": [
+        {
+          "id": "stc_1",
+          "stem": "Which is a contraindication to exercise stress testing?",
+          "options": ["Stable exertional angina", "Acute myocardial infarction", "A family history of coronary disease", "Controlled hypertension"],
+          "correctIndex": 1,
+          "explanation": "Exercise testing is contraindicated in acute MI because provoking further ischaemia in a patient with an occluded artery is dangerous.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        }
+      ]
+    },
+    "dissection_screen": {
+      "title": "Screening for aortic dissection",
+      "summary": "Screen clinically before antithrombotics and lysis: pain character, pulses, inter-arm BP, mediastinum.",
+      "questions": [
+        {
+          "id": "ds_1",
+          "stem": "Which finding should make you STOP and consider aortic dissection before giving anticoagulation or fibrinolysis for suspected STEMI?",
+          "options": [
+            "Central crushing chest pain radiating to the left arm",
+            "A difference of more than 20 mmHg in systolic BP between the arms with tearing pain radiating to the back",
+            "Sweating and nausea",
+            "A history of smoking"
+          ],
+          "correctIndex": 1,
+          "explanation": "Tearing pain radiating to the back and a marked inter-arm BP difference suggest dissection. Anticoagulation or lysis in a dissection can be fatal.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        }
+      ]
+    },
+    "fibrinolysis_contraindications": {
+      "title": "Screening before lysis and anticoagulation",
+      "summary": "Ask about bleeding, stroke, recent surgery and allergy before antithrombotics.",
+      "questions": [
+        {
+          "id": "flc_1",
+          "stem": "Which history should be checked BEFORE giving fibrinolysis for STEMI?",
+          "options": [
+            "Previous stroke, active bleeding, recent major surgery or head injury",
+            "Favourite foods",
+            "Length of the daily commute",
+            "Whether he owns a car"
+          ],
+          "correctIndex": 0,
+          "explanation": "Previous haemorrhagic stroke, active bleeding, recent major surgery or head trauma are contraindications that must be excluded before lysis or intensive anticoagulation.",
+          "category": "Cardiology",
+          "difficulty": "recall"
+        }
+      ]
+    },
+    "vt_shock_management": {
+      "title": "VT with shock",
+      "summary": "Treat the rhythm with synchronised cardioversion; treat the cause with reperfusion.",
+      "questions": [
+        {
+          "id": "vts_1",
+          "stem": "A patient with acute MI develops sustained ventricular tachycardia with a palpable pulse, BP 66/44 and drowsiness. What is the most appropriate immediate treatment?",
+          "options": [
+            "Oral beta-blocker",
+            "Synchronised DC cardioversion",
+            "IV fluids only",
+            "Observation and repeat ECG in 10 minutes"
+          ],
+          "correctIndex": 1,
+          "explanation": "VT with haemodynamic compromise needs immediate synchronised cardioversion. The underlying ischaemia must then be treated with reperfusion or the VT will recur.",
+          "category": "Cardiology",
+          "difficulty": "application"
+        }
+      ]
+    },
+    "mastery_challenge": {
+      "title": "Challenge",
+      "summary": "For a well-handled case: harder integration questions.",
+      "questions": [
+        {
+          "id": "mc_1",
+          "stem": "A patient with an anterior STEMI is 3 hours from symptom onset, with a PCI centre 3 hours away by road and no contraindications. What is the best strategy?",
+          "options": [
+            "Wait until he arrives at the PCI centre before treating",
+            "Fibrinolysis now, then transfer for angiography (pharmaco-invasive strategy)",
+            "Aspirin alone and observe",
+            "Do nothing until the troponin peaks"
+          ],
+          "correctIndex": 1,
+          "explanation": "When primary PCI cannot be delivered within about 120 minutes of diagnosis, fibrinolysis should be given promptly, followed by transfer for angiography (pharmaco-invasive strategy).",
+          "category": "Cardiology",
+          "difficulty": "integration"
+        },
+        {
+          "id": "mc_2",
+          "stem": "After successful primary PCI for an anterior STEMI with an LVEF of 35%, which long-term drug class has proven mortality benefit and should be started?",
+          "options": [
+            "Long-term nitrates",
+            "ACE inhibitor (or ARB)",
+            "Digoxin",
+            "Calcium-channel blocker"
+          ],
+          "correctIndex": 1,
+          "explanation": "ACE inhibitors (or ARBs) improve survival after MI with reduced LVEF, along with dual antiplatelet therapy, beta-blocker, high-intensity statin and, where indicated, an MRA.",
+          "category": "Cardiology",
+          "difficulty": "integration"
+        }
+      ]
+    }
+  }
+}

@@ -1,26 +1,24 @@
 import { Suspense } from "react"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { DashboardOverview } from "../../components/dashboard/dashboard-overview"
-import { getDashboardStats } from "@/app/actions/dashboard"
+import { HomeSkeleton } from "@/components/dashboard/skeletons"
+import { getDashboardData } from "@/app/actions/dashboard"
+import { getCases } from "@/data/cases"
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Dashboard" };
 
 async function DashboardStats() {
-  const stats = await getDashboardStats();
-  return <DashboardOverview initialStats={stats} />
+  // The numbers and per-case progress in one go (two small queries), beside the case list, which is kept for a minute.
+  const [{ stats, progress }, cases] = await Promise.all([getDashboardData(), getCases()])
+  return <DashboardOverview initialStats={stats} cases={cases} progress={progress} />
 }
 
 export default function DashboardPage() {
+  // The frame is sent at once; the page's own content streams in when its data is ready.
   return (
     <DashboardLayout>
-      <Suspense fallback={
-        <div className="flex-1 flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-200 border-t-brand-600" />
-            <p className="text-sm text-slate-500">Loading your dashboard...</p>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<HomeSkeleton />}>
         <DashboardStats />
       </Suspense>
     </DashboardLayout>

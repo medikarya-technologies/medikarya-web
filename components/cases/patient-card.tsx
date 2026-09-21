@@ -1,279 +1,310 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatPatientAge } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import {
-  User,
-  Calendar,
-  Activity,
-  Heart,
-  Thermometer,
-  Wind,
-  Droplets,
-  AlertCircle,
-  Pill,
-  Play,
-  FileText
-} from "lucide-react"
+// The briefing before the bedside: who is waiting, how they look, what they came with, and the
+// numbers taken on arrival. It is drawn from the same surfaces as the encounter that follows
+// (the dark monitor for the vitals, the white sheet for the record, the desk behind them), and the
+// portrait is the one the bedside rail will show, resolved from the same appearance, so the student
+// meets the same person before and after pressing Start.
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { useMemo } from "react"
+import { cn, formatPatientAge } from "@/lib/utils"
+import { appearanceAtArrival } from "@/lib/simulation/arrival"
+import { formatClock } from "@/lib/simulation/clock-format"
+import { relativeDay } from "@/lib/library/relative-day"
+import { Button } from "@/components/ui/button"
+import { Eye, FileText, Loader2, Play } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Eyebrow, Paper, StatusPill } from "./encounter-ui"
+import { PatientPortrait } from "./patient-portrait"
+
+interface Reading {
+  value?: number | null
+  note?: string
+  unit?: string
+}
 
 interface PatientCardProps {
   patient: {
     name: string
     age: number
     gender: string
-    mrn: string
-    admissionDate: string
+    mrn?: string | null
+    admissionDate?: string | null
     chiefComplaint: string
     vitalSigns?: {
-      bloodPressure?: { systolic?: number; diastolic?: number; unit?: string }
-      heartRate?: { value?: number; unit?: string }
-      temperature?: { value?: number; unit?: string }
-      respiratoryRate?: { value?: number; unit?: string }
-      oxygenSaturation?: { value?: number; unit?: string }
+      bloodPressure?: { systolic?: number | null; diastolic?: number | null; unit?: string; note?: string }
+      heartRate?: Reading
+      temperature?: Reading
+      respiratoryRate?: Reading
+      oxygenSaturation?: Reading
     }
-    allergies: string[]
-    currentMedications: string[]
+    allergies?: string[]
+    currentMedications?: string[]
   }
   caseTitle: string
   onStartCase: () => void
+  /** The whole case. The card reads how the patient looks, and where they are seen, from it. */
+  caseData?: any
+  /** True while the encounter is being prepared: the card locks and says so. */
+  starting?: boolean
+  /** The student has already started this case on this device: the button resumes it, and can offer to start over. */
+  resume?: { elapsedSeconds: number; savedAt?: number }
+  onStartOver?: () => void
 }
 
-export function PatientCard({ patient, caseTitle, onStartCase }: PatientCardProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+interface Cell {
+  key: string
+  label: string
+  unit: string
+  text: string
+  value: string | null
+  note?: string
+  className: string
+}
+
+const has = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n)
+
+function arrivalCells(v: NonNullable<PatientCardProps["patient"]["vitalSigns"]>): Cell[] {
+  const bp = v.bloodPressure
+  return [
+    { key: "hr", label: "HR", unit: "bpm", text: "text-enc-ecg", value: has(v.heartRate?.value) ? String(v.heartRate!.value) : null, note: v.heartRate?.note, className: "" },
+    { key: "spo2", label: "SpO₂", unit: "%", text: "text-enc-spo2", value: has(v.oxygenSaturation?.value) ? String(v.oxygenSaturation!.value) : null, note: v.oxygenSaturation?.note, className: "border-l border-enc-scope-line" },
+    {
+      key: "bp",
+      label: "NIBP",
+      unit: "mmHg",
+      text: "text-enc-nibp",
+      value: has(bp?.systolic) && has(bp?.diastolic) ? `${bp!.systolic}/${bp!.diastolic}` : null,
+      note: bp?.note,
+      className: "col-span-2 border-t border-enc-scope-line sm:col-span-1 sm:border-t-0 sm:border-l",
+    },
+    { key: "rr", label: "RR", unit: "/min", text: "text-enc-rr", value: has(v.respiratoryRate?.value) ? String(v.respiratoryRate!.value) : null, note: v.respiratoryRate?.note, className: "border-t border-enc-scope-line sm:border-t-0 sm:border-l" },
+    { key: "temp", label: "Temp", unit: v.temperature?.unit === "°F" ? "°F" : "°C", text: "text-enc-nibp", value: has(v.temperature?.value) ? String(v.temperature!.value) : null, note: v.temperature?.note, className: "border-t border-l border-enc-scope-line sm:border-t-0" },
+  ]
+}
+
+// The time is the one the case was written with, not the viewer's local time: a simulated patient
+// does not arrive at a different hour for a student in another time zone.
+function arrivedAt(admissionDate: string | null | undefined): string | null {
+  if (!admissionDate) return null
+  const d = new Date(admissionDate)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })
+}
+
+// "MRN-2024-003" already says what it is; "ED-0417-58" does not.
+const mrnLabel = (mrn: string): string => (/^mrn/i.test(mrn.trim()) ? mrn.trim() : `MRN ${mrn.trim()}`)
+
+export function PatientCard({ patient, caseTitle, onStartCase, caseData, starting = false, resume, onStartOver }: PatientCardProps) {
+  // Stable between renders (the portrait is memoised on its look), and the card's own `patient`
+  // wins over the case's, so what is printed and what is drawn come from the same record.
+  const arrival = useMemo(() => appearanceAtArrival({ ...(caseData ?? {}), patient: { ...(caseData?.patient ?? {}), ...patient } }), [caseData, patient])
+  const cells = patient.vitalSigns ? arrivalCells(patient.vitalSigns) : []
+  const allergies = patient.allergies ?? []
+  const medications = patient.currentMedications ?? []
+  const setting: string | undefined = caseData?.setting
+  const arrived = arrivedAt(patient.admissionDate)
+  const age = formatPatientAge(patient.age).replace(/ old/g, "")
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="text-center space-y-3">
-        <Badge className="bg-brand-100 text-brand-700 border-brand-200 px-4 py-1">
-          Case Study
-        </Badge>
-        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{caseTitle}</h1>
-        <p className="text-slate-600">
-          Review the patient information below and start the case when ready
-        </p>
-      </div>
+    <div className="relative animate-in space-y-6 fade-in duration-500">
+      <header className="space-y-1.5">
+        <Eyebrow>Case briefing</Eyebrow>
+        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.01em] text-enc-ink sm:text-[30px]">{caseTitle}</h1>
+        <p className="text-[15px] leading-snug text-enc-ink-2">Take a first look at the patient, then start the case when you are ready.</p>
+      </header>
 
-      {/* Patient Information Card */}
-      <Card className="bg-white/90 backdrop-blur-sm border-2 border-slate-200 shadow-lg">
-        <CardHeader className="bg-gradient-to-r from-brand-50 to-accent-50 border-b border-slate-200 px-4 py-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center flex-shrink-0">
-                <User className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-              </div>
-              <div className="min-w-0">
-                <CardTitle className="text-lg sm:text-2xl text-slate-900 truncate">{patient.name}</CardTitle>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1 text-xs sm:text-sm text-slate-600">
-                  <span className="whitespace-nowrap">{formatPatientAge(patient.age)}</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="whitespace-nowrap">{patient.gender}</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="font-mono text-[10px] sm:text-xs bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{patient.mrn}</span>
-                </div>
-              </div>
-            </div>
-            <Badge variant="outline" className="bg-white w-fit self-start sm:self-auto text-xs sm:text-sm py-1">
-              <Calendar className="mr-1.5 sm:mr-2 h-3 w-3" />
-              {formatDate(patient.admissionDate)}
-            </Badge>
-          </div>
-        </CardHeader>
+      <Paper className="overflow-hidden">
+        {/* ── Who ─────────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-4 p-4 sm:grid-cols-[176px_1fr] sm:gap-x-6 sm:p-5">
+          <PatientPortrait
+            persona={arrival.persona}
+            look={arrival.look}
+            rr={arrival.rr}
+            label={arrival.observation || patient.name}
+            className="h-[104px] w-[104px] overflow-hidden rounded-xl ring-1 ring-enc-line sm:row-span-2 sm:h-[176px] sm:w-[176px]"
+          />
 
-        <CardContent className="p-6 space-y-6">
-          {/* Chief Complaint */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold text-amber-900 mb-1">Chief Complaint</h3>
-                <p className="text-amber-800">{patient.chiefComplaint}</p>
-              </div>
+          <div className="min-w-0 self-center sm:self-start">
+            <h2 className="text-[20px] leading-tight font-semibold text-enc-ink sm:text-[24px]">{patient.name}</h2>
+            <p className="mt-1 text-[14px] text-enc-ink-2">
+              {age} · {patient.gender}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-enc-ink-3">
+              {patient.mrn && <span className="font-mono">{mrnLabel(patient.mrn)}</span>}
+              {setting && <span>{setting}</span>}
+              {arrived && <span>Arrived {arrived}</span>}
             </div>
           </div>
 
-          {/* Vital Signs */}
-          <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2 text-sm sm:text-base">
-              <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-brand-600" />
-              Vital Signs
-            </h3>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Heart className="h-4 w-4 text-red-500" />
-                  <span className="text-xs text-slate-600 font-medium">Blood Pressure</span>
-                </div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {patient.vitalSigns?.bloodPressure?.systolic ? `${patient.vitalSigns.bloodPressure.systolic}/${patient.vitalSigns.bloodPressure.diastolic} ${patient.vitalSigns.bloodPressure.unit || 'mmHg'}` : 'Not recorded'}
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Activity className="h-4 w-4 text-pink-500" />
-                  <span className="text-xs text-slate-600 font-medium">Heart Rate</span>
-                </div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {patient.vitalSigns?.heartRate?.value ? `${patient.vitalSigns.heartRate.value} ${patient.vitalSigns.heartRate.unit || 'bpm'}` : 'Not recorded'}
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Thermometer className="h-4 w-4 text-orange-500" />
-                  <span className="text-xs text-slate-600 font-medium">Temperature</span>
-                </div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {patient.vitalSigns?.temperature?.value ? `${patient.vitalSigns.temperature.value} ${patient.vitalSigns.temperature.unit || '°C'}` : 'Not recorded'}
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Wind className="h-4 w-4 text-brand-500" />
-                  <span className="text-xs text-slate-600 font-medium">Respiratory Rate</span>
-                </div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {patient.vitalSigns?.respiratoryRate?.value ? `${patient.vitalSigns.respiratoryRate.value} ${patient.vitalSigns.respiratoryRate.unit || 'breaths/min'}` : 'Not recorded'}
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                <div className="flex items-center gap-2 mb-1">
-                  <Droplets className="h-4 w-4 text-accent-500" />
-                  <span className="text-xs text-slate-600 font-medium">O₂ Saturation</span>
-                </div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {patient.vitalSigns?.oxygenSaturation?.value ? `${patient.vitalSigns.oxygenSaturation.value}${patient.vitalSigns.oxygenSaturation.unit === '%' ? '%' : ` ${patient.vitalSigns.oxygenSaturation.unit || '%'}`}` : 'Not recorded'}
-                </p>
-              </div>
-            </div>
+          <div className="col-span-2 sm:col-span-1">
+            <Eyebrow>Presenting complaint</Eyebrow>
+            <p className="mt-1.5 border-l-2 border-enc-line-strong pl-3 text-[16px] leading-relaxed text-enc-ink">{patient.chiefComplaint}</p>
           </div>
+        </div>
 
-          <Separator />
-
-          {/* Allergies */}
-          <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              Allergies
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {patient.allergies.length > 0 ? (
-                patient.allergies.map((allergy, index) => (
-                  <Badge key={index} variant="destructive" className="bg-red-100 text-red-700 border-red-200">
-                    {allergy}
-                  </Badge>
-                ))
-              ) : (
-                <span className="text-sm text-slate-600">No known allergies</span>
-              )}
-            </div>
+        {/* ── First look ──────────────────────────────────────────────── */}
+        {arrival.observation && (
+          <div className="flex gap-2.5 border-t border-enc-line bg-enc-desk px-4 py-3 sm:px-5">
+            <Eye className="mt-0.5 h-4 w-4 shrink-0 text-enc-ink-3" aria-hidden />
+            <p className="text-[14px] leading-snug text-enc-ink-2 italic">
+              <span className="mr-1.5 text-[11px] font-semibold tracking-[0.09em] text-enc-ink-3 uppercase not-italic">First look</span>{" "}
+              {arrival.observation}
+            </p>
           </div>
+        )}
 
-          {/* Current Medications */}
-          <div>
-            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-              <Pill className="h-5 w-5 text-green-600" />
-              Current Medications
-            </h3>
-            <div className="space-y-2">
-              {patient.currentMedications.length > 0 ? (
-                patient.currentMedications.map((medication, index) => (
-                  <div key={index} className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                    <p className="text-sm text-green-900">{medication}</p>
+        {/* ── Vitals on arrival: the monitor's surface, not live yet ──── */}
+        {cells.length > 0 && (
+          <section aria-label="Vital signs on arrival" className="bg-enc-scope text-enc-nibp">
+            <p className="px-4 pt-2.5 pb-1 text-[10.5px] font-semibold tracking-[0.12em] text-enc-scope-dim uppercase sm:px-5">Vitals on arrival</p>
+            <div className="grid grid-cols-2 sm:grid-cols-5">
+              {cells.map((c) => (
+                <div key={c.key} className={cn("px-4 py-2.5 sm:px-5", c.className)}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[10.5px] font-semibold tracking-[0.1em] text-enc-scope-dim uppercase">{c.label}</span>
+                    <span className="text-[10.5px] text-enc-scope-dim">{c.unit}</span>
                   </div>
+                  <p className={cn("font-mono text-[28px] leading-[1.15] font-medium tabular-nums", c.value ? c.text : "text-enc-scope-dim")}>
+                    {c.value ?? "—"}
+                    {!c.value && <span className="sr-only">not recorded</span>}
+                  </p>
+                  {c.note && <p className="text-[10.5px] leading-snug text-enc-scope-dim">{c.note}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── The record ──────────────────────────────────────────────── */}
+        <div className="grid gap-x-6 gap-y-5 p-4 sm:grid-cols-2 sm:p-5">
+          <section aria-label="Allergies">
+            <Eyebrow>Allergies</Eyebrow>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {allergies.length > 0 ? (
+                allergies.map((a) => (
+                  <StatusPill key={a} tone="crit" className="px-2 py-1 text-[12px]">
+                    {a}
+                  </StatusPill>
                 ))
               ) : (
-                <span className="text-sm text-slate-600">No current medications</span>
+                <p className="text-[14px] text-enc-ink-2">No known allergies</p>
               )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </section>
 
+          <section aria-label="Current medications">
+            <Eyebrow>Current medications</Eyebrow>
+            {medications.length > 0 ? (
+              <ul className="mt-2 divide-y divide-enc-line">
+                {medications.map((m) => (
+                  <li key={m} className="py-1.5 text-[14px] leading-snug text-enc-ink first:pt-0 last:pb-0">
+                    {m}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-[14px] text-enc-ink-2">No current medications</p>
+            )}
+          </section>
+        </div>
+      </Paper>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col-reverse sm:flex-row justify-center gap-3 sm:gap-4 pt-2">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Dialog>
           <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full sm:w-auto min-w-[150px]"
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              View Guidelines
+            <Button variant="outline" size="lg" className="h-11 w-full gap-2 rounded-lg border-enc-line-strong bg-enc-sheet text-[14px] font-medium text-enc-ink-2 hover:bg-enc-console hover:text-enc-ink sm:w-auto">
+              <FileText className="h-4 w-4" />
+              View guidelines
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Clinical Guidelines</DialogTitle>
-              <DialogDescription>
-                Standard evaluation and management protocols.
-              </DialogDescription>
+              <DialogTitle>Clinical guidelines</DialogTitle>
+              <DialogDescription>Standard evaluation and management protocols.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 text-sm text-slate-700">
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h4 className="font-semibold text-slate-900 mb-2">General Assessment</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Assess airway, breathing, and circulation immediately upon presentation.</li>
-                  <li>Obtain a detailed history including onset, duration, and progression of symptoms.</li>
-                  <li>Perform a comprehensive physical examination with focus on the affected systems.</li>
-                </ul>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h4 className="font-semibold text-slate-900 mb-2">Diagnostic Approach</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Order investigations based on clinical suspicion and pre-test probability.</li>
-                  <li>Avoid unnecessary testing to reduce cost and patient discomfort.</li>
-                  <li>Review vital signs and red flags before ruling out serious pathology.</li>
-                </ul>
-              </div>
-
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h4 className="font-semibold text-slate-900 mb-2">Management Principles</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Prioritize stabilization of unstable patients.</li>
-                  <li>Provide symptomatic relief while awaiting confirmatory diagnosis.</li>
-                  <li>Involve specialists early for complex or rapidly deteriorating cases.</li>
-                </ul>
-              </div>
+            <div className="space-y-3 text-[14px] text-enc-ink-2">
+              {GUIDELINES.map((g) => (
+                <div key={g.title} className="rounded-lg border border-enc-line bg-enc-desk p-4">
+                  <h4 className="mb-2 font-semibold text-enc-ink">{g.title}</h4>
+                  <ul className="list-disc space-y-1 pl-5">
+                    {g.points.map((p) => (
+                      <li key={p}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
           </DialogContent>
         </Dialog>
 
-        <Button
-          size="lg"
-          onClick={onStartCase}
-          className="w-full sm:w-auto min-w-[200px] bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <Play className="mr-2 h-5 w-5" />
-          Start Case
-        </Button>
+        <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
+          <Button
+            size="lg"
+            onClick={onStartCase}
+            disabled={starting}
+            className="h-11 w-full gap-2 rounded-lg bg-brand-600 px-6 text-[14px] font-semibold text-white shadow-none hover:bg-brand-700 sm:w-auto sm:min-w-[180px]"
+          >
+            <Play className="h-4 w-4" />
+            {resume ? "Resume case" : "Start case"}
+          </Button>
+          {resume && (
+            <p className="text-center text-[12.5px] text-enc-ink-3 sm:text-right" suppressHydrationWarning>
+              You left off at <span className="font-mono tabular-nums">{formatClock(resume.elapsedSeconds)}</span>
+              {resume.savedAt ? `, ${relativeDay(new Date(resume.savedAt).toISOString())}` : ""}.{" "}
+              {onStartOver && (
+                <button
+                  type="button"
+                  onClick={onStartOver}
+                  disabled={starting}
+                  className="rounded font-medium text-brand-700 underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-brand-300 disabled:opacity-50"
+                >
+                  Start over
+                </button>
+              )}
+            </p>
+          )}
+        </div>
       </div>
+
+      {starting && (
+        <div className="absolute inset-0 z-20 flex animate-in items-center justify-center rounded-xl bg-enc-desk/75 backdrop-blur-[2px] fade-in duration-300" role="status">
+          <div className="flex items-center gap-3 rounded-lg border border-enc-line bg-enc-sheet px-4 py-3 shadow-enc-sheet">
+            <Loader2 className="h-4 w-4 animate-spin text-brand-600" />
+            <div>
+              <p className="text-[13px] leading-tight font-semibold text-enc-ink">Preparing simulation</p>
+              <p className="text-[12px] leading-tight text-enc-ink-3">Going to the bedside…</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+const GUIDELINES: Array<{ title: string; points: string[] }> = [
+  {
+    title: "General assessment",
+    points: [
+      "Assess airway, breathing, and circulation immediately upon presentation.",
+      "Obtain a detailed history including onset, duration, and progression of symptoms.",
+      "Perform a comprehensive physical examination with focus on the affected systems.",
+    ],
+  },
+  {
+    title: "Diagnostic approach",
+    points: [
+      "Order investigations based on clinical suspicion and pre-test probability.",
+      "Avoid unnecessary testing to reduce cost and patient discomfort.",
+      "Review vital signs and red flags before ruling out serious pathology.",
+    ],
+  },
+  {
+    title: "Management principles",
+    points: [
+      "Prioritize stabilization of unstable patients.",
+      "Provide symptomatic relief while awaiting confirmatory diagnosis.",
+      "Involve specialists early for complex or rapidly deteriorating cases.",
+    ],
+  },
+]

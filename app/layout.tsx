@@ -9,6 +9,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import Script from "next/script"
 import { LayoutClient } from "@/components/LayoutClient"
 import { Toaster } from "@/components/ui/toaster"
+import { ThemeController } from "@/components/theme-controller"
+import { themeInitScript } from "@/lib/theme"
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -96,8 +98,10 @@ export const viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
-      <html lang="en" className="scroll-smooth">
+      <html lang="en" className="scroll-smooth" suppressHydrationWarning>
         <head>
+          {/* Puts the dark theme on before the first paint, for someone who chose it (lib/theme.ts) */}
+          <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
           {/* Preconnect hints — warm up TCP/TLS before JS requests these origins */}
           <link rel="preconnect" href="https://clerk.medikarya.in" />
           <link rel="dns-prefetch" href="https://clerk.medikarya.in" />
@@ -108,6 +112,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           className={cn(geistSans.variable, geistMono.variable, geistSans.className)}
           suppressHydrationWarning={true}
         >
+          <ThemeController />
           <NextTopLoader
             color="#2563EB"
             initialPosition={0.08}
