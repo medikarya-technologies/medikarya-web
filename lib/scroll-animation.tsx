@@ -1,19 +1,35 @@
 "use client"
 
+// A section eases in the first time it scrolls into view, and stays. (This used to fake it: `isVisible` started
+// true and a timeout flipped it to... true, so nothing was ever actually watched. IntersectionObserver here does
+// what the name says.)
+
 import { useEffect, useRef, useState } from "react"
 
-export function useScrollAnimation(threshold = 0.1) {
-  const [isVisible, setIsVisible] = useState(true) // Start as visible by default
+export function useScrollAnimation(threshold = 0.15) {
+  const [isVisible, setIsVisible] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Set visible after a small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
+    const el = ref.current
+    if (!el) return
+    // A visitor with reduced-motion set sees content immediately, not a fade they didn't ask for.
+    if (typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setIsVisible(true)
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [])
+      return
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect() // once: it does not fade out again on the way past
+        }
+      },
+      { threshold, rootMargin: "0px 0px -80px 0px" }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [threshold])
 
   return { ref, isVisible }
 }

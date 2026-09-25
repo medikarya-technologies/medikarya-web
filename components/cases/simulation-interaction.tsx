@@ -187,6 +187,38 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   const [evaluating, setEvaluating] = useState(false)
   const pendingQuestion = useRef<string | null>(null)
 
+  // ── Diagnosis form state — lifted here so it survives tab switches ──────
+  // If the student types their differential, switches to History, then comes
+  // back, their work must still be there. Keeping it in a child that
+  // unmounts on every tab change loses it.
+  const [diagSlots, setDiagSlots] = useState<string[]>(["", "", ""])
+  const [diagReasoning, setDiagReasoning] = useState("")
+  const [diagManagement, setDiagManagement] = useState("")
+
+  // The LIVE encounter sizes itself to exactly `100dvh` and every panel scrolls internally —
+  // the page itself is never meant to scroll there. Some browser/OS combinations compute
+  // `100dvh` a little tall against nested flex layouts (most visible on the Diagnose tab,
+  // which nests a scrollable region plus a sticky footer inside it), leaving the outer page
+  // a few dozen pixels taller than the real viewport and scrollable into blank space below
+  // the UI. Locking body scroll while the live encounter is showing makes that impossible
+  // regardless of the exact `dvh` rounding a given browser produces.
+  //
+  // This component never unmounts when the encounter ends — `feedback` just flips from null
+  // to set and the SAME `Encounter` instance renders the debrief screens below instead. Those
+  // screens are NOT `dvh`-constrained (they're a normal `min-h-screen` page that's often
+  // taller than one viewport, e.g. "Tests You Should Have Considered" near the bottom of a
+  // long step), so they need the page to scroll normally. The lock has to release the moment
+  // `feedback` is set, not just on unmount, or a debrief step taller than the viewport
+  // becomes permanently unreachable.
+  useEffect(() => {
+    if (ui.feedback) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [ui.feedback])
+
   const feedback = ui.feedback
   const p = caseData.patient
   const speaksForSelf: boolean = caseData.ai_role?.can_speak_for_self !== false
@@ -484,13 +516,15 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
           <WorkspaceHeader brief={objective} tabs={tabDefs} active={tab} onChange={setTab} isExpired={isExpired} />
 
           <div className="min-h-0 flex-1 overflow-hidden">
-            {tab === "history" && (
+            {/* All tab panels stay mounted. Toggling visibility (not unmounting) means:
+                1. The Diagnose scroll container always has correct flex height.
+                2. Typed form values are not lost when the student switches tabs. */}
+            <div className={cn("h-full", tab !== "history" && "hidden")}>
               <AIPatientChat
                 variant="bedside"
                 caseData={caseData}
                 onMessageSent={handleChatMessage as any}
                 chatHistory={ui.chat as any}
-                // When a parent speaks for a child, the lines are the parent's: their name, not the child's face.
                 patientName={speaksForSelf ? p.name : `${String(speaker).charAt(0).toUpperCase()}${String(speaker).slice(1)} of ${p.name}`}
                 patientAvatar={
                   speaksForSelf ? (
@@ -504,10 +538,12 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
                   ) : undefined
                 }
               />
-            )}
-            {tab === "exam" && <SimulationExamConsole />}
-            {tab === "tests" && <SimulationInvestigations />}
-            {tab === "diagnose" && (
+            </div>
+            {tab === "exam" && <div className="h-full"><SimulationExamConsole /></div>}
+            <div className={cn("h-full", tab !== "tests" && "hidden")}>
+              <SimulationInvestigations />
+            </div>
+            <div className={cn("h-full", tab !== "diagnose" && "hidden")}>
               <DiagnosisSubmission
                 orderedTests={[]}
                 testResults={[]}
@@ -521,9 +557,16 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
                   isLoading: evaluating,
                   expired: isExpired,
                   onSubmit: submit,
+                  // Persisted form state — survives tab switches
+                  slots: diagSlots,
+                  setSlots: setDiagSlots,
+                  reasoning: diagReasoning,
+                  setReasoning: setDiagReasoning,
+                  management: diagManagement,
+                  setManagement: setDiagManagement,
                 }}
               />
-            )}
+            </div>
           </div>
         </main>
       </div>

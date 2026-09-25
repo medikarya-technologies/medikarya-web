@@ -38,7 +38,7 @@ const values = [
         iconBg: "bg-emerald-50",
         iconColor: "text-emerald-500",
         title: "Honest feedback",
-        desc: "No vague scores. Students deserve to know exactly where their reasoning broke down and what a better approach looks like.",
+        desc: "Two scores, not one: what you did, and what you did without any help. Students deserve to know exactly where their reasoning broke down and what a better approach looks like.",
     },
     {
         Icon: Heart,
@@ -112,7 +112,7 @@ export default function AboutPage() {
                     <section className="mb-20">
                         <h2 className="text-2xl font-bold text-slate-900 mb-3">What MediKarya is</h2>
                         <p className="text-slate-600 leading-relaxed mb-8">
-                            MediKarya is an AI patient simulation platform. Students interact with a virtual patient presented with a chief complaint. They take a history, order investigations, interpret results, and submit a diagnosis and management plan. The AI evaluates their reasoning at each step — not just whether the final diagnosis was right, but whether the clinical thinking was sound.
+                            MediKarya is an AI patient simulation platform. Students interact with a virtual patient presented with a chief complaint, working against a real bedside monitor with live vitals. They take a history, order investigations, interpret results, and rank a differential — a working diagnosis, a real alternative, and the one they can't afford to miss — before submitting a management plan. The AI evaluates their reasoning at each step — not just whether the final diagnosis was right, but whether the clinical thinking was sound.
                         </p>
                         <p className="text-slate-600 leading-relaxed">
                             Cases are built around real clinical presentations — the kinds seen at district hospitals and tertiary centres across India. Paediatrics, obstetrics, neurology, medicine. Each case comes with evidence-based learning objectives, structured differentials, and teaching points grounded in current guidelines.
@@ -141,7 +141,7 @@ export default function AboutPage() {
                     <section className="mb-20">
                         <h2 className="text-2xl font-bold text-slate-900 mb-3">Where we are right now</h2>
                         <p className="text-slate-600 leading-relaxed mb-4">
-                            MediKarya is in early development. We currently have 4 published clinical cases and are actively building the case library and platform features. If you're a medical student, clinician, or educator who wants to help shape what this becomes — we'd genuinely like to hear from you.
+                            MediKarya is in early development. We currently have 10 published clinical cases — including a real-time cardiac emergency that deteriorates based on how it's managed — and are actively building the case library and platform features. If you're a medical student, clinician, or educator who wants to help shape what this becomes — we'd genuinely like to hear from you.
                         </p>
                         <p className="text-slate-600 leading-relaxed">
                             We're based in India and building this for the Indian medical education context, with a longer-term goal of expanding to other LMIC settings where the same gap exists.

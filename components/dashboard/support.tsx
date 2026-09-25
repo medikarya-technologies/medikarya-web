@@ -71,13 +71,13 @@ export function Support() {
               </a>
             </li>
             <li>
-              <a href="tel:+919711638511" className="flex items-center gap-3.5 px-4 py-3.5 outline-none transition-colors hover:bg-enc-desk focus-visible:bg-enc-desk focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-inset sm:px-5">
+              <a href="tel:+918796502901" className="flex items-center gap-3.5 px-4 py-3.5 outline-none transition-colors hover:bg-enc-desk focus-visible:bg-enc-desk focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-inset sm:px-5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-enc-console text-enc-ink-2">
                   <Phone className="h-4 w-4" strokeWidth={1.8} />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[11px] font-semibold tracking-[0.09em] text-enc-ink-3 uppercase">Phone</span>
-                  <span className="block font-mono text-[14px] font-medium text-brand-700 tabular-nums">+91 97116 38511</span>
+                  <span className="block font-mono text-[14px] font-medium text-brand-700 tabular-nums">+91 87965 02901</span>
                 </span>
               </a>
             </li>

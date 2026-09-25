@@ -1,140 +1,87 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { motion } from "framer-motion"
+// The demo video, without the "holographic theatre" wrapper (glass reflections, a mix-blend aurora glow, a
+// floor reflection, a mouse-tracked spotlight) that dressed up a plain YouTube embed as something more than it
+// is. Two things brought back after the first pass read as too plain: a restrained dot-grid texture (the same
+// idea the old page had, kept to one static, low-opacity layer instead of stacking three effects), and a real
+// picture behind the play button. The picture is not hotlinked to YouTube's own CDN any more — that thumbnail is
+// real (i.ytimg.com/vi/<id>/hqdefault.jpg, confirmed with curl), but a hotlinked youtube.com/ytimg.com image is
+// exactly the kind of third-party request ad blockers routinely strip, which is likely why it rendered as a flat
+// slate-900 fallback for the user testing this in their own browser. public/demo-thumbnail.jpg is that same real
+// frame, downloaded once and served from this origin, so no blocker can single it out.
+//
+// Re-added after being cut in the user's own consolidation pass — "watch the whole thing end to end" right
+// after the numbered moments close (debrief-section.tsx's 03/04), before the real-artifact proof section
+// (pilot-proof-section.tsx) and pricing. Background has flipped between plain enc-sheet and tinted brand-50
+// several times now as sections get reordered/inserted around it — currently enc-sheet again, since its
+// neighbours (debrief-section.tsx, tinted; pilot-proof-section.tsx, now also tinted) are both Tinted. Re-check
+// this file's own background against its actual current neighbours before trusting the comment history alone.
+
+import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { Play, Pause, Maximize2, Volume2 } from "lucide-react"
+import { useScrollAnimation } from "@/lib/scroll-animation"
+import { Play } from "lucide-react"
+import { Eyebrow } from "@/components/cases/encounter-ui"
+
+const VIDEO_ID = "k_K8HfMhAIw"
 
 export function DashboardPreview() {
-  const containerRef = useRef<HTMLDivElement>(null)
-
   const [isPlaying, setIsPlaying] = useState(false)
-
-  // Gradient placeholder — replaces the 470 KiB Unsplash external image fetch
-  const videoThumbnail = null
+  const { ref, isVisible } = useScrollAnimation(0.15)
 
   return (
-    <section id="video-demo" className="py-24 sm:py-32 bg-slate-50 relative overflow-hidden flex flex-col items-center">
+    <section id="video-demo" className="relative overflow-hidden bg-enc-sheet py-20 sm:py-28" ref={ref}>
+      {/* A quiet texture, not a light show: one line grid, tinted brand-blue the way the old page's was (its own
+          grid was plain grey, but sat under a blue-tinted glow that read, together, as "blue lines"), faded top
+          and bottom, no motion. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.4]"
+        style={{
+          backgroundImage: "linear-gradient(to right, var(--brand-300) 1px, transparent 1px), linear-gradient(to bottom, var(--brand-300) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+          maskImage: "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)",
+        }}
+      />
 
-      {/* Aurora Background Atmosphere (Light) */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-50/50 via-slate-50 to-slate-50 pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:linear-gradient(to_bottom,transparent,black,transparent)] pointer-events-none" />
-
-      {/* Header Content */}
-      <div className="relative z-10 text-center max-w-3xl px-6 mb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          className="inline-flex items-center gap-2 rounded-full bg-brand-50 border border-brand-100 px-3 py-1 mb-6 text-xs font-semibold text-brand-600 uppercase tracking-widest"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse" />
-          Simulation Demo
-        </motion.div>
-
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ delay: 0.1 }}
-          className="text-4xl md:text-6xl font-bold tracking-tight text-slate-900 mb-6"
-        >
-          Train with <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-accent-600">Clinical Precision</span>
-        </motion.h2>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ delay: 0.2 }}
-          className="text-lg text-slate-600 leading-relaxed"
-        >
-          See how our AI patients help students master diagnostic reasoning before they ever touch a real patient.
-        </motion.p>
+      <div className={cn("relative mx-auto max-w-3xl px-4 text-center transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}>
+        <Eyebrow className="text-brand-600">Two minutes</Eyebrow>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink sm:text-4xl">Watch a case, start to finish</h2>
+        <p className="mt-4 text-lg leading-relaxed text-enc-ink-2">History, examination, tests and a diagnosis — the real interface, not a walkthrough of slides.</p>
       </div>
 
-      {/* THE HOLOGRAPHIC THEATER (Light Mode) */}
-      <div className="w-full max-w-6xl px-6 relative z-10" ref={containerRef}>
+      <div className={cn("relative mx-auto mt-12 max-w-4xl px-4 transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")} style={{ transitionDelay: isVisible ? "120ms" : "0ms" }}>
+        {/* One soft, still glow behind the frame — depth without a mouse-tracked spotlight. */}
+        <div aria-hidden className="absolute inset-x-10 -inset-y-6 -z-10 rounded-[3rem] bg-brand-400/20 opacity-60 blur-3xl" />
 
-        {/* Soft Glow (Behind - Light Mode) */}
-        <div
-          className="absolute inset-0 bg-brand-500/20 blur-[100px] -z-10 rounded-full mix-blend-multiply opacity-50"
-        />
-
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="relative aspect-video w-full rounded-[2rem] bg-slate-900 border border-slate-200/50 shadow-2xl overflow-hidden group cursor-pointer ring-1 ring-slate-900/5"
-          onClick={() => setIsPlaying(!isPlaying)}
+        <button
+          type="button"
+          onClick={() => setIsPlaying(true)}
+          disabled={isPlaying}
+          aria-label="Play the demo video"
+          className="group relative block aspect-video w-full overflow-hidden rounded-[1.75rem] border border-enc-line bg-slate-900 shadow-xl shadow-slate-900/10"
         >
-          {/* Glass Reflection Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent z-20 pointer-events-none" />
-
-          {/* Video / Thumbnail */}
-          <div className="absolute inset-0 bg-slate-950 flex items-center justify-center overflow-hidden">
-            {!isPlaying ? (
-              <>
-                <div
-                  className="absolute inset-0 transition-transform duration-1000 group-hover:scale-105"
-                  style={{
-                    background: videoThumbnail
-                      ? `url(${videoThumbnail}) center/cover no-repeat`
-                      : "linear-gradient(135deg, #0f172a 0%, #1e3a5f 30%, #1a4a6e 60%, #0f172a 100%)"
-                  }}
-                />
-                <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/10 transition-colors duration-500" />
-
-                {/* Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center z-40">
-                  <div className="w-24 h-24 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center group-hover:scale-110 group-hover:bg-white/30 transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
-                    <Play className="w-8 h-8 text-white fill-current ml-1" />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <iframe
-                className="w-full h-full"
-                src="https://www.youtube.com/embed/k_K8HfMhAIw?autoplay=1"
-                title="Demo Video"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            )}
-          </div>
-
-          {/* Controls Overlay (Fake) */}
-          {!isPlaying && (
-            <div className="absolute bottom-0 left-0 right-0 p-8 flex justify-between items-end z-30 bg-gradient-to-t from-slate-900/80 to-transparent">
-              <div className="text-white">
-                <h3 className="text-xl font-bold mb-1">Clinical Scenario Demo</h3>
-                <p className="text-sm text-slate-300">02:14 • Diagnosis Simulation</p>
-              </div>
-              <div className="flex gap-4">
-                <button
-                  aria-label="Toggle volume"
-                  className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors"
-                >
-                  <Volume2 className="w-5 h-5" aria-hidden="true" />
-                </button>
-                <button
-                  aria-label="Fullscreen"
-                  className="p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white transition-colors"
-                >
-                  <Maximize2 className="w-5 h-5" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
+          {isPlaying ? (
+            <iframe
+              className="h-full w-full"
+              src={`https://www.youtube.com/embed/${VIDEO_ID}?autoplay=1`}
+              title="MediKarya — interactive clinical case walkthrough"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <>
+              <img src="/demo-thumbnail.jpg" alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <div className="absolute inset-0 bg-slate-900/25 transition-colors group-hover:bg-slate-900/15" />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 shadow-lg transition-transform group-hover:scale-110">
+                  <Play className="ml-0.5 h-6 w-6 fill-brand-600 text-brand-600" />
+                </span>
+              </span>
+            </>
           )}
-
-        </motion.div>
-
-        {/* Reflection on floor (Light Mode) */}
-        <div
-          className="absolute -bottom-10 left-[5%] right-[5%] h-12 bg-brand-600/10 blur-xl rounded-[100%] z-0 opacity-50"
-        />
+        </button>
       </div>
     </section>
   )

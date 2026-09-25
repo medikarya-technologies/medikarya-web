@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { CaseInteraction } from "@/components/cases/case-interaction"
 import { PatientCard } from "@/components/cases/patient-card"
 import { StatusPill } from "@/components/cases/encounter-ui"
+import { FirstCaseConsentDialog, useFirstCaseConsent } from "@/components/cases/first-case-consent"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Loader2, Stethoscope } from "lucide-react"
 import Link from "next/link"
@@ -31,6 +32,8 @@ export default function TryPage() {
   const [isStarting, setIsStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [guestId, setGuestId] = useState<string>("")
+  const { hasConsented, markConsented } = useFirstCaseConsent()
+  const [consentOpen, setConsentOpen] = useState(false)
 
   const loadCase = useCallback(async () => {
     try {
@@ -71,6 +74,15 @@ export default function TryPage() {
     } finally {
       setIsStarting(false)
     }
+  }
+
+  // First-ever case only: gate the real start behind a one-time consent dialog.
+  const requestStartCase = () => {
+    if (!hasConsented) {
+      setConsentOpen(true)
+      return
+    }
+    void handleStartCase()
   }
 
   // --- Loading ---
@@ -144,7 +156,7 @@ export default function TryPage() {
             caseTitle={caseData.displayTitle || caseData.title}
             caseData={caseData}
             starting={isStarting}
-            onStartCase={handleStartCase}
+            onStartCase={requestStartCase}
           />
 
           {/* Info note */}
@@ -165,6 +177,15 @@ export default function TryPage() {
           </div>
         </div>
       </div>
+      <FirstCaseConsentDialog
+        open={consentOpen}
+        onCancel={() => setConsentOpen(false)}
+        onAgree={() => {
+          markConsented()
+          setConsentOpen(false)
+          void handleStartCase()
+        }}
+      />
     </div>
   )
 }

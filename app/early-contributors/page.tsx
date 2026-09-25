@@ -39,7 +39,7 @@ const contributors = [
         iconBg: "bg-emerald-50",
         iconColor: "text-emerald-500",
         contribution:
-            "Provided the initial four to five medical case scenarios that became the foundation of MediKarya's case library. These cases are at the heart of the platform's current pilot — and it wouldn't exist in its current form without this early contribution.",
+            "Provided the initial four to five medical case scenarios that became the foundation of MediKarya's case library. That library has since grown to ten cases — but it wouldn't exist in its current form without this early contribution.",
     },
 ]
 
@@ -81,7 +81,7 @@ export default function EarlyContributorsPage() {
                             </span>
                         </h1>
                         <p className="text-lg text-slate-600 leading-relaxed">
-                            MediKarya is still in its earliest days — running a pilot on four clinical cases. These are the people who made those four cases possible.
+                            MediKarya started with a pilot on four clinical cases. The library has since grown to ten, including a real-time cardiac emergency — but it wouldn't exist without the people who made those first four possible.
                         </p>
                     </div>
 

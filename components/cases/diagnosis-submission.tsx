@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -53,6 +53,14 @@ interface RankedDiagnosisProps {
   /** The encounter has run out of time: the assessment is all that is left to do. */
   expired?: boolean
   onSubmit: (assessment: RankedAssessment) => void
+  // Optional controlled state — when provided, the parent owns the values so
+  // they survive tab switches without this component being unmounted.
+  slots?: string[]
+  setSlots?: React.Dispatch<React.SetStateAction<string[]>>
+  reasoning?: string
+  setReasoning?: React.Dispatch<React.SetStateAction<string>>
+  management?: string
+  setManagement?: React.Dispatch<React.SetStateAction<string>>
 }
 
 /** Switches between the legacy form and the ranked-differential form. */
@@ -130,10 +138,25 @@ function RankedDiagnosisSubmission({
   isLoading = false,
   expired = false,
   onSubmit,
+  // Controlled state from parent — when provided, values survive tab switches.
+  slots: controlledSlots,
+  setSlots: setControlledSlots,
+  reasoning: controlledReasoning,
+  setReasoning: setControlledReasoning,
+  management: controlledManagement,
+  setManagement: setControlledManagement,
 }: RankedDiagnosisProps) {
-  const [slots, setSlots] = useState<string[]>(() => [0, 1, 2].map((i) => initialDifferential?.[i] ?? ""))
-  const [reasoning, setReasoning] = useState("")
-  const [management, setManagement] = useState("")
+  // Fall back to local state when the parent doesn't provide controlled state.
+  const [localSlots, setLocalSlots] = useState<string[]>(() => [0, 1, 2].map((i) => initialDifferential?.[i] ?? ""))
+  const [localReasoning, setLocalReasoning] = useState("")
+  const [localManagement, setLocalManagement] = useState("")
+
+  const slots = controlledSlots ?? localSlots
+  const setSlots = setControlledSlots ?? setLocalSlots
+  const reasoning = controlledReasoning ?? localReasoning
+  const setReasoning = setControlledReasoning ?? setLocalReasoning
+  const management = controlledManagement ?? localManagement
+  const setManagement = setControlledManagement ?? setLocalManagement
 
   const primary = slots[0].trim()
   const setSlot = (index: number, value: string) => setSlots((prev) => prev.map((s, i) => (i === index ? value : s)))

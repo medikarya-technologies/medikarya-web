@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { PatientCard } from "@/components/cases/patient-card"
 import { CaseInteraction } from "@/components/cases/case-interaction"
 import { CaseFeedback } from "@/components/cases/case-feedback"
+import { FirstCaseConsentDialog, useFirstCaseConsent } from "@/components/cases/first-case-consent"
 import { Button } from "@/components/ui/button"
 import { 
   ArrowLeft, 
@@ -66,6 +67,8 @@ export default function CasePage() {
   const [isStarting, setIsStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const { hasConsented, markConsented } = useFirstCaseConsent()
+  const [consentOpen, setConsentOpen] = useState(false)
 
   // The bedside screen walks a new student through itself once, on their first case: someone with no attempts on
   // any case who has not seen it on this device. It is worked out here, while the briefing is on screen.
@@ -145,6 +148,15 @@ export default function CasePage() {
     }
   }
 
+  // First-ever case only: gate the real start behind a one-time consent dialog.
+  const requestStartCase = () => {
+    if (!hasConsented) {
+      setConsentOpen(true)
+      return
+    }
+    void handleStartCase()
+  }
+
   const handleReviewAttempt = (attempt: CaseAttempt) => {
     if (!attempt.feedback_json) {
       toast({
@@ -211,7 +223,7 @@ export default function CasePage() {
         onReset={() => {
           setViewingHistory(false)
           setSelectedAttempt(null)
-          handleStartCase()
+          requestStartCase()
         }}
         mode="history"
       />
@@ -248,11 +260,20 @@ export default function CasePage() {
             Case library
           </Button>
 
-          <Briefing caseId={params.id as string} caseData={caseData} isStarting={isStarting} onStart={handleStartCase} />
+          <Briefing caseId={params.id as string} caseData={caseData} isStarting={isStarting} onStart={requestStartCase} />
 
           <AttemptHistory attempts={attempts} onReview={handleReviewAttempt} />
         </div>
       </div>
+      <FirstCaseConsentDialog
+        open={consentOpen}
+        onCancel={() => setConsentOpen(false)}
+        onAgree={() => {
+          markConsented()
+          setConsentOpen(false)
+          void handleStartCase()
+        }}
+      />
     </div>
   )
 }

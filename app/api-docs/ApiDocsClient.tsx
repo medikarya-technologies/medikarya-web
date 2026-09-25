@@ -11,7 +11,7 @@ import { useToast } from "@/components/ui/use-toast"
 
 const features = [
     { Icon: Database, iconBg: "bg-blue-50", iconColor: "text-blue-600", title: "Patient Simulator Engine", description: "Embed lifelike AI patient simulations directly inside your institution's LMS or clinical training platform. Students interact with realistic patient presentations, order investigations, and receive immediate structured feedback." },
-    { Icon: BookCopy, iconBg: "bg-purple-50", iconColor: "text-purple-600", title: "Case Library Access", description: "Integrate our library of 50+ clinical case scenarios — covering cardiology, neurology, pulmonology, emergency medicine, and more — mapped directly to your curriculum's learning objectives." },
+    { Icon: BookCopy, iconBg: "bg-purple-50", iconColor: "text-purple-600", title: "Case Library Access", description: "Integrate our library of clinical case scenarios — covering cardiology, neurology, paediatrics, endocrinology, and more — mapped directly to your curriculum's learning objectives." },
     { Icon: BarChart2, iconBg: "bg-emerald-50", iconColor: "text-emerald-600", title: "Analytics & Reporting", description: "Track diagnostic reasoning performance at the individual student and cohort level. See where students commonly anchor on incorrect diagnoses and how clinical confidence develops over time." },
 ]
 
@@ -101,7 +101,7 @@ export default function ApiDocsClient() {
                                     <span className="w-3 h-3 rounded-full bg-red-500" /><span className="w-3 h-3 rounded-full bg-yellow-500" /><span className="w-3 h-3 rounded-full bg-green-500" />
                                     <span className="ml-3 text-xs text-slate-400 font-mono">GET /v1/cases/{"{case_id}"}/summary</span>
                                 </div>
-                                <pre className="p-5 text-xs font-mono text-slate-300 leading-relaxed overflow-x-auto">{`{\n  "case_id": "mk_case_001",\n  "title": "Chest Pain in a 55-Year-Old Male",\n  "specialty": "Cardiology",\n  "difficulty": "Hard",\n  "student_session": {\n    "final_diagnosis": "NSTEMI",\n    "correct": true,\n    "score": 87\n  }\n}`}</pre>
+                                <pre className="p-5 text-xs font-mono text-slate-300 leading-relaxed overflow-x-auto">{`{\n  "case_id": "acute-anterior-stemi",\n  "title": "58-year-old man with severe chest pain and sweating",\n  "specialty": "Cardiology",\n  "difficulty": "Hard",\n  "student_session": {\n    "differential": {\n      "most_likely": "Acute anterior STEMI",\n      "alternative": "Unstable angina",\n      "cant_miss": "Aortic dissection"\n    },\n    "correct": true,\n    "clinical_score": 87,\n    "independent_score": 74\n  }\n}`}</pre>
                             </div>
                             <p className="text-xs text-slate-400 mt-3 text-center">Full API reference provided after access approval.</p>
                         </div>

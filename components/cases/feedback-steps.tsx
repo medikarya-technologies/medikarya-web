@@ -3,13 +3,19 @@
 // The classic step-by-step review chrome, shared by the standard case feedback and the
 // simulation debrief so both read as one product: progress header, one card per step,
 // Back / Next, and the closing calls to action.
+//
+// Redesigned this round to actually match the rest of the app instead of a generic
+// white-card-on-slate template: enc-* tokens throughout (so this also now works correctly
+// in dark mode, same as every other dashboard screen — it never did before, since slate-*/
+// emerald-*/rose-* are fixed colours with no dark-mode counterpart), brand-600 as the one
+// forward-action colour instead of a neutral slate-900 "next" button that made every step
+// feel like a generic wizard rather than this specific product.
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, Brain, Flag, RotateCcw, Home } from "lucide-react";
+import { ArrowRight, ArrowLeft, Brain, Flag, RotateCcw, Home, Sparkles } from "lucide-react";
 
 // ─── Lightweight markdown renderer for walkthrough text ──────────────────────
 // Handles: ### headings, **bold**, * bullet lists, blank-line paragraphs
@@ -23,7 +29,7 @@ export function WalkthroughMarkdown({ text }: { text: string }) {
     if (paraBuffer.length === 0) return;
     const raw = paraBuffer.join(" ").trim();
     if (raw) elements.push(
-      <p key={elements.length} className="text-slate-700 leading-relaxed mb-1">
+      <p key={elements.length} className="text-enc-ink-2 leading-relaxed mb-1">
         {renderInline(raw)}
       </p>
     );
@@ -35,7 +41,7 @@ export function WalkthroughMarkdown({ text }: { text: string }) {
     elements.push(
       <ul key={elements.length} className="space-y-2 mb-3 pl-1">
         {bulletBuffer.map((b, i) => (
-          <li key={i} className="flex gap-2.5 text-slate-700 leading-relaxed">
+          <li key={i} className="flex gap-2.5 text-enc-ink-2 leading-relaxed">
             <span className="mt-2 h-1.5 w-1.5 rounded-full bg-brand-500 flex-shrink-0" />
             <span>{renderInline(b)}</span>
           </li>
@@ -50,7 +56,7 @@ export function WalkthroughMarkdown({ text }: { text: string }) {
     const parts = str.split(/(\*\*[^*]+\*\*)/);
     return parts.map((p, i) =>
       p.startsWith("**") && p.endsWith("**")
-        ? <strong key={i} className="font-semibold text-slate-900">{p.slice(2, -2)}</strong>
+        ? <strong key={i} className="font-semibold text-enc-ink">{p.slice(2, -2)}</strong>
         : p
     );
   }
@@ -63,7 +69,7 @@ export function WalkthroughMarkdown({ text }: { text: string }) {
       flushBullets(); flushPara();
       const heading = line.replace(/^###\s*/, "");
       elements.push(
-        <h3 key={elements.length} className="text-base font-bold text-slate-900 mt-5 mb-2 first:mt-0">
+        <h3 key={elements.length} className="text-base font-bold text-enc-ink mt-5 mb-2 first:mt-0">
           {heading}
         </h3>
       );
@@ -74,7 +80,7 @@ export function WalkthroughMarkdown({ text }: { text: string }) {
       flushBullets(); flushPara();
       const heading = line.replace(/^##\s*/, "");
       elements.push(
-        <h2 key={elements.length} className="text-lg font-bold text-slate-900 mt-6 mb-2 first:mt-0">
+        <h2 key={elements.length} className="text-lg font-bold text-enc-ink mt-6 mb-2 first:mt-0">
           {heading}
         </h2>
       );
@@ -85,7 +91,7 @@ export function WalkthroughMarkdown({ text }: { text: string }) {
       flushBullets(); flushPara();
       const heading = line.replace(/^#\s*/, "");
       elements.push(
-        <h1 key={elements.length} className="text-xl font-bold text-slate-900 mt-6 mb-3 first:mt-0">
+        <h1 key={elements.length} className="text-xl font-bold text-enc-ink mt-6 mb-3 first:mt-0">
           {heading}
         </h1>
       );
@@ -115,7 +121,7 @@ export function WalkthroughMarkdown({ text }: { text: string }) {
 export function ProgressHeader({ step, total, onReport }: { step: number; total: number; onReport?: () => void }) {
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-3 text-sm font-medium text-slate-500">
+      <div className="flex items-center justify-between mb-3 text-sm font-medium text-enc-ink-3">
         <span>Clinical Reasoning Replay</span>
         <span className="flex items-center gap-3">
           <span>Step {step + 1} of {total}</span>
@@ -124,16 +130,16 @@ export function ProgressHeader({ step, total, onReport }: { step: number; total:
               type="button"
               onClick={onReport}
               title="Report a problem with this case"
-              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-slate-500 outline-none hover:bg-slate-100 hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-brand-300"
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium text-enc-ink-3 outline-none hover:bg-enc-desk hover:text-enc-ink focus-visible:ring-2 focus-visible:ring-brand-300"
             >
               <Flag className="h-3 w-3" /> Report
             </button>
           )}
         </span>
       </div>
-      <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+      <div className="h-2.5 w-full rounded-full bg-enc-line overflow-hidden">
         <motion.div
-          className="h-full bg-slate-900"
+          className="h-full bg-brand-600"
           initial={{ width: 0 }}
           animate={{ width: `${((step + 1) / total) * 100}%` }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -160,37 +166,46 @@ export function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, onQuizSt
         variant="outline"
         onClick={onPrev}
         disabled={isFirst}
-        className="gap-2 text-slate-600"
+        className="gap-2 border-enc-line-strong text-enc-ink-2 hover:bg-enc-desk"
       >
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 
       {isLast ? (
         <div className="flex flex-col gap-3 items-end">
-          {/* Quiz CTA — only in live mode, not history replay */}
+          {/* Quiz CTA — the single most prominent thing on this step, on purpose: it's the
+              one action here worth taking before you leave. */}
           {onQuizStart && mode !== 'history' && (
-            <div className="w-full p-4 rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Brain className="w-4 h-4 text-amber-400" />
-                  Strengthen Your Weak Areas
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">5 personalized NEET PG questions targeting your knowledge gaps</p>
+            <div className="relative w-full overflow-hidden rounded-2xl border border-brand-500/60 bg-gradient-to-br from-brand-600 to-brand-700 p-5 shadow-enc-lift sm:p-6">
+              <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3.5">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
+                    <Brain className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-brand-100">
+                      <Sparkles className="h-3 w-3" /> Next up
+                    </p>
+                    <p className="mt-1 text-lg font-bold leading-tight text-white">Strengthen your weak areas</p>
+                    <p className="mt-0.5 text-sm text-brand-100/90">5 personalised NEET PG questions targeting your knowledge gaps</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={onQuizStart}
+                  size="lg"
+                  className="w-full shrink-0 gap-1.5 rounded-full bg-white px-6 font-bold text-brand-700 shadow-lg hover:bg-brand-50 sm:w-auto"
+                >
+                  Start Quiz <ArrowRight className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                onClick={onQuizStart}
-                size="sm"
-                className="rounded-full bg-white hover:bg-slate-100 text-slate-900 px-5 flex-shrink-0 shadow-sm font-semibold gap-1.5"
-              >
-                Take Quiz <ArrowRight className="w-3.5 h-3.5" />
-              </Button>
             </div>
           )}
           {guestMode && (
-            <div className="w-full p-4 rounded-xl bg-gradient-to-r from-brand-50 to-cyan-50 border border-brand-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="w-full p-4 rounded-xl bg-brand-50 border border-brand-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900">Enjoyed this case?</p>
-                <p className="text-xs text-slate-500">Create a free account to access all cases, track your progress, and earn XP.</p>
+                <p className="text-sm font-semibold text-enc-ink">Enjoyed this case?</p>
+                <p className="text-xs text-enc-ink-2">Create a free account to access all cases, track your progress, and earn XP.</p>
               </div>
               <Button asChild size="sm" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-5 flex-shrink-0 shadow-sm">
                 <Link href="/signup">Create Free Account</Link>
@@ -199,17 +214,17 @@ export function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, onQuizSt
           )}
           <div className="flex gap-2">
             {!guestMode && (
-              <Button variant="ghost" onClick={onExit} className="gap-2">
+              <Button variant="ghost" onClick={onExit} className="gap-2 text-enc-ink-2 hover:bg-enc-desk hover:text-enc-ink">
                 <Home className="w-4 h-4" /> Dashboard
               </Button>
             )}
-            <Button onClick={onReset || (() => window.location.reload())} className="gap-2 bg-slate-900 hover:bg-slate-800 text-white">
+            <Button onClick={onReset || (() => window.location.reload())} className="gap-2 bg-brand-600 hover:bg-brand-700 text-white">
               <RotateCcw className="w-4 h-4" /> {mode === 'history' ? 'Re-attempt Case' : 'Try Again'}
             </Button>
           </div>
         </div>
       ) : (
-        <Button onClick={onNext} className="gap-2 bg-slate-900 hover:bg-slate-800 text-white">
+        <Button onClick={onNext} className="gap-2 bg-brand-600 hover:bg-brand-700 text-white">
           Next <ArrowRight className="w-4 h-4" />
         </Button>
       )}
@@ -219,19 +234,19 @@ export function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, onQuizSt
 
 export function Section({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) {
   return (
-    <Card className="shadow-lg shadow-slate-200/50 border-0 rounded-2xl bg-white overflow-hidden">
-      <CardContent className="p-6 md:p-10">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-900">
-            <Icon className="w-6 h-6" />
+    <div className="overflow-hidden rounded-xl border border-enc-line bg-enc-sheet shadow-enc-lift">
+      <div className="p-4 md:p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-enc-line bg-enc-console text-enc-ink-2">
+            <Icon className="w-4 h-4" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{title}</h2>
+          <h2 className="text-lg font-bold text-enc-ink tracking-tight">{title}</h2>
         </div>
-        <div className="text-slate-600 leading-relaxed text-[16px] md:text-lg">
+        <div className="text-enc-ink-2 leading-relaxed text-[14px]">
           {children}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

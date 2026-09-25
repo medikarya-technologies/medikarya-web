@@ -1,7 +1,7 @@
 import { Footer } from "@/components/flowai/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowLeft, PlayCircle, Clock, ChevronRight, Zap, BookOpen, Target } from "lucide-react"
+import { ArrowLeft, PlayCircle, Clock, Zap, BookOpen, Target } from "lucide-react"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -88,11 +88,11 @@ function TutorialCard({ title, description, duration, difficulty, difficultyColo
                 <span className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full border ${difficultyColor}`}>
                     {difficulty}
                 </span>
-                <h3 className="font-bold text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">{title}</h3>
+                <h3 className="font-bold text-slate-900 leading-snug">{title}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
-                <button className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:gap-2 transition-all">
-                    Watch tutorial <ChevronRight className="w-4 h-4" />
-                </button>
+                <span className="flex items-center gap-1 text-sm font-medium text-slate-400">
+                    Coming soon
+                </span>
             </div>
         </div>
     )

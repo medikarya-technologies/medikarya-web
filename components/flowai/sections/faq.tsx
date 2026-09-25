@@ -1,112 +1,84 @@
 "use client"
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { cn } from "@/lib/utils"
-import { motion, Variants } from "framer-motion"
+// Every answer here has to be true of the product as it exists, the same rule the dashboard's Support page
+// follows (components/dashboard/support.tsx). The old FAQ claimed HIPAA compliance (a US law, not relevant to an
+// Indian platform, and never verified), "institutional plans" with no page behind them, monthly case updates
+// (no evidence of a fixed schedule), and a feedback system scoring "patient communication skills" — the app has
+// never scored that; the real six are history, investigations, clinical reasoning, diagnosis, management and
+// efficiency (lib/library/skills.ts). Fixed to only what's actually true, and `specialties` comes from the
+// server so this can't go stale the way that copy did.
 
-export default function FAQSection() {
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Eyebrow } from "@/components/cases/encounter-ui"
+import { cn } from "@/lib/utils"
+import { useScrollAnimation } from "@/lib/scroll-animation"
+
+export default function FAQSection({ specialties }: { specialties: readonly string[] }) {
+  const list = specialties.length > 0 ? specialties.join(", ") : "cardiology, pediatrics, nephrology and more"
+
   const faqs = [
     {
-      question: "How realistic are the AI patient simulations?",
-      answer: "Our AI patient simulations are developed by medical professionals and use advanced natural language processing to create highly realistic patient interactions. Each scenario is based on real clinical cases and provides authentic responses to student inquiries and examinations."
+      question: "How realistic is the patient?",
+      answer:
+        "Each case is built as a full chart — a history, an examination, vitals, a set of investigations, and the red flags that matter — so the patient's answers stay consistent with the record, whatever order you ask things in. You never see the diagnosis named anywhere before you commit to one.",
     },
     {
-      question: "What medical conditions can students practice with?",
-      answer: "MediKarya covers a comprehensive range of medical conditions including cardiovascular diseases, respiratory disorders, endocrine conditions, neurological cases, infectious diseases, and emergency scenarios. We regularly add new cases based on current medical education needs."
+      question: "What can I practice?",
+      answer: `Real clinical cases across ${list}. The library is growing; what's live today is what you'll find when you open it, not a roadmap.`,
     },
     {
-      question: "How does the feedback system work?",
-      answer: "After each simulation, students receive detailed, personalized feedback on their clinical reasoning, diagnostic accuracy, test ordering appropriateness, and patient communication skills. The AI analyzes their decisions against evidence-based medical guidelines and provides specific improvement suggestions."
+      question: "How does the feedback work?",
+      answer:
+        "After a case, you get a score broken down by part — history taking, investigations, clinical reasoning, diagnosis and management — so you can see exactly where marks were lost, not just a single number at the end.",
     },
     {
-      question: "Can MediKarya be integrated into medical school curriculum?",
-      answer: "Yes! MediKarya offers institutional plans that allow seamless integration with existing medical school curricula. We provide progress tracking, performance analytics, and customizable case libraries to support institutional learning objectives."
+      question: "Is it free?",
+      answer: (
+        <>
+          The case on this page is free, and needs no account. Sign in for Basic or Pro to unlock the rest of the library — see{" "}
+          <a href="#pricing" className="font-medium text-brand-700 hover:text-brand-800">
+            pricing
+          </a>
+          .
+        </>
+      ),
     },
     {
-      question: "Is MediKarya suitable for all levels of medical training?",
-      answer: "Absolutely. Our platform offers cases ranging from basic clinical scenarios for first-year students to complex, multi-system cases for advanced trainees and residents. Difficulty levels are clearly marked and can be adjusted based on learner needs."
+      question: "What's included in Pro?",
+      answer: "Everything in Basic, plus Advanced-difficulty cases with patients whose condition can deteriorate on its own — real-time vitals and telemetry, not just a static chart.",
     },
     {
-      question: "How often are new patient cases added?",
-      answer: "We add new patient cases and update existing ones monthly, ensuring students have access to current medical scenarios that reflect the latest clinical guidelines and emerging health challenges."
+      question: "Can my medical school use this?",
+      answer: "Yes — see the API and institutional page for integrating the case library and analytics into a curriculum.",
     },
     {
-      question: "Is my patient data and progress information secure?",
-      answer: "Yes, we take data security seriously. All patient simulations are anonymized, and we comply with HIPAA regulations. Student progress data is encrypted and stored securely with strict access controls."
+      question: "Does it work on my phone?",
+      answer: "Yes. It runs in your phone's browser, and can be installed like an app for quick access.",
     },
-    {
-      question: "Can I practice on mobile devices?",
-      answer: "MediKarya is fully responsive and works seamlessly on desktop computers, tablets, and smartphones. You can continue your medical training anywhere, whether you're at home, in the library, or on clinical rotations."
-    }
   ]
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  }
-
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 1.2,
-        ease: [0.25, 0.4, 0.25, 1]
-      }
-    }
-  }
+  const { ref, isVisible } = useScrollAnimation(0.15)
 
   return (
-    <section
-      id="faq"
-      className="mx-auto max-w-4xl px-4 py-16"
-    >
-      <motion.div
-        className="mx-auto max-w-2xl text-center"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.2, ease: [0.25, 0.4, 0.25, 1] }}
-      >
-        <h2 className="text-3xl font-semibold tracking-tight">Frequently Asked Questions</h2>
-        <p className="mt-2 text-muted-foreground">
-          Everything you need to know about MediKarya's AI-powered medical education platform.
-        </p>
-      </motion.div>
+    <section id="faq" className="py-20 sm:py-24" ref={ref}>
+      <div className="mx-auto max-w-3xl px-4">
+        <div className={cn("mx-auto max-w-2xl text-center transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}>
+          <Eyebrow className="text-brand-600">Questions</Eyebrow>
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink">A few real questions</h2>
+          <p className="mt-2 text-enc-ink-2">If something else is unclear, just ask — see Support once you're in.</p>
+        </div>
 
-      <motion.div
-        className="mt-8"
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-50px" }}
-      >
-        <Accordion type="single" collapsible className="space-y-4">
-          {faqs.map((faq, index) => (
-            <motion.div key={index} variants={itemVariants}>
-              <AccordionItem value={`item-${index}`} className="rounded-2xl border px-6 bg-slate-50/50">
-                <AccordionTrigger className="text-left text-base font-medium hover:no-underline">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
-                  {faq.answer}
-                </AccordionContent>
+        <div className={cn("mt-8 transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")} style={{ transitionDelay: isVisible ? "120ms" : "0ms" }}>
+          <Accordion type="single" collapsible className="space-y-3">
+            {faqs.map((faq, index) => (
+              <AccordionItem key={faq.question} value={`item-${index}`} className="rounded-xl border border-enc-line bg-enc-sheet px-6 shadow-enc-sheet">
+                <AccordionTrigger className="text-left text-base font-medium text-enc-ink hover:no-underline">{faq.question}</AccordionTrigger>
+                <AccordionContent className="text-sm leading-relaxed text-enc-ink-2">{faq.answer}</AccordionContent>
               </AccordionItem>
-            </motion.div>
-          ))}
-        </Accordion>
-      </motion.div>
+            ))}
+          </Accordion>
+        </div>
+      </div>
     </section>
   )
 }

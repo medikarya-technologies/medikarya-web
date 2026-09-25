@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Twitter, Linkedin, Instagram, Mail, Phone, MapPin, Youtube } from "lucide-react"
 
@@ -16,7 +15,7 @@ export function Footer() {
     <footer
       ref={ref}
       className={cn(
-        "bg-slate-50 border-t transition-all duration-1000 ease-out",
+        "bg-enc-console border-t border-enc-line-strong transition-all duration-1000 ease-out",
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       )}
     >
@@ -26,12 +25,12 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center">
-                <img src="https://www.medikarya.in/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
+                <img src="/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
               </div>
-              <span className="text-xl font-bold text-slate-800">MediKarya</span>
+              <span className="text-xl font-bold text-enc-ink">MediKarya</span>
             </div>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Empowering medical students with AI-powered patient simulation technology for better clinical training and education.
+            <p className="text-sm text-enc-ink-2 max-w-xs">
+              AI patient cases for MBBS students — ask questions, order tests, and see exactly where your reasoning held up.
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-brand-50 hover:text-brand-400 transition-colors" asChild>
@@ -59,35 +58,40 @@ export function Footer() {
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold">Platform</h3>
+            <h3 className="text-sm font-semibold text-enc-ink">Platform</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/about" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   About
                 </Link>
               </li>
               <li>
-                <Link href="/#features" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/features" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   Features
                 </Link>
               </li>
               <li>
-                <Link href="/#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/how-it-works" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   How It Works
                 </Link>
               </li>
               <li>
-                <Link href="/#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/#pricing" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/contribute" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/try" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
+                  Try a case, free
+                </Link>
+              </li>
+              <li>
+                <Link href="/contribute" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   Become a Contributor
                 </Link>
               </li>
               <li>
-                <Link href="/early-contributors" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/early-contributors" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   Early Contributors
                 </Link>
               </li>
@@ -96,77 +100,68 @@ export function Footer() {
 
           {/* Resources */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold">Resources</h3>
+            <h3 className="text-sm font-semibold text-enc-ink">Resources</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/blog" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/blog" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   Medical Blog
                 </Link>
               </li>
               <li>
-                <Link href="/case-studies" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/case-studies" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   Case Studies
                 </Link>
               </li>
               <li>
-                <Link href="/tutorials" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/tutorials" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   Tutorials
                 </Link>
               </li>
               <li>
-                <Link href="/api-docs" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/api-docs" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   API Documentation
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Contact & Newsletter */}
+          {/* Contact */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold">Stay Updated</h3>
+            <h3 className="text-sm font-semibold text-enc-ink">Get in touch</h3>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <a href="mailto:contact@medikarya.in" className="flex items-center gap-2 text-sm text-enc-ink-2 hover:text-enc-ink transition-colors">
                 <Mail className="h-4 w-4" />
                 <span>contact@medikarya.in</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              </a>
+              <a href="tel:+918796502901" className="flex items-center gap-2 text-sm text-enc-ink-2 hover:text-enc-ink transition-colors">
                 <Phone className="h-4 w-4" />
-                <span>+91 9711638511</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>+91 8796502901</span>
+              </a>
+              <div className="flex items-center gap-2 text-sm text-enc-ink-2">
                 <MapPin className="h-4 w-4" />
                 <span>Delhi, NCR</span>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Get the latest updates on new features and medical education insights.
-              </p>
-              <div className="flex gap-2">
-                <Input placeholder="Enter your email" className="text-sm" />
-                <Button size="sm" className="px-3 bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200">
-                  Subscribe
-                </Button>
-              </div>
-            </div>
+            <Link href="/contact" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800 transition-colors">
+              Send us a message →
+            </Link>
           </div>
         </div>
 
         <Separator className="my-8" />
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-enc-ink-2">
             © {new Date().getFullYear()} MediKarya. All rights reserved.
           </div>
-          <div className="flex gap-6 text-sm text-muted-foreground">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">
+          <div className="flex gap-6 text-sm text-enc-ink-2">
+            <Link href="/privacy" className="hover:text-enc-ink transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">
+            <Link href="/terms" className="hover:text-enc-ink transition-colors">
               Terms of Service
             </Link>
-            <Link href="/cookies" className="hover:text-foreground transition-colors">
+            <Link href="/cookies" className="hover:text-enc-ink transition-colors">
               Cookie Policy
             </Link>
           </div>
