@@ -118,7 +118,7 @@ export default function FeaturesPage() {
                         <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl leading-tight">
                             What's actually{" "}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">
-                                built in.
+                                built&nbsp;in.
                             </span>
                         </h1>
                         <p className="text-lg text-slate-600 leading-relaxed">

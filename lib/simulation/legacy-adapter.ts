@@ -12,8 +12,13 @@
 //   • vitals, rhythm and monitor alarm limits come from `patient.vitalSigns`
 //     (and from the ECG test's parameters, if the case has one);
 //   • the examination is the case's `*_examination` sections;
-//   • the order menu is the case's `tests`, with the results the case authored;
-//   • scoring is the case's `evaluation_config`, run by the classic evaluator.
+//   • the order menu is the case's own `tests` PLUS the master catalog (lib/clinical-catalog.ts) —
+//     order anything, the same as the STEMI case, not just what the case happened to author;
+//   • a test the case didn't author resolves to a normal result from the catalog's own reference ranges;
+//   • scoring is the case's `evaluation_config`, run by the classic evaluator — its test-ordering score
+//     only knows about ids listed in `evaluation_config.testing`, so a case's `distractor_tests` and
+//     `dangerous_tests` need to name catalog ids too, not just the case's own tests, or ordering
+//     something irrelevant from the wider catalog costs nothing (see scripts/*_testing_rubric.sql).
 //
 // What it will NOT do is invent physiology. A classic case carries no rules for
 // how the patient changes over time or what a treatment does, so the patient
@@ -488,7 +493,10 @@ export function upgradeLegacyCase<T extends Json>(legacy: T, overlay: UpgradeOve
         ...(examination.length > 0 ? { examination } : {}),
         ...(appearance ? { appearance } : {}),
         custom_tests,
-        order_menu: "case_only",
+        // Order from the case's own tests or the full catalog — a real ward doesn't hand a student a
+        // pre-picked menu. The case's own test still wins where an id collides (getTestDef checks
+        // custom_tests first); anything else resolves to a catalog-normal result (case-resolvers.ts).
+        order_menu: "catalog",
         investigation_results,
         scoring_mode: "classic",
     };

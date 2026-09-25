@@ -12,13 +12,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { caseData } = body;
+    const { caseData, currentCondition } = body;
 
     if (!caseData) {
       return NextResponse.json({ error: "Missing caseData" }, { status: 400 });
     }
 
-    const openingLine = await ChatEngine.generateOpening(caseData);
+    const openingLine = await ChatEngine.generateOpening(caseData, currentCondition);
     return NextResponse.json({ opening: openingLine });
 
   } catch (error) {

@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { message, caseData } = body;
+    const { message, caseData, currentCondition } = body;
 
-    const result = await ChatEngine.processRequest(message, caseData, currentUserId);
+    const result = await ChatEngine.processRequest(message, caseData, currentUserId, currentCondition);
 
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });

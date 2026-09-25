@@ -128,7 +128,10 @@ export interface ClinicalConstraints {
     hard_time_limit_minutes?: number;
     /**
      * No pressure clock. The encounter still shows elapsed time, but keeps only a
-     * 3-hour safety cap instead of a limit the student is racing.
+     * 3-hour safety cap instead of a limit the student is racing. Also compresses any
+     * catalog test's real turnaround down to at most a sim-minute (case-resolvers.ts,
+     * turnaroundMinutes) — a consultation doesn't make the student sit through a real
+     * clinical wait, timed or not.
      */
     untimed?: boolean;
     /** Simulation seconds per real second. Defaults to 1. */

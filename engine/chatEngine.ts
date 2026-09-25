@@ -2,30 +2,73 @@ import { CaseData } from '../data/cases/index';
 import { CaseResponse } from '../cases/types';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+/** How the patient looks/behaves right now — the live simulation's own state, not the case's static authoring. */
+export interface CurrentCondition {
+    /** One-line description of how the patient looks/behaves right now (the same text driving the portrait/exam findings). */
+    observation?: string
+    /** alert | anxious | drowsy | altered | unresponsive */
+    consciousness?: string
+}
+
 export class ChatEngine {
 
     private static sessionHistories: Map<string, Array<{ role: 'user' | 'assistant'; content: string }>> = new Map();
     private static readonly MAX_HISTORY_MESSAGES = 12; // ~6 exchanges
 
+    private static isGuardianRole(caseData: CaseData): boolean {
+        const speaker = caseData.ai_role?.speaker?.toLowerCase() || "";
+        return speaker.includes("mother") || speaker.includes("father") || speaker.includes("guardian");
+    }
+
+    /**
+     * How the CURRENT consciousness level should change the way the speaker talks — separate guidance for the
+     * patient speaking for themselves vs. a guardian speaking about them, since a drowsy child does not mean a
+     * drowsy parent: the parent gets more urgent, not less coherent.
+     */
+    private static consciousnessGuidance(level: string | undefined, isGuardian: boolean): string {
+        if (!level) return "";
+        if (isGuardian) {
+            switch (level) {
+                case "drowsy":
+                case "altered":
+                    return "Your child is very sleepy and hard to rouse right now. You are frightened and urgent — speak quickly, in short anxious sentences, and press the doctor for reassurance and action.";
+                case "unresponsive":
+                    return "Your child is not responding to you at all right now. You are panicking — short, urgent, pleading sentences.";
+                default:
+                    return "";
+            }
+        }
+        switch (level) {
+            case "drowsy":
+                return "You are drowsy and fading. Answer in short, slow, half-finished sentences (3-6 words). You may need a question repeated before you respond.";
+            case "altered":
+                return "Your thinking is confused. Answers may be brief, slightly off-topic, or trail off. You may not fully track what was asked.";
+            case "unresponsive":
+                return "You cannot speak right now. You may only groan or make a wordless sound — do not form real words or answer the question.";
+            case "anxious":
+                return "You are alert but frightened — answer normally, but let the fear show.";
+            default:
+                return "";
+        }
+    }
+
     static async processRequest(
         message: string,
         caseData: CaseData,
-        userId: string
+        userId: string,
+        currentCondition?: CurrentCondition
     ): Promise<CaseResponse | { error: string, status: number }> {
 
         if (!message || (!caseData?.patient_text_brief && !caseData?.patient_facts)) {
             return { error: "Missing message or patient data", status: 400 };
         }
 
-        return await this.generateLLMResponse(message, caseData, userId);
+        return await this.generateLLMResponse(message, caseData, userId, currentCondition);
     }
 
-    static async generateOpening(caseData: CaseData): Promise<string> {
-        const compiledMemory = this.buildPatientMemory(caseData);
-        const isGuardian =
-            caseData.ai_role?.speaker?.toLowerCase().includes("mother") ||
-            caseData.ai_role?.speaker?.toLowerCase().includes("father") ||
-            caseData.ai_role?.speaker?.toLowerCase().includes("guardian");
+    static async generateOpening(caseData: CaseData, currentCondition?: CurrentCondition): Promise<string> {
+        const compiledMemory = this.buildPatientMemory(caseData, currentCondition);
+        const isGuardian = this.isGuardianRole(caseData);
 
         const prompt = `
 You are roleplaying as a patient (or guardian) who has just walked into a doctor's consultation room.
@@ -65,7 +108,7 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
 
 
     // 🔥 THE BIG FIX — convert entire case into patient memory
-    private static buildPatientMemory(caseData: CaseData): string {
+    private static buildPatientMemory(caseData: CaseData, currentCondition?: CurrentCondition): string {
         const facts = Object.entries(caseData.patient_facts || {})
             .map(([k, v]) => `${k}: ${v}`)
             .join("\n");
@@ -78,6 +121,12 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
             ? `You are speaking as: ${caseData.ai_role.first_person_description || "the patient"}`
             : `You are speaking as: the patient`;
 
+        const guidance = this.consciousnessGuidance(currentCondition?.consciousness, this.isGuardianRole(caseData));
+        const conditionLines = [currentCondition?.observation, guidance].filter(Boolean).join("\n");
+        const conditionNow = conditionLines
+            ? `\n\nRIGHT NOW, IN THIS ROOM (this can change as the encounter goes on — speak from THIS, not just the narrative above, if the two differ):\n${conditionLines}`
+            : "";
+
         return `
 ${role}
 
@@ -88,17 +137,18 @@ KNOWN MEDICAL DETAILS:
 ${facts || "None explicitly listed."}
 
 HOW YOU NATURALLY SPEAK:
-${examples || "Simple, worried, conversational language."}
+${examples || "Simple, worried, conversational language."}${conditionNow}
 `.trim();
     }
 
     private static async generateLLMResponse(
         message: string,
         caseData: CaseData,
-        userId: string
+        userId: string,
+        currentCondition?: CurrentCondition
     ): Promise<CaseResponse | { error: string, status: number }> {
 
-        const compiledMemory = this.buildPatientMemory(caseData);
+        const compiledMemory = this.buildPatientMemory(caseData, currentCondition);
 
         const systemPrompt = `
 You are roleplaying as a patient in a medical consultation.
@@ -111,6 +161,7 @@ CRITICAL INSTRUCTIONS:
 - Act like a worried parent/patient, not a medical case report.
 - CLINICAL SAFETY: Do NOT invent, assume, or make up any medical symptoms, clinical facts, lab results, or history not explicitly provided in the PATIENT CONTEXT. If asked about a symptom not mentioned, deny having it naturally (e.g., "No, I haven't had any fever").
 - SOCIAL ROLEPLAY: For non-medical, personal, or conversational questions (e.g., hobbies, daily routine, school allowance), you are encouraged to improvise realistic, natural details in character to keep the conversation realistic.
+- LIVE CONDITION: if PATIENT CONTEXT has a "RIGHT NOW, IN THIS ROOM" section, that is how you are THIS INSTANT — it overrides the general tone/energy implied by the narrative and past examples. A patient who is now drowsy or confused must sound drowsy or confused even if the earlier example lines sound alert.
 
 PATIENT CONTEXT (Use this to answer questions, but do not recite it):
 ${compiledMemory}

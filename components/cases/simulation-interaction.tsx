@@ -525,6 +525,7 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
                 caseData={caseData}
                 onMessageSent={handleChatMessage as any}
                 chatHistory={ui.chat as any}
+                currentCondition={{ observation: appearance.observation, consciousness: patient.consciousness }}
                 patientName={speaksForSelf ? p.name : `${String(speaker).charAt(0).toUpperCase()}${String(speaker).slice(1)} of ${p.name}`}
                 patientAvatar={
                   speaksForSelf ? (

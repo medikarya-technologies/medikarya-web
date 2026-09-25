@@ -1,5 +1,12 @@
 "use client"
 
+import { useState } from "react"
+import Link from "next/link"
+import { Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { useScrollAnimation } from "@/lib/scroll-animation"
+
 // Pricing section — modified from original:
 // 1. Eyebrow ("Pricing") removed — heading alone is enough
 // 2. All accent-* (teal/cyan) replaced with brand-* blue
@@ -14,42 +21,52 @@
 // Monthly/annual toggle real client state. Annual math:
 // ₹199×12=₹2,388 vs ₹1,999 saves ~16.3%
 // ₹399×12=₹4,788 vs ₹3,999 saves ~16.5%
-
-import { useState } from "react"
-import Link from "next/link"
-import { Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { useScrollAnimation } from "@/lib/scroll-animation"
+//
+// Tier names follow the real Indian medical-training ladder (Student → Intern → Resident)
+// instead of generic Free/Basic/Pro — the audience already knows exactly what each word means,
+// and upgrading reads as advancing rather than just paying more. "sub" is the small secondary
+// label next to each name so a first-time visitor still gets the familiar Free/Basic/Pro anchor
+// without the card needing two separate headings.
+//
+// Daily case-count and live-case limits are new: difficulty (Beginner/Intermediate/Advanced)
+// still controls WHAT you can access; the daily numbers are a separate fair-use ceiling, not a
+// content gate — sized from real Gemini API cost per attempt (~₹0.20–0.25 for a live/simulation
+// case, ~₹0.45–0.55 for a classic one), so even a user who maxes out every day for a month stays
+// a small fraction of the tier's price. The Student tier's one-time STEMI attempt (not daily) is
+// deliberate: it costs about 20 paise per person and is the single most impressive thing in the
+// product, worth letting a free visitor feel once before any paywall.
 
 type Period = "monthly" | "annual"
 
 const TIERS = [
   {
-    name: "Free",
+    name: "Student",
+    sub: "Free",
     tagline: "A simple way to experience MediKarya.",
     monthly: 0,
     annual: 0,
-    features: ["One real case", "No account needed"],
+    features: ["2 cases a day, Beginner difficulty", "One live emergency case, on us — try it once", "No account needed"],
     cta: { label: "Try a case free", href: "/try" },
     highlight: false,
   },
   {
-    name: "Basic",
+    name: "Intern",
+    sub: "Basic",
     tagline: "For regular clinical reasoning practice.",
     monthly: 199,
     annual: 1999,
-    features: ["Beginner & Intermediate cases", "AI patient conversations", "Diagnosis, management & debrief", "Progress tracking"],
-    cta: { label: "Get Basic", href: "/login" },
+    features: ["Beginner & Intermediate cases, 15 a day", "5 live emergency cases a day", "AI patient conversations", "Diagnosis, management & debrief", "Progress tracking"],
+    cta: { label: "Become an Intern", href: "/login" },
     highlight: false,
   },
   {
-    name: "Pro",
+    name: "Resident",
+    sub: "Pro",
     tagline: "For deeper simulation and advanced clinical scenarios.",
     monthly: 399,
     annual: 3999,
-    features: ["Everything in Basic", "Advanced cases with deteriorating patients", "Real-time vitals & telemetry", "Advanced performance analytics"],
-    cta: { label: "Get Pro", href: "/login" },
+    features: ["Everything in Intern", "All cases, including Advanced — unlimited a day", "10 live emergency cases a day", "Real-time vitals & telemetry", "Advanced performance analytics"],
+    cta: { label: "Become a Resident", href: "/login" },
     highlight: true,
   },
 ] as const
@@ -119,7 +136,10 @@ export default function PricingSection() {
                   Full simulation
                 </span>
               )}
-              <h3 className="text-lg font-bold text-white">{tier.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-white">{tier.name}</h3>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">{tier.sub}</span>
+              </div>
               <p className="mt-1 text-sm text-white/60">{tier.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-3xl font-extrabold tracking-tight text-white">

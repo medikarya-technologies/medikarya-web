@@ -37,6 +37,8 @@ interface AIPatientChatProps {
   /** Bedside layout: who is speaking, and their portrait beside each of their lines. */
   patientName?: string
   patientAvatar?: ReactNode
+  /** How the patient looks/behaves right now (bedside encounters only) — lets the chat voice react to deterioration or recovery instead of always sounding the same. */
+  currentCondition?: { observation?: string; consciousness?: string }
 }
 
 // Two icebreaker chips shown only before the student sends their first message
@@ -45,7 +47,7 @@ const ICEBREAKERS = [
   "How long has this been going on?",
 ]
 
-export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, adaptiveNudge, variant = "classic", patientName = "Patient", patientAvatar }: AIPatientChatProps) {
+export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, adaptiveNudge, variant = "classic", patientName = "Patient", patientAvatar, currentCondition }: AIPatientChatProps) {
   const [openingLoading, setOpeningLoading] = useState(true)
 
   const userMsgCount = (chatHistory || []).filter((m) => m.role === "user").length
@@ -89,7 +91,7 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
     fetch("/api/chat/patient/opening", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caseData }),
+      body: JSON.stringify({ caseData, currentCondition }),
     })
       .then((r) => r.json())
       .then((data) => {
@@ -182,7 +184,7 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
       const response = await fetch("/api/chat/patient", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.content, caseData, chatHistory: messages }),
+        body: JSON.stringify({ message: userMessage.content, caseData, chatHistory: messages, currentCondition }),
       })
       if (!response.ok) throw new Error("Failed")
       const data = await response.json()

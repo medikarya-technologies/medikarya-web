@@ -35,7 +35,7 @@ export default function FAQSection({ specialties }: { specialties: readonly stri
       question: "Is it free?",
       answer: (
         <>
-          The case on this page is free, and needs no account. Sign in for Basic or Pro to unlock the rest of the library — see{" "}
+          The case on this page is free, and needs no account. Sign in as an Intern or Resident to unlock the rest of the library — see{" "}
           <a href="#pricing" className="font-medium text-brand-700 hover:text-brand-800">
             pricing
           </a>
@@ -44,8 +44,8 @@ export default function FAQSection({ specialties }: { specialties: readonly stri
       ),
     },
     {
-      question: "What's included in Pro?",
-      answer: "Everything in Basic, plus Advanced-difficulty cases with patients whose condition can deteriorate on its own — real-time vitals and telemetry, not just a static chart.",
+      question: "What's included in Resident?",
+      answer: "Everything in Intern, plus unlimited normal-case attempts, more live emergency cases a day, and Advanced-difficulty cases with patients whose condition can deteriorate on its own — real-time vitals and telemetry, not just a static chart.",
     },
     {
       question: "Can my medical school use this?",

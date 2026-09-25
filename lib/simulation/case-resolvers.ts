@@ -93,11 +93,24 @@ export function listOrders(events: readonly ClinicalEvent[]): InvestigationOrder
     return orders;
 }
 
-/** Sim minutes until the result is back: the case's override, else the catalog's standard. */
+/**
+ * Sim minutes until the result is back: the case's override, else the catalog's standard.
+ *
+ * An untimed encounter ("a consultation, not a race" — see `ClinicalConstraints.untimed`) authors
+ * deliberately short turnarounds for its OWN tests (`custom_tests[i].turnaround_minutes`, see
+ * TURNAROUND_MINUTES in legacy-adapter.ts) but never for the wider catalog it also opens up, so a
+ * catalog test's raw clinical turnaround (a real PET-CT takes 4 hours; a bone marrow biopsy, a day)
+ * would otherwise play out literally at `time_scale: 1` — a real multi-hour wait for one result.
+ * Only THAT fallback path is scaled down 60x and capped at a sim-minute (= 60 real seconds at
+ * time_scale 1); a test the case authored itself keeps its real value untouched either way.
+ */
 export function turnaroundMinutes(config: SimulationCaseConfig, testId: string): number {
     const override = config.investigation_results?.[testId]?.turnaround_minutes;
     if (typeof override === "number") return override;
-    return getTestDef(config, testId)?.turnaroundMinutes ?? 30;
+    const catalogMinutes = getTestDef(config, testId)?.turnaroundMinutes ?? 30;
+    const isCaseAuthored = config.custom_tests?.some((t) => t.id === testId) ?? false;
+    if (isCaseAuthored || !config.clinical_constraints?.untimed) return catalogMinutes;
+    return Math.min(catalogMinutes / 60, 1);
 }
 
 export function readyAt(config: SimulationCaseConfig, order: InvestigationOrder): number {

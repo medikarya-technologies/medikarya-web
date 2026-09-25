@@ -11,7 +11,7 @@ import { getTestDef, listOrderableTests, orderableCategories } from "../test-cat
 import { demographicsOf, resolveInvestigation, turnaroundMinutes } from "../case-resolvers";
 import { assessVitals, vitalLimitsForAge } from "../vitals-assess";
 import { INTERVENTION_IDS, interventionsForCase } from "../intervention-catalog";
-import { CATALOG_TEST_IDS } from "../../clinical-catalog";
+import { CATALOG_TEST_IDS, type TestCategory } from "../../clinical-catalog";
 import { replayStudentEvents } from "../replay";
 import { classicInputsFromEvents } from "../classic-inputs";
 import { PatientState } from "../patient-state";
@@ -456,12 +456,15 @@ describe("legacy adapter: examination", () => {
 // ── Investigations ──────────────────────────────────────────────────────────
 
 describe("legacy adapter: investigations", () => {
-    it("offers exactly the case's own tests, not the master catalog", () => {
+    it("offers the case's own tests plus the master catalog, like a real ward", () => {
         const c = upgraded(adultCase());
-        assert.equal(c.order_menu, "case_only");
-        assert.deepEqual(listOrderableTests(c).map((t) => t.id), ["ecg", "continuous-ecg-monitoring", "serum-electrolytes", "echocardiography"]);
-        assert.equal(getTestDef(c, "troponin_i"), undefined, "a catalog test is not orderable in a case-only menu");
-        assert.equal(getTestDef(c, "ecg")?.name, "12-lead ECG");
+        assert.equal(c.order_menu, "catalog");
+        const ids = listOrderableTests(c).map((t) => t.id);
+        assert.deepEqual(ids.slice(0, 4), ["ecg", "continuous-ecg-monitoring", "serum-electrolytes", "echocardiography"], "the case's own tests come first");
+        assert.ok(ids.includes("troponin_i"), "a catalog test the case never authored is still orderable");
+        assert.ok(ids.length > 4, "the rest of the catalog is there too");
+        assert.equal(getTestDef(c, "troponin_i")?.name, "Troponin I (conventional)", "unauthored catalog tests still resolve, to a catalog-normal result");
+        assert.equal(getTestDef(c, "ecg")?.name, "12-lead ECG", "the case's own test still wins over any catalog test sharing its id");
     });
 
     it("classifies each test", () => {
@@ -489,7 +492,12 @@ describe("legacy adapter: investigations", () => {
         assert.equal(cats["cbc"], "haematology");
         assert.equal(cats["stool-elisa-rotavirus"], "microbiology");
         assert.equal(cats["usg-abdomen"], "imaging");
-        assert.deepEqual(orderableCategories(upgraded(toddlerCase())).map((c) => c.id), ["haematology", "microbiology", "imaging"]);
+        // The category list now spans the whole catalog (the order menu is open, not just this case's own
+        // three categories) — haematology, microbiology and imaging are in there among the rest.
+        const available = orderableCategories(upgraded(toddlerCase())).map((c) => c.id);
+        const expected: TestCategory[] = ["haematology", "microbiology", "imaging"];
+        assert.ok(expected.every((id) => available.includes(id)));
+        assert.ok(available.length > 3, "the catalog's other categories (cardiac, biochemistry, ...) are orderable too");
     });
 
     it("returns results after a short wait, not the emergency department's hour", () => {
@@ -501,7 +509,8 @@ describe("legacy adapter: investigations", () => {
 
     it("lets a case's own definition of a test win over the catalog's", () => {
         const c = upgraded(toddlerCase());
-        assert.equal(getTestDef({ ...c, order_menu: "catalog" }, "cbc")?.name, "Complete Blood Count (CBC)");
+        assert.equal(c.order_menu, "catalog", "the default now, not something this test needs to force");
+        assert.equal(getTestDef(c, "cbc")?.name, "Complete Blood Count (CBC)");
     });
 });
 
