@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import Razorpay from "razorpay";
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+import { getRazorpay } from "@/lib/razorpay";
 
 // One Razorpay Plan per paid tier — created in the dashboard (Plans can't be edited once made),
 // referenced here by id rather than re-deriving amounts, since the plan is the source of truth for price.
@@ -19,6 +14,11 @@ const PLAN_ID_BY_TIER: Record<string, string> = {
 const TOTAL_COUNT_MONTHLY = 1200;
 
 export async function POST(request: NextRequest) {
+  const razorpay = getRazorpay();
+  if (!razorpay) {
+    return NextResponse.json({ error: "Payments are not configured" }, { status: 503 });
+  }
+
   try {
     const { userId } = await auth();
     if (!userId) {

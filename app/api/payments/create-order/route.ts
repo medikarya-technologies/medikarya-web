@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import Razorpay from "razorpay";
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+import { getRazorpay } from "@/lib/razorpay";
 
 export async function POST(request: NextRequest) {
+  const razorpay = getRazorpay();
+  if (!razorpay) {
+    return NextResponse.json({ error: "Payments are not configured" }, { status: 503 });
+  }
+
   try {
     // Allow both authenticated and guest checkout — the order itself is what needs paying for.
     let userId: string | null = null;
