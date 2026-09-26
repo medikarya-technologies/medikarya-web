@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { cn } from "@/lib/utils"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
-import NextTopLoader from 'nextjs-toploader';
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import Script from "next/script"
 import { LayoutClient } from "@/components/LayoutClient"
@@ -113,17 +112,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           suppressHydrationWarning={true}
         >
           <ThemeController />
-          <NextTopLoader
-            color="#2563EB"
-            initialPosition={0.08}
-            crawlSpeed={200}
-            height={3}
-            crawl={true}
-            showSpinner={false}
-            easing="ease"
-            speed={200}
-            shadow="0 0 10px #2563EB,0 0 5px #2563EB"
-          />
           {/* Organization + WebSite JSON-LD structured data */}
           <Script
             id="json-ld-org"

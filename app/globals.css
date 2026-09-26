@@ -316,10 +316,22 @@
   animation: enc-blink 5s ease-in-out infinite;
 }
 
+/* A small, quiet pulse-line loop for app-wide loading screens — see components/ui/branded-loading.tsx.
+   Three copies of a 60px-wide unit slide left by one unit width, forever, so the wrap is seamless. */
+@keyframes enc-pulse-sweep {
+  from { transform: translateX(0); }
+  to { transform: translateX(-60px); }
+}
+
+.enc-pulse-sweep {
+  animation: enc-pulse-sweep 2.4s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .enc-breathe,
   .enc-blink,
-  .enc-live-dot {
+  .enc-live-dot,
+  .enc-pulse-sweep {
     animation: none;
   }
 }

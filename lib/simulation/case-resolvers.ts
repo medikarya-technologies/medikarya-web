@@ -193,6 +193,26 @@ const NORMAL_REPORT: ImagingReport = {
     impression: "No acute abnormality.",
 };
 
+/**
+ * A real, reusable image for a catalog imaging test nobody authored a case-specific result for —
+ * same idea as NORMAL_REPORT, but a picture. A normal scan looks the same regardless of the
+ * patient's unrelated diagnosis, so one file covers every case that reaches this fallback for that
+ * test id. Deliberately short: only test ids with a real, licence-checked image on file are listed
+ * (see public/investigation-images/CREDITS.md) — everything else still gets NORMAL_REPORT with no
+ * image, same as before this existed, rather than a guessed or mismatched picture.
+ */
+const NORMAL_IMAGE: Partial<Record<string, string>> = {
+    cxr_pa: "/investigation-images/cxr-pa-normal.jpg",
+    cxr_portable: "/investigation-images/cxr-pa-normal.jpg",
+    ct_abdomen_pelvis: "/investigation-images/ct-abdomen-pelvis-normal.png",
+    ct_head_noncontrast: "/investigation-images/ct-brain-normal.png",
+    usg_abdomen: "/investigation-images/usg-abdomen-liver-normal.jpg",
+    xray_abdomen: "/investigation-images/xray-abdomen-normal.jpg",
+    mri_brain: "/investigation-images/mri-brain-normal.jpg",
+    echo_tte: "/investigation-images/echo-4chamber-normal.jpg",
+    echo_pocus: "/investigation-images/echo-4chamber-normal.jpg",
+};
+
 function rowKey(parameter: string, index: number): string {
     const slug = parameter.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
     return slug ? `${slug}_${index}` : `row_${index}`;
@@ -281,8 +301,8 @@ export function resolveInvestigation(
         };
     }
 
-    const report =
-        body.report ?? (test.kind === "imaging" && !authored ? NORMAL_REPORT : undefined);
+    const isUnauthoredImaging = test.kind === "imaging" && !authored;
+    const report = body.report ?? (isUnauthoredImaging ? NORMAL_REPORT : undefined);
 
     return {
         testId,
@@ -296,7 +316,7 @@ export function resolveInvestigation(
         interpretation: body.interpretation ?? (authored ? undefined : "No abnormality detected."),
         hint: body.hint,
         report,
-        imageUrl: body.image_url,
+        imageUrl: body.image_url ?? (isUnauthoredImaging ? NORMAL_IMAGE[testId] : undefined),
         ecg,
         caseSpecific: authored !== undefined,
         stateConsequence: body.state_consequence,
