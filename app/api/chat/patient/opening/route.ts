@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { ChatEngine } from "../../../../../engine/chatEngine";
+import { authorizeAiCase } from "@/lib/plans/access";
+import { cleanCondition } from "../condition";
 
+// The patient's first words. Same rules as the chat itself: the case by id, from the server, once it is started.
 export async function POST(request: NextRequest) {
   try {
-    // Allow both authenticated and guest users
-    try {
-      await auth();
-    } catch {
-      // Guest access — no session
-    }
-
     const body = await request.json();
-    const { caseData, currentCondition } = body;
+    const access = await authorizeAiCase(request, body.caseId ?? body.caseData?.id, "opening");
+    if ("response" in access) return access.response;
 
-    if (!caseData) {
-      return NextResponse.json({ error: "Missing caseData" }, { status: 400 });
-    }
-
-    const openingLine = await ChatEngine.generateOpening(caseData, currentCondition);
+    const openingLine = await ChatEngine.generateOpening(access.caseData, cleanCondition(body.currentCondition));
     return NextResponse.json({ opening: openingLine });
 
   } catch (error) {

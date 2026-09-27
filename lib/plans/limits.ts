@@ -67,8 +67,9 @@ export type Decision =
  * isSimulationCase(): getCaseById adapts every classic case onto the bedside engine, which gives it the same
  * fields, just empty (see lib/simulation/legacy-adapter.ts).
  */
-export function caseKindOf(caseData: { difficulty?: string; event_rules?: unknown }): CaseKind {
-  const live = Array.isArray(caseData.event_rules) && caseData.event_rules.length > 0;
+export function caseKindOf(caseData: { difficulty?: string; event_rules?: unknown; live?: unknown; briefingOnly?: unknown }): CaseKind {
+  // The briefing-only copy (lib/plans/access.ts) has its rules taken out, and says whether it is live instead.
+  const live = caseData.briefingOnly === true ? caseData.live === true : Array.isArray(caseData.event_rules) && caseData.event_rules.length > 0;
   return { live, difficulty: difficultyLevel(caseData.difficulty) };
 }
 

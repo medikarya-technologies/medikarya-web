@@ -16,6 +16,7 @@ const staticRoutes: { path: string; lastModified: string; priority: number }[] =
     { path: '/contact',      lastModified: '2025-12-01', priority: 0.6 },
     { path: '/privacy',      lastModified: '2025-12-01', priority: 0.3 },
     { path: '/terms',        lastModified: '2025-12-01', priority: 0.3 },
+    { path: '/refund-policy', lastModified: '2026-09-27', priority: 0.3 },
     { path: '/cookies',      lastModified: '2025-12-01', priority: 0.3 },
     { path: '/tutorials',    lastModified: '2026-04-20', priority: 0.8 },
     { path: '/case-studies', lastModified: '2026-04-20', priority: 0.8 },

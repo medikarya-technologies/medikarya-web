@@ -106,7 +106,7 @@ export function PlanCard({ cases }: { cases: readonly LibraryCase[] }) {
       {info.plan !== "resident" && !info.admin && (
         <Button
           type="button"
-          onClick={() => openUpgrade({ highlight: info.plan === "student" ? "intern" : "resident" })}
+          onClick={() => openUpgrade({ source: "plan_card", highlight: info.plan === "student" ? "intern" : "resident" })}
           className={cn(info.plan === "student" ? PRIMARY_BUTTON : SECONDARY_BUTTON, "mt-4 w-full")}
         >
           {info.plan === "student" ? "Upgrade your plan" : "See Resident"}

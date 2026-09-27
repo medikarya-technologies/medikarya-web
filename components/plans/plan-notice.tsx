@@ -26,7 +26,7 @@ export function PlanNotice({ block }: { block: PlanBlock }) {
       <p className="flex-1 text-[14.5px] leading-relaxed text-enc-ink">{block.message}</p>
       <div className="flex shrink-0 flex-wrap gap-2">
         {block.needs && (
-          <Button type="button" onClick={() => openUpgrade({ highlight: block.needs, reason: block.message })} className={PRIMARY_BUTTON}>
+          <Button type="button" onClick={() => openUpgrade({ source: "case_notice", highlight: block.needs, reason: block.message })} className={PRIMARY_BUTTON}>
             Unlock with {PLAN_NAME[block.needs]}
           </Button>
         )}

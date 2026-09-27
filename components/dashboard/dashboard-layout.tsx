@@ -9,7 +9,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
-import { LayoutDashboard, LifeBuoy, LogOut, Menu, Stethoscope, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react"
+import { CreditCard, LayoutDashboard, LifeBuoy, LogOut, Menu, Stethoscope, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Eyebrow } from "@/components/cases/encounter-ui"
@@ -44,6 +44,7 @@ const NAV: Array<{ group: string; items: NavItem[] }> = [
     group: "Account",
     items: [
       { title: "Profile", href: "/dashboard/profile", icon: UserRound },
+      { title: "Plan & billing", href: "/dashboard/plan", icon: CreditCard },
       { title: "Support", href: "/dashboard/support", icon: LifeBuoy },
     ],
   },

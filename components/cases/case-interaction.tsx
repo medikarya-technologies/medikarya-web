@@ -372,7 +372,7 @@ function LegacyCaseInteraction({ caseData, onExit, guestId }: CaseInteractionPro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           feedback: aiFeedback,
-          caseData,
+          caseId: caseData?.id,
           orderedTestNames: testNames,
         }),
         signal: quizAbort.signal,

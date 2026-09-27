@@ -91,7 +91,7 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
     fetch("/api/chat/patient/opening", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caseData, currentCondition }),
+      body: JSON.stringify({ caseId: caseData?.id, currentCondition }),
     })
       .then((r) => r.json())
       .then((data) => {
@@ -184,7 +184,7 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
       const response = await fetch("/api/chat/patient", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.content, caseData, chatHistory: messages, currentCondition }),
+        body: JSON.stringify({ message: userMessage.content, caseId: caseData?.id, currentCondition }),
       })
       if (!response.ok) throw new Error("Failed")
       const data = await response.json()

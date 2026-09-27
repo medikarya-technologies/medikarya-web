@@ -192,7 +192,7 @@ function PlanUsage({ plan }: { plan: PlanInfo }) {
       {plan.plan !== "resident" && (
         <>
           {" · "}
-          <button type="button" onClick={() => openUpgrade()} className="rounded font-semibold text-brand-700 outline-none hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-300">
+          <button type="button" onClick={() => openUpgrade({ source: "library_header" })} className="rounded font-semibold text-brand-700 outline-none hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-300">
             Upgrade
           </button>
         </>

@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { AlertCircle } from "lucide-react"
 import { PlanNotice, type PlanBlock } from "@/components/plans/plan-notice"
 import { refreshPlan, usePlan } from "@/components/plans/use-plan"
+import { trackEvent } from "@/lib/clarity"
 import { GUEST_CASE_IDS, caseKindOf, decide, explain } from "@/lib/plans/limits"
 
 // The briefing before a case. It reads what the encounter has saved each time it is shown, so coming back from
@@ -150,6 +151,7 @@ export default function CasePage() {
 
       // The plan does not open this case, or today's allowance is used: say why, and do not start.
       if (response.status === 403 || response.status === 429) {
+        trackEvent("Plan_Limit_Hit", { limit_reason: body.reason ?? String(response.status) });
         setPlanBlock({ message: body.error ?? "Your plan does not include this case.", needs: body.needs ?? null });
         return;
       }

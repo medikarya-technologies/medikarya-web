@@ -26,6 +26,7 @@ import { TrainingPanel } from "./training-panel"
 import { useDisplayName } from "./use-display-name"
 import { PlanCard } from "@/components/plans/plan-card"
 import { usePlan } from "@/components/plans/use-plan"
+import { useUpgrade } from "@/components/plans/upgrade-dialog"
 import { GUEST_CASE_IDS, lockedFor } from "@/lib/plans/limits"
 
 interface Props {
@@ -72,13 +73,24 @@ function FirstCase() {
 
 // ── What to do next ─────────────────────────────────────────────────────────
 
-function Suggested({ next, progress }: { next?: LibraryCase; progress: ProgressMap }) {
+/** planLimited: some cases were left out because the student's plan does not include them. */
+function Suggested({ next, progress, planLimited = false }: { next?: LibraryCase; progress: ProgressMap; planLimited?: boolean }) {
+  const openUpgrade = useUpgrade()
   if (!next) {
     return (
       <Paper className="h-fit p-5">
         <Eyebrow>Suggested next</Eyebrow>
-        <p className="mt-2 text-[15px] font-medium text-enc-ink">You are all caught up.</p>
-        <p className="mt-1 text-[13.5px] leading-relaxed text-enc-ink-2">Every case in the library is done at 90 or above. New cases appear here as they are added.</p>
+        <p className="mt-2 text-[15px] font-medium text-enc-ink">{planLimited ? "You have done every case in your plan." : "You are all caught up."}</p>
+        <p className="mt-1 text-[13.5px] leading-relaxed text-enc-ink-2">
+          {planLimited
+            ? "Every case your plan includes is done at 90 or above. More cases open with a higher plan."
+            : "Every case in the library is done at 90 or above. New cases appear here as they are added."}
+        </p>
+        {planLimited && (
+          <Button type="button" onClick={() => openUpgrade({ source: "plan_card" })} className={cn(PRIMARY_BUTTON, "mt-4 w-full")}>
+            See plans
+          </Button>
+        )}
       </Paper>
     )
   }
@@ -194,7 +206,7 @@ export function DashboardOverview({ initialStats, cases = [], progress = {}, use
         <div className="space-y-6">
           <PlanCard cases={cases} />
           {resume && resumeCase && <ResumeCard one={resume} c={resumeCase} />}
-          <Suggested next={next} progress={progress} />
+          <Suggested next={next} progress={progress} planLimited={cases.some((c) => !openToPlan(c))} />
         </div>
       </div>
     </PageContainer>

@@ -1,22 +1,27 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { ChatEngine } from "../../../../engine/chatEngine";
+import { authorizeAiCase } from "@/lib/plans/access";
+import { MAX_MESSAGE_LENGTH, cleanCondition } from "./condition";
 
+// The patient's reply. The case is loaded on the server by id (never taken from the request), and only for a case
+// this student has started (lib/plans/access.ts), so this cannot be used as an open AI endpoint.
 export async function POST(request: NextRequest) {
   try {
-    let currentUserId = "guest";
-    try {
-      const { userId } = await auth();
-      if (userId) currentUserId = userId;
-    } catch {
-      // Guest access — auth() may throw when no session exists
+    const body = await request.json();
+    const { message } = body;
+    const caseId = body.caseId ?? body.caseData?.id;
+
+    if (typeof message !== "string" || !message.trim()) {
+      return NextResponse.json({ error: "Missing message" }, { status: 400 });
+    }
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json({ error: "That question is too long." }, { status: 400 });
     }
 
-    const body = await request.json();
-    const { message, caseData, currentCondition } = body;
+    const access = await authorizeAiCase(request, caseId, "chat");
+    if ("response" in access) return access.response;
 
-    const result = await ChatEngine.processRequest(message, caseData, currentUserId, currentCondition);
+    const result = await ChatEngine.processRequest(message, access.caseData, access.userId, cleanCondition(body.currentCondition));
 
     if ('error' in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });

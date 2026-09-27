@@ -1,4 +1,7 @@
 import { supabaseServer } from "@/lib/supabase/server";
+import { HOLDING_STATUSES, stillHolds, type SubscriptionRow } from "./holding";
+
+export { HOLDING_STATUSES, stillHolds, type SubscriptionRow } from "./holding";
 
 // The paid tiers and how they're billed. Each (tier, period) is one Razorpay Plan, made in the dashboard or via
 // the API, and referenced by id from env, since the plan is the source of truth for price. Test and live mode
@@ -22,8 +25,6 @@ export function planIdFor(tier: PaidTier, period: BillingPeriod): string | null 
 // No true "forever" option in Razorpay (100-year max): a subscription ends by being cancelled, not by running out.
 export const TOTAL_COUNT: Record<BillingPeriod, number> = { monthly: 1200, yearly: 100 };
 
-// Statuses in which the user already holds (or is about to hold) a plan, so a second checkout would double-bill them.
-export const HOLDING_STATUSES = ["authenticated", "active", "pending"];
 
 /** The subset of Razorpay's subscription entity this app stores. */
 export interface RazorpaySubscriptionEntity {
@@ -71,4 +72,21 @@ export async function saveSubscription(
     { onConflict: "razorpay_subscription_id" }
   );
   return error ? { error: error.message } : {};
+}
+
+// ── Reading a student's current subscription ────────────────────────────────
+
+/** Monthly or yearly, from which of the configured plans this is. */
+export function periodOfPlan(planId: string): BillingPeriod {
+  const yearly = [process.env.RAZORPAY_PLAN_ID_INTERN_YEARLY, process.env.RAZORPAY_PLAN_ID_RESIDENT_YEARLY];
+  return yearly.includes(planId) ? "yearly" : "monthly";
+}
+
+/** The subscription that gives this student their plan now (the highest tier if, oddly, there are two). */
+export async function currentSubscription(userId: string): Promise<SubscriptionRow | null> {
+  // select * so this keeps working whether or not the cancel_at column has been added yet
+  const { data, error } = await supabaseServer.from("subscriptions").select("*").eq("clerk_user_id", userId).in("status", HOLDING_STATUSES);
+  if (error) throw error;
+  const holding = ((data ?? []) as SubscriptionRow[]).filter((row) => stillHolds(row));
+  return holding.sort((a, b) => (a.tier === "resident" ? -1 : b.tier === "resident" ? 1 : 0))[0] ?? null;
 }

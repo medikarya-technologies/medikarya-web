@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import ApiDocsClient from "./ApiDocsClient"
 
 export const metadata: Metadata = {
-    title: "API & Institutional Access | MediKarya",
+    title: "API & Institutional Access",
     description: "Integrate MediKarya's AI patient simulation engine, case library, and analytics into your medical school or hospital training programme.",
     robots: { index: true, follow: true },
     openGraph: {

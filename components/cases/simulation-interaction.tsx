@@ -366,7 +366,7 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
           fetch("/api/quiz/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ feedback: forQuiz, caseData, orderedTestNames: orders.map((o) => o.testName) }),
+            body: JSON.stringify({ feedback: forQuiz, caseId: caseData?.id, orderedTestNames: orders.map((o) => o.testName) }),
             signal: controller.signal,
           })
         )

@@ -1,35 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { QuizGenerator } from "@/engine/evaluation/QuizGenerator";
+import { authorizeAiCase } from "@/lib/plans/access";
+
+// The follow-up quiz after a case. The case is loaded on the server by id and only for a case this student has
+// started (lib/plans/access.ts); the student's feedback comes from the request, so its size is capped.
+const MAX_FEEDBACK_BYTES = 100_000;
 
 export async function POST(request: NextRequest) {
     try {
-        // Auth check — works for both authenticated and guest users
-        let currentUserId = "guest";
-        try {
-            const { userId } = await auth();
-            if (userId) currentUserId = userId;
-        } catch {
-            // Guest access — auth() may throw when no session exists
-        }
-
         const body = await request.json();
-        const { feedback, caseData, orderedTestNames } = body;
+        const { feedback, orderedTestNames } = body;
 
-        if (!feedback || !caseData) {
-            return NextResponse.json(
-                { error: "Missing feedback or caseData" },
-                { status: 400 }
-            );
+        if (!feedback) {
+            return NextResponse.json({ error: "Missing feedback" }, { status: 400 });
+        }
+        if (JSON.stringify(feedback).length > MAX_FEEDBACK_BYTES) {
+            return NextResponse.json({ error: "Feedback too large" }, { status: 413 });
         }
 
-        console.log(`QuizGeneration API: Generating quiz for user=${currentUserId}, case=${caseData.id || 'unknown'}`);
+        const access = await authorizeAiCase(request, body.caseId ?? body.caseData?.id, "quiz");
+        if ("response" in access) return access.response;
 
-        const result = await QuizGenerator.generate(
-            feedback,
-            caseData,
-            orderedTestNames || []
-        );
+        const testNames = Array.isArray(orderedTestNames)
+            ? orderedTestNames.filter((t): t is string => typeof t === "string").slice(0, 200).map((t) => t.slice(0, 120))
+            : [];
+
+        console.log(`QuizGeneration API: Generating quiz for user=${access.userId}, case=${access.caseData.id}`);
+
+        const result = await QuizGenerator.generate(feedback, access.caseData, testNames);
 
         return NextResponse.json(result);
 

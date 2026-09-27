@@ -166,6 +166,7 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
             type="button"
             onClick={() =>
               openUpgrade({
+                source: "locked_card",
                 highlight: locked,
                 reason: c.live ? "Live emergency cases are part of the Intern and Resident plans." : `This case is part of the ${PLAN_NAME[locked]} plan.`,
               })

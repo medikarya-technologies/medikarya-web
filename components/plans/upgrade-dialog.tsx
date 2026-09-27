@@ -8,6 +8,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
 import { Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { trackEvent } from "@/lib/clarity"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SubscribeButton } from "@/components/payments/subscribe-button"
@@ -22,6 +23,8 @@ interface UpgradeRequest {
   highlight?: Plan | null
   /** Why they are here, e.g. the lock's message. */
   reason?: string
+  /** Where it was opened from, for conversion tracking (Clarity tag upgrade_source). */
+  source?: "locked_card" | "case_notice" | "plan_card" | "library_header" | "billing"
 }
 
 const UpgradeContext = createContext<(request?: UpgradeRequest) => void>(() => {})
@@ -33,7 +36,10 @@ export function useUpgrade() {
 
 export function UpgradeProvider({ children }: { children: ReactNode }) {
   const [request, setRequest] = useState<UpgradeRequest | null>(null)
-  const open = useCallback((r: UpgradeRequest = {}) => setRequest(r), [])
+  const open = useCallback((r: UpgradeRequest = {}) => {
+    trackEvent("Upgrade_Opened", { upgrade_source: r.source ?? "other", ...(r.highlight ? { upgrade_for: r.highlight } : {}) })
+    setRequest(r)
+  }, [])
   return (
     <UpgradeContext.Provider value={open}>
       {children}

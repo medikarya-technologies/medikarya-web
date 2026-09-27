@@ -18,7 +18,9 @@ The platform is designed to reinforce structured clinical reasoning, patient saf
 
 ## Key Features
 
-- 🩺 **AI Patient Chat** — Powered by Groq (Llama-3.3-70b), patients respond in character based on pre-scripted clinical facts
+- 🩺 **AI Patient Chat** — Powered by Google Gemini, patients respond in character from pre-scripted clinical facts, and in live cases their speech follows their condition
+- 🚑 **Live Simulations** — A bedside encounter (monitor, clock, examination, timed investigations) for every case; authored live cases deteriorate in real time and respond to treatment
+- 💳 **Plans & Payments** — Student (free) / Intern / Resident plans, monthly or yearly, as Razorpay subscriptions; plan limits enforced when a case starts
 - 🧪 **Investigation Ordering** — A categorised test library (Lab, Imaging, Special) with pre-scripted results tied to each case
 - 🧠 **4-Layer Evaluation Engine** — Hybrid algorithmic + LLM scoring across 5 clinical domains (100 marks total)
 - 🚨 **Red Flag Safety System** — Two-system (rule + LLM) penalty detection for clinically critical missed questions
@@ -38,8 +40,8 @@ The platform is designed to reinforce structured clinical reasoning, patient saf
 | **Styling** | Tailwind CSS v4 + Radix UI primitives |
 | **Authentication** | [Clerk](https://clerk.dev/) |
 | **Database** | [Supabase](https://supabase.com/) (PostgreSQL) |
-| **AI — Patient Chat** | [Groq](https://groq.com/) (`llama-3.3-70b-versatile`) |
-| **AI — Evaluation** | [Google Gemini](https://ai.google.dev/) + Groq |
+| **AI** | [Google Gemini](https://ai.google.dev/) (`gemini-3.1-flash-lite` for patient chat and quizzes, `gemini-3.8-flash` for classic-case evaluation) |
+| **Payments** | [Razorpay](https://razorpay.com/) Subscriptions |
 | **Animations** | Framer Motion + CSS |
 | **Smooth Scroll** | Lenis |
 | **PWA** | Serwist (`@serwist/next`) |
@@ -66,6 +68,8 @@ medikarya/
 │       ├── cases/              # GET /api/cases, GET /api/cases/[id]
 │       ├── chat/patient/       # POST patient chat + GET opening line
 │       ├── tests/              # POST generate test result
+│       ├── payments/           # Razorpay: create/verify/cancel subscription, webhook
+│       ├── plan/               # GET the signed-in student's plan and today's usage
 │       └── clerk-webhook/      # POST Clerk user creation webhook
 │
 ├── components/                 # Shared React components
@@ -91,9 +95,9 @@ medikarya/
 │   └── evaluate.ts             # Server action: run evaluation + persist to Supabase
 │
 ├── hooks/                      # Custom React hooks
-├── lib/                        # Utility functions (Supabase client, etc.)
+├── lib/                        # Utilities: Supabase client, simulation engine (lib/simulation),
+│                               #   plan rules and access (lib/plans), payments (lib/payments)
 ├── types/                      # Global TypeScript type definitions
-├── styles/                     # Global CSS
 └── public/                     # Static assets
 ```
 
@@ -106,7 +110,8 @@ medikarya/
 - Node.js 20+
 - A [Clerk](https://clerk.dev/) account and application
 - A [Supabase](https://supabase.com/) project
-- A [Groq](https://console.groq.com/) API key
+- A [Google AI Studio](https://aistudio.google.com/) (Gemini) API key
+- A [Razorpay](https://razorpay.com/) account (test mode is enough to develop)
 
 ### 1. Clone the repository
 
@@ -140,16 +145,23 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL=/signup
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
+# Supabase (server-side only)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SECRET_KEY=...
 
-# Groq (AI patient + evaluation)
-GROQ_API_KEY=gsk_...
+# Google Gemini (patient chat, evaluation, quizzes)
+GEMINI_API_KEY=AIza...
 
-# Google Gemini (evaluation fallback)
-GOOGLE_AI_API_KEY=AIza...
+# Razorpay. Test and live mode are separate: keys, plans and webhooks all differ.
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_WEBHOOK_SECRET=...
+# One Razorpay plan per tier and billing period
+RAZORPAY_PLAN_ID_INTERN=plan_...
+RAZORPAY_PLAN_ID_RESIDENT=plan_...
+RAZORPAY_PLAN_ID_INTERN_YEARLY=plan_...
+RAZORPAY_PLAN_ID_RESIDENT_YEARLY=plan_...
 ```
 
 ### 4. Run the development server
@@ -164,13 +176,19 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Supabase Schema
 
-The platform uses two primary tables:
+The main tables (SQL for the newer ones is in `scripts/`, run in the Supabase SQL editor):
 
 **`user_profiles`**
 Stores user metadata synced from Clerk via webhook: `user_id`, `email`, `name`, `role` (`student` | `admin`), `total_xp`, `current_streak`, `longest_streak`, `last_active_date`.
 
 **`case_attempts`**
 Stores every completed evaluation: `user_id`, `case_id`, `score`, `xp_earned`, `time_taken`, `feedback_json` (full structured result), `completed_at`.
+
+**`cases`** — the case library (`case_json`); a row wins over a bundled JSON file with the same id.
+
+**`subscriptions`** — one row per Razorpay subscription (`scripts/create_subscriptions_table.sql`, `scripts/add_subscription_cancel_at.sql`).
+
+**`case_starts`** — one row per student, case and day, which the plan limits count (`scripts/create_case_starts_table.sql`).
 
 ---
 
@@ -194,7 +212,7 @@ The scoring pipeline runs across 4 layers:
 |---|---|---|
 | **1 — Intent Extraction** | Rule-based NLP | Maps questions to clinical intents; scores specificity & redundancy |
 | **2 — Deterministic Scoring** | Algorithmic | Test ordering (0–20 pts) + 70% of History (0–17.5 pts) |
-| **3 — LLM Scoring** | Groq / Llama | Clinical Reasoning (30), Diagnosis (15), Management (10), History Q (0–7.5) |
+| **3 — LLM Scoring** | Google Gemini | Clinical Reasoning (30), Diagnosis (15), Management (10), History Q (0–7.5) |
 | **4 — Safety Penalties** | Hybrid rule + LLM | Red flag missed penalty (−2 to −5 per flag) |
 
 **Total: 100 marks** across Clinical Reasoning (30), History (25), Diagnosis (15), Testing (20), Management (10), minus safety penalties.
@@ -209,7 +227,7 @@ For the full technical and pedagogical reference, see [`EVALUATION_ENGINE.md`](.
 |---|---|
 | [`CASE_SYSTEM_README.md`](./CASE_SYSTEM_README.md) | Complete case flow, data architecture, API routes, components, and guide to adding new cases |
 | [`EVALUATION_ENGINE.md`](./EVALUATION_ENGINE.md) | Detailed scoring rubric, intent extraction, deterministic + LLM layers, red flag system, and design philosophy |
-| [`AI_INTEGRATION_GUIDE.md`](./AI_INTEGRATION_GUIDE.md) | Guide to the AI integrations (Groq, Gemini) and how to extend or replace the LLM layer |
+| [`AI_INTEGRATION_GUIDE.md`](./AI_INTEGRATION_GUIDE.md) | Guide to the AI integrations and how to extend or replace the LLM layer |
 
 ---
 

@@ -1,5 +1,7 @@
 # MediKarya — AI Integration Reference
 
+> ⚠️ **Out of date (Sept 2026):** the app no longer uses Groq. Everything AI now runs on Google Gemini (`GEMINI_API_KEY`): patient chat and quizzes on `gemini-3.1-flash-lite`, classic-case evaluation on `gemini-3.8-flash`; live simulations are scored deterministically, without an LLM. See `engine/chatEngine.ts`, `engine/evaluation/`, and the README. The architecture below is kept for history until this guide is rewritten.
+>
 > **Status:** AI is **fully integrated and live** — Groq's Llama-3.3-70b-versatile model powers both the patient chat and the evaluation engine. This document describes the actual implemented architecture.
 
 ---

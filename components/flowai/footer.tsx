@@ -154,12 +154,15 @@ export function Footer() {
           <div className="text-sm text-enc-ink-2">
             © {new Date().getFullYear()} MediKarya. All rights reserved.
           </div>
-          <div className="flex gap-6 text-sm text-enc-ink-2">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-enc-ink-2">
             <Link href="/privacy" className="hover:text-enc-ink transition-colors">
               Privacy Policy
             </Link>
             <Link href="/terms" className="hover:text-enc-ink transition-colors">
               Terms of Service
+            </Link>
+            <Link href="/refund-policy" className="hover:text-enc-ink transition-colors">
+              Refunds &amp; Cancellation
             </Link>
             <Link href="/cookies" className="hover:text-enc-ink transition-colors">
               Cookie Policy

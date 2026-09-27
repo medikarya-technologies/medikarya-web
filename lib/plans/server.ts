@@ -1,8 +1,8 @@
 import "server-only";
 
 import { supabaseServer } from "@/lib/supabase/server";
-import { HOLDING_STATUSES } from "@/lib/payments/subscriptions";
-import { decide, higherPlan, indiaDay, type CaseKind, type Decision, type Plan } from "./limits";
+import { currentSubscription } from "@/lib/payments/subscriptions";
+import { decide, indiaDay, type CaseKind, type Decision, type Plan } from "./limits";
 
 export { caseKindOf as caseKind } from "./limits";
 
@@ -21,19 +21,17 @@ export interface PlanStatus {
 
 export async function getPlanStatus(userId: string): Promise<PlanStatus> {
   const today = indiaDay();
-  const [subs, profile, startsToday, liveEver] = await Promise.all([
-    supabaseServer.from("subscriptions").select("tier").eq("clerk_user_id", userId).in("status", HOLDING_STATUSES),
+  const [subscription, profile, startsToday, liveEver] = await Promise.all([
+    currentSubscription(userId),
     supabaseServer.from("user_profiles").select("role").eq("clerk_user_id", userId).maybeSingle(),
     supabaseServer.from("case_starts").select("case_id, live").eq("clerk_user_id", userId).eq("day", today),
     supabaseServer.from("case_starts").select("id", { count: "exact", head: true }).eq("clerk_user_id", userId).eq("live", true),
   ]);
-  const failed = subs.error ?? startsToday.error ?? liveEver.error;
+  const failed = startsToday.error ?? liveEver.error;
   if (failed) throw failed;
 
-  let plan: Plan = "student";
-  for (const row of subs.data ?? []) {
-    if (row.tier === "intern" || row.tier === "resident") plan = higherPlan(plan, row.tier);
-  }
+  const tier = subscription?.tier;
+  const plan: Plan = tier === "intern" || tier === "resident" ? tier : "student";
 
   const rows = startsToday.data ?? [];
   return {

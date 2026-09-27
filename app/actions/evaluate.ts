@@ -10,6 +10,17 @@ import { replayStudentEvents } from "@/lib/simulation/replay";
 import { computeAssistance, scoreEncounter } from "@/engine/evaluation/DualScorer";
 import { classicInputsFromEvents } from "@/lib/simulation/classic-inputs";
 import { countBudgetedActions, type ClinicalEvent } from "@/lib/simulation/encounter-events";
+import { headers } from "next/headers";
+import { checkAiAccess } from "@/lib/plans/access";
+
+/** Scoring spends AI (classic cases) and records an attempt: same rules as the AI routes (lib/plans/access.ts). */
+async function authorisedCase(caseId: unknown) {
+    const h = await headers();
+    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+    const access = await checkAiAccess(caseId, "evaluate", ip);
+    if (!access.ok) throw new Error(access.error);
+    return access.caseData;
+}
 
 interface PersistArgs {
     caseId: string;
@@ -184,11 +195,13 @@ export async function evaluateCase(
     diagnosis: any,
     orderedTests: any[],
     chatHistory: any[],
-    caseData: any,
+    clientCaseData: any,
     timeTaken: number = 0, // timeTaken in seconds
     guestId?: string
 ) {
     try {
+        // The server's copy of the case, not the one the browser sent.
+        const caseData = await authorisedCase(clientCaseData?.id);
         console.log("Evaluating case for:", caseData.patient.name);
         const result = await EvaluationEngine.evaluate(
             diagnosis,
@@ -307,7 +320,7 @@ export async function evaluateSimulation(
 ) {
     try {
         const caseId: string | undefined = caseData?.id;
-        const authoritative = caseId ? await getCaseById(caseId) : null;
+        const authoritative = await authorisedCase(caseId);
         if (!authoritative || !isSimulationCase(authoritative)) {
             throw new Error(`Simulation case "${caseId}" not found`);
         }

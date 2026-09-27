@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getRazorpay } from "@/lib/razorpay";
-import { supabaseServer } from "@/lib/supabase/server";
-import { HOLDING_STATUSES, TOTAL_COUNT, isPaidTier, planIdFor, type BillingPeriod } from "@/lib/payments/subscriptions";
+import { TOTAL_COUNT, currentSubscription, isPaidTier, planIdFor, type BillingPeriod } from "@/lib/payments/subscriptions";
 
 export async function POST(request: NextRequest) {
   const razorpay = getRazorpay();
@@ -30,16 +29,10 @@ export async function POST(request: NextRequest) {
 
     // One plan at a time: a second checkout while one is live would bill the student twice.
     // (Changing plan is not built yet; it needs Razorpay's update-subscription flow.)
-    const { data: holding, error: lookupError } = await supabaseServer
-      .from("subscriptions")
-      .select("tier, status")
-      .eq("clerk_user_id", userId)
-      .in("status", HOLDING_STATUSES)
-      .limit(1);
-    if (lookupError) throw lookupError;
-    if (holding && holding.length > 0) {
+    const holding = await currentSubscription(userId);
+    if (holding) {
       return NextResponse.json(
-        { error: `You already have an active ${holding[0].tier === "resident" ? "Resident" : "Intern"} plan.` },
+        { error: `You already have an active ${holding.tier === "resident" ? "Resident" : "Intern"} plan.` },
         { status: 409 }
       );
     }

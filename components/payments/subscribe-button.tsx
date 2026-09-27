@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { loadCheckoutScript } from "./razorpay-checkout-button"
 import { refreshPlan } from "@/components/plans/use-plan"
+import { trackEvent } from "@/lib/clarity"
 
 type Tier = "intern" | "resident"
 type Period = "monthly" | "yearly"
@@ -36,6 +37,7 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
 
+  const checkoutPlan = `${tier}_${period}`
   const fail = (description: string) => toast({ title: "Could not start your plan", description, variant: "destructive" })
 
   const handleClick = async () => {
@@ -80,6 +82,7 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
               })
               return
             }
+            trackEvent("Subscribed", { checkout_plan: checkoutPlan })
             await refreshPlan()
             if (onSubscribed) {
               toast({ title: `You're now a ${TIER_NAME[tier]}`, description: "Your plan is active." })
@@ -96,14 +99,21 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
             })
           }
         },
-        modal: { ondismiss: () => toast({ title: "Checkout closed", description: "You have not been charged." }) },
+        modal: {
+          ondismiss: () => {
+            trackEvent("Checkout_Closed", { checkout_plan: checkoutPlan })
+            toast({ title: "Checkout closed", description: "You have not been charged." })
+          },
+        },
         theme: { color: "#0891b2" },
       })
 
       checkout.on("payment.failed", (response) => {
+        trackEvent("Payment_Failed", { checkout_plan: checkoutPlan })
         toast({ title: "Payment failed", description: response.error.description, variant: "destructive" })
       })
       onCheckoutOpen?.()
+      trackEvent("Checkout_Opened", { checkout_plan: checkoutPlan })
       checkout.open()
     } catch (error) {
       fail(error instanceof Error ? error.message : "Please try again in a moment.")

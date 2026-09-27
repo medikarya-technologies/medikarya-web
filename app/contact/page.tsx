@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import ContactClient from "./ContactClient"
 
 export const metadata: Metadata = {
-    title: "Contact & Partner | MediKarya",
+    title: "Contact & Partner",
     description: "Get in touch with MediKarya to explore institutional partnerships, curriculum integration, or API access for AI-powered medical education.",
     robots: { index: true, follow: true },
     openGraph: {

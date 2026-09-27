@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import ContributeForm from "./ContributeForm"
 
 export const metadata: Metadata = {
-    title: "Contribute | MediKarya",
+    title: "Contribute",
     description: "Join MediKarya as a case contributor. Craft clinical scenarios, share your expertise, and help train the next generation of doctors.",
     robots: {
         index: true,
