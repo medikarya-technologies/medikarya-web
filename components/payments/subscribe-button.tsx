@@ -6,13 +6,14 @@
 
 import { useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@clerk/nextjs"
+import { useAuth, useUser } from "@clerk/nextjs"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { loadCheckoutScript } from "./razorpay-checkout-button"
 import { refreshPlan } from "@/components/plans/use-plan"
 import { trackEvent } from "@/lib/clarity"
+import { CHECKOUT_COLOR, CHECKOUT_NAME, checkoutLogo } from "@/lib/payments/checkout-brand"
 
 type Tier = "intern" | "resident"
 type Period = "monthly" | "yearly"
@@ -33,6 +34,7 @@ interface SubscribeButtonProps {
 
 export function SubscribeButton({ tier, period, className, children, onSubscribed, onCheckoutOpen }: SubscribeButtonProps) {
   const { isLoaded, isSignedIn } = useAuth()
+  const { user } = useUser()
   const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
@@ -64,7 +66,10 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
       const checkout = new window.Razorpay({
         key: created.key_id,
         subscription_id: created.subscription_id,
-        name: "MediKarya",
+        name: CHECKOUT_NAME,
+        image: checkoutLogo(),
+        // Filled in from their account so they only type what Razorpay needs (phone, payment details).
+        prefill: { name: user?.fullName ?? undefined, email: user?.primaryEmailAddress?.emailAddress ?? undefined },
         description: `${TIER_NAME[tier]} plan, billed ${period === "yearly" ? "yearly" : "monthly"}`,
         handler: async (response: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) => {
           try {
@@ -105,7 +110,7 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
             toast({ title: "Checkout closed", description: "You have not been charged." })
           },
         },
-        theme: { color: "#0891b2" },
+        theme: { color: CHECKOUT_COLOR },
       })
 
       checkout.on("payment.failed", (response) => {

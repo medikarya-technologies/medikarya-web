@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { CHECKOUT_COLOR, CHECKOUT_NAME, checkoutLogo } from "@/lib/payments/checkout-brand"
 
 declare global {
   interface Window {
@@ -69,7 +70,8 @@ export function RazorpayCheckoutButton({ amountRupees, label, description, class
         amount: order.amount,
         currency: order.currency,
         order_id: order.order_id,
-        name: "MediKarya",
+        name: CHECKOUT_NAME,
+        image: checkoutLogo(),
         description,
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
@@ -94,7 +96,7 @@ export function RazorpayCheckoutButton({ amountRupees, label, description, class
             toast({ title: "Payment cancelled" })
           },
         },
-        theme: { color: "#0891b2" },
+        theme: { color: CHECKOUT_COLOR },
       })
 
       razorpay.on("payment.failed", (response) => {
