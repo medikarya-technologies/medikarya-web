@@ -23,8 +23,10 @@ import { DifficultyMeter, LivePill, ScoreValue } from "./dashboard-ui"
 import { specialtyIcon } from "./specialty-icon"
 
 // The card's button. It is drawn as a button but is not one: a click anywhere on the card lands on the title's link.
-const BUTTON = "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold transition"
-const PRIMARY = cn(BUTTON, "bg-brand-600 text-white group-hover:brightness-95")
+// pointer-events-none lets a click on it fall through to that link. (Hover changes the colour, never a filter: a
+// filter lifts the element above the link's overlay, and the click then stops at the button and goes nowhere.)
+const BUTTON = "pointer-events-none inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold transition"
+const PRIMARY = cn(BUTTON, "bg-brand-600 text-white group-hover:bg-brand-700")
 const SECONDARY = cn(BUTTON, "border border-enc-line-strong bg-enc-sheet text-enc-ink-2 group-hover:bg-enc-console group-hover:text-enc-ink")
 
 /** What the student has done here (left), and the way in (right). */
