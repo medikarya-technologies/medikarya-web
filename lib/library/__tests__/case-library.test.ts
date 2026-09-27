@@ -58,7 +58,7 @@ const LIBRARY: LibraryCase[] = [
     make("goitre", { displayTitle: "54-year-old woman with a 15-day neck swelling", category: "Internal Medicine", estimatedTime: 20 }),
     make("neonate", { displayTitle: "4-week-old male infant with yellow eyes and face", category: "Pediatrics", difficulty: "Beginner", estimatedTime: 20 }),
     make("chb", { displayTitle: "72-year-old man with recurrent fainting episodes", category: "Cardiology", estimatedTime: 25 }),
-    make("stemi", { displayTitle: "58-year-old man with severe chest pain and sweating", category: "Cardiology", difficulty: "Advanced", estimatedTime: 25, xpReward: 100, live: true }),
+    make("stemi", { displayTitle: "61-year-old man with severe chest pain and sweating", category: "Cardiology", difficulty: "Advanced", estimatedTime: 25, xpReward: 100, live: true }),
 ];
 
 const ids = (list: readonly LibraryCase[]) => list.map((c) => c.id);

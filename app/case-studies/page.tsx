@@ -86,7 +86,7 @@ const cases = [
         difficulty: "Advanced",
         difficultyColor: "bg-red-50 text-red-700 border-red-200",
         live: true,
-        chiefComplaint: "58-year-old man with severe crushing central chest pain for 90 minutes, radiating to the left arm and jaw, with sweating, nausea and breathlessness. Known hypertension, diabetes, and a 30-year smoking history.",
+        chiefComplaint: "61-year-old man with severe crushing central chest pain for 90 minutes, radiating to the left arm and jaw, with sweating, nausea and breathlessness. Known hypertension, diabetes, and a 30-year smoking history.",
         differentials: ["Acute anterior STEMI", "Unstable angina", "Aortic dissection (excluded)", "Pulmonary embolism (excluded)"],
         learningObjectives: ["Recognising the ECG pattern of an anterior STEMI within 10 minutes of arrival", "Choosing and activating a reperfusion strategy without waiting for troponin", "Managing cardiogenic shock and avoiding drugs unsafe in a low-output state"],
     },

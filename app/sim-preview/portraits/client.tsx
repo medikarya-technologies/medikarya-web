@@ -32,7 +32,7 @@ const CASES: Row[] = [
   { title: "Malaria · 24 y, M", seed: "malaria-returning-traveller-fever", age: 24, gender: "Male", rr: 19, look: { expression: "tired" } },
   { title: "ADPKD · 49 y, F", seed: "autosomal-dominant-polycystic-kidney-disease", age: 49, gender: "Female", rr: 17, look: {} },
   { title: "Goitre · 54 y, F", seed: "non-toxic-nodular-goitre-neck-swelling", age: 54, gender: "Female", rr: 20, look: { swelling: "neck_right" } },
-  { title: "STEMI · 58 y, M", seed: "acute-anterior-stemi", age: 58, gender: "Male", rr: 24, look: { pallor: 2, sweating: 3, expression: "anxious" } },
+  { title: "STEMI · 61 y, M", seed: "acute-anterior-stemi", age: 61, gender: "Male", rr: 24, look: { pallor: 2, sweating: 3, expression: "anxious" } },
   { title: "B12 deficiency · 63 y, F", seed: "vitamin-b12-deficiency-pernicious-anaemia", age: 63, gender: "Female", rr: 17, look: { pallor: 2, jaundice: 1, expression: "tired" } },
   { title: "Complete heart block · 72 y, M", seed: "complete-heart-block-syncope", age: 72, gender: "Male", rr: 18, look: { pallor: 1, expression: "tired" } },
 ]

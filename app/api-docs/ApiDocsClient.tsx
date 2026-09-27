@@ -101,7 +101,7 @@ export default function ApiDocsClient() {
                                     <span className="w-3 h-3 rounded-full bg-red-500" /><span className="w-3 h-3 rounded-full bg-yellow-500" /><span className="w-3 h-3 rounded-full bg-green-500" />
                                     <span className="ml-3 text-xs text-slate-400 font-mono">GET /v1/cases/{"{case_id}"}/summary</span>
                                 </div>
-                                <pre className="p-5 text-xs font-mono text-slate-300 leading-relaxed overflow-x-auto">{`{\n  "case_id": "acute-anterior-stemi",\n  "title": "58-year-old man with severe chest pain and sweating",\n  "specialty": "Cardiology",\n  "difficulty": "Hard",\n  "student_session": {\n    "differential": {\n      "most_likely": "Acute anterior STEMI",\n      "alternative": "Unstable angina",\n      "cant_miss": "Aortic dissection"\n    },\n    "correct": true,\n    "clinical_score": 87,\n    "independent_score": 74\n  }\n}`}</pre>
+                                <pre className="p-5 text-xs font-mono text-slate-300 leading-relaxed overflow-x-auto">{`{\n  "case_id": "acute-anterior-stemi",\n  "title": "61-year-old man with severe chest pain and sweating",\n  "specialty": "Cardiology",\n  "difficulty": "Hard",\n  "student_session": {\n    "differential": {\n      "most_likely": "Acute anterior STEMI",\n      "alternative": "Unstable angina",\n      "cant_miss": "Aortic dissection"\n    },\n    "correct": true,\n    "clinical_score": 87,\n    "independent_score": 74\n  }\n}`}</pre>
                             </div>
                             <p className="text-xs text-slate-400 mt-3 text-center">Full API reference provided after access approval.</p>
                         </div>
