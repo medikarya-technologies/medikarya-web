@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils";
-import { supabaseServer } from "@/lib/supabase/server";
+import { saveSubscription } from "@/lib/payments/subscriptions";
 
 // Razorpay's subscription lifecycle, delivered here — this is what actually marks a user's access as
 // active, not the checkout success screen (a payment can succeed client-side and the tab close before
@@ -43,28 +43,13 @@ export async function POST(request: NextRequest) {
     }
 
     const sub = event.payload.subscription.entity;
-    const userId = sub.notes?.userId;
-    const tier = sub.notes?.tier;
+    const { error, unattributed } = await saveSubscription(sub);
 
-    if (!userId || !tier) {
-      console.error(`Subscription ${sub.id} has no userId/tier in notes — cannot attribute it to a user.`);
+    if (unattributed) {
+      // Not ours to attribute (e.g. made by hand in the dashboard): acknowledge it so Razorpay stops retrying.
+      console.error(error);
       return NextResponse.json({ received: true, error: "Missing notes.userId/tier" });
     }
-
-    const { error } = await supabaseServer.from("subscriptions").upsert(
-      {
-        clerk_user_id: userId,
-        razorpay_subscription_id: sub.id,
-        razorpay_plan_id: sub.plan_id,
-        tier,
-        status: sub.status,
-        current_start: sub.current_start ? new Date(sub.current_start * 1000).toISOString() : null,
-        current_end: sub.current_end ? new Date(sub.current_end * 1000).toISOString() : null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "razorpay_subscription_id" }
-    );
-
     if (error) {
       console.error("Failed to upsert subscription:", error);
       return NextResponse.json({ error: "Database write failed" }, { status: 500 });

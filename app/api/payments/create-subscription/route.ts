@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getRazorpay } from "@/lib/razorpay";
-
-// One Razorpay Plan per paid tier — created in the dashboard (Plans can't be edited once made),
-// referenced here by id rather than re-deriving amounts, since the plan is the source of truth for price.
-const PLAN_ID_BY_TIER: Record<string, string> = {
-  intern: process.env.RAZORPAY_PLAN_ID_INTERN ?? "",
-  resident: process.env.RAZORPAY_PLAN_ID_RESIDENT ?? "",
-};
-
-// No true "forever" option in Razorpay (100-year max) — a subscription is ended by cancelling it via
-// the API when someone unsubscribes, not by running out of billing cycles. 100 years of monthly cycles.
-const TOTAL_COUNT_MONTHLY = 1200;
+import { supabaseServer } from "@/lib/supabase/server";
+import { HOLDING_STATUSES, TOTAL_COUNT, isPaidTier, planIdFor, type BillingPeriod } from "@/lib/payments/subscriptions";
 
 export async function POST(request: NextRequest) {
   const razorpay = getRazorpay();
@@ -27,20 +18,41 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { tier } = body;
+    const period: BillingPeriod = body.period === "yearly" ? "yearly" : "monthly";
 
-    const planId = PLAN_ID_BY_TIER[tier];
+    if (!isPaidTier(tier)) {
+      return NextResponse.json({ error: `Unknown tier: ${tier}` }, { status: 400 });
+    }
+    const planId = planIdFor(tier, period);
     if (!planId) {
-      return NextResponse.json({ error: `Unknown or unconfigured tier: ${tier}` }, { status: 400 });
+      return NextResponse.json({ error: `No ${period} plan is configured for ${tier}` }, { status: 400 });
+    }
+
+    // One plan at a time: a second checkout while one is live would bill the student twice.
+    // (Changing plan is not built yet; it needs Razorpay's update-subscription flow.)
+    const { data: holding, error: lookupError } = await supabaseServer
+      .from("subscriptions")
+      .select("tier, status")
+      .eq("clerk_user_id", userId)
+      .in("status", HOLDING_STATUSES)
+      .limit(1);
+    if (lookupError) throw lookupError;
+    if (holding && holding.length > 0) {
+      return NextResponse.json(
+        { error: `You already have an active ${holding[0].tier === "resident" ? "Resident" : "Intern"} plan.` },
+        { status: 409 }
+      );
     }
 
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
-      total_count: TOTAL_COUNT_MONTHLY,
-      notes: { userId, tier },
+      total_count: TOTAL_COUNT[period],
+      notes: { userId, tier, period },
     });
 
-    return NextResponse.json({ subscription_id: subscription.id });
+    // The key id is public; sending the one the subscription was made with keeps checkout on the same key.
+    return NextResponse.json({ subscription_id: subscription.id, key_id: process.env.RAZORPAY_KEY_ID });
   } catch (error) {
     const statusCode = (error as { statusCode?: number })?.statusCode;
     if (statusCode === 401) {

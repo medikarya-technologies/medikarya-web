@@ -2,6 +2,7 @@ import { after } from "next/server"
 import { auth, clerkClient } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { supabaseServer } from "@/lib/supabase/server"
+import { UpgradeProvider } from "@/components/plans/upgrade-dialog"
 
 // Always re-run server-side — never serve from Next.js router cache.
 // Without this, client-side navigations (e.g. post-Clerk sign-in) can hit a
@@ -55,5 +56,6 @@ export default async function DashboardRootLayout({
 
     after(() => ensureProfile(userId))
 
-    return <>{children}</>
+    // Every dashboard page (the library, a case, the home) can open the upgrade dialog without leaving it.
+    return <UpgradeProvider>{children}</UpgradeProvider>
 }

@@ -8,8 +8,9 @@ import { FirstCaseConsentDialog, useFirstCaseConsent } from "@/components/cases/
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Loader2, Stethoscope } from "lucide-react"
 import Link from "next/link"
+import { GUEST_CASE_IDS } from "@/lib/plans/limits"
 
-const FREE_CASE_ID = "viral-gastroenteritis"
+const FREE_CASE_ID = GUEST_CASE_IDS[0]
 
 function getOrCreateGuestId(): string {
   const KEY = "medikarya-guest-id"

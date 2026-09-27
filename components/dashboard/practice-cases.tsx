@@ -4,7 +4,7 @@
 // search and a sort above, one row per case. Everything it does to the list (what matches, what order,
 // what the counts beside each filter say) is in lib/library/case-library.ts and is tested there.
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Bookmark, ChevronDown, Search, SearchX, X } from "lucide-react"
 import type { CaseMetadata } from "@/data/cases"
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import {
   activeFilterCount,
   DIFFICULTY_LABEL,
+  difficultyLevel,
   facetCounts,
   filterCases,
   isNewCase,
@@ -33,6 +34,9 @@ import { mergeQuery, queryFromView, viewFromParams } from "@/lib/library/library
 import { useInProgress } from "@/components/cases/use-in-progress"
 import { useSavedCases } from "@/components/cases/use-saved-cases"
 import { CaseRow } from "./case-row"
+import { usePlan, type PlanInfo } from "@/components/plans/use-plan"
+import { useUpgrade } from "@/components/plans/upgrade-dialog"
+import { GUEST_CASE_IDS, PLAN_NAME, lockedFor, type Plan } from "@/lib/plans/limits"
 import { LibrarySkeleton } from "./skeletons"
 import { PageContainer, PageHeader, SECONDARY_BUTTON } from "./dashboard-ui"
 import { specialtyIcon } from "./specialty-icon"
@@ -173,6 +177,30 @@ function MobileFilters({ facets, filters, set, hasProgress, savedCount }: { face
 
 // ── The screen ──────────────────────────────────────────────────────────────
 
+/** "Intern plan · 3 of 15 cases today · 1 of 5 live": what is left today, next to the library's counts. */
+function PlanUsage({ plan }: { plan: PlanInfo }) {
+  const { casesPerDay, livePerDay, liveEver } = plan.limits
+  const cases = casesPerDay === null ? "unlimited cases" : `${plan.casesToday} of ${casesPerDay} cases today`
+  const live =
+    plan.plan === "student"
+      ? `free live case ${plan.liveEver >= (liveEver ?? 1) ? "used" : "unused"}`
+      : `${plan.liveToday} of ${livePerDay} live today`
+  const openUpgrade = useUpgrade()
+  return (
+    <span className="mt-1 block text-enc-ink-3">
+      <span className="font-medium text-enc-ink-2">{PLAN_NAME[plan.plan]} plan</span> · {cases} · {live}
+      {plan.plan !== "resident" && (
+        <>
+          {" · "}
+          <button type="button" onClick={() => openUpgrade()} className="rounded font-semibold text-brand-700 outline-none hover:text-brand-800 focus-visible:ring-2 focus-visible:ring-brand-300">
+            Upgrade
+          </button>
+        </>
+      )}
+    </span>
+  )
+}
+
 export function PracticeCases({ initialCases, progress = {}, userId }: { initialCases?: CaseMetadata[]; progress?: ProgressMap; userId?: string }) {
   const [cases, setCases] = useState<LibraryCase[]>(initialCases ?? [])
   const [loading, setLoading] = useState(!initialCases)
@@ -244,6 +272,14 @@ export function PracticeCases({ initialCases, progress = {}, userId }: { initial
   const sorted = useMemo(() => sortCases(filterCases(cases, filters, progress, saved), sort, progress), [cases, filters, progress, saved, sort])
   // What the student has started on this device and not finished goes to the top of "recommended": it is the thing to do next.
   const inProgress = useInProgress(useMemo(() => cases.map((c) => c.id), [cases]))
+  const plan = usePlan()
+  const lockOf = useCallback(
+    (c: LibraryCase): Plan | null =>
+      !plan || plan.admin || GUEST_CASE_IDS.includes(c.id)
+        ? null
+        : lockedFor(plan.plan, { live: !!c.live, difficulty: difficultyLevel(c.difficulty) }, plan.liveEver),
+    [plan]
+  )
   const results = useMemo(() => (sort === "recommended" ? pinFirst(sorted, new Set(inProgress.keys())) : sorted), [sorted, sort, inProgress])
   const active = activeFilterCount(filters)
 
@@ -279,6 +315,7 @@ export function PracticeCases({ initialCases, progress = {}, userId }: { initial
                 · <span className="font-mono text-enc-ink-2 tabular-nums">{summary.attempted}</span> tried
               </>
             )}
+            {plan && !plan.admin && <PlanUsage plan={plan} />}
           </p>
         }
       />
@@ -368,7 +405,7 @@ export function PracticeCases({ initialCases, progress = {}, userId }: { initial
             <>
               <ul className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3">
                 {results.slice(0, visible).map((c) => (
-                  <CaseRow key={c.id} c={c} progress={progress[c.id]} inProgress={inProgress.get(c.id)} isNew={isNewCase(c, progress, now)} saved={saved.has(c.id)} onToggleSaved={toggleSaved} />
+                  <CaseRow key={c.id} c={c} progress={progress[c.id]} inProgress={inProgress.get(c.id)} isNew={isNewCase(c, progress, now)} saved={saved.has(c.id)} onToggleSaved={toggleSaved} locked={lockOf(c)} />
                 ))}
               </ul>
               {results.length > visible && (

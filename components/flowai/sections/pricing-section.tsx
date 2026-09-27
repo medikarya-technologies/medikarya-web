@@ -6,6 +6,9 @@ import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
+import { SubscribeButton } from "@/components/payments/subscribe-button"
+import { usePlan } from "@/components/plans/use-plan"
+import { PLAN_OFFERS } from "@/lib/plans/catalog"
 
 // Pricing section — modified from original:
 // 1. Eyebrow ("Pricing") removed — heading alone is enough
@@ -35,46 +38,31 @@ import { useScrollAnimation } from "@/lib/scroll-animation"
 // a small fraction of the tier's price. The Student tier's one-time STEMI attempt (not daily) is
 // deliberate: it costs about 20 paise per person and is the single most impressive thing in the
 // product, worth letting a free visitor feel once before any paywall.
+//
+// The paid CTAs start a Razorpay subscription for that tier and the chosen period (SubscribeButton);
+// the free one is a plain link.
 
 type Period = "monthly" | "annual"
 
+// Prices and features come from lib/plans/catalog.ts, shared with the in-app upgrade dialog.
 const TIERS = [
-  {
-    name: "Student",
-    sub: "Free",
-    tagline: "A simple way to experience MediKarya.",
-    monthly: 0,
-    annual: 0,
-    features: ["2 cases a day, Beginner difficulty", "One live emergency case, on us — try it once", "No account needed"],
-    cta: { label: "Try a case free", href: "/try" },
-    highlight: false,
-  },
-  {
-    name: "Intern",
-    sub: "Basic",
-    tagline: "For regular clinical reasoning practice.",
-    monthly: 199,
-    annual: 1999,
-    features: ["Beginner & Intermediate cases, 15 a day", "5 live emergency cases a day", "AI patient conversations", "Diagnosis, management & debrief", "Progress tracking"],
-    cta: { label: "Become an Intern", href: "/login" },
-    highlight: false,
-  },
-  {
-    name: "Resident",
-    sub: "Pro",
-    tagline: "For deeper simulation and advanced clinical scenarios.",
-    monthly: 399,
-    annual: 3999,
-    features: ["Everything in Intern", "All cases, including Advanced — unlimited a day", "10 live emergency cases a day", "Real-time vitals & telemetry", "Advanced performance analytics"],
-    cta: { label: "Become a Resident", href: "/login" },
-    highlight: true,
-  },
+  { ...PLAN_OFFERS.student, annual: PLAN_OFFERS.student.yearly, cta: { label: "Try a case free", href: "/try" }, plan: null, highlight: false },
+  { ...PLAN_OFFERS.intern, annual: PLAN_OFFERS.intern.yearly, cta: { label: "Become an Intern", href: "/login" }, plan: "intern", highlight: false },
+  { ...PLAN_OFFERS.resident, annual: PLAN_OFFERS.resident.yearly, cta: { label: "Become a Resident", href: "/login" }, plan: "resident", highlight: true },
 ] as const
+
+function ctaClass(highlight: boolean) {
+  return cn(
+    "mt-6 h-auto w-full rounded-full py-2.5 text-sm font-semibold",
+    highlight ? "bg-brand-500 text-white hover:bg-brand-400" : "border border-white/15 bg-white/5 text-white hover:bg-white/10"
+  )
+}
 
 export default function PricingSection() {
   const { ref, isVisible } = useScrollAnimation(0.15)
   const [period, setPeriod] = useState<Period>("monthly")
   const annual = period === "annual"
+  const current = usePlan()?.plan
 
   return (
     <section id="pricing" className="relative overflow-hidden bg-brand-950 py-20 sm:py-28" ref={ref}>
@@ -160,15 +148,19 @@ export default function PricingSection() {
                 ))}
               </ul>
 
-              <Button
-                asChild
-                className={cn(
-                  "mt-6 h-auto w-full rounded-full py-2.5 text-sm font-semibold",
-                  tier.highlight ? "bg-brand-500 text-white hover:bg-brand-400" : "border border-white/15 bg-white/5 text-white hover:bg-white/10"
-                )}
-              >
-                <Link href={tier.cta.href}>{tier.cta.label}</Link>
-              </Button>
+              {tier.plan && tier.plan === current ? (
+                <Button type="button" disabled className={cn(ctaClass(tier.highlight), "disabled:opacity-70")}>
+                  Your current plan
+                </Button>
+              ) : tier.plan ? (
+                <SubscribeButton tier={tier.plan} period={annual ? "yearly" : "monthly"} className={ctaClass(tier.highlight)}>
+                  {tier.cta.label}
+                </SubscribeButton>
+              ) : (
+                <Button asChild className={ctaClass(tier.highlight)}>
+                  <Link href={tier.cta.href}>{tier.cta.label}</Link>
+                </Button>
+              )}
             </div>
           )
         })}

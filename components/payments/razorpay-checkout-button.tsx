@@ -21,7 +21,7 @@ declare global {
 
 const CHECKOUT_SCRIPT_SRC = "https://checkout.razorpay.com/v1/checkout.js"
 
-function loadCheckoutScript(): Promise<void> {
+export function loadCheckoutScript(): Promise<void> {
   if (typeof window !== "undefined" && window.Razorpay) return Promise.resolve()
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[src="${CHECKOUT_SCRIPT_SRC}"]`)
@@ -65,7 +65,7 @@ export function RazorpayCheckoutButton({ amountRupees, label, description, class
       if (!orderRes.ok) throw new Error(order.error ?? "Could not create order")
 
       const razorpay = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: order.key_id ?? process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
         order_id: order.order_id,

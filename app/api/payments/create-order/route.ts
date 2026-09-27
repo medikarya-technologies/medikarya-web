@@ -31,7 +31,9 @@ export async function POST(request: NextRequest) {
       notes: userId ? { userId } : undefined,
     });
 
-    return NextResponse.json({ order_id: order.id, amount: order.amount, currency: order.currency });
+    // The key id is public (checkout needs it in the browser). Sending the one this order was made with means
+    // the modal can never open with a different key than the server's, e.g. after the keys are regenerated.
+    return NextResponse.json({ order_id: order.id, amount: order.amount, currency: order.currency, key_id: process.env.RAZORPAY_KEY_ID });
   } catch (error) {
     const statusCode = (error as { statusCode?: number })?.statusCode;
     if (statusCode === 401) {

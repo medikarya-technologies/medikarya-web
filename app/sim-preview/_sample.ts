@@ -5,6 +5,8 @@
 import { computeMilestones, type Milestone } from "@/lib/library/milestones"
 import { buildSkillProfile, NO_SKILLS, type AttemptFeedback, type SkillProfile } from "@/lib/library/skills"
 import { buildDashboardStats, NO_STATS, type AttemptRecord, type CaseProgress, type DashboardStats, type LibraryCase, type ProgressMap } from "@/lib/library/case-library"
+import { PLAN_LIMITS } from "@/lib/plans/limits"
+import type { PlanInfo } from "@/components/plans/use-plan"
 
 const DAY = 86_400_000
 
@@ -71,4 +73,20 @@ export function sampleSkills(empty: boolean): SkillProfile {
     { case_id: "acute-anterior-stemi", created_at: at(20), simDomains: { clinical_reasoning: 38, investigation_accuracy: 64, management: 20, efficiency: 72 }, simGaps: ["stemi_ecg_recognition", "antiplatelet_vs_reperfusion"], clinicalScore: 44, independentScore: 38 },
   ]
   return buildSkillProfile(rows)
+}
+
+/** A made-up plan for the preview pages (?plan=student|intern|resident): a student part-way through today. */
+export function samplePlan(plan: string | undefined): PlanInfo | null {
+  if (plan !== "student" && plan !== "intern" && plan !== "resident") return null
+  const l = PLAN_LIMITS[plan]
+  const cap = (n: number) => (Number.isFinite(n) ? n : null)
+  return {
+    plan,
+    admin: false,
+    casesToday: plan === "student" ? 1 : 4,
+    liveToday: plan === "student" ? 0 : 2,
+    liveEver: plan === "student" ? 1 : 6,
+    openedToday: [],
+    limits: { maxDifficulty: l.maxDifficulty, casesPerDay: cap(l.casesPerDay), livePerDay: cap(l.livePerDay), liveEver: cap(l.liveEver) },
+  }
 }

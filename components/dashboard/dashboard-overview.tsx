@@ -4,7 +4,8 @@
 //   1. how you are doing: the training section (four cards, one each for XP, cases, streak and score,
 //      and below them XP case by case);
 //   2. what you did last: recent attempts, each a way back into the case;
-//   3. what to do next: one suggested case, chosen by lib/library/case-library.ts.
+//   3. what to do next: one suggested case, chosen by lib/library/case-library.ts;
+//   4. and your plan: what it opens, and how much of today's allowance is left (components/plans/plan-card.tsx).
 // A student with no attempts yet gets the four steps of a case in place of a table of nothing.
 
 import { useEffect, useMemo, useState } from "react"
@@ -23,6 +24,9 @@ import { RecentAttempts } from "./recent-attempts"
 import { specialtyIcon } from "./specialty-icon"
 import { TrainingPanel } from "./training-panel"
 import { useDisplayName } from "./use-display-name"
+import { PlanCard } from "@/components/plans/plan-card"
+import { usePlan } from "@/components/plans/use-plan"
+import { GUEST_CASE_IDS, lockedFor } from "@/lib/plans/limits"
 
 interface Props {
   initialStats?: DashboardStats
@@ -150,8 +154,11 @@ export function DashboardOverview({ initialStats, cases = [], progress = {}, use
   const inProgress = useInProgress(useMemo(() => cases.map((c) => c.id), [cases]))
   const resume = mostRecent(inProgress)
   const resumeCase = resume ? byId.get(resume.caseId) : undefined
-  // The case being resumed is not also suggested.
-  const next = suggestNext(resumeCase ? cases.filter((c) => c.id !== resumeCase.id) : cases, progress)
+  // The case being resumed is not also suggested, and neither is one the student's plan does not open.
+  const plan = usePlan()
+  const openToPlan = (c: LibraryCase) =>
+    !plan || plan.admin || GUEST_CASE_IDS.includes(c.id) || !lockedFor(plan.plan, { live: !!c.live, difficulty: difficultyLevel(c.difficulty) }, plan.liveEver)
+  const next = suggestNext(cases.filter((c) => c.id !== resumeCase?.id && openToPlan(c)), progress)
   const started = stats.recentCases.length > 0
 
   return (
@@ -185,6 +192,7 @@ export function DashboardOverview({ initialStats, cases = [], progress = {}, use
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         {started ? <RecentAttempts attempts={stats.recentCases} byId={byId} /> : <FirstCase />}
         <div className="space-y-6">
+          <PlanCard cases={cases} />
           {resume && resumeCase && <ResumeCard one={resume} c={resumeCase} />}
           <Suggested next={next} progress={progress} />
         </div>

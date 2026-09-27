@@ -28,6 +28,9 @@ import { clearInProgress } from "@/lib/simulation/resume"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 import { AlertCircle } from "lucide-react"
+import { PlanNotice, type PlanBlock } from "@/components/plans/plan-notice"
+import { refreshPlan, usePlan } from "@/components/plans/use-plan"
+import { GUEST_CASE_IDS, caseKindOf, decide, explain } from "@/lib/plans/limits"
 
 // The briefing before a case. It reads what the encounter has saved each time it is shown, so coming back from
 // the bedside offers "Resume" without a reload.
@@ -69,6 +72,17 @@ export default function CasePage() {
   const { toast } = useToast()
   const { hasConsented, markConsented } = useFirstCaseConsent()
   const [consentOpen, setConsentOpen] = useState(false)
+  // Set when the student's plan will not open this case (see app/api/cases/[id]/start).
+  const [planBlock, setPlanBlock] = useState<PlanBlock | null>(null)
+
+  // Say so on arrival, not only after Start is pressed. (The start route is what actually enforces it.)
+  const planInfo = usePlan()
+  useEffect(() => {
+    const id = params.id as string
+    if (!planInfo || planInfo.admin || !caseData || GUEST_CASE_IDS.includes(id)) return
+    const decision = decide(planInfo.plan, caseKindOf(caseData), { ...planInfo, openedToday: planInfo.openedToday.includes(id) })
+    if (!decision.ok) setPlanBlock({ message: explain(decision), needs: decision.needs ?? null })
+  }, [planInfo, caseData, params.id])
 
   // The bedside screen walks a new student through itself once, on their first case: someone with no attempts on
   // any case who has not seen it on this device. It is worked out here, while the briefing is on screen.
@@ -132,17 +146,29 @@ export default function CasePage() {
         },
       });
 
+      const body = await response.json().catch(() => ({}));
+
+      // The plan does not open this case, or today's allowance is used: say why, and do not start.
+      if (response.status === 403 || response.status === 429) {
+        setPlanBlock({ message: body.error ?? "Your plan does not include this case.", needs: body.needs ?? null });
+        return;
+      }
       if (!response.ok) {
-        throw new Error('Failed to start case');
+        throw new Error(body.error ?? 'Failed to start case');
       }
 
-      const updatedCase = await response.json();
-      setCaseData(updatedCase);
+      setPlanBlock(null);
+      void refreshPlan(); // today's counts, wherever they are shown
+      setCaseData(body);
       setCaseStarted(true);
     } catch (error) {
+      // Not started locally as a fallback any more: that would open cases the plan does not include.
       console.error('Error starting case:', error);
-      // Fallback: just start it locally if API fails
-      setCaseStarted(true);
+      toast({
+        title: "Could not start the case",
+        description: error instanceof Error && error.message !== 'Failed to start case' ? error.message : "Check your connection and try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsStarting(false)
     }
@@ -259,6 +285,8 @@ export default function CasePage() {
             <ArrowLeft className="h-4 w-4" />
             Case library
           </Button>
+
+          {planBlock && <PlanNotice block={planBlock} />}
 
           <Briefing caseId={params.id as string} caseData={caseData} isStarting={isStarting} onStart={requestStartCase} />
 
