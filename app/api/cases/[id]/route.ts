@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCaseById } from '@/data/cases';
-import { briefingOnly, planIncludes, viewerId } from '@/lib/plans/access';
+import { briefingOnly, isAdmin, isDraft, planIncludes, viewerId } from '@/lib/plans/access';
 
 // The whole case only for someone whose plan includes it (anyone, for the free /try case), since it holds the
 // diagnosis, the answers and the patient's script; for everyone else, the briefing only (lib/plans/access.ts).
@@ -19,9 +19,15 @@ export async function GET(
       );
     }
 
+    const userId = await viewerId();
+    // Drafts exist only for admins to play-test.
+    if (isDraft(caseData) && !(await isAdmin(userId))) {
+      return NextResponse.json({ error: 'Case not found' }, { status: 404 });
+    }
+
     let whole = false;
     try {
-      whole = await planIncludes(await viewerId(), id, caseData);
+      whole = await planIncludes(userId, id, caseData);
     } catch (error) {
       console.error('Could not check plan for case fetch:', error);
     }

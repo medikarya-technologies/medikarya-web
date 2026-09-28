@@ -23,6 +23,18 @@ export async function viewerId(): Promise<string | null> {
   }
 }
 
+/** A draft (not yet published) case is only for admins, who play-test it before publishing. */
+export function isDraft(caseData: object): boolean {
+  const status = (caseData as { status?: unknown }).status;
+  return typeof status === "string" && status !== "published";
+}
+
+export async function isAdmin(userId: string | null): Promise<boolean> {
+  if (!userId) return false;
+  const { data } = await supabaseServer.from("user_profiles").select("role").eq("clerk_user_id", userId).maybeSingle();
+  return data?.role === "admin";
+}
+
 /** Whether this student's plan includes this case at all (daily counts aside). */
 export async function planIncludes(userId: string | null, caseId: string, caseData: { difficulty?: string; event_rules?: unknown }): Promise<boolean> {
   if (GUEST_CASE_IDS.includes(caseId)) return true;
@@ -46,6 +58,7 @@ export function briefingOnly(caseData: Record<string, any>) {
     setting: caseData.setting,
     patient,
     appearance: caseData.appearance,
+    credit: caseData.credit,
     initial_state: caseData.initial_state,
     // kept as empty lists so the briefing still recognises a bedside case; `live` says what the rules would have
     event_rules: [],
@@ -101,6 +114,8 @@ export async function checkAiAccess(caseId: unknown, use: AiUse, ip: string): Pr
 
   const caseData = await getCaseById(caseId);
   if (!caseData) return { ok: false, status: 404, error: "Case not found" };
+  // A draft is for admins to play-test, never anyone else, not even on the dev preview pages.
+  if (isDraft(caseData) && !(await isAdmin(userId))) return { ok: false, status: 404, error: "Case not found" };
 
   const freeCase = GUEST_CASE_IDS.includes(caseId);
   const devPreview = process.env.NODE_ENV !== "production";

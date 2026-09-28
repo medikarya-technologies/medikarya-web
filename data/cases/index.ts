@@ -160,14 +160,16 @@ function toMetadata(row: CaseListRow): CaseMetadata {
 // failed query throws, so a failure is never kept. (A newly added case shows up within a minute.)
 const cachedCaseList = unstable_cache(
   async (): Promise<CaseMetadata[]> => {
+    // Only published cases: drafts (from the studio converter, /admin/studio) are for admins to play-test.
     const { data, error } = await supabaseServer
       .from('cases')
       .select(CASE_LIST_COLUMNS)
+      .eq('status', 'published')
       .order('updated_at', { ascending: false });
     if (error) throw error;
     return (data as unknown as CaseListRow[]).map(toMetadata);
   },
-  ['case-list-v2'],
+  ['case-list-v3'],
   { revalidate: 60, tags: ['cases'] }
 );
 

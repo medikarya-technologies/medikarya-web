@@ -381,7 +381,8 @@ function examinationOf(facts: unknown): ExamManoeuvreDef[] {
     for (const [key, section] of Object.entries(facts)) {
         const m = key.match(/^(.*)_examination$/);
         if (!m) continue;
-        const findings = factLines(section).join("\n");
+        // A section is either structured ({ inspection: "...", palpation: "..." }) or one line of text.
+        const findings = typeof section === "string" ? section.trim() : factLines(section).join("\n");
         if (!findings) continue;
         const stem = m[1];
         const general = /^general/.test(stem);

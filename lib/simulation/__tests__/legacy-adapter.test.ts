@@ -448,6 +448,14 @@ describe("legacy adapter: examination", () => {
         assert.match(local.findings, /Inspection: Moves with swallowing/);
     });
 
+    it("takes a section written as one line of text as it is", () => {
+        const c = adultCase();
+        (c as any).patient_facts.respiratory_examination = "Bilateral equal air entry, vesicular breath sounds.";
+        const resp = upgraded(c).examination!.find((m) => m.id === "respiratory_examination")!;
+        assert.equal(resp.region, "respiratory");
+        assert.equal(resp.findings, "Bilateral equal air entry, vesicular breath sounds.");
+    });
+
     it("offers no examination when the case has none, rather than inventing findings", () => {
         assert.equal(upgraded(toddlerCase()).examination, undefined);
     });

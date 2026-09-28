@@ -1,0 +1,465 @@
+{
+ "case": {
+  "title": "Non-Toxic Nodular Goitre with Neck Swelling",
+  "category": "Internal Medicine",
+  "difficulty": "Intermediate",
+  "estimatedTime": 20,
+  "tags": [
+   "thyroid swelling",
+   "neck swelling",
+   "goitre",
+   "dysphagia",
+   "voice change",
+   "exertional dyspnea"
+  ],
+  "displayTitle": "54-year-old woman with a 15-day neck swelling",
+  "displayDescription": "A 54-year-old woman presents with a painless, non-progressive neck swelling associated with difficulty swallowing, change in voice, and difficulty breathing on exertion.",
+  "displayTags": [
+   "internal-medicine",
+   "neck-swelling"
+  ],
+  "patient": {
+   "name": "Sunita Devi",
+   "age": 54,
+   "gender": "Female",
+   "mrn": null,
+   "chiefComplaint": "Neck swelling for 15 days.",
+   "vitalSigns": {
+    "bloodPressure": {
+     "systolic": 110,
+     "diastolic": 60,
+     "unit": "mmHg"
+    },
+    "heartRate": {
+     "value": 86,
+     "unit": "bpm"
+    },
+    "temperature": {
+     "value": null,
+     "unit": "°C",
+     "note": "Afebrile to touch"
+    },
+    "respiratoryRate": {
+     "value": 20,
+     "unit": "breaths/min"
+    },
+    "oxygenSaturation": {
+     "value": 98,
+     "unit": "%"
+    }
+   },
+   "allergies": [],
+   "currentMedications": [],
+   "investigations": {
+    "allowed_tests": [
+     "TSH",
+     "Free T4",
+     "Ultrasound neck / thyroid",
+     "Fine-needle aspiration cytology (FNAC)"
+    ]
+   }
+  },
+  "patient_text_brief": "I am a 54-year-old homemaker from a village in Uttar Pradesh. I came to the hospital because of a painless neck swelling that I have had for about 15 days. About 20 days ago, I had a fever for 3-4 days and a dry cough, but that got better with medicine. After that, I started having a change in my voice, difficulty swallowing food, and difficulty breathing when I exert myself. I'm not feeling anxious, just a bit lethargic and slow.",
+  "patient_facts": {
+   "identity": {
+    "name": "Sunita Devi",
+    "age_years": 54,
+    "gender": "female",
+    "occupation": "homemaker",
+    "religion": "Hindu",
+    "location": "Uttar Pradesh",
+    "socioeconomic_status": "Low socioeconomic class"
+   },
+   "chief_complaint": "Neck swelling for 15 days.",
+   "timeline": {
+    "20_days_ago": "Developed fever for 3-4 days and a dry cough (relieved by undocumented medications).",
+    "15_days_ago": "Developed a painless, non-progressive neck swelling.",
+    "post_fever": "Developed difficulty swallowing, change in voice, and difficulty breathing on exertion."
+   },
+   "symptoms": {
+    "neck_swelling": {
+     "duration": "15 days",
+     "pain": "painless",
+     "progression": "non-progressive",
+     "size_hpi": "7 x 5 cm",
+     "size_inspection": "6 x 8 cm",
+     "size_palpation": "7 x 8 cm",
+     "consistency": "soft to firm",
+     "shape": "spherical",
+     "surface": "smooth",
+     "mobility": "mobile, moves with deglutition, does not move with tongue protrusion",
+     "fixity": "not fixed",
+     "lower_border": "palpable (can get below the swelling)"
+    },
+    "positive": [
+     "difficulty swallowing (dysphagia)",
+     "change in voice (hoarseness)",
+     "difficulty breathing on exertion (exertional dyspnea)",
+     "preceding fever and dry cough",
+     "lethargy"
+    ],
+    "negative": [
+     "heat or cold intolerance",
+     "excessive sweating",
+     "weight loss",
+     "palpitations",
+     "tremors",
+     "protrusion of eyes",
+     "constipation or diarrhea",
+     "bowel/bladder problems",
+     "pain in ear",
+     "hemoptysis"
+    ]
+   },
+   "past_history": {
+    "surgeries": "History of unilateral salpingectomy ~16 years ago.",
+    "similar_complaints": "No history of similar complaints in the past.",
+    "medical_history": "No diabetes mellitus, hypertension, or asthma.",
+    "radiation_exposure": "No history of radiation exposure."
+   },
+   "personal_history": {
+    "sleep": "Normal",
+    "appetite": "Normal",
+    "bowel_and_bladder": "Normal",
+    "substance_use": "No history of substance abuse"
+   },
+   "family_history": "Not significant.",
+   "menstrual_history": {
+    "menarche": "13 years",
+    "menopause": "3 years ago"
+   },
+   "general_physical_examination": {
+    "pallor": "Lower palpebral conjunctiva evaluated (pallor documented)",
+    "cyanosis": "Absent",
+    "icterus": "Absent",
+    "peripheral_edema": "Absent",
+    "clubbing": "Absent",
+    "jvp": "Not elevated",
+    "lymph_nodes": "Cervical, axillary, and inguinal lymph nodes not palpable",
+    "vital_signs": "Pulse 86/min (regular, normal volume), BP 110/60 mmHg, RR 20/min, Temp afebrile to touch"
+   },
+   "respiratory_examination": "Bilateral equal air entry with vesicular breath sounds. No added sounds.",
+   "cardiovascular_examination": "S1 and S2 heard. No murmurs.",
+   "abdominal_examination": "Soft, non-tender. Bowel sounds present. No organomegaly documented.",
+   "neurological_examination": "Conscious and well oriented to time, place and person. No neurological deficit documented.",
+   "local_examination": {
+    "inspection": {
+     "trachea": "Midline",
+     "swelling": "Single diffuse irregular swelling on the right side of the neck (6 x 8 cm), extending from the sternocleidomastoid muscle anteriorly and from clavicle to thyroid cartilage.",
+     "skin": "No overlying skin changes, scars, sinuses, fistulas, dilated veins, or ulcerations.",
+     "mobility": "Moves with deglutition, does not move with protrusion of tongue"
+    },
+    "palpation": {
+     "local_temperature": "No local rise of temperature",
+     "tenderness": "No tenderness",
+     "swelling": "Single spherical swelling 7 x 8 cm on the right side of the neck. Soft to firm consistency, smooth surface, mobile and not fixed. Lower border is palpable (able to get below the swelling).",
+     "carotid": "Carotid artery palpable at the location.",
+     "lymph_nodes": "No lymph nodes palpable on both sides."
+    },
+    "special_tests": {
+     "pemberton_sign": "Negative",
+     "eye_signs": "Negative",
+     "kocher_test": "Negative"
+    },
+    "percussion": "Resonant",
+    "auscultation": "No bruit heard"
+   }
+  },
+  "ai_role": {
+   "speaker": "patient",
+   "first_person_description": "54-year-old female homemaker named Sunita Devi presenting with a painless, non-progressive neck swelling associated with difficulty swallowing, change in voice, and exertional breathing difficulty.",
+   "age_group": "middle-aged adult",
+   "can_speak_for_self": true,
+   "language_style": "Simple, conversational Hindi-English style (homemaker language).",
+   "emotional_tone": "Calm and slightly lethargic.",
+   "key_constraints": [
+    "Do not volunteer information unless the student asks.",
+    "Answer questions using only the documented case facts.",
+    "Use simple patient language instead of medical terminology.",
+    "If information is not documented in the case (like specific medicines taken for fever), state that you don't know or don't recall.",
+    "Be cooperative but lethargic."
+   ]
+  },
+  "ai_examples": [
+   {
+    "doctor": "How long have you had this neck swelling?",
+    "patient": "It's been about 15 days, doctor."
+   },
+   {
+    "doctor": "Is it painful or growing rapidly?",
+    "patient": "No, it doesn't hurt at all, and it hasn't really grown since I noticed it."
+   },
+   {
+    "doctor": "Have you had any difficulty swallowing or breathing?",
+    "patient": "Yes, I have trouble swallowing food, my voice has changed, and I get out of breath easily when I walk or do house work."
+   },
+   {
+    "doctor": "Did you have a fever recently?",
+    "patient": "Yes, about 20 days ago I had a fever and a dry cough for 3-4 days, but some medicine made that go away."
+   }
+  ],
+  "tests": [
+   {
+    "id": "tsh",
+    "name": "TSH",
+    "category": "Laboratory",
+    "result": {
+     "summary": "TSH within the normal range.",
+     "values": [
+      {
+       "parameter": "TSH",
+       "value": "1.8",
+       "unit": "μIU/mL",
+       "referenceRange": "0.4 - 4.5"
+      }
+     ],
+     "interpretation": "Euthyroid. Rules out a toxic goitre and primary hypothyroidism.",
+     "criticalFindings": false
+    }
+   },
+   {
+    "id": "ft4",
+    "name": "Free T4",
+    "category": "Laboratory",
+    "result": {
+     "summary": "Free T4 within the normal range.",
+     "values": [
+      {
+       "parameter": "Free T4",
+       "value": "1.2",
+       "unit": "ng/dL",
+       "referenceRange": "0.8 - 1.8"
+      }
+     ],
+     "interpretation": "Euthyroid, consistent with a non-toxic goitre.",
+     "criticalFindings": false
+    }
+   },
+   {
+    "id": "usg_neck_thyroid",
+    "name": "Ultrasound neck / thyroid",
+    "category": "Imaging",
+    "result": {
+     "summary": "Enlarged right thyroid lobe with a large, well-defined heterogeneous nodule.",
+     "values": [
+      {
+       "parameter": "Right Lobe Nodule",
+       "value": "7.2 x 8.1",
+       "unit": "cm",
+       "referenceRange": "N/A"
+      },
+      {
+       "parameter": "Nodule Consistency",
+       "value": "Predominantly solid with focal cystic components",
+       "unit": "",
+       "referenceRange": "N/A"
+      },
+      {
+       "parameter": "Left Lobe",
+       "value": "Normal size, homogeneous echo pattern, no nodules",
+       "unit": "",
+       "referenceRange": "N/A"
+      },
+      {
+       "parameter": "Cervical Lymph Nodes",
+       "value": "No significant lymphadenopathy",
+       "unit": "",
+       "referenceRange": "N/A"
+      }
+     ],
+     "interpretation": "Features are highly suggestive of a benign multinodular goitre / dominant right thyroid follicular nodule. No microcalcifications or suspicious irregular borders.",
+     "criticalFindings": false
+    }
+   },
+   {
+    "id": "fnac",
+    "name": "Fine-needle aspiration cytology (FNAC)",
+    "category": "Special",
+    "result": {
+     "summary": "Colloid goitre / Benign follicular nodule (Bethesda Category II).",
+     "values": [
+      {
+       "parameter": "Cytology Classification",
+       "value": "Bethesda Category II (Benign)",
+       "unit": "",
+       "referenceRange": "N/A"
+      },
+      {
+       "parameter": "Microscopic Description",
+       "value": "Abundant colloid with sheets of benign-appearing follicular cells and hemosiderin-laden macrophages.",
+       "unit": "",
+       "referenceRange": "N/A"
+      }
+     ],
+     "interpretation": "Benign thyroid nodule/colloid goitre. Rules out malignancy (Thyroid Carcinoma or Thyroid Lymphoma).",
+     "criticalFindings": false
+    }
+   }
+  ],
+  "evaluation_config": {
+   "history": {
+    "required_questions": [
+     "duration of neck swelling",
+     "character of swelling (pain, progression, size)",
+     "difficulty swallowing",
+     "change in voice or hoarseness",
+     "difficulty breathing on exertion",
+     "preceding fever and cough",
+     "thyrotoxic symptoms (sweating, palpitations, weight loss)",
+     "eye symptoms",
+     "radiation exposure",
+     "previous similar complaints"
+    ],
+    "important_questions": [],
+    "red_flag_questions": [
+     "difficulty swallowing",
+     "change in voice",
+     "difficulty breathing on exertion",
+     "radiation history"
+    ]
+   },
+   "testing": {
+    "testing_required": true,
+    "core_tests": [
+     "tsh",
+     "usg_neck_thyroid",
+     "fnac"
+    ],
+    "optional_tests": [
+     "ft4",
+     "ft3",
+     "cbc"
+    ],
+    "distractor_tests": [
+     "troponin_i",
+     "ct_head_noncontrast",
+     "ca_125",
+     "dengue_ns1",
+     "malaria_smear",
+     "hba1c"
+    ],
+    "dangerous_tests": [
+     "lumbar_puncture_csf",
+     "bone_marrow_biopsy"
+    ]
+   },
+   "diagnosis": {
+    "accepted_primary": [
+     "non-toxic nodular goitre",
+     "non toxic nodular goitre",
+     "nodular goitre"
+    ],
+    "must_include_keywords": [
+     "non-toxic",
+     "nodular",
+     "goitre"
+    ]
+   },
+   "management": {
+    "core_steps": [
+     "Advise surgical consultation/excision due to compressive symptoms (dysphagia, hoarseness, dyspnea)",
+     "Review TFT, USG, and FNAC results to confirm benign status"
+    ],
+    "dangerous_steps": [
+     "Prescribing high-dose radioactive iodine without confirming benign status"
+    ]
+   },
+   "red_flags": [
+    {
+     "intent": "dysphagia",
+     "keywords": [
+      "difficulty swallowing",
+      "dysphagia"
+     ],
+     "present_in_case": true,
+     "critical": true
+    },
+    {
+     "intent": "voice_change",
+     "keywords": [
+      "change in voice",
+      "hoarseness",
+      "voice change"
+     ],
+     "present_in_case": true,
+     "critical": true
+    },
+    {
+     "intent": "breathing_difficulty",
+     "keywords": [
+      "difficulty breathing",
+      "breathlessness",
+      "dyspnea",
+      "on exertion"
+     ],
+     "present_in_case": true,
+     "critical": true
+    },
+    {
+     "intent": "radiation_history",
+     "keywords": [
+      "radiation exposure",
+      "radiation history"
+     ],
+     "present_in_case": true,
+     "critical": false
+    }
+   ]
+  },
+  "questions": [
+   {
+    "id": "investigation_priority",
+    "text": "Which of the following is the most appropriate initial diagnostic investigation to evaluate the structural characteristics of this neck swelling?",
+    "type": "single-best-answer",
+    "options": [
+     {
+      "id": "a",
+      "text": "Fine-Needle Aspiration Cytology (FNAC)"
+     },
+     {
+      "id": "b",
+      "text": "Ultrasonography of the thyroid and neck (USG)",
+      "correct": true,
+      "explanation": "Ultrasonography is the primary imaging modality to evaluate thyroid nodule dimensions, solid/cystic consistency, and structural margins."
+     },
+     {
+      "id": "c",
+      "text": "Contrast-Enhanced CT scan of the neck"
+     },
+     {
+      "id": "d",
+      "text": "Thyroid Function Tests (TFT)"
+     }
+    ]
+   }
+  ],
+  "discussion": {
+   "keyPoints": [
+    "A 54-year-old female presents with a painless, non-progressive neck swelling for 15 days.",
+    "The swelling is associated with compressive symptoms: dysphagia, change in voice, and exertional dyspnea.",
+    "There is no documented history of thyrotoxicosis (hyperthyroid state) or hypothyroidism.",
+    "Local neck examination demonstrates a single diffuse irregular swelling on the right side moving with deglutition (6x8 cm on inspection, 7x8 cm on palpation).",
+    "The swelling is mobile, smooth, soft to firm, and not fixed with a palpable lower border.",
+    "Special tests (Pemberton, eye signs, Kocher's) are all negative.",
+    "First-line investigations to evaluate a thyroid nodule are TFT, USG thyroid, and FNAC.",
+    "Management of non-toxic nodular goitre with compressive symptoms usually requires surgical evaluation for subtotal or total thyroidectomy."
+   ],
+   "references": []
+  },
+  "walkthrough": "### Expert Walkthrough: Non-Toxic Nodular Goitre\n\n**1. History Taking**\n*   **Neck Swelling characteristics:** Sunita Devi presents with a 15-day history of painless, non-progressive neck swelling. \n*   **Compressive Symptoms:** The presence of difficulty swallowing (dysphagia), change in voice (hoarseness), and difficulty breathing on exertion are critical local pressure effects suggesting a large mass/goitre compressing the trachea and esophagus.\n*   **Systemic Review:** Absence of palpitations, tremors, sweating, eye changes, and weight loss rules out a toxic goitre (hyperthyroidism). Normal bowel habits also support a euthyroid state.\n\n**2. Physical Examination**\n*   **Local Neck Examination:** Inspection reveals a 6x8 cm irregular swelling on the right side of the neck that moves with swallowing (deglutition) but not with tongue protrusion, confirming it is thyroidal. Palpation measures the nodule as 7x8 cm, spherical, soft-to-firm, smooth, mobile, and not fixed. The lower border is palpable, ruling out retrosternal extension (supported by negative Pemberton's sign).\n\n**3. Investigations**\n*   **TFT:** Crucial first step to determine functional status. Normal values (Euthyroid) confirm the diagnosis of 'non-toxic' goitre.\n*   **USG Thyroid:** Evaluates nodule dimensions, solid/cystic features, and rules out suspicious features of malignancy.\n*   **FNAC:** Essential to establish cytology (Bethesda Class II - Benign colloid goitre) and rule out thyroid carcinoma or lymphoma.\n\n**4. Diagnosis**\n*   The clinical picture of a euthyroid patient with a dominant, benign follicular/colloid nodule and local pressure symptoms establishes the diagnosis of **Non-Toxic Nodular Goitre**.\n\n**5. Management**\n*   Since the patient is symptomatic with compression (breathing and swallowing difficulty), the primary recommendation is surgical consultation for **partial or total thyroidectomy** to relieve the obstruction.",
+  "appearance": {
+   "pallor": 1,
+   "sweating": 0,
+   "expression": "tired",
+   "swelling": "neck_right",
+   "note": "Middle-aged woman, a little pale and tired, with a visible swelling on the right side of her neck."
+  }
+ },
+ "review_notes": [
+  "TSH and Free T4 values proposed: the case sheet says thyroid function tests were done but gives no values.",
+  "Ultrasound findings proposed: not in the case sheet.",
+  "FNAC result (Bethesda II) proposed: not in the case sheet.",
+  "SpO2 98% proposed: not recorded on the case sheet.",
+  "Patient name \"Sunita Devi\" invented; the case sheet name was not used."
+ ]
+}

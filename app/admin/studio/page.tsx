@@ -1,0 +1,75 @@
+import Link from "next/link"
+import { redirect } from "next/navigation"
+import { auth } from "@clerk/nextjs/server"
+import { ArrowLeft } from "lucide-react"
+import { supabaseServer } from "@/lib/supabase/server"
+import { isAdmin } from "@/lib/plans/access"
+import { listStudioCases, studioConfigured } from "@/lib/studio/source"
+import { StudioRow, type Converted } from "./studio-row"
+
+// Studio cases → MediKarya. Each case sheet from the Case Studio can be converted into a draft playable case
+// (lib/studio/convert.ts), play-tested by an admin, and published. Drafts never show in the student library.
+
+export const dynamic = "force-dynamic"
+// A conversion is one or two model calls, about a minute; server actions run under this page's limit.
+export const maxDuration = 300
+
+export const metadata = { title: "Studio cases" }
+
+export default async function StudioCasesPage() {
+  const { userId } = await auth()
+  if (!(await isAdmin(userId ?? null))) redirect("/")
+
+  if (!studioConfigured()) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-12">
+        <h1 className="text-2xl font-bold text-slate-900">Studio cases</h1>
+        <p className="mt-3 text-slate-600">
+          The case studio is not connected. Set <code>STUDIO_SUPABASE_URL</code> and <code>STUDIO_SUPABASE_SERVICE_KEY</code> (the studio&apos;s Supabase project) in
+          the environment and redeploy.
+        </p>
+      </main>
+    )
+  }
+
+  const [studio, { data: made }] = await Promise.all([
+    listStudioCases(),
+    supabaseServer.from("cases").select("id, status, updated_at, source:case_json->source").not("case_json->source->>studio_case_id", "is", null),
+  ])
+  const byStudioId = new Map<string, Converted>()
+  for (const row of made ?? []) {
+    const source = (row.source ?? {}) as Record<string, any>
+    if (source.studio_case_id) {
+      byStudioId.set(source.studio_case_id, {
+        id: row.id,
+        status: row.status,
+        updatedAt: row.updated_at,
+        reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
+        warnings: Array.isArray(source.warnings) ? source.warnings : [],
+      })
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <Link href="/admin" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
+          <ArrowLeft className="h-4 w-4" /> Admin
+        </Link>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Studio cases</h1>
+        <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-600">
+          Case sheets from the Case Studio. <strong>Convert</strong> drafts a playable case from one (about a minute): the AI writes the patient&apos;s
+          script, test results and scoring from the sheet, and lists everything it had to make up. A draft is hidden from students. Play-test it,
+          check the list, then <strong>Publish</strong>.
+        </p>
+
+        <div className="mt-8 space-y-3">
+          {studio.map((c) => (
+            <StudioRow key={c.id} studioCase={c} converted={byStudioId.get(c.id) ?? null} />
+          ))}
+          {studio.length === 0 && <p className="text-slate-500">No cases in the studio yet.</p>}
+        </div>
+      </div>
+    </main>
+  )
+}

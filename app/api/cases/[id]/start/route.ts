@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { getCaseById } from '@/data/cases';
 import { GUEST_CASE_IDS, explain } from '@/lib/plans/limits';
 import { admitCaseStart, caseKind } from '@/lib/plans/server';
+import { isAdmin, isDraft } from '@/lib/plans/access';
 
 export async function POST(
   request: Request,
@@ -31,7 +32,10 @@ export async function POST(
       // no session
     }
 
-    if (GUEST_CASE_IDS.includes(id)) {
+    // Drafts exist only for admins to play-test (admins are never plan-limited, so this is all they need).
+    if (isDraft(caseData)) {
+      if (!(await isAdmin(userId))) return NextResponse.json({ error: 'Case not found' }, { status: 404 });
+    } else if (GUEST_CASE_IDS.includes(id)) {
       // free for everyone
     } else if (!userId) {
       if (process.env.NODE_ENV === 'production') {

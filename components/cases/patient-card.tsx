@@ -112,6 +112,16 @@ export function PatientCard({ patient, caseTitle, onStartCase, caseData, startin
         <Eyebrow>Case briefing</Eyebrow>
         <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.01em] text-enc-ink sm:text-[30px]">{caseTitle}</h1>
         <p className="text-[15px] leading-snug text-enc-ink-2">Take a first look at the patient, then start the case when you are ready.</p>
+        {caseData?.credit?.author && (
+          <p className="text-[13px] text-enc-ink-3">
+            Case written by <span className="font-medium text-enc-ink-2">{caseData.credit.author}</span> through the MediKarya Case Studio
+          </p>
+        )}
+        {caseData?.status === "draft" && (
+          <p className="inline-flex rounded-md bg-enc-warn-soft px-2 py-1 text-[12.5px] font-semibold text-enc-warn">
+            Draft: only admins can see this case. Publish it from Admin → Studio Cases.
+          </p>
+        )}
       </header>
 
       <Paper className="overflow-hidden">
