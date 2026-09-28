@@ -38,3 +38,6 @@ data/cases/*.json
 public/sw.js
 public/sw.js.map
 .serwist
+
+# /arena skill run output
+.arena/
