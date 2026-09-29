@@ -11,11 +11,14 @@
 // findings have changed. Every manoeuvre is an EXAM_PERFORMED event carrying what
 // the student actually saw.
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Brain, Check, ClipboardList, Eye, Footprints, Hand, Heart, Wind } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { figureFor, isFemale } from "@/lib/simulation/appearance"
 import { formatClock, type EventOf } from "@/lib/simulation/encounter-events"
 import type { ExamRegion } from "@/lib/simulation/case-schema"
+import { useLiveVitals } from "./bedside-patient-rail"
+import { BodyPointCloud, type BodyFlash } from "./body-point-cloud"
 import { useClinicalEvents } from "./clinical-event-manager"
 import { Eyebrow, Paper, PaperHeader, Timestamp } from "./encounter-ui"
 
@@ -66,7 +69,7 @@ function FindingsBody({ text }: { text: string }) {
 }
 
 export function SimulationExamConsole() {
-  const { config, events, actions, isExpired } = useClinicalEvents()
+  const { config, caseData, events, actions, isExpired } = useClinicalEvents()
   const [latest, setLatest] = useState<number | null>(null)
 
   const manoeuvres = config.examination ?? []
@@ -86,13 +89,86 @@ export function SimulationExamConsole() {
     if (findings !== null) setLatest(events.length)
   }
 
+  // ── The body beside the list ──────────────────────────────────────────
+  const figure = figureFor(caseData.patient?.age, caseData.patient?.gender)
+  const vitals = useLiveVitals()
+  const unmeasured = new Set<string>(config.initial_state?.unmeasured ?? [])
+  const regionOf = useMemo(() => new Map(manoeuvres.map((m) => [m.id, m.region])), [manoeuvres])
+  const offered = useMemo(() => new Set(manoeuvres.map((m) => m.region)), [manoeuvres])
+  const examinedRegions = useMemo(() => new Set([...doneAt.keys()].map((id) => regionOf.get(id)).filter((r): r is ExamRegion => !!r)), [doneAt, regionOf])
+  const newest = log[0]
+  const flash = useMemo<BodyFlash | null>(() => {
+    const region = newest && regionOf.get(newest.e.manoeuvre)
+    return region ? { region, key: newest.index } : null
+  }, [newest, regionOf])
+
+  const [bodyHover, setBodyHover] = useState<ExamRegion | null>(null)
+  const [listHover, setListHover] = useState<ExamRegion | null>(null)
+  const [focused, setFocused] = useState<ExamRegion | null>(null)
+  const sectionRefs = useRef(new Map<ExamRegion, HTMLElement>())
+  useEffect(() => {
+    if (!focused) return
+    const timer = setTimeout(() => setFocused(null), 1600)
+    return () => clearTimeout(timer)
+  }, [focused])
+  const select = (region: ExamRegion) => {
+    sectionRefs.current.get(region)?.scrollIntoView({ behavior: "smooth", block: "start" })
+    setFocused(region)
+  }
+  const countIn = (region: ExamRegion) => manoeuvres.filter((m) => m.region === region).length
+  const labelOf = (region: ExamRegion) => REGIONS.find((r) => r.id === region)?.label ?? region
+
   if (manoeuvres.length === 0) {
     return <div className="flex h-full items-center justify-center bg-enc-desk p-8 text-center text-[14px] text-enc-ink-2">This case has no bedside examination.</div>
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-enc-desk" style={{ scrollbarWidth: "thin" }} data-lenis-prevent>
-      <div className="mx-auto grid max-w-[1080px] gap-5 p-5 lg:grid-cols-[minmax(300px,380px)_1fr] lg:items-start">
+    <div className="@container h-full overflow-y-auto bg-enc-desk" style={{ scrollbarWidth: "thin" }} data-lenis-prevent>
+      {/* One column on a phone; list and findings side by side with the body across the top; and,
+          when the workspace itself is wide enough, the body standing on its own column at the left. */}
+      <div className="mx-auto grid max-w-[1080px] gap-5 p-5 lg:items-start lg:@max-5xl:grid-cols-[minmax(300px,380px)_1fr] @5xl:max-w-[1360px] @5xl:grid-cols-[minmax(240px,290px)_minmax(280px,360px)_1fr]">
+        {/* ── The body ────────────────────────────────────────────── */}
+        <Paper className="overflow-hidden lg:@max-5xl:col-span-2 @5xl:sticky @5xl:top-5">
+          <PaperHeader title="Patient" description="Point at a region to find it in the list. Drag to turn." />
+          <div className="relative bg-[radial-gradient(ellipse_at_center,var(--color-enc-console)_0%,transparent_70%)]">
+            <BodyPointCloud
+              className="h-[300px] @5xl:h-[480px]"
+              regions={offered}
+              examined={examinedRegions}
+              active={listHover}
+              flash={flash}
+              heartRate={unmeasured.has("hr") ? null : vitals.hr}
+              respiratoryRate={unmeasured.has("rr") ? null : vitals.rr}
+              female={figure === "adult_f"}
+              child={figure === "infant" || figure === "toddler" || figure === "child"}
+              labelFor={labelOf}
+              countFor={countIn}
+              onHover={setBodyHover}
+              onSelect={select}
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5 border-t border-enc-line px-3 py-2.5">
+            {REGIONS.filter((r) => offered.has(r.id)).map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => select(id)}
+                onMouseEnter={() => setListHover(id)}
+                onMouseLeave={() => setListHover(null)}
+                onFocus={() => setListHover(id)}
+                onBlur={() => setListHover(null)}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[12px] font-medium transition-colors outline-none",
+                  bodyHover === id || listHover === id ? "border-brand-400 bg-brand-50 text-brand-700" : "border-enc-line text-enc-ink-2 hover:border-brand-300",
+                  examinedRegions.has(id) && "text-enc-ok"
+                )}
+              >
+                <Icon className="h-3 w-3" /> {label}
+              </button>
+            ))}
+          </div>
+        </Paper>
+
         {/* ── Manoeuvres ──────────────────────────────────────────── */}
         <Paper className="overflow-hidden">
           <PaperHeader title="Examine" description="Choose what to examine. Findings reflect the patient as they are right now." />
@@ -101,8 +177,22 @@ export function SimulationExamConsole() {
               const inRegion = manoeuvres.filter((m) => m.region === id)
               if (inRegion.length === 0) return null
               return (
-                <section key={id}>
-                  <Eyebrow className="flex items-center gap-1.5 border-b border-enc-line bg-enc-desk px-4 py-2">
+                <section
+                  key={id}
+                  ref={(el) => {
+                    if (el) sectionRefs.current.set(id, el)
+                    else sectionRefs.current.delete(id)
+                  }}
+                  className="scroll-mt-5"
+                  onMouseEnter={() => setListHover(id)}
+                  onMouseLeave={() => setListHover(null)}
+                >
+                  <Eyebrow
+                    className={cn(
+                      "flex items-center gap-1.5 border-b border-enc-line bg-enc-desk px-4 py-2 transition-colors duration-500",
+                      (focused === id || bodyHover === id) && "bg-brand-50 text-brand-700"
+                    )}
+                  >
                     <Icon className="h-3.5 w-3.5" /> {label}
                   </Eyebrow>
                   <ul>
