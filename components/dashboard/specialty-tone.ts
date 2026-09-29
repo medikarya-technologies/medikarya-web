@@ -1,6 +1,7 @@
-// One muted colour per specialty, so cases in the library tell themselves apart at a glance: a strip along the top
-// of the card, a tint behind the patient, and the specialty label. A colour here means a specialty and nothing else
-// (results keep green / amber / red). Class names are written out in full so Tailwind finds them.
+// One muted colour per specialty, so cases in the library tell themselves apart at a glance. The library card uses it
+// sparingly (a thin strip along the top and the specialty's icon; case-row.tsx): more than that turned the page into
+// a paint box. A colour here means a specialty and nothing else (results keep green / amber / red). Class names are
+// written out in full so Tailwind finds them.
 
 export interface SpecialtyTone {
   /** The strip along the top of a card. */
