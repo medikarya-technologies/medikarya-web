@@ -8,13 +8,13 @@ import { UpgradeProvider } from "@/components/plans/upgrade-dialog"
 import { samplePlan, sampleProgress } from "../_sample"
 
 // Dev-only: the case library without a login, with real cases and made-up attempts.
-//   ?plan=student|intern|resident   show that plan (locks, the plan card, the upgrade dialog)
+//   ?plan=student|intern|resident   show that plan (locks, the plan card, the upgrade dialog); &admin=1 as an admin viewing as it
 //   ?empty=1   a student who has not started      ?name=Priya   the name in the rail
 // Returns 404 in production builds.
-export default async function LibraryPreview({ searchParams }: { searchParams: Promise<{ empty?: string; name?: string; plan?: string }> }) {
+export default async function LibraryPreview({ searchParams }: { searchParams: Promise<{ empty?: string; name?: string; plan?: string; admin?: string }> }) {
   if (process.env.NODE_ENV === "production") notFound()
-  const { empty, name, plan } = await searchParams
-  const planInfo = samplePlan(plan)
+  const { empty, name, plan, admin } = await searchParams
+  const planInfo = samplePlan(plan, admin === "1")
   const cases = await getCases()
 
   return (

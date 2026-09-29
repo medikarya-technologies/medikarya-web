@@ -28,24 +28,29 @@
     "bloodPressure": {
      "systolic": 110,
      "diastolic": 60,
-     "unit": "mmHg"
+     "unit": "mmHg",
+     "origin": "case_sheet"
     },
     "heartRate": {
      "value": 86,
-     "unit": "bpm"
+     "unit": "bpm",
+     "origin": "case_sheet"
     },
     "temperature": {
      "value": null,
      "unit": "°C",
-     "note": "Afebrile to touch"
+     "note": "Afebrile to touch",
+     "origin": "case_sheet"
     },
     "respiratoryRate": {
      "value": 20,
-     "unit": "breaths/min"
+     "unit": "breaths/min",
+     "origin": "case_sheet"
     },
     "oxygenSaturation": {
      "value": 98,
-     "unit": "%"
+     "unit": "%",
+     "origin": "ai"
     }
    },
    "allergies": [],
@@ -214,7 +219,9 @@
       }
      ],
      "interpretation": "Euthyroid. Rules out a toxic goitre and primary hypothyroidism.",
-     "criticalFindings": false
+     "criticalFindings": false,
+     "origin": "ai",
+     "basis": "Proposed normal: the sheet documents no heat/cold intolerance, sweating, palpitations, tremor or weight loss (a non-toxic goitre)."
     }
    },
    {
@@ -232,7 +239,9 @@
       }
      ],
      "interpretation": "Euthyroid, consistent with a non-toxic goitre.",
-     "criticalFindings": false
+     "criticalFindings": false,
+     "origin": "ai",
+     "basis": "Proposed normal, for the same reason as TSH."
     }
    },
    {
@@ -268,7 +277,9 @@
       }
      ],
      "interpretation": "Features are highly suggestive of a benign multinodular goitre / dominant right thyroid follicular nodule. No microcalcifications or suspicious irregular borders.",
-     "criticalFindings": false
+     "criticalFindings": false,
+     "origin": "ai",
+     "basis": "Follows the documented 7 x 8 cm smooth, mobile swelling that moves with deglutition, with no palpable nodes."
     }
    },
    {
@@ -292,7 +303,9 @@
       }
      ],
      "interpretation": "Benign thyroid nodule/colloid goitre. Rules out malignancy (Thyroid Carcinoma or Thyroid Lymphoma).",
-     "criticalFindings": false
+     "criticalFindings": false,
+     "origin": "ai",
+     "basis": "Follows the documented benign features (painless, slow, mobile, no nodes) and the sheet's diagnosis of non-toxic nodular goitre."
     }
    }
   ],

@@ -5,10 +5,12 @@ import { ArrowLeft } from "lucide-react"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
 import { listStudioCases, studioConfigured } from "@/lib/studio/source"
+import { latestReviews } from "@/lib/review/links"
 import { StudioRow, type Converted } from "./studio-row"
 
 // Studio cases → MediKarya. Each case sheet from the Case Studio can be converted into a draft playable case
-// (lib/studio/convert.ts), play-tested by an admin, and published. Drafts never show in the student library.
+// (lib/studio/convert.ts), reviewed by a professor through a private link (lib/review/links.ts), and published once
+// approved. Drafts never show in the student library.
 
 export const dynamic = "force-dynamic"
 // A conversion is one or two model calls, about a minute; server actions run under this page's limit.
@@ -36,18 +38,32 @@ export default async function StudioCasesPage() {
     listStudioCases(),
     supabaseServer.from("cases").select("id, status, updated_at, source:case_json->source").not("case_json->source->>studio_case_id", "is", null),
   ])
+  const reviews = await latestReviews((made ?? []).map((r) => r.id))
   const byStudioId = new Map<string, Converted>()
   for (const row of made ?? []) {
     const source = (row.source ?? {}) as Record<string, any>
-    if (source.studio_case_id) {
-      byStudioId.set(source.studio_case_id, {
-        id: row.id,
-        status: row.status,
-        updatedAt: row.updated_at,
-        reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
-        warnings: Array.isArray(source.warnings) ? source.warnings : [],
-      })
-    }
+    if (!source.studio_case_id) continue
+    const r = reviews.get(row.id)
+    // A review is of the version the professor read: a later conversion or rebuild needs a new one.
+    const current = r && (!source.converted_at || Date.parse(r.created_at) >= Date.parse(source.converted_at)) ? r : null
+    byStudioId.set(source.studio_case_id, {
+      id: row.id,
+      status: row.status,
+      updatedAt: row.updated_at,
+      reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
+      warnings: Array.isArray(source.warnings) ? source.warnings : [],
+      review: current
+        ? {
+            sentAt: current.created_at,
+            expiresAt: current.expires_at,
+            decision: current.decision,
+            reviewer: [current.reviewer_name, current.reviewer_designation, current.reviewer_department, current.reviewer_institution].filter(Boolean).join(", "),
+            showName: current.show_name,
+            comments: current.comments,
+            decidedAt: current.decided_at,
+          }
+        : null,
+    })
   }
 
   return (
@@ -58,9 +74,10 @@ export default async function StudioCasesPage() {
         </Link>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Studio cases</h1>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-600">
-          Case sheets from the Case Studio. <strong>Convert</strong> drafts a playable case from one (about a minute): the AI writes the patient&apos;s
-          script, test results and scoring from the sheet, and lists everything it had to make up. A draft is hidden from students. Play-test it,
-          check the list, then <strong>Publish</strong>.
+          Case sheets from the Case Studio. <strong>Convert</strong> drafts a playable case (about a minute): the AI writes the patient&apos;s
+          script, test results and scoring from the sheet and marks everything it added. <strong>Send for review</strong> gives you a private link
+          for a professor: they read the one-page report and approve it or ask for changes. Once approved, <strong>Publish</strong> it and reward
+          the author. Drafts are hidden from students throughout.
         </p>
 
         <div className="mt-8 space-y-3">

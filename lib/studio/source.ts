@@ -36,6 +36,8 @@ export interface StudioCaseSummary {
   /** The author allowed MediKarya to publish it (ticked on submit, or recorded by an admin). */
   publishConsent: boolean;
   consentNote: string | null;
+  /** The author's email when they wrote it in the studio themselves (not when an admin entered it for them). */
+  authorEmail: string | null;
 }
 
 export interface StudioCase extends StudioCaseSummary {
@@ -53,7 +55,7 @@ function specialtyOf(row: Json): string {
   return String(row.specialty ?? "other").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function summary(row: Json): StudioCaseSummary {
+function summary(row: Json, authorEmail: string | null = null): StudioCaseSummary {
   const d = row.patient_details?.declarations ?? {};
   return {
     id: row.id,
@@ -66,7 +68,19 @@ function summary(row: Json): StudioCaseSummary {
     addedToPlatform: !!row.added_to_platform,
     publishConsent: d.publish_consent === true,
     consentNote: typeof d.consent_note === "string" ? d.consent_note : null,
+    authorEmail,
   };
+}
+
+/** Emails of the studio users who wrote these cases, for authors only: an admin entering a case for someone else is not its author. */
+async function authorEmails(db: SupabaseClient, authorIds: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const ids = [...new Set(authorIds.filter(Boolean))];
+  if (ids.length === 0) return out;
+  const { data, error } = await db.from("users").select("id, email, role").in("id", ids);
+  if (error) throw error;
+  for (const u of data ?? []) if (u.role === "author" && u.email) out.set(u.id, String(u.email).toLowerCase());
+  return out;
 }
 
 export async function listStudioCases(): Promise<StudioCaseSummary[]> {
@@ -74,10 +88,11 @@ export async function listStudioCases(): Promise<StudioCaseSummary[]> {
   if (!db) return [];
   const { data, error } = await db
     .from("cases")
-    .select("id, title, status, specialty, difficulty, original_author_name, created_at, added_to_platform, patient_details")
+    .select("id, title, status, specialty, difficulty, original_author_name, created_at, added_to_platform, patient_details, author_id")
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(summary);
+  const emails = await authorEmails(db, (data ?? []).map((r) => r.author_id));
+  return (data ?? []).map((r) => summary(r, emails.get(r.author_id) ?? null));
 }
 
 // Rich-text fields are stored as HTML; the model reads plain text.
@@ -124,8 +139,9 @@ export async function getStudioCase(id: string): Promise<StudioCase | null> {
   const sections: Record<string, unknown> = {};
   for (const k of SECTIONS) if (row[k] != null) sections[k] = hide(plain(row[k]));
 
+  const emails = await authorEmails(db, [row.author_id]);
   return {
-    ...summary(row),
+    ...summary(row, emails.get(row.author_id) ?? null),
     patient: {
       age: typeof pd.age === "number" ? pd.age : null,
       sex: pd.sex ?? pd.gender ?? null,

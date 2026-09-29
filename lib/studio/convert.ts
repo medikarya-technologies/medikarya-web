@@ -30,9 +30,16 @@ and is then scored. Output ONLY a JSON object {"case": {...}, "review_notes": [.
 Facts
 - History, examination findings, diagnosis and management come from the case sheet. Never contradict it and never
   add symptoms, signs or history it does not contain; if a fact is missing, the patient says they don't know.
-- Where the case needs something the sheet does not give (test result values, SpO2, a missing vital), propose a
-  realistic value consistent with the sheet's diagnosis and findings, and add one line per proposal to review_notes
-  ("CBC values proposed: not in the case sheet."). Every invented clinical detail must be in review_notes.
+- Where the case needs something the sheet does not give (test result values, SpO2, a missing vital), work out a
+  value from what the sheet does document (pulse, BP, pallor, icterus, the examination, the diagnosis) so the case
+  stays consistent, and add one line per proposal to review_notes ("CBC values proposed: not in the case sheet.").
+  Every invented clinical detail must be in review_notes.
+
+Where each value came from (a clinical reviewer reads this instead of playing the case)
+- Every test result has "origin": "case_sheet" if its values are written in the sheet, "ai" if you proposed them.
+  An "ai" result also has "basis": one short line naming the documented findings it follows from ("Hb 9.2 g/dL: the
+  sheet documents conjunctival pallor and a pulse of 104/min").
+- Every vital sign in patient.vitalSigns has "origin" the same way (a vital the sheet records is "case_sheet").
 
 Identity and privacy
 - The sheet's patient name and address have been replaced with "the patient" and "[place]". Invent a new, ordinary
@@ -44,7 +51,7 @@ Tests
   every test the sheet mentions and every core test.
 - Use an id from the CATALOG below whenever one fits (e.g. "tsh", "cbc", "usg_neck_thyroid", "fnac"). Only when
   nothing in the catalog fits (e.g. a specific biopsy), use a hyphenated custom id like "trucut-biopsy-breast".
-- category is "Laboratory", "Imaging" or "Special".
+- category is "Laboratory", "Imaging" or "Special". "origin" and, for "ai", "basis" go inside result.
 
 Scoring (evaluation_config)
 - history.required_questions: 8–12 short phrases a good student must ask; red_flag_questions: the dangerous misses.
@@ -119,11 +126,23 @@ async function generate(prompt: string): Promise<any> {
 
 const catalogIds = new Set(CATALOG_TEST_IDS);
 
-export async function convertStudioCase(sc: StudioCase): Promise<Conversion> {
+/**
+ * revise: rebuild an existing draft with a clinical reviewer's comments, changing only what they asked for (so what
+ * they did not question stays as they read it), instead of converting from scratch.
+ */
+export async function convertStudioCase(
+  sc: StudioCase,
+  revise?: { previous: { case: unknown; review_notes: string[] }; comments: string }
+): Promise<Conversion> {
   const ctx = { catalogIds, identifiers: sc.identifiers };
 
   let out = await generate(
-    `EXAMPLE (a different case, converted well):\n${JSON.stringify(example)}\n\nCASE SHEET TO CONVERT:\n${sheetFor(sc)}`
+    revise
+      ? `A clinical reviewer read this case and asked for changes. Make exactly the changes they ask for, keep everything ` +
+          `else as it is, and keep "origin", "basis" and review_notes true for anything you change (a value the reviewer ` +
+          `gave you has origin "reviewer").\n\nREVIEWER'S COMMENTS:\n${revise.comments}\n\n` +
+          `CASE SHEET:\n${sheetFor(sc)}\n\nCURRENT CASE:\n${JSON.stringify(revise.previous)}`
+      : `EXAMPLE (a different case, converted well):\n${JSON.stringify(example)}\n\nCASE SHEET TO CONVERT:\n${sheetFor(sc)}`
   );
   let check = checkDraft(out?.case, ctx);
 

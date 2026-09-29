@@ -59,6 +59,8 @@ export function briefingOnly(caseData: Record<string, any>) {
     patient,
     appearance: caseData.appearance,
     credit: caseData.credit,
+    // only the public part: the reviewer's name is here at all only if they agreed to be named
+    review: caseData.review?.decision === "approved" && caseData.review.show_name ? caseData.review : undefined,
     initial_state: caseData.initial_state,
     // kept as empty lists so the briefing still recognises a bedside case; `live` says what the rules would have
     event_rules: [],

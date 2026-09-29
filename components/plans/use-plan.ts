@@ -19,6 +19,12 @@ export interface PlanInfo {
   openedToday: string[]
   /** null = no limit. */
   limits: { maxDifficulty: 1 | 2 | 3; casesPerDay: number | null; livePerDay: number | null; liveEver: number | null }
+  /** Free plan time (e.g. the reward for a published case) giving this plan, and when it ends. */
+  grant?: { plan: Plan; endsAt: string } | null
+  /** The account is an admin (even while viewing as a student plan). */
+  realAdmin?: boolean
+  /** An admin viewing the site as this plan. */
+  viewingAs?: Plan | null
 }
 
 let current: PlanInfo | null = null

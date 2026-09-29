@@ -76,7 +76,7 @@ export function sampleSkills(empty: boolean): SkillProfile {
 }
 
 /** A made-up plan for the preview pages (?plan=student|intern|resident): a student part-way through today. */
-export function samplePlan(plan: string | undefined): PlanInfo | null {
+export function samplePlan(plan: string | undefined, asAdmin = false): PlanInfo | null {
   if (plan !== "student" && plan !== "intern" && plan !== "resident") return null
   const l = PLAN_LIMITS[plan]
   const cap = (n: number) => (Number.isFinite(n) ? n : null)
@@ -87,6 +87,9 @@ export function samplePlan(plan: string | undefined): PlanInfo | null {
     liveToday: plan === "student" ? 0 : 2,
     liveEver: plan === "student" ? 1 : 6,
     openedToday: [],
+    // ?admin=1: an admin viewing as this plan (the "View as" switch and its banner)
+    realAdmin: asAdmin,
+    viewingAs: asAdmin ? plan : null,
     limits: { maxDifficulty: l.maxDifficulty, casesPerDay: cap(l.casesPerDay), livePerDay: cap(l.livePerDay), liveEver: cap(l.liveEver) },
   }
 }

@@ -43,8 +43,8 @@ function good(): any {
       { doctor: "Swallowing?", patient: "Solids stick." },
     ],
     tests: [
-      { id: "tsh", name: "TSH", category: "Laboratory", result: { summary: "Normal", values: [], interpretation: "Euthyroid" } },
-      { id: "usg_neck_thyroid", name: "USG neck", category: "Imaging", result: { summary: "Nodule", values: [], interpretation: "Benign" } },
+      { id: "tsh", name: "TSH", category: "Laboratory", result: { summary: "Normal", values: [], interpretation: "Euthyroid", origin: "case_sheet" } },
+      { id: "usg_neck_thyroid", name: "USG neck", category: "Imaging", result: { summary: "Nodule", values: [], interpretation: "Benign", origin: "ai", basis: "Follows the documented swelling" } },
     ],
     evaluation_config: {
       history: { required_questions: ["a", "b", "c", "d"], important_questions: [], red_flag_questions: ["dysphagia"] },
@@ -110,6 +110,15 @@ describe("checkDraft", () => {
     assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("appearance levels")));
     c.appearance = { pallor: 1, expression: "happy" };
     assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("appearance.expression")));
+  });
+
+  it("asks every result to say where it came from, and an AI-added one why", () => {
+    const c = good();
+    delete c.tests[0].result.origin;
+    delete c.tests[1].result.basis;
+    const { warnings } = checkDraft(c, ctx);
+    assert.ok(warnings.some((w) => w.includes('"tsh" does not say where')));
+    assert.ok(warnings.some((w) => w.includes('"usg_neck_thyroid" was added by the AI but gives no basis')));
   });
 
   it("needs a heart rate for the bedside monitor", () => {

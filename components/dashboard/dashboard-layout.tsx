@@ -16,6 +16,7 @@ import { Eyebrow } from "@/components/cases/encounter-ui"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { InstallPrompt } from "./install-prompt"
 import { useDisplayName } from "./use-display-name"
+import { ViewAsBanner, ViewAsSwitch } from "@/components/plans/view-as-switch"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -146,7 +147,8 @@ export function DashboardLayout({ children, activeHref, userName }: DashboardLay
         <div className="flex-1 overflow-y-auto px-3">
           <NavList current={current} />
         </div>
-        <div className="px-3 pb-3">
+        <div className="space-y-2 px-3 pb-3">
+          <ViewAsSwitch />
           <InstallPrompt />
         </div>
         <Person userName={userName} />
@@ -190,12 +192,14 @@ export function DashboardLayout({ children, activeHref, userName }: DashboardLay
           <div className="flex-1 overflow-y-auto px-3">
             <NavList current={current} onNavigate={() => setOpen(false)} />
           </div>
-          <div className="px-3 pb-3">
+          <div className="space-y-2 px-3 pb-3">
+            <ViewAsSwitch />
             <InstallPrompt />
           </div>
           <Person userName={userName} />
         </aside>
 
+        <ViewAsBanner />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>

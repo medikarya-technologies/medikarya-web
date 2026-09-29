@@ -26,6 +26,7 @@ import { useUpgrade } from "@/components/plans/upgrade-dialog"
 import { Eyebrow, StatusPill } from "@/components/cases/encounter-ui"
 import { DifficultyMeter, LivePill, ScoreValue } from "./dashboard-ui"
 import { specialtyIcon } from "./specialty-icon"
+import { specialtyTone } from "./specialty-tone"
 
 // The card's button. It is drawn as a button but is not one: a click anywhere on the card lands on the title's link.
 // pointer-events-none lets a click on it fall through to that link. (Hover changes the colour, never a filter: a
@@ -128,6 +129,7 @@ interface CaseRowProps {
 
 export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, saved = false, onToggleSaved, locked }: CaseRowProps) {
   const Icon = specialtyIcon(c.category)
+  const tone = specialtyTone(c.category)
   const level = difficultyLevel(c.difficulty)
   const title = c.displayTitle || c.title
   const summary = c.displayDescription || ""
@@ -136,7 +138,9 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
   const stretched = "rounded-sm text-center outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-brand-300 focus-visible:after:ring-inset"
 
   return (
-    <li className="group relative flex flex-col rounded-xl border border-enc-line bg-enc-sheet p-4 shadow-enc-sheet transition-[border-color,box-shadow] sm:p-5 focus-within:border-enc-line-strong hover:border-enc-line-strong hover:shadow-enc-lift">
+    <li className="group relative flex flex-col overflow-hidden rounded-xl border border-enc-line bg-enc-sheet p-4 pt-5 shadow-enc-sheet transition-[border-color,box-shadow,transform] sm:p-5 sm:pt-6 focus-within:border-enc-line-strong hover:-translate-y-0.5 hover:border-enc-line-strong hover:shadow-enc-lift">
+      {/* the specialty's colour, so cases tell themselves apart at a glance (specialty-tone.ts) */}
+      <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1.5", tone.band, locked && "opacity-40")} />
       {locked ? (
         <span className="absolute top-4 left-4">
           <StatusPill tone="accent" icon={<Lock className="h-3 w-3" strokeWidth={2.2} />}>{PLAN_NAME[locked]}</StatusPill>
@@ -149,7 +153,7 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
         )
       )}
 
-      <div className="relative mx-auto">
+      <div className={cn("relative mx-auto rounded-full p-1.5", tone.soft)}>
         <PatientAvatar age={c.patient?.age} gender={c.patient?.gender} seed={c.id} className={cn("h-16 w-16 sm:h-20 sm:w-20", locked && "opacity-40 grayscale")} />
         {locked && (
           <span className="absolute inset-0 flex items-center justify-center" aria-hidden>
@@ -184,8 +188,8 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
 
       {/* no dots between these: on a narrow card they wrap, and a dot left at the end of a line looks like a mistake */}
       <p className={cn("mt-2.5 flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1.5 text-[12.5px] text-enc-ink-3", locked && "opacity-60")}>
-        <span className="inline-flex items-center gap-1.5">
-          <Icon className="h-3.5 w-3.5" strokeWidth={1.8} />
+        <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium", tone.soft, tone.text)}>
+          <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
           {c.category}
         </span>
         <DifficultyMeter level={level} />
@@ -196,7 +200,7 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
         {c.live && <LivePill />}
       </p>
 
-      {summary && <p className={cn("mt-3 line-clamp-2 text-center sm:line-clamp-3 text-[13.5px] leading-relaxed text-enc-ink-2", locked && "opacity-60")}>{summary}</p>}
+      {summary && <p className={cn("mt-3 line-clamp-2 text-center text-[13.5px] leading-relaxed text-enc-ink-2", locked && "opacity-60")}>{summary}</p>}
 
       {/* the foot sits at the bottom of every card, so the buttons line up across a row */}
       <div className="mt-auto pt-5">

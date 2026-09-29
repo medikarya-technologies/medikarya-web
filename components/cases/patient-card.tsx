@@ -114,7 +114,14 @@ export function PatientCard({ patient, caseTitle, onStartCase, caseData, startin
         <p className="text-[15px] leading-snug text-enc-ink-2">Take a first look at the patient, then start the case when you are ready.</p>
         {caseData?.credit?.author && (
           <p className="text-[13px] text-enc-ink-3">
-            Case written by <span className="font-medium text-enc-ink-2">{caseData.credit.author}</span> through the MediKarya Case Studio
+            Case written by <span className="font-medium text-enc-ink-2">{caseData.credit.author}</span>
+            {caseData.credit.institution ? `, ${caseData.credit.institution}` : ""}
+          </p>
+        )}
+        {caseData?.review?.decision === "approved" && caseData.review.show_name && caseData.review.reviewer_name && (
+          <p className="text-[13px] text-enc-ink-3">
+            Clinically reviewed by <span className="font-medium text-enc-ink-2">{caseData.review.reviewer_name}</span>
+            {[caseData.review.reviewer_designation, caseData.review.reviewer_department, caseData.review.reviewer_institution].filter(Boolean).map((part: string) => `, ${part}`).join("")}
           </p>
         )}
         {caseData?.status === "draft" && (

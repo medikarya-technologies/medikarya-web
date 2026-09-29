@@ -111,6 +111,11 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
       if (!isObj(t.result) || !isStr(t.result.summary) || !Array.isArray(t.result.values) || !isStr(t.result.interpretation)) {
         errors.push(`tests "${t.id}" needs result.summary, result.values[] and result.interpretation.`);
       }
+      if (isObj(t.result) && !["case_sheet", "ai", "reviewer"].includes(t.result.origin)) {
+        warnings.push(`tests "${t.id}" does not say where its values came from (result.origin "case_sheet" or "ai").`);
+      } else if (isObj(t.result) && t.result.origin === "ai" && !isStr(t.result.basis)) {
+        warnings.push(`tests "${t.id}" was added by the AI but gives no basis for its values.`);
+      }
       if (!ctx.catalogIds.has(t.id) && !/^[a-z0-9]+(-[a-z0-9]+)+$/.test(t.id)) {
         warnings.push(`tests "${t.id}" is neither a catalog id nor a hyphenated custom id.`);
       }

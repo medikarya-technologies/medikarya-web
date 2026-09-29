@@ -403,7 +403,7 @@ export function PracticeCases({ initialCases, progress = {}, userId }: { initial
             </Paper>
           ) : (
             <>
-              <ul className="grid gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3">
+              <ul className="grid gap-5 @2xl:grid-cols-2 @2xl:gap-6 @5xl:grid-cols-3">
                 {results.slice(0, visible).map((c) => (
                   <CaseRow key={c.id} c={c} progress={progress[c.id]} inProgress={inProgress.get(c.id)} isNew={isNewCase(c, progress, now)} saved={saved.has(c.id)} onToggleSaved={toggleSaved} locked={lockOf(c)} />
                 ))}

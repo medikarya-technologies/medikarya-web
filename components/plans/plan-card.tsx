@@ -69,6 +69,11 @@ export function PlanCard({ cases }: { cases: readonly LibraryCase[] }) {
         <h2 className="text-[20px] font-bold text-enc-ink">{offer.name}</h2>
         <span className="rounded-full bg-enc-console px-2 py-0.5 text-[10px] font-semibold tracking-wide text-enc-ink-3 uppercase">{offer.sub}</span>
       </div>
+      {info.grant && info.grant.plan === info.plan && (
+        <p className="mt-1 text-[12.5px] text-enc-ok">
+          Free until {new Date(info.grant.endsAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}, thanks to your published case
+        </p>
+      )}
 
       <ul className="mt-3 space-y-1.5">
         {includes(info).map((line) => (

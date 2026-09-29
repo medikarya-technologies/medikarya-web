@@ -112,6 +112,7 @@ function CancelButton({ sub, onCancelled }: { sub: Subscription; onCancelled: ()
 
 function SubscriptionPanel({ preview }: { preview?: Subscription | null }) {
   const { loading, sub, failed, reload } = useSubscription(preview)
+  const grant = usePlan()?.grant ?? null
   const openUpgrade = useUpgrade()
 
   if (loading) {
@@ -128,6 +129,31 @@ function SubscriptionPanel({ preview }: { preview?: Subscription | null }) {
         <p className="text-[14px] text-enc-ink-2">We could not load your subscription just now.</p>
         <Button onClick={() => void reload()} variant="outline" className={SECONDARY_BUTTON + " mt-4"}>
           Try again
+        </Button>
+      </Paper>
+    )
+  }
+
+  if (!sub && grant) {
+    const offer = PLAN_OFFERS[grant.plan]
+    return (
+      <Paper className="p-6">
+        <Eyebrow>Plan</Eyebrow>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <h2 className="text-[22px] font-bold text-enc-ink">{offer.name}</h2>
+          <span className="rounded-full bg-enc-ok-soft px-2 py-0.5 text-[10px] font-semibold tracking-wide text-enc-ok uppercase">Free</span>
+        </div>
+        <div className="mt-4 rounded-xl border border-enc-line bg-enc-desk p-4">
+          <p className="flex items-start gap-2.5 text-[14px] leading-relaxed text-enc-ink">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-enc-ok" strokeWidth={1.9} />
+            <span>
+              Free until <span className="font-semibold">{longDate(grant.endsAt)}</span>: our thank-you for your case published on MediKarya. Nothing
+              to pay, and it doesn&apos;t renew. After that you move to the free Student plan, unless you subscribe.
+            </span>
+          </p>
+        </div>
+        <Button onClick={() => openUpgrade({ source: "billing" })} variant="outline" className={SECONDARY_BUTTON + " mt-5"}>
+          See plans
         </Button>
       </Paper>
     )
