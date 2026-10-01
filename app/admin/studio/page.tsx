@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server"
 import { ArrowLeft } from "lucide-react"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
-import { listStudioCases, studioConfigured } from "@/lib/studio/source"
+import { listStudioCases, queuedInStudio, studioConfigured, studioReviews } from "@/lib/studio/source"
 import { latestReviews } from "@/lib/review/links"
 import { StudioRow, type Converted } from "./studio-row"
 
@@ -38,31 +38,50 @@ export default async function StudioCasesPage() {
     listStudioCases(),
     supabaseServer.from("cases").select("id, status, updated_at, source:case_json->source").not("case_json->source->>studio_case_id", "is", null),
   ])
-  const reviews = await latestReviews((made ?? []).map((r) => r.id))
+  const studioIds = (made ?? []).map((r) => (r.source as Record<string, any> | null)?.studio_case_id).filter(Boolean) as string[]
+  const [reviews, queue, queued] = await Promise.all([latestReviews((made ?? []).map((r) => r.id)), studioReviews(studioIds), queuedInStudio(studioIds)])
   const byStudioId = new Map<string, Converted>()
   for (const row of made ?? []) {
     const source = (row.source ?? {}) as Record<string, any>
     if (!source.studio_case_id) continue
     const r = reviews.get(row.id)
     // A review is of the version the professor read: a later conversion or rebuild needs a new one.
-    const current = r && (!source.converted_at || Date.parse(r.created_at) >= Date.parse(source.converted_at)) ? r : null
+    const link = r && (!source.converted_at || Date.parse(r.created_at) >= Date.parse(source.converted_at)) ? r : null
+    const q = queue.get(source.studio_case_id) ?? null
+    const fromLink = link
+      ? {
+          sentAt: link.created_at,
+          expiresAt: link.expires_at,
+          decision: link.decision,
+          reviewer: [link.reviewer_name, link.reviewer_designation, link.reviewer_department, link.reviewer_institution].filter(Boolean).join(", "),
+          showName: link.show_name,
+          comments: link.comments,
+          decidedAt: link.decided_at,
+          via: "link" as const,
+        }
+      : null
+    const fromQueue = q
+      ? {
+          sentAt: q.claimedAt,
+          expiresAt: q.expiresAt,
+          decision: q.decision,
+          reviewer: [q.reviewerName, q.designation, q.department, q.institution].filter(Boolean).join(", "),
+          showName: q.showName,
+          comments: q.comments,
+          decidedAt: q.decidedAt,
+          via: "queue" as const,
+        }
+      : null
+    // the most recent of the two, if a draft has both a private link and a queue review
+    const review = [fromLink, fromQueue].filter((x) => !!x).sort((a, b) => b!.sentAt.localeCompare(a!.sentAt))[0] ?? null
     byStudioId.set(source.studio_case_id, {
       id: row.id,
       status: row.status,
       updatedAt: row.updated_at,
       reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
       warnings: Array.isArray(source.warnings) ? source.warnings : [],
-      review: current
-        ? {
-            sentAt: current.created_at,
-            expiresAt: current.expires_at,
-            decision: current.decision,
-            reviewer: [current.reviewer_name, current.reviewer_designation, current.reviewer_department, current.reviewer_institution].filter(Boolean).join(", "),
-            showName: current.show_name,
-            comments: current.comments,
-            decidedAt: current.decided_at,
-          }
-        : null,
+      review,
+      inQueue: queued.has(source.studio_case_id),
     })
   }
 
@@ -75,9 +94,10 @@ export default async function StudioCasesPage() {
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Studio cases</h1>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-600">
           Case sheets from the Case Studio. <strong>Convert</strong> drafts a playable case (about a minute): the AI writes the patient&apos;s
-          script, test results and scoring from the sheet and marks everything it added. <strong>Send for review</strong> gives you a private link
-          for a professor: they read the one-page report and approve it or ask for changes. Once approved, <strong>Publish</strong> it and reward
-          the author. Drafts are hidden from students throughout.
+          script, test results and scoring from the sheet and marks everything it added, and puts it in the <strong>Case Studio&apos;s reviewer
+          queue</strong>, where verified reviewers of that specialty claim and review it. For someone without a studio account, send a{" "}
+          <strong>private link</strong> instead. Once approved, <strong>Publish</strong> it and reward the author. Drafts are hidden from students
+          throughout.
         </p>
 
         <div className="mt-8 space-y-3">

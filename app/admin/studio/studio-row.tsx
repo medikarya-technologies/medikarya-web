@@ -31,7 +31,11 @@ export interface Converted {
     showName: boolean
     comments: string | null
     decidedAt: string | null
+    /** From the studio's reviewer queue, or a private link you sent. */
+    via: "queue" | "link"
   } | null
+  /** This version is in the studio's reviewer queue, for any verified reviewer of its specialty to claim. */
+  inQueue: boolean
 }
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
@@ -78,7 +82,7 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
             {draft && approved && <Badge tone="green">Approved, ready to publish</Badge>}
             {draft && changes && <Badge tone="red">Changes requested</Badge>}
             {draft && waiting && <Badge tone="amber">With reviewer</Badge>}
-            {draft && !review && <Badge tone="amber">Draft, not reviewed</Badge>}
+            {draft && !review && <Badge tone="amber">{converted.inQueue ? "In the reviewer queue" : "Draft, not reviewed"}</Badge>}
             {draft && expired && <Badge tone="amber">Review link expired</Badge>}
           </div>
           <p className="mt-1 text-[13.5px] text-slate-600">
@@ -102,16 +106,32 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
           {converted && <p className="mt-1.5 text-[12.5px] text-slate-500">MediKarya case <code>{converted.id}</code> · updated {when(converted.updatedAt)}</p>}
 
           {/* Where the review stands */}
+          {draft && !review && converted.inQueue && (
+            <p className="mt-2 text-[13.5px] text-slate-600">Waiting in the studio&apos;s reviewer queue for a verified reviewer of this specialty. Or send a private link to someone you know.</p>
+          )}
           {draft && review && (
             <div className="mt-2 text-[13.5px]">
               {approved && (
                 <p className="text-emerald-800">
-                  ✓ Approved by <strong>{review.reviewer}</strong> on {day(review.decidedAt!)}.{" "}
+                  ✓ Approved by <strong>{review.reviewer}</strong> on {day(review.decidedAt!)}
+                  {review.via === "queue" ? " (reviewer queue)" : " (private link)"}.{" "}
                   <span className="text-slate-500">{review.showName ? "Their name will show on the case." : "They asked not to be named on the case."}</span>
                 </p>
               )}
-              {waiting && <p className="text-slate-600">Sent for review on {day(review.sentAt)}; waiting. The link expires {day(review.expiresAt)}.</p>}
-              {expired && <p className="text-amber-800">The review link sent on {day(review.sentAt)} expired unused. Send a new one.</p>}
+              {waiting &&
+                (review.via === "queue" ? (
+                  <p className="text-slate-600">
+                    Claimed by <strong>{review.reviewer}</strong> on {day(review.sentAt)}; due by {day(review.expiresAt)}.
+                  </p>
+                ) : (
+                  <p className="text-slate-600">Private link sent on {day(review.sentAt)}; waiting. It expires {day(review.expiresAt)}.</p>
+                ))}
+              {expired &&
+                (review.via === "queue" ? (
+                  <p className="text-amber-800">The reviewer who claimed it on {day(review.sentAt)} didn&apos;t finish; it is back in the queue.</p>
+                ) : (
+                  <p className="text-amber-800">The private link sent on {day(review.sentAt)} expired unused.</p>
+                ))}
               {changes && (
                 <div className="mt-1 rounded-lg border border-red-200 bg-red-50 p-3 text-red-950">
                   <p className="flex items-center gap-1.5 font-semibold">
@@ -153,14 +173,14 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
                   {busy === "rebuild" ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Rebuilding…</> : "Rebuild with comments"}
                 </Button>
               ) : (
-                <Button disabled={pending} onClick={() => run("send", () => sendForReview(converted.id))}>
+                <Button disabled={pending} variant={converted.inQueue ? "outline" : "default"} onClick={() => run("send", () => sendForReview(converted.id))}>
                   {spin("send") || <Send className="mr-1.5 h-4 w-4" />}
-                  {waiting ? "New review link" : "Send for review"}
+                  {waiting && review?.via === "link" ? "New private link" : "Send a private link"}
                 </Button>
               )}
               {changes && (
                 <Button disabled={pending} variant="outline" onClick={() => run("send", () => sendForReview(converted.id))}>
-                  {spin("send")}Send as it is
+                  {spin("send")}Private link for it as it is
                 </Button>
               )}
               <Button asChild variant="ghost">

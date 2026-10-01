@@ -152,3 +152,102 @@ export async function getStudioCase(id: string): Promise<StudioCase | null> {
     identifiers: { names, places },
   };
 }
+
+// ── Writing back: the AI-built version, for the studio's reviewers ──────────
+// The only place MediKarya writes to the studio: table case_conversions (studio migration 010). Each conversion or
+// rebuild is a new version; a review only counts for the version it was made on.
+
+export async function pushConversion(
+  studioCaseId: string,
+  c: { medikaryaCaseId: string; caseJson: Record<string, unknown>; reviewNotes: string[]; warnings: string[]; testNames: Record<string, string> }
+): Promise<number> {
+  const db = studio();
+  if (!db) throw new Error("The case studio is not connected");
+  const { data: existing, error } = await db.from("case_conversions").select("version").eq("case_id", studioCaseId).maybeSingle();
+  if (error) throw error;
+  const version = (existing?.version ?? 0) + 1;
+  const { error: upsertError } = await db.from("case_conversions").upsert(
+    {
+      case_id: studioCaseId,
+      medikarya_case_id: c.medikaryaCaseId,
+      version,
+      case_json: c.caseJson,
+      review_notes: c.reviewNotes,
+      warnings: c.warnings,
+      test_names: c.testNames,
+      converted_at: new Date().toISOString(),
+    },
+    { onConflict: "case_id" }
+  );
+  if (upsertError) throw upsertError;
+  return version;
+}
+
+export interface StudioReview {
+  /** The studio's current version of the conversion, and whether this review is of it. */
+  version: number;
+  claimedAt: string;
+  expiresAt: string;
+  decision: "approved" | "changes_requested" | null;
+  comments: string | null;
+  showName: boolean;
+  decidedAt: string | null;
+  reviewerName: string;
+  designation: string | null;
+  department: string | null;
+  institution: string | null;
+}
+
+/** The latest review in the studio's reviewer queue of the current version of each studio case. */
+export async function studioReviews(studioCaseIds: string[]): Promise<Map<string, StudioReview>> {
+  const out = new Map<string, StudioReview>();
+  const db = studio();
+  if (!db || studioCaseIds.length === 0) return out;
+  const [{ data: convs, error: convError }, { data: reviews, error: revError }] = await Promise.all([
+    db.from("case_conversions").select("case_id, version").in("case_id", studioCaseIds),
+    db
+      .from("conversion_reviews")
+      .select("case_id, version, reviewer_id, claimed_at, claim_expires_at, decision, comments, show_name, decided_at")
+      .in("case_id", studioCaseIds)
+      .order("claimed_at", { ascending: false }),
+  ]);
+  if (convError || revError) {
+    // Studio migration 010 not run yet: there is simply no queue.
+    console.error("Could not read studio reviews:", (convError ?? revError)?.message);
+    return out;
+  }
+  const current = new Map((convs ?? []).map((c) => [c.case_id, c.version]));
+  const latest = (reviews ?? []).filter((r) => current.get(r.case_id) === r.version);
+  const reviewerIds = [...new Set(latest.map((r) => r.reviewer_id))];
+  const [{ data: users }, { data: profiles }] = await Promise.all([
+    db.from("users").select("id, name").in("id", reviewerIds.length ? reviewerIds : ["00000000-0000-0000-0000-000000000000"]),
+    db.from("reviewer_profiles").select("user_id, designation, department, institution").in("user_id", reviewerIds.length ? reviewerIds : ["00000000-0000-0000-0000-000000000000"]),
+  ]);
+  for (const r of latest) {
+    if (out.has(r.case_id)) continue; // newest first
+    const p = (profiles ?? []).find((x) => x.user_id === r.reviewer_id);
+    out.set(r.case_id, {
+      version: r.version,
+      claimedAt: r.claimed_at,
+      expiresAt: r.claim_expires_at,
+      decision: r.decision,
+      comments: r.comments,
+      showName: r.show_name,
+      decidedAt: r.decided_at,
+      reviewerName: (users ?? []).find((u) => u.id === r.reviewer_id)?.name ?? "A reviewer",
+      designation: p?.designation ?? null,
+      department: p?.department ?? null,
+      institution: p?.institution ?? null,
+    });
+  }
+  return out;
+}
+
+/** Which of these studio cases have a version in the reviewer queue (case_conversions). */
+export async function queuedInStudio(studioCaseIds: string[]): Promise<Set<string>> {
+  const db = studio();
+  if (!db || studioCaseIds.length === 0) return new Set();
+  const { data, error } = await db.from("case_conversions").select("case_id").in("case_id", studioCaseIds);
+  if (error) return new Set();
+  return new Set((data ?? []).map((r) => r.case_id));
+}

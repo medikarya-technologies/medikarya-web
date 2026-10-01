@@ -36,17 +36,17 @@ export default function StudioPreview() {
         <StudioRow studioCase={{ ...base, id: "a", publishConsent: false, consentNote: null }} converted={null} />
         <StudioRow studioCase={{ ...base, id: "b" }} converted={null} />
         <StudioRow studioCase={{ ...base, id: "c", title: "Non-toxic nodular goitre", status: "approved", addedToPlatform: true }} converted={null} />
-        <StudioRow studioCase={{ ...base, id: "d" }} converted={{ ...draft, review: null }} />
-        <StudioRow studioCase={{ ...base, id: "d2" }} converted={{ ...draft, review: { sentAt: now, expiresAt: later, decision: null, reviewer: "", showName: false, comments: null, decidedAt: null } }} />
+        <StudioRow studioCase={{ ...base, id: "d" }} converted={{ ...draft, review: null, inQueue: true }} />
+        <StudioRow studioCase={{ ...base, id: "d2" }} converted={{ ...draft, review: { sentAt: now, expiresAt: later, decision: null, reviewer: "", showName: false, comments: null, decidedAt: null, via: "queue" as const }, inQueue: true }} />
         <StudioRow
           studioCase={{ ...base, id: "d3" }}
-          converted={{ ...draft, review: { sentAt: now, expiresAt: later, decision: "changes_requested", reviewer: "Dr. A. Reviewer, Professor, General Surgery, Sample Medical College", showName: false, comments: "Hb should be about 11 g/dL; the case documents no pallor. Add USG of the scrotum to the core tests.", decidedAt: now } }}
+          converted={{ ...draft, review: { sentAt: now, expiresAt: later, decision: "changes_requested", reviewer: "Dr. A. Reviewer, Professor, General Surgery, Sample Medical College", showName: false, comments: "Hb should be about 11 g/dL; the case documents no pallor. Add USG of the scrotum to the core tests.", decidedAt: now, via: "queue" as const }, inQueue: true }}
         />
         <StudioRow
           studioCase={{ ...base, id: "d4", authorEmail: "author@example.com" }}
-          converted={{ ...draft, review: { sentAt: now, expiresAt: later, decision: "approved", reviewer: "Dr. A. Reviewer, Professor, General Surgery, Sample Medical College", showName: true, comments: null, decidedAt: now } }}
+          converted={{ ...draft, review: { sentAt: now, expiresAt: later, decision: "approved", reviewer: "Dr. A. Reviewer, Professor, General Surgery, Sample Medical College", showName: true, comments: null, decidedAt: now, via: "queue" as const }, inQueue: true }}
         />
-        <StudioRow studioCase={{ ...base, id: "e", title: "Chronic lower limb ulcer with varicose veins" }} converted={{ id: "56-year-old-man-with-a-leg-ulcer", status: "published", updatedAt: now, reviewNotes: [], warnings: [], review: null }} />
+        <StudioRow studioCase={{ ...base, id: "e", title: "Chronic lower limb ulcer with varicose veins" }} converted={{ id: "56-year-old-man-with-a-leg-ulcer", status: "published", updatedAt: now, reviewNotes: [], warnings: [], review: null, inQueue: true }} />
       </div>
     </main>
   )

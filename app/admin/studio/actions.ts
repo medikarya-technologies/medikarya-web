@@ -11,7 +11,8 @@ import { headers } from "next/headers"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
-import { getStudioCase, type StudioCase } from "@/lib/studio/source"
+import { getStudioCase, pushConversion, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
+import { getCatalogTest } from "@/lib/clinical-catalog"
 import { caseIdFor, convertStudioCase, type Conversion } from "@/lib/studio/convert"
 import { createReviewLink, latestReviews } from "@/lib/review/links"
 import { CASE_REWARD, caseRewardWindow, type GrantRow } from "@/lib/plans/grants"
@@ -47,8 +48,24 @@ const fail = (error: unknown, fallback: string): ActionResult => {
   return { ok: false, error: error instanceof Error ? error.message : fallback }
 }
 
-/** Saves a conversion as the draft for this studio case. A new version needs a new review, so any review is dropped. */
-async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: string | undefined): Promise<string> {
+/** Names for every test id the case mentions, for the studio's copy of the report (the catalog lives here). */
+function testNamesOf(c: Record<string, any>): Record<string, string> {
+  const t = c.evaluation_config?.testing ?? {}
+  const ids = [...(t.core_tests ?? []), ...(t.optional_tests ?? []), ...(t.distractor_tests ?? []), ...(t.dangerous_tests ?? [])]
+  const names: Record<string, string> = {}
+  for (const id of ids) {
+    const name = (c.tests ?? []).find((x: any) => x.id === id)?.name ?? getCatalogTest(id)?.name
+    if (name) names[id] = name
+  }
+  return names
+}
+
+/**
+ * Saves a conversion as the draft for this studio case, and puts the new version in the studio's reviewer queue. A
+ * new version needs a new review, so any review is dropped. Returns a warning if the studio could not be updated
+ * (the draft is saved either way; a private review link still works).
+ */
+async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: string | undefined): Promise<{ id: string; queueWarning?: string }> {
   const { caseJson, reviewNotes, check } = conversion
   let id = existingId
   if (!id) {
@@ -89,7 +106,14 @@ async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: str
     { onConflict: "id" }
   )
   if (error) throw error
-  return id
+
+  try {
+    await pushConversion(sc.id, { medikaryaCaseId: id, caseJson: full, reviewNotes, warnings: check.warnings, testNames: testNamesOf(full) })
+    return { id }
+  } catch (e) {
+    console.error("Could not put the draft in the studio's reviewer queue:", e)
+    return { id, queueWarning: "It could not be added to the studio's reviewer queue (has studio migration 010 been run?); a private review link still works." }
+  }
 }
 
 export async function convertToDraft(studioId: string): Promise<ActionResult> {
@@ -106,9 +130,10 @@ export async function convertToDraft(studioId: string): Promise<ActionResult> {
     if (conversion.check.errors.length > 0) {
       return { ok: false, error: "The conversion still had problems after one fix; nothing was saved. Try again.", details: conversion.check.errors }
     }
-    const id = await saveDraft(sc, conversion, existing?.id)
+    const { id, queueWarning } = await saveDraft(sc, conversion, existing?.id)
     done()
-    return { ok: true, message: existing ? "Draft re-converted. It needs a new review." : "Draft created.", caseId: id }
+    const base = existing ? "Draft re-converted. It needs a new review." : "Draft created and placed in the reviewer queue."
+    return { ok: true, message: queueWarning ? `${base} ${queueWarning}` : base, caseId: id }
   } catch (error) {
     return fail(error, "Conversion failed.")
   }
@@ -123,22 +148,50 @@ export async function rebuildWithComments(studioId: string): Promise<ActionResul
     const existing = await convertedFrom(studioId)
     if (!existing || existing.status === "published") return { ok: false, error: "There is no draft to rebuild." }
 
-    const review = (await latestReviews([existing.id])).get(existing.id)
-    if (review?.decision !== "changes_requested" || !review.comments) return { ok: false, error: "The latest review did not ask for changes." }
+    const asked = await latestChangeRequest(existing.id, studioId)
+    if (!asked) return { ok: false, error: "The latest review did not ask for changes." }
 
     const { source, credit, review: _r, status: _s, id: _i, ...current } = existing.case_json
     const conversion = await convertStudioCase(sc, {
       previous: { case: current, review_notes: Array.isArray(source?.review_notes) ? source.review_notes : [] },
-      comments: review.comments,
+      comments: asked.comments,
     })
     if (conversion.check.errors.length > 0) {
       return { ok: false, error: "The rebuild still had problems; nothing was saved. Try again.", details: conversion.check.errors }
     }
-    await saveDraft(sc, conversion, existing.id)
+    const { queueWarning } = await saveDraft(sc, conversion, existing.id)
     done()
-    return { ok: true, message: `Rebuilt with ${review.reviewer_name ?? "the reviewer"}'s comments. Send it for review again.`, caseId: existing.id }
+    return {
+      ok: true,
+      message: `Rebuilt with ${asked.reviewer}'s comments and put back in the reviewer queue.${queueWarning ? ` ${queueWarning}` : ""}`,
+      caseId: existing.id,
+    }
   } catch (error) {
     return fail(error, "Rebuild failed.")
+  }
+}
+
+/** The newest "changes requested" on this draft, from the studio's queue or a private link. */
+async function latestChangeRequest(caseId: string, studioId: string): Promise<{ comments: string; reviewer: string } | null> {
+  const [link, queue] = await Promise.all([latestReviews([caseId]).then((m) => m.get(caseId)), studioReviews([studioId]).then((m) => m.get(studioId))])
+  const candidates = [
+    link?.decision === "changes_requested" && link.comments ? { at: link.decided_at!, comments: link.comments, reviewer: link.reviewer_name ?? "the reviewer" } : null,
+    queue?.decision === "changes_requested" && queue.comments ? { at: queue.decidedAt!, comments: queue.comments, reviewer: queue.reviewerName } : null,
+  ].filter((x): x is { at: string; comments: string; reviewer: string } => !!x)
+  candidates.sort((a, b) => b.at.localeCompare(a.at))
+  return candidates[0] ?? null
+}
+
+/** What goes on the case from a studio approval: the reviewer's name only if they agreed to be named. */
+function reviewFromStudio(r: StudioReview) {
+  return {
+    decision: "approved",
+    show_name: r.showName,
+    decided_at: r.decidedAt,
+    via: "studio",
+    ...(r.showName
+      ? { reviewer_name: r.reviewerName, reviewer_designation: r.designation, reviewer_department: r.department, reviewer_institution: r.institution }
+      : {}),
   }
 }
 
@@ -193,8 +246,14 @@ export async function publishCase(caseId: string, rewardEmail: string | null): P
     const { data: row, error } = await supabaseServer.from("cases").select("case_json").eq("id", caseId).maybeSingle()
     if (error) throw error
     if (!row) return { ok: false, error: "Case not found." }
-    const caseJson = row.case_json as Record<string, any>
-    if (caseJson.review?.decision !== "approved") return { ok: false, error: "A professor has to approve this case before it can be published." }
+    let caseJson = row.case_json as Record<string, any>
+    if (caseJson.review?.decision !== "approved") {
+      // Approved in the studio's reviewer queue rather than through a private link: take the approval from there.
+      const studioId = caseJson.source?.studio_case_id
+      const queued = studioId ? (await studioReviews([studioId])).get(studioId) : undefined
+      if (queued?.decision !== "approved") return { ok: false, error: "A reviewer has to approve this case before it can be published." }
+      caseJson = { ...caseJson, review: reviewFromStudio(queued) }
+    }
 
     const email = rewardEmail?.trim().toLowerCase() || null
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "That author email does not look right." }
