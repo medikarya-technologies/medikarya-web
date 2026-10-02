@@ -43,6 +43,9 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
   const fail = (description: string) => toast({ title: "Could not start your plan", description, variant: "destructive" })
 
   const handleClick = async () => {
+    // Clerk is still loading for a moment after the page appears. The button is not drawn as disabled for that
+    // moment: the server cannot know when it ends, so the page it sends and the page the browser builds would differ.
+    if (!isLoaded) return
     if (!isSignedIn) {
       router.push("/login")
       return
@@ -128,7 +131,7 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
   }
 
   return (
-    <Button type="button" onClick={handleClick} disabled={!isLoaded || loading} className={className}>
+    <Button type="button" onClick={handleClick} disabled={loading} className={className}>
       {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {children}
     </Button>
