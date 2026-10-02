@@ -5,6 +5,8 @@ import { ArrowLeft } from "lucide-react"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
 import { CaseReport } from "@/components/review/case-report"
+import { PrintButton } from "@/components/review/print-button"
+import { PRINT_CSS } from "@/components/review/print-css"
 
 // The review report exactly as the professor will see it (without the decision form), for an admin to read first.
 
@@ -24,10 +26,14 @@ export default async function AdminReportPage({ params }: { params: Promise<{ ca
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
-        <Link href="/admin/studio" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
-          <ArrowLeft className="h-4 w-4" /> Studio cases
-        </Link>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <style>{PRINT_CSS}</style>
+        <div className="no-print flex flex-wrap items-center justify-between gap-3">
+          <Link href="/admin/studio" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800">
+            <ArrowLeft className="h-4 w-4" /> Studio cases
+          </Link>
+          <PrintButton />
+        </div>
+        <div className="print-plain rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <CaseReport caseJson={caseJson} reviewNotes={notes} />
         </div>
       </div>

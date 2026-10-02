@@ -87,12 +87,12 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/contribute" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
-                  Become a Contributor
+                  Write or review cases
                 </Link>
               </li>
               <li>
-                <Link href="/early-contributors" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
-                  Early Contributors
+                <Link href="/contributors" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
+                  Our contributors
                 </Link>
               </li>
             </ul>

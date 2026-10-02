@@ -3,6 +3,8 @@ import { supabaseServer } from "@/lib/supabase/server"
 import { isOpen, reviewForToken } from "@/lib/review/links"
 import { CaseReport } from "@/components/review/case-report"
 import { ReviewForm } from "./review-form"
+import { PrintButton } from "@/components/review/print-button"
+import { PRINT_CSS } from "@/components/review/print-css"
 
 // A professor's private review page: the case as a one-page report, then their decision. No account needed; the
 // link is the permission (lib/review/links.ts). Never indexed.
@@ -13,7 +15,7 @@ export const metadata: Metadata = { title: "Case review", robots: { index: false
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="no-print border-b border-slate-200 bg-white">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4">
           <img src="/medikarya.svg" alt="" className="h-7 w-7" />
           <span className="font-bold text-slate-900">MediKarya</span>
@@ -60,15 +62,22 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
 
   return (
     <Shell>
-      <p className="text-[14.5px] text-slate-600">
+      <style>{PRINT_CSS}</style>
+      <p className="no-print text-[14.5px] text-slate-600">
         Thank you for reviewing this case. It was written by a medical student and turned into an interactive case for MediKarya; students
         will interview the patient, examine them, order tests and make a diagnosis. Please read it through, then approve it or tell us what to
         change.
       </p>
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+      <div className="no-print flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[14px] text-slate-600">You review this report: there is no need to play the case. Prefer paper? Save it as a PDF, then come back to this page to give your decision.</p>
+        <PrintButton />
+      </div>
+      <div className="print-plain rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
         <CaseReport caseJson={caseJson} reviewNotes={notes} />
       </div>
-      <ReviewForm token={token} />
+      <div className="no-print">
+        <ReviewForm token={token} />
+      </div>
     </Shell>
   )
 }

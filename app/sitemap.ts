@@ -20,7 +20,8 @@ const staticRoutes: { path: string; lastModified: string; priority: number }[] =
     { path: '/cookies',      lastModified: '2025-12-01', priority: 0.3 },
     { path: '/tutorials',    lastModified: '2026-04-20', priority: 0.8 },
     { path: '/case-studies', lastModified: '2026-04-20', priority: 0.8 },
-    { path: '/contribute',   lastModified: '2026-01-01', priority: 0.7 },
+    { path: '/contribute',   lastModified: '2026-10-03', priority: 0.7 },
+    { path: '/contributors', lastModified: '2026-10-03', priority: 0.7 },
     { path: '/api-docs',     lastModified: '2026-01-01', priority: 0.5 },
 ]
 

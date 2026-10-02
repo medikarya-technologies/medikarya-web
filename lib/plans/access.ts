@@ -7,6 +7,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { allow, clientIp } from "@/lib/rate-limit";
 import { GUEST_CASE_IDS, caseKindOf, indiaDay, lockedFor } from "./limits";
 import { getPlanStatus } from "./server";
+import { invitedTo } from "@/lib/advisors/invites";
 
 // Who may read a whole case, and who may spend AI on one. The start route (app/api/cases/[id]/start) is where a
 // case is opened and counted; these keep the other routes from being a way around it:
@@ -14,6 +15,8 @@ import { getPlanStatus } from "./server";
 //     everyone else gets the briefing only, which has no diagnosis, answers, script or results in it.
 //   - The AI routes (patient chat, its opening line, the quiz) load the case from the server by id, never from the
 //     request, and answer only for a case this student opened today or yesterday, within a rate limit.
+//   - An advisor link (lib/advisors/invites.ts) opens the cases an admin chose for it, and only those, to someone
+//     with no account: they are treated like the /try case for that visitor.
 
 export async function viewerId(): Promise<string | null> {
   try {
@@ -37,7 +40,7 @@ export async function isAdmin(userId: string | null): Promise<boolean> {
 
 /** Whether this student's plan includes this case at all (daily counts aside). */
 export async function planIncludes(userId: string | null, caseId: string, caseData: { difficulty?: string; event_rules?: unknown }): Promise<boolean> {
-  if (GUEST_CASE_IDS.includes(caseId)) return true;
+  if (GUEST_CASE_IDS.includes(caseId) || (await invitedTo(caseId))) return true;
   if (!userId) return false;
   const status = await getPlanStatus(userId);
   return status.admin || !lockedFor(status.plan, caseKindOf(caseData), status.liveEver);
@@ -119,7 +122,7 @@ export async function checkAiAccess(caseId: unknown, use: AiUse, ip: string): Pr
   // A draft is for admins to play-test, never anyone else, not even on the dev preview pages.
   if (isDraft(caseData) && !(await isAdmin(userId))) return { ok: false, status: 404, error: "Case not found" };
 
-  const freeCase = GUEST_CASE_IDS.includes(caseId);
+  const freeCase = GUEST_CASE_IDS.includes(caseId) || (await invitedTo(caseId));
   const devPreview = process.env.NODE_ENV !== "production";
 
   if (guest) {

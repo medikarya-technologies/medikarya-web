@@ -6,6 +6,7 @@ import { admitCaseStart, caseKind } from '@/lib/plans/server';
 import { isAdmin, isDraft } from '@/lib/plans/access';
 import { caseForBrowser } from '@/lib/cases/for-browser';
 import { isSimulationCase } from '@/lib/simulation/case-schema';
+import { invitedTo } from '@/lib/advisors/invites';
 
 export async function POST(
   request: Request,
@@ -44,8 +45,8 @@ export async function POST(
     // Drafts exist only for admins to play-test (admins are never plan-limited, so this is all they need).
     if (isDraft(caseData)) {
       if (!(await isAdmin(userId))) return NextResponse.json({ error: 'Case not found' }, { status: 404 });
-    } else if (GUEST_CASE_IDS.includes(id)) {
-      // free for everyone
+    } else if (GUEST_CASE_IDS.includes(id) || (await invitedTo(id))) {
+      // free for everyone, or opened by an advisor link (lib/advisors/invites.ts): never counted
     } else if (!userId) {
       if (process.env.NODE_ENV === 'production') {
         return NextResponse.json({ error: 'Sign in to open this case.', reason: 'sign_in' }, { status: 401 });

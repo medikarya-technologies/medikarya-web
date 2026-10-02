@@ -3,8 +3,9 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // The MediKarya Case Studio (a separate app and Supabase project, where students write case sheets and faculty
-// review them), read by the admin converter. It writes back only a case's converted report (for the studio's reviewer
-// queue) and when it was published; everything else here is a read.
+// review them), read by the admin converter. It writes back a case's converted report (for the studio's reviewer
+// queue), when it was published, and a Clinical Advisory Board certificate for an advisor who has no studio account
+// (Admin → Advisors); everything else here is a read.
 
 let client: SupabaseClient | null = null;
 
@@ -309,6 +310,42 @@ export async function studioCertificate(credentialId: string): Promise<StudioCer
   if (error) throw error;
   if (!data) return null;
   return { credentialId: data.credential_id, kind: data.kind, recipientName: data.recipient_name, title: data.title, detail: data.detail, issuedAt: data.issued_at, revoked: data.revoked };
+}
+
+// Must stay the same as the studio's own (lib/rewards/config.ts there): the title printed on the certificate, and
+// the sentence under the name.
+const ADVISORY_BOARD_TITLE = "Clinical Advisory Board";
+const ADVISORY_BOARD_DETAIL = "for serving on the Clinical Advisory Board of MediKarya";
+
+/**
+ * Issues a Clinical Advisory Board certificate in the studio (where every certificate lives, with its QR code and
+ * its page at /verify) for someone who has no studio account, and returns its credential id. Asking twice for the
+ * same name gives back the certificate that already exists.
+ */
+export async function issueAdvisoryCertificate(name: string): Promise<string> {
+  const db = studio();
+  if (!db) throw new Error("The case studio is not connected, so a certificate cannot be issued from here.");
+  const recipient = name.trim().replace(/\s+/g, " ");
+  if (recipient.length < 3) throw new Error("A certificate needs the person's full name.");
+  const ref = `advisory_board:${recipient.toLowerCase()}:${ADVISORY_BOARD_TITLE}`;
+
+  const { data: existing, error: readError } = await db.from("certificates").select("credential_id").eq("ref", ref).maybeSingle();
+  if (readError) throw readError;
+  if (existing) return existing.credential_id as string;
+
+  const { data: credentialId, error: idError } = await db.rpc("next_credential_id");
+  if (idError) throw idError;
+  const { error } = await db.from("certificates").insert({
+    credential_id: credentialId,
+    ref,
+    kind: "advisory_board",
+    user_id: null,
+    recipient_name: recipient,
+    title: ADVISORY_BOARD_TITLE,
+    detail: ADVISORY_BOARD_DETAIL,
+  });
+  if (error) throw error;
+  return credentialId as string;
 }
 
 export interface StudioRecordReview {

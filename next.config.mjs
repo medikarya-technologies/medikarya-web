@@ -25,6 +25,10 @@ const nextConfig = {
       },
     ],
   },
+  // The early contributors are now a section of the contributors page; old links and search results land there.
+  async redirects() {
+    return [{ source: "/early-contributors", destination: "/contributors#early", permanent: true }];
+  },
   async headers() {
     return [
       {

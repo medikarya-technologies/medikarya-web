@@ -13,6 +13,7 @@ import { classicInputsFromEvents } from "@/lib/simulation/classic-inputs";
 import { countBudgetedActions, type ClinicalEvent } from "@/lib/simulation/encounter-events";
 import { headers } from "next/headers";
 import { checkAiAccess } from "@/lib/plans/access";
+import { activeInvite } from "@/lib/advisors/invites";
 
 /** Scoring spends AI (classic cases) and records an attempt: same rules as the AI routes (lib/plans/access.ts). */
 async function authorisedCase(caseId: unknown) {
@@ -86,6 +87,11 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
                 insertPayload.user_id = userId;
             } else if (guestId) {
                 insertPayload.guest_id = guestId;
+                // An attempt needs an owner (user_id cannot be empty). Someone playing through an advisor link has
+                // no account, so theirs is filed under the link itself; Admin → Advisors finds it by guest_id. The
+                // link is read from their cookie on the server, so a guest id sent by a browser cannot claim one.
+                const invite = await activeInvite();
+                if (invite && invite.id === guestId) insertPayload.user_id = `advisor:${invite.id}`;
             }
 
             const { error: dbError } = await supabaseServer

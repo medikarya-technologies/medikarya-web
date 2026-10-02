@@ -48,6 +48,9 @@ const PilotProofSection = dynamic(() => import("@/components/flowai/sections/pil
 const ReviewsSection = dynamic(() => import("@/components/flowai/sections/reviews-section"), {
   loading: () => <div className="h-[560px] w-full bg-enc-sheet" />,
 })
+const ContributeSection = dynamic(() => import("@/components/flowai/sections/contribute-section"), {
+  loading: () => <div className="h-[620px] w-full bg-enc-desk" />,
+})
 const DashboardPreview = dynamic(() => import("@/components/flowai/dashboard-preview").then((mod) => mod.DashboardPreview), {
   loading: () => <div className="h-[560px] w-full bg-enc-sheet" />,
 })
@@ -112,6 +115,7 @@ export default function Page() {
       <DashboardPreview />
       <PilotProofSection />
       <ReviewsSection />
+      <ContributeSection />
       <MarqueeStrip items={SKILL_ITEMS} />
       <PricingSection />
       <FinalCtaSection />

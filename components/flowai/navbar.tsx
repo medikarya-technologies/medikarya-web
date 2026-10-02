@@ -51,6 +51,11 @@ export function Navbar() {
               Pricing
             </Link>
           </li>
+          <li>
+            <Link href="/#contribute" className="transition-colors hover:text-enc-ink">
+              Write or review cases
+            </Link>
+          </li>
         </ul>
 
         <div className="flex items-center gap-2">
@@ -119,6 +124,11 @@ export function Navbar() {
             <li>
               <Link href="#pricing" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
                 Pricing
+              </Link>
+            </li>
+            <li>
+              <Link href="/#contribute" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
+                Write or review cases
               </Link>
             </li>
             {!userId && (
