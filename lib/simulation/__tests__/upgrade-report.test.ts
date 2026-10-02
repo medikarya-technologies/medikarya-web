@@ -34,10 +34,10 @@ describe("upgrade report: what a student will get from a case you add", () => {
         assert.match(t, /Portrait: adult f, 34 y, female, in a (salwar|saree)/);
     });
 
-    it("says why a case without tests, or without a heart rate, falls back to the old flow", () => {
+    it("says why a case without tests, or without a heart rate, cannot be played", () => {
         const noTests = upgradeReport(newCase({ tests: [] }));
         assert.equal(noTests.bedside, false);
-        assert.match(text(noTests), /OLD classic three-step flow/);
+        assert.match(text(noTests), /CANNOT BE PLAYED/);
         assert.match(text(noTests), /tests\[\] has no test with an id/);
 
         const noHeartRate = upgradeReport(newCase({ patient: { name: "X", age: 30, gender: "Male", vitalSigns: { bloodPressure: { systolic: 120, diastolic: 80 } } } }));
@@ -48,11 +48,7 @@ describe("upgrade report: what a student will get from a case you add", () => {
         assert.equal(both.notes.length, 2, "it names every reason, not just the first");
     });
 
-    it("respects an opt-out and recognises an authored simulation case", () => {
-        const out = upgradeReport(newCase({ experience: "classic" }));
-        assert.equal(out.bedside, false);
-        assert.match(out.headline, /experience": "classic"/);
-
+    it("recognises an authored simulation case", () => {
         const stemi = upgradeReport(bundledSimulationCases[0]);
         assert.equal(stemi.bedside, true);
         assert.match(stemi.headline, /authored simulation case/);

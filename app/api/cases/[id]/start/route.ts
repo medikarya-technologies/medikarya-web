@@ -5,6 +5,7 @@ import { GUEST_CASE_IDS, explain } from '@/lib/plans/limits';
 import { admitCaseStart, caseKind } from '@/lib/plans/server';
 import { isAdmin, isDraft } from '@/lib/plans/access';
 import { caseForBrowser } from '@/lib/cases/for-browser';
+import { isSimulationCase } from '@/lib/simulation/case-schema';
 
 export async function POST(
   request: Request,
@@ -21,6 +22,13 @@ export async function POST(
         { error: 'Case not found' },
         { status: 404 }
       );
+    }
+
+    // Every case is played at the bedside. One it cannot run (no heart rate, or no test to order) is refused here,
+    // before it is counted against the student's allowance. The studio checker does not publish such a case.
+    if (!isSimulationCase(caseData)) {
+      console.error(`Case ${id} cannot run at the bedside (npm run check:cases says why).`);
+      return NextResponse.json({ error: 'This case is not ready to open yet. Please try another case.' }, { status: 422 });
     }
 
     // Plan limits (lib/plans/limits.ts). The free /try case is open to everyone and never counted: anyone can

@@ -209,10 +209,10 @@ describe("legacy adapter: what it leaves alone", () => {
         assert.equal(upgradeLegacyCase(sim as any), sim);
     });
 
-    it("honours the per-case opt-out", () => {
+    it("has no opt-out: the bedside is the only way a case is played", () => {
         const c = { ...adultCase(), experience: "classic" };
-        assert.equal(canUpgrade(c), false);
-        assert.equal(upgradeLegacyCase(c), c);
+        assert.equal(canUpgrade(c), true);
+        assert.equal((upgradeLegacyCase(c) as any).experience, "bedside");
     });
 
     it("leaves a case with no heart rate alone: a monitor has nothing to show", () => {

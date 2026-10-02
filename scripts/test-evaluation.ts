@@ -15,7 +15,7 @@ loadEnvConfig(process.cwd());
 // We use require() because tsx/ts-node handles the TS → JS at runtime
 const { IntentExtractor } = require("../engine/evaluation/IntentExtractor");
 const { DeterministicScorer } = require("../engine/evaluation/DeterministicScorer");
-const { getRuleEngineMissedFlags, resolveRedFlagPenalties, totalRedFlagPenalty } = require("../cases/lib/red-flag-detector");
+const { getRuleEngineMissedFlags, resolveRedFlagPenalties, totalRedFlagPenalty } = require("../engine/evaluation/red-flag-detector");
 const { EvaluationEngine } = require("../engine/evaluationEngine");
 const caseData = require("../data/cases/viral-gastroenteritis.json");
 

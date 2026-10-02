@@ -1,5 +1,5 @@
 // =========================
-// cases/lib/red-flag-detector.ts
+// engine/evaluation/red-flag-detector.ts
 // =========================
 // Three purposes (A/B/C) are exported separately:
 //
@@ -12,7 +12,7 @@
 //   - Tiered penalty resolver: full / partial / none
 //   - "Asked but ignored" detection forwarded from IntentExtractor
 
-import { ExtractedConsultation, RedFlag, PenaltyLevel, RedFlagResolution } from "../../engine/evaluation/types";
+import { ExtractedConsultation, RedFlag, PenaltyLevel, RedFlagResolution } from "./types";
 
 // ── Type re-exported for callers ──────────────────────────────────────────────
 export type { RedFlag };

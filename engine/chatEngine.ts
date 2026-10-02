@@ -1,6 +1,11 @@
 import { CaseData } from '../data/cases/index';
-import { CaseResponse } from '../cases/types';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+export interface CaseResponse {
+    response: string;
+    timestamp: string;
+    source: "guard" | "fact" | "ai";
+}
 
 /** How the patient looks/behaves right now — the live simulation's own state, not the case's static authoring. */
 export interface CurrentCondition {

@@ -131,8 +131,9 @@ It prints, per case, whether it runs at the bedside, the monitor rhythm, how man
 
 Keep `displayTitle` and `displayTags` at the level of what the patient would tell you, plus the specialty: never the diagnosis, an examination finding or a test name. The library shows the title before a student starts and its search reads the tags, so a tag like "malaria" or "bradycardia" gives the case away (`scripts/fix_display_tags.sql` corrects the seven that did).
 
-Switches: `CLASSIC_CASE_FLOW=true` in the server environment turns the upgrade off everywhere;
-`"experience": "classic"` in a case's JSON opts that one case out. Try any case without logging
+The bedside is the only way a case is played (the old three-step flow and its switches were removed
+on 2026-10-02). A case with no heart rate or no test to order cannot be played: the studio checker
+refuses to publish one, and `npm run check:cases` says so. Try any case without logging
 in at `/sim-preview?case=<id>` (dev builds only).
 
 ## The encounter screen

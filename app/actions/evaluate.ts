@@ -63,9 +63,8 @@ async function milestonesEarnedBy(before: AttemptRow[], attempt: AttemptRow): Pr
 }
 
 /**
- * Saves the attempt and bumps the user's streak. Shared by the classic
- * evaluation and the simulation debrief; a database failure never fails the
- * evaluation the student is waiting on.
+ * Saves the attempt and bumps the user's streak. A database failure never fails
+ * the evaluation the student is waiting on.
  */
 async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson, guestId }: PersistArgs): Promise<{ milestones: MilestoneNotice[] }> {
     let milestones: MilestoneNotice[] = [];
@@ -190,56 +189,6 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
         console.error("Failed to save to Supabase:", dbEx);
     }
     return { milestones };
-}
-
-export async function evaluateCase(
-    diagnosis: any,
-    orderedTests: any[],
-    chatHistory: any[],
-    clientCaseData: any,
-    timeTaken: number = 0, // timeTaken in seconds
-    guestId?: string
-) {
-    try {
-        // The server's copy of the case, not the one the browser sent.
-        const caseData = await authorisedCase(clientCaseData?.id);
-        console.log("Evaluating case for:", caseData.patient.name);
-        const result = await EvaluationEngine.evaluate(
-            diagnosis,
-            orderedTests,
-            chatHistory,
-            caseData
-        );
-
-        const baseXP = caseData.xpReward || 50;
-        let finalXpEarned = Math.round((result.score / 100) * baseXP);
-
-        // Determine case_id
-        const caseId = caseData.id || caseData.patient.name.toLowerCase().replace(/\s+/g, '-');
-
-        // Prepare the full feedback payload that the UI needs
-        const persistedFeedback = {
-            ...result,
-            xpEarned: finalXpEarned,
-            caseId: caseId,
-            caseTitle: caseData.displayTitle || caseData.title,
-            timestamp: new Date().toISOString()
-        };
-
-        const { milestones } = await persistAttempt({
-            caseId,
-            score: result.score,
-            xpEarned: finalXpEarned,
-            timeTaken,
-            feedbackJson: persistedFeedback,
-            guestId,
-        });
-
-        return { ...result, xpEarned: finalXpEarned, milestones };
-    } catch (error) {
-        console.error("Evaluation Server Action Failed", error);
-        throw new Error("Failed to evaluate case");
-    }
 }
 
 /**

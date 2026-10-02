@@ -8,6 +8,11 @@
 -- attempts (so their history and scores stay attached), case starts, reports, private review links and plan rewards.
 -- Nothing else about a case changes. It is one transaction: if any step fails, nothing is changed.
 -- Running it a second time changes nothing.
+--
+-- RUN ON 2026-10-02. Supabase's editor asks whether to enable row level security because this makes a (temporary)
+-- table; choose "Run without RLS". Choosing to enable it adds a step after the commit that fails with
+-- 'relation "case_id_rename" does not exist' (the temporary table is already gone): the rename itself has still
+-- been done, and that error can be ignored.
 
 begin;
 

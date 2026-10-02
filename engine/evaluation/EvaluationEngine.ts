@@ -23,7 +23,7 @@ import {
     getRuleEngineMissedFlags,
     resolveRedFlagPenalties,
     totalRedFlagPenalty,
-} from "../../cases/lib/red-flag-detector";
+} from "./red-flag-detector";
 
 export class EvaluationEngine {
     static async evaluate(

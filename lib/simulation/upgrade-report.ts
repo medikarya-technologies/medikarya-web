@@ -3,8 +3,8 @@
 // =========================
 // "If I add this case JSON, what will the student get?" A plain-language readout of what the
 // bedside encounter will do with a case, and, when it will NOT run at the bedside, why not. It is
-// printed by scripts/migrate-cases.ts next to each case, so a case that quietly falls back to the
-// old three-step flow is noticed when it is added, not when a student opens it.
+// printed by scripts/migrate-cases.ts next to each case, so a case the bedside cannot run is
+// noticed when it is added, not when a student opens it.
 //
 // Pure: it runs the same upgrade the app runs, then describes the result.
 
@@ -27,13 +27,12 @@ const isObj = (v: unknown): v is Json => !!v && typeof v === "object" && !Array.
 export function upgradeReport(legacy: unknown, overlay: UpgradeOverlay = {}): UpgradeReport {
     if (!isObj(legacy)) return { bedside: false, headline: "Not a case (expected a JSON object).", notes: [] };
     if (isSimulationCase(legacy)) return { bedside: true, headline: "Runs at the bedside: an authored simulation case (its own physiology, treatments and scoring).", notes: [] };
-    if (legacy.experience === "classic") return { bedside: false, headline: 'Opens in the classic three-step flow: the case says "experience": "classic".', notes: [] };
 
     if (!canUpgrade(legacy)) {
         const why: string[] = [];
         if (readVitals(legacy.patient?.vitalSigns) === null) why.push("patient.vitalSigns.heartRate has no value: the monitor needs at least a heart rate.");
         if (!Array.isArray(legacy.tests) || !legacy.tests.some((t: unknown) => isObj(t) && typeof t.id === "string" && t.id)) why.push("tests[] has no test with an id: there is nothing for the student to order.");
-        return { bedside: false, headline: "Will open in the OLD classic three-step flow, without the monitor, clock, examination or portrait.", notes: why };
+        return { bedside: false, headline: "CANNOT BE PLAYED: the bedside encounter cannot run this case, and there is no other way to play one.", notes: why };
     }
 
     const up = upgradeLegacyCase(legacy, overlay) as Json;

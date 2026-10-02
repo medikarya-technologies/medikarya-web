@@ -192,15 +192,12 @@ export async function getCases(): Promise<CaseMetadata[]> {
 }
 
 /**
- * A case as the encounter runs it. Classic cases are upgraded to the bedside
+ * A case as the encounter runs it. An older case sheet is upgraded to the bedside
  * encounter (live monitor, clock, examination, investigations that come back
  * after a wait, assists, timeline) using only the case's own data; see
- * lib/simulation/legacy-adapter.ts. Two ways back to the classic three-step flow:
- * set CLASSIC_CASE_FLOW=true to switch it off everywhere, or add
- * `"experience": "classic"` to a case to opt that one case out.
+ * lib/simulation/legacy-adapter.ts. The bedside is the only way a case is played.
  */
 function forEncounter(caseJson: CaseData): CaseData {
-  if (process.env.CLASSIC_CASE_FLOW === 'true') return caseJson;
   return upgradeLegacyCase(caseJson as any, { appearance: appearanceOverlays[caseJson.id] }) as CaseData;
 }
 

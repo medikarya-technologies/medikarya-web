@@ -27,8 +27,8 @@
 // rather than filled in: no Examine tab without examination findings, no hints
 // without authored hints, "—" for a vital that was never measured.
 //
-// Pure and idempotent. A case that is already a simulation case, has opted out
-// (`experience: "classic"`) or lacks what a monitor needs comes back untouched.
+// Pure and idempotent. A case that is already a simulation case, or lacks what a
+// monitor needs, comes back untouched.
 
 import type {
     CaseInvestigationResult,
@@ -397,7 +397,6 @@ function examinationOf(facts: unknown): ExamManoeuvreDef[] {
 /** True for a case the bedside can run: a monitor's worth of vitals and at least one test to order. */
 export function canUpgrade(legacy: unknown): boolean {
     if (!isObj(legacy) || isSimulationCase(legacy)) return false;
-    if (legacy.experience === "classic") return false;
     return readVitals(legacy.patient?.vitalSigns) !== null && Array.isArray(legacy.tests) && legacy.tests.some((t: unknown) => isObj(t) && !!str(t.id));
 }
 
