@@ -20,6 +20,29 @@ const KIND: Record<StudioCertificate["kind"], string> = {
   contributor: "Case contributor",
   reviewer: "Clinical reviewer",
   advisory_board: "Clinical Advisory Board",
+  internship: "Internship",
+}
+
+// On a development machine only, /verify/MK-0000-00000 (a contributor) and /verify/MK-0000-00001 (an internship) show
+// these samples, to see the page a scanned QR code opens without a real certificate.
+const SAMPLE_INTERNSHIP: StudioCertificate = {
+  credentialId: "MK-0000-00001",
+  kind: "internship",
+  recipientName: "Sample Intern Name",
+  title: "Developer Intern",
+  detail: "Completed an internship at MediKarya Technologies Pvt. Ltd. from 3 July 2026 to 2 September 2026. Built and developed MediKarya's Case Studio.",
+  issuedAt: "2026-09-02T06:30:00Z",
+  revoked: false,
+}
+
+const SAMPLE: StudioCertificate = {
+  credentialId: "MK-0000-00000",
+  kind: "contributor",
+  recipientName: "Sample Recipient Name",
+  title: "Senior Contributor",
+  detail: "for 5 clinical cases published on MediKarya",
+  issuedAt: "2026-01-01T06:00:00Z",
+  revoked: false,
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -56,7 +79,8 @@ export default async function VerifyPage({ params }: Props) {
   let certificate: StudioCertificate | null = null
   let unavailable = false
   try {
-    certificate = await studioCertificate(id)
+    const sample = process.env.NODE_ENV !== "production" ? [SAMPLE, SAMPLE_INTERNSHIP].find((c) => c.credentialId === id) : undefined
+    certificate = sample ?? (await studioCertificate(id))
   } catch (error) {
     console.error("Could not read certificate:", error)
     unavailable = true
@@ -116,8 +140,8 @@ export default async function VerifyPage({ params }: Props) {
         </div>
         <dl className="divide-y divide-slate-100 px-6">
           <Row label="Awarded to">{certificate.recipientName}</Row>
-          <Row label="Title">{certificate.title}</Row>
-          <Row label="Awarded">{certificate.detail.replace(/^for /, "For ")}</Row>
+          <Row label={certificate.kind === "internship" ? "Role" : "Title"}>{certificate.title}</Row>
+          <Row label={certificate.kind === "internship" ? "Details" : "Awarded"}>{certificate.detail.replace(/^for /, "For ")}</Row>
           <Row label="Category">{KIND[certificate.kind]}</Row>
           <Row label="Issued on">{issued}</Row>
           <Row label="Credential ID">
@@ -126,8 +150,8 @@ export default async function VerifyPage({ params }: Props) {
         </dl>
       </div>
       <p className="mt-5 text-[14px] leading-relaxed text-slate-600">
-        MediKarya is a clinical simulation platform for medical students. Its cases are written by medical students from patients they have seen, and
-        each one is checked by a doctor before it is published. Contributors and reviewers earn titles for that work.{" "}
+        MediKarya is a clinical simulation platform for medical students. New cases are written by medical students from patients they have seen, and checked by a
+        doctor before they are published. Contributors and reviewers earn titles for that work.{" "}
         <Link href="/" className="font-medium text-sky-700 hover:underline">
           About MediKarya
         </Link>

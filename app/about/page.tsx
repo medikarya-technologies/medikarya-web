@@ -112,10 +112,10 @@ export default function AboutPage() {
                     <section className="mb-20">
                         <h2 className="text-2xl font-bold text-slate-900 mb-3">What MediKarya is</h2>
                         <p className="text-slate-600 leading-relaxed mb-8">
-                            MediKarya is an AI patient simulation platform. Students interact with a virtual patient presented with a chief complaint, working against a real bedside monitor with live vitals. They take a history, order investigations, interpret results, and rank a differential — a working diagnosis, a real alternative, and the one they can't afford to miss — before submitting a management plan. The AI evaluates their reasoning at each step — not just whether the final diagnosis was right, but whether the clinical thinking was sound.
+                            MediKarya is an AI patient simulation platform. Students interact with a virtual patient presented with a chief complaint, working against a real bedside monitor with live vitals. They take a history, order investigations, interpret results, and rank a differential — a working diagnosis, a real alternative, and the one they can't afford to miss — before submitting a management plan. The AI evaluates their reasoning at each step — not just whether the final diagnosis was right, but whether the clinical thinking was sound. Then comes the part that makes it stick: a debrief that sets what they did well beside the consequences of what they missed, an expert walkthrough of the case, and five questions drawn from the gaps that attempt showed.
                         </p>
                         <p className="text-slate-600 leading-relaxed">
-                            Cases are built around real clinical presentations — the kinds seen at district hospitals and tertiary centres across India. Paediatrics, obstetrics, neurology, medicine. Each case comes with evidence-based learning objectives, structured differentials, and teaching points grounded in current guidelines.
+                            Cases are built around real clinical presentations — the kinds seen at district hospitals and tertiary centres across India. Paediatrics, obstetrics, neurology, medicine. Each case comes with evidence-based learning objectives, structured differentials, and teaching points grounded in current guidelines. New cases are written by medical students from patients they have seen, and checked by a doctor before they are published.
                         </p>
                     </section>
 

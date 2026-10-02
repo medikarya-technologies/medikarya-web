@@ -1,15 +1,24 @@
 import { Footer } from "@/components/flowai/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, Baby, Brain, Activity, Stethoscope, HeartPulse, Droplet, Thermometer, Syringe } from "lucide-react"
+import { ArrowLeft, ArrowRight, Activity, Baby, Brain, Clock, Droplet, HeartPulse, Stethoscope, Syringe, Thermometer, type LucideIcon } from "lucide-react"
 import type { Metadata } from "next"
+import { getCases, type CaseMetadata } from "@/data/cases"
+import { GUEST_CASE_IDS } from "@/lib/plans/limits"
+
+// The public case library: every published case as a student first meets it (who the patient is and what they came
+// in with), never what they turn out to have. It reads the same list the signed-in library does, so a new case
+// appears here by itself and nothing on this page can give a diagnosis away. What a case teaches is described once,
+// for all of them: the loop every case runs through.
+
+export const revalidate = 300
 
 export const metadata: Metadata = {
-    title: "Clinical Case Studies — MediKarya Case Library",
-    description: "Explore AI-simulated clinical case studies across cardiology, paediatrics, obstetrics, neurology, nephrology and more. Real chief complaints, differentials, and learning objectives — interactive simulation behind login.",
+    title: "Clinical Cases — MediKarya Case Library",
+    description: "Every patient in the MediKarya library, as you first meet them: who they are and what they came in with. Work each one up yourself, then see where your reasoning held and where it broke.",
     openGraph: {
-        title: "MediKarya Case Library — Clinical Simulation Cases",
-        description: "Explore real clinical cases across cardiology, paediatrics, obstetrics, neurology and more. Interactive AI simulation behind login.",
+        title: "MediKarya Case Library — Patients to Work Up Yourself",
+        description: "Real presentations across paediatrics, obstetrics, medicine, surgery and more. Take the history, order the tests, commit to a diagnosis, then get a debrief and questions on what you missed.",
         images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Clinical Cases" }],
     },
     twitter: {
@@ -18,160 +27,88 @@ export const metadata: Metadata = {
     },
 }
 
-const cases = [
-    {
-        id: "4-week-old-infant-with-yellow-eyes-and-face",
-        title: "Prolonged Neonatal Jaundice due to Breastmilk Jaundice",
-        specialty: "Paediatrics",
-        specialtyColor: "bg-amber-50 text-amber-700 border-amber-200",
-        Icon: Baby,
-        iconBg: "bg-amber-50",
-        iconColor: "text-amber-500",
-        difficulty: "Beginner",
-        difficultyColor: "bg-green-50 text-green-700 border-green-200",
-        chiefComplaint: "4-week-old male infant with yellow eyes and face since day 5–7 of life. Exclusively breastfed, gaining weight well, no pale stools or dark urine.",
-        differentials: ["Breastmilk jaundice", "Breastfeeding jaundice", "ABO incompatibility", "G6PD deficiency", "Biliary atresia (excluded)"],
-        learningObjectives: ["Distinguishing breastmilk from breastfeeding jaundice", "Recognising red flags: pale stools, dark urine, lethargy", "Appropriate investigation in prolonged neonatal jaundice"],
-    },
-    {
-        id: "24-year-old-pregnant-woman-with-fatigue-and-breathlessness",
-        title: "Moderate Iron Deficiency Anemia in Pregnancy",
-        specialty: "Obstetrics",
-        specialtyColor: "bg-pink-50 text-pink-700 border-pink-200",
-        Icon: Activity,
-        iconBg: "bg-pink-50",
-        iconColor: "text-pink-500",
-        difficulty: "Intermediate",
-        difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        chiefComplaint: "24-year-old female, G2P1, at 28 weeks gestation with 5-day history of breathlessness on exertion, fatigue, and lightheadedness. Vegetarian diet, inadequate iron supplementation.",
-        differentials: ["Iron deficiency anemia", "Thalassemia trait", "Anemia of chronic illness", "Pulmonary embolism (excluded)"],
-        learningObjectives: ["Microcytic hypochromic anemia workup in pregnancy", "Ganzoni formula for IV iron dosing", "Differentiating IDA from thalassemia trait on investigations"],
-    },
-    {
-        id: "2-year-old-boy-with-vomiting-and-watery-diarrhea",
-        title: "Viral Gastroenteritis in a Toddler",
-        specialty: "Paediatrics",
-        specialtyColor: "bg-amber-50 text-amber-700 border-amber-200",
-        Icon: Baby,
-        iconBg: "bg-amber-50",
-        iconColor: "text-amber-500",
-        difficulty: "Beginner",
-        difficultyColor: "bg-green-50 text-green-700 border-green-200",
-        chiefComplaint: "2-year-old male with 3-day history of vomiting and 2-day history of profuse watery diarrhoea (5–10 times/day), fever 38.5°C, moderate dehydration. Incomplete immunisation history.",
-        differentials: ["Viral gastroenteritis (Rotavirus)", "Viral gastroenteritis (Norovirus)", "Cholera", "Traveller's diarrhoea (ETEC)"],
-        learningObjectives: ["Dehydration assessment and ORS use in paediatrics", "Recognising red flags: blood in stool, bilious vomiting", "Role of Rotavirus vaccination in prevention"],
-    },
-    {
-        id: "21-year-old-woman-with-visual-disturbances-and-headache",
-        title: "Severe Migraine with Aura",
-        specialty: "Neurology",
-        specialtyColor: "bg-purple-50 text-purple-700 border-purple-200",
-        Icon: Brain,
-        iconBg: "bg-purple-50",
-        iconColor: "text-purple-500",
-        difficulty: "Intermediate",
-        difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        chiefComplaint: "21-year-old female student with 48-hour left-sided pulsatile headache, preceded by visual aura (light flashes), photophobia, vomiting. Recurrent for 3 months, 3–4 episodes/month. Paracetamol not helping.",
-        differentials: ["Migraine with aura", "Space-occupying lesion", "Idiopathic intracranial hypertension", "Subarachnoid haemorrhage (excluded)"],
-        learningObjectives: ["ICHD-3 diagnostic criteria for migraine with aura", "Acute vs prophylactic migraine management", "Red flag headache features warranting neuroimaging"],
-    },
-    {
-        id: "61-year-old-man-with-severe-chest-pain-and-sweating",
-        title: "Acute Anterior STEMI",
-        specialty: "Cardiology",
-        specialtyColor: "bg-red-50 text-red-700 border-red-200",
-        Icon: HeartPulse,
-        iconBg: "bg-red-50",
-        iconColor: "text-red-500",
-        difficulty: "Advanced",
-        difficultyColor: "bg-red-50 text-red-700 border-red-200",
-        live: true,
-        chiefComplaint: "61-year-old man with severe crushing central chest pain for 90 minutes, radiating to the left arm and jaw, with sweating, nausea and breathlessness. Known hypertension, diabetes, and a 30-year smoking history.",
-        differentials: ["Acute anterior STEMI", "Unstable angina", "Aortic dissection (excluded)", "Pulmonary embolism (excluded)"],
-        learningObjectives: ["Recognising the ECG pattern of an anterior STEMI within 10 minutes of arrival", "Choosing and activating a reperfusion strategy without waiting for troponin", "Managing cardiogenic shock and avoiding drugs unsafe in a low-output state"],
-    },
-    {
-        id: "72-year-old-man-with-recurrent-fainting",
-        title: "Syncope Due to Complete Heart Block",
-        specialty: "Cardiology",
-        specialtyColor: "bg-red-50 text-red-700 border-red-200",
-        Icon: HeartPulse,
-        iconBg: "bg-red-50",
-        iconColor: "text-red-500",
-        difficulty: "Intermediate",
-        difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        chiefComplaint: "72-year-old man with recurrent dizziness and fainting episodes for one month. Pulse markedly slow and regular at 36 bpm on examination.",
-        differentials: ["Complete heart block", "Mobitz II second-degree block", "Sick sinus syndrome", "Vasovagal syncope (excluded)"],
-        learningObjectives: ["Recognising complete AV dissociation on a 12-lead ECG", "Distinguishing a nodal from an infranodal escape rhythm by QRS width", "Excluding reversible causes: hyperkalaemia, drug toxicity, acute MI"],
-    },
-    {
-        id: "24-year-old-man-with-fever-after-travel",
-        title: "Malaria in a Returning Traveller",
-        specialty: "Infectious Disease",
-        specialtyColor: "bg-orange-50 text-orange-700 border-orange-200",
-        Icon: Thermometer,
-        iconBg: "bg-orange-50",
-        iconColor: "text-orange-500",
-        difficulty: "Intermediate",
-        difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        chiefComplaint: "24-year-old man with 3 days of fever, intense rigors and malaise after returning from a six-week work trip to Nigeria. Mild anaemia, thrombocytopenia and raised bilirubin on bloods.",
-        differentials: ["Falciparum malaria", "Typhoid fever", "Dengue fever (excluded)", "Viral hepatitis (excluded)"],
-        learningObjectives: ["Treating fever after travel to an endemic region as malaria until proven otherwise", "Recognising that completed prophylaxis does not exclude malaria", "Diagnosing malaria on a stained peripheral blood film"],
-    },
-    {
-        id: "49-year-old-woman-with-flank-pain-and-blood-in-urine",
-        title: "ADPKD Presenting with Flank Pain and Haematuria",
-        specialty: "Nephrology",
-        specialtyColor: "bg-blue-50 text-blue-700 border-blue-200",
-        Icon: Droplet,
-        iconBg: "bg-blue-50",
-        iconColor: "text-blue-500",
-        difficulty: "Intermediate",
-        difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        chiefComplaint: "49-year-old woman with recurrent right-sided flank pain and visible blood in her urine for 2 days. Palpable masses in both flanks, blood pressure elevated at 148/92.",
-        differentials: ["Autosomal dominant polycystic kidney disease", "Renal cell carcinoma (excluded)", "Nephrolithiasis", "Pyelonephritis (excluded)"],
-        learningObjectives: ["Recognising the classic tetrad: flank masses, hypertension, loin pain, haematuria", "Applying ultrasound diagnostic criteria for ADPKD by age band", "First-line blood pressure control with ACE inhibitors or ARBs"],
-    },
-    {
-        id: "54-year-old-woman-with-a-neck-swelling",
-        title: "Non-Toxic Nodular Goitre with Neck Swelling",
-        specialty: "Internal Medicine",
-        specialtyColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
-        Icon: Stethoscope,
-        iconBg: "bg-indigo-50",
-        iconColor: "text-indigo-500",
-        difficulty: "Intermediate",
-        difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        chiefComplaint: "54-year-old woman with a painless neck swelling for 15 days, with difficulty swallowing, voice change and breathlessness on exertion. No history of thyrotoxicosis.",
-        differentials: ["Non-toxic nodular goitre", "Papillary thyroid carcinoma (excluded)", "Multinodular goitre", "Thyroiditis (excluded)"],
-        learningObjectives: ["Assessing a thyroid swelling for compressive symptoms and red flags", "Examining for special signs: Pemberton's, Kocher's, eye signs", "Distinguishing a benign nodular goitre from a malignant thyroid mass"],
-    },
-    {
-        id: "63-year-old-woman-with-tiredness-and-numb-feet",
-        title: "Severe Vitamin B12 Deficiency Due to Pernicious Anaemia",
-        specialty: "Haematology",
-        specialtyColor: "bg-cyan-50 text-cyan-700 border-cyan-200",
-        Icon: Syringe,
-        iconBg: "bg-cyan-50",
-        iconColor: "text-cyan-600",
-        difficulty: "Intermediate",
-        difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-200",
-        chiefComplaint: "63-year-old woman with progressive tiredness, exertional breathlessness and headaches, along with numbness and unsteadiness in her feet.",
-        differentials: ["Pernicious anaemia", "Vitamin B12 deficiency (dietary)", "Folate deficiency (excluded)", "Hypothyroidism (excluded)"],
-        learningObjectives: ["Recognising subacute combined degeneration alongside macrocytic anaemia", "Using intrinsic factor antibodies to confirm pernicious anaemia", "Never giving folate alone before correcting B12 — it masks progressive neurological damage"],
-    },
+const ICONS: Array<[RegExp, LucideIcon]> = [
+    [/paediatr|pediatr|neonat/i, Baby],
+    [/cardio|emergency/i, HeartPulse],
+    [/neuro|psychiat/i, Brain],
+    [/obstet|gynae|gyne/i, Activity],
+    [/nephro|urolog|haemat|hemat/i, Droplet],
+    [/infect|tropical/i, Thermometer],
+    [/surg|ortho|ent/i, Syringe],
+]
+const iconFor = (category: string): LucideIcon => ICONS.find(([re]) => re.test(category))?.[1] ?? Stethoscope
+
+const DIFFICULTY: Record<string, string> = {
+    Beginner: "bg-green-50 text-green-700 border-green-200",
+    Intermediate: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    Advanced: "bg-red-50 text-red-700 border-red-200",
+}
+
+/** What happens in every case, in order. Each line is something the platform does today (see /how-it-works). */
+const LOOP = [
+    { title: "Work the patient up", text: "Take the history in your own words, watch a live bedside monitor, and order investigations that come back after a realistic wait." },
+    { title: "Commit to an answer", text: "A ranked differential, the findings that support it, and what you would do next. No multiple choice." },
+    { title: "See where your reasoning broke", text: "Two scores, what you did well beside the consequences of what you missed, the full record of the encounter, and an expert walkthrough of the case." },
+    { title: "Close the gaps", text: "Five questions drawn from what this attempt showed you missed, so the next patient like this goes better." },
 ]
 
-export default function CaseStudiesPage() {
+function CaseCard({ c }: { c: CaseMetadata }) {
+    const Icon = iconFor(c.category)
+    const free = GUEST_CASE_IDS.includes(c.id)
     return (
-        <main className="min-h-screen flex flex-col bg-white">
-            <div className="flex-1 relative">
+        <article className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+            <div className="flex items-start gap-4 p-6 pb-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+                    <Icon className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap gap-2">
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs font-semibold text-slate-700">{c.category}</span>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${DIFFICULTY[c.difficulty] ?? DIFFICULTY.Intermediate}`}>{c.difficulty}</span>
+                        {c.live && <span className="rounded-full border border-slate-900 bg-slate-900 px-2.5 py-0.5 text-xs font-semibold text-white">Live simulation</span>}
+                        {free && <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Free, no account</span>}
+                    </div>
+                    <h2 className="font-bold leading-snug text-slate-900">{c.displayTitle}</h2>
+                </div>
+            </div>
+
+            <div className="flex flex-1 flex-col px-6 pb-6">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">How they present</p>
+                <p className="text-sm leading-relaxed text-slate-700">{c.displayDescription}</p>
+
+                <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-500">
+                    <Clock className="h-3.5 w-3.5" /> About {c.estimatedTime} minutes
+                    {c.live ? " · the patient changes with what you do, and with what you leave undone" : ""}
+                </p>
+
+                <Button asChild className="group mt-5 w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800">
+                    <Link href={free ? "/try" : `/dashboard/cases/${c.id}`}>
+                        {free ? "Try this case now" : "Work up this patient"}
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                </Button>
+            </div>
+        </article>
+    )
+}
+
+export default async function CaseStudiesPage() {
+    const all = await getCases()
+    // the free case first, then by difficulty, so the page opens on something a visitor can do at once
+    const order = ["Beginner", "Intermediate", "Advanced"]
+    const cases = [...all].sort(
+        (a, b) => Number(GUEST_CASE_IDS.includes(b.id)) - Number(GUEST_CASE_IDS.includes(a.id)) || order.indexOf(a.difficulty) - order.indexOf(b.difficulty)
+    )
+    const specialties = [...new Set(cases.map((c) => c.category))]
+
+    return (
+        <main className="flex min-h-screen flex-col bg-white">
+            <div className="relative flex-1">
                 <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-50 via-white to-purple-50" />
 
-                {/* Simple header */}
                 <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-xl">
-                    <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                        <Link href="/" className="flex items-center gap-2 font-bold text-slate-800 text-lg">
+                    <div className="container mx-auto flex h-16 items-center justify-between px-4">
+                        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-slate-800">
                             <div className="flex h-8 w-8 items-center justify-center">
                                 <img src="https://www.medikarya.in/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
                             </div>
@@ -186,92 +123,58 @@ export default function CaseStudiesPage() {
                 </header>
 
                 <div className="mx-auto max-w-6xl px-4">
-
-                    {/* Hero */}
-                    <div className="py-16 md:py-20 text-center space-y-5 max-w-3xl mx-auto">
+                    <div className="mx-auto max-w-3xl space-y-5 py-16 text-center md:py-20">
                         <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-800">
-                            <Stethoscope className="w-4 h-4" />
-                            <span>Clinical Case Library</span>
+                            <Stethoscope className="h-4 w-4" />
+                            <span>Case Library</span>
                         </div>
                         <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-                            Learn from{" "}
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                                Real Clinical Scenarios
-                            </span>
+                            {cases.length} patients.{" "}
+                            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">You work out what is wrong.</span>
                         </h1>
-                        <p className="text-lg text-slate-600 leading-relaxed">
-                            Every case is built around a real chief complaint, evidence-based differentials, and clear learning objectives. Browse the previews below — then run the full interactive simulation inside the platform.
+                        <p className="text-lg leading-relaxed text-slate-600">
+                            Each one is shown here as you would meet them: who they are and what brought them in. The diagnosis is yours to reach
+                            {specialties.length > 1 ? `, across ${specialties.slice(0, 5).join(", ").toLowerCase()}${specialties.length > 5 ? " and more" : ""}` : ""}.
                         </p>
                     </div>
 
-                    {/* Case cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
+                    {/* What every case teaches: the same loop, start to finish */}
+                    <section className="mb-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">What every case takes you through</p>
+                        <ol className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            {LOOP.map((step, i) => (
+                                <li key={step.title}>
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">{i + 1}</span>
+                                    <p className="mt-3 font-semibold text-slate-900">{step.title}</p>
+                                    <p className="mt-1 text-sm leading-relaxed text-slate-600">{step.text}</p>
+                                </li>
+                            ))}
+                        </ol>
+                        <p className="mt-6 text-sm text-slate-500">
+                            The full flow, step by step:{" "}
+                            <Link href="/how-it-works" className="font-medium text-indigo-700 hover:underline">
+                                how a case works
+                            </Link>
+                            .
+                        </p>
+                    </section>
+
+                    <div className="grid grid-cols-1 gap-6 pb-8 md:grid-cols-2">
                         {cases.map((c) => (
-                            <div key={c.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-                                {/* Header */}
-                                <div className="p-6 pb-4 flex items-start gap-4">
-                                    <div className={`w-10 h-10 rounded-xl ${c.iconBg} flex items-center justify-center flex-shrink-0`}>
-                                        <c.Icon className={`w-5 h-5 ${c.iconColor}`} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap gap-2 mb-2">
-                                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${c.specialtyColor}`}>{c.specialty}</span>
-                                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${c.difficultyColor}`}>{c.difficulty}</span>
-                                            {c.live && (
-                                                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full border bg-slate-900 text-white border-slate-900">Live simulation</span>
-                                            )}
-                                        </div>
-                                        <h2 className="font-bold text-slate-900 leading-snug">{c.title}</h2>
-                                    </div>
-                                </div>
-
-                                <div className="px-6 pb-6 space-y-4">
-                                    {/* Chief complaint */}
-                                    <div>
-                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Chief Complaint</p>
-                                        <p className="text-sm text-slate-700 leading-relaxed">{c.chiefComplaint}</p>
-                                    </div>
-
-                                    {/* Differentials */}
-                                    <div>
-                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Possible Differentials</p>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {c.differentials.map((d) => (
-                                                <span key={d} className="text-xs px-2.5 py-0.5 bg-slate-50 text-slate-600 rounded-full border border-slate-200">{d}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Learning objectives */}
-                                    <div>
-                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Learning Objectives</p>
-                                        <ul className="space-y-1">
-                                            {c.learningObjectives.map((o) => (
-                                                <li key={o} className="flex items-start gap-2 text-sm text-slate-600">
-                                                    <span className="text-indigo-500 mt-0.5 flex-shrink-0">›</span>
-                                                    {o}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    <Button asChild className="w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800 group">
-                                        <Link href="/login">
-                                            Simulate this Case
-                                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </div>
+                            <CaseCard key={c.id} c={c} />
                         ))}
                     </div>
 
-                    {/* Bottom CTA */}
-                    <div className="text-center py-16">
-                        <p className="text-slate-500 mb-2 text-sm">More cases are being added regularly. Sign up to be the first to know.</p>
-                        <Button asChild size="lg" className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-90">
-                            <Link href="/login">Start Simulating →</Link>
-                        </Button>
+                    <div className="py-16 text-center">
+                        <p className="mb-4 text-sm text-slate-500">New cases are written by medical students from patients they have seen, and checked by a doctor before they go live.</p>
+                        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                            <Button asChild size="lg" className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-90">
+                                <Link href="/try">Try a case free →</Link>
+                            </Button>
+                            <Button asChild size="lg" variant="outline" className="rounded-full">
+                                <Link href="/contribute">Write or review cases</Link>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

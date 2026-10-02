@@ -29,13 +29,13 @@ export default function FAQSection({ specialties }: { specialties: readonly stri
     {
       question: "How does the feedback work?",
       answer:
-        "After a case, you get a score broken down by part — history taking, investigations, clinical reasoning, diagnosis and management — so you can see exactly where marks were lost, not just a single number at the end.",
+        "In three parts. First the debrief: two scores (what you did, and what you did without help), what you did well beside the consequences of what you missed, the full record of the encounter and an expert walkthrough. Then a breakdown by skill — history, investigations, reasoning, diagnosis and management — so you see where the marks went. Then five questions drawn from the gaps that attempt showed, so the lesson carries to the next patient.",
     },
     {
       question: "Is it free?",
       answer: (
         <>
-          The case on this page is free, and needs no account. Sign in as an Intern or Resident to unlock the rest of the library — see{" "}
+          The case on this page is free, and needs no account. A free Student account opens the Beginner cases, a couple a day. Intern and Resident open the rest of the library — see{" "}
           <a href="#pricing" className="font-medium text-brand-700 hover:text-brand-800">
             pricing
           </a>
@@ -46,6 +46,11 @@ export default function FAQSection({ specialties }: { specialties: readonly stri
     {
       question: "What's included in Resident?",
       answer: "Everything in Intern, plus unlimited normal-case attempts, more live emergency cases a day, and Advanced-difficulty cases with patients whose condition can deteriorate on its own — real-time vitals and telemetry, not just a static chart.",
+    },
+    {
+      question: "Who writes the cases?",
+      answer:
+        "New cases are written by medical students from patients they have seen, and checked by a doctor before they are published. Where a case has a named author and reviewer, you will see them on its briefing before you start.",
     },
     {
       question: "Can my medical school use this?",

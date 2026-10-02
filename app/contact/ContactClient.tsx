@@ -24,8 +24,8 @@ export default function ContactClient() {
         try {
             const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_INSTITUTION;
             if (!endpoint) {
-                console.warn("Formspree endpoint not set. Simulating success.");
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // No inbox is connected to this form: never tell someone their message was sent when it was not.
+                throw new Error("This form is not connected");
             } else {
                 const response = await fetch(endpoint, {
                     method: 'POST',

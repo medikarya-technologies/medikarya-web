@@ -39,12 +39,15 @@ export default function ApiDocsClient() {
         }
         setIsLoading(true)
         try {
-            const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_API
+            // Goes to the same inbox as the Contact page's form (its own address, if one is ever set, wins). The
+            // `source` below says which form a message came from.
+            const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_API || process.env.NEXT_PUBLIC_FORMSPREE_INSTITUTION
             if (endpoint) {
                 const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ name, email, institution, useCase, source: "medikarya_api_page" }) })
                 if (!res.ok) throw new Error("Submission failed")
             } else {
-                await new Promise(r => setTimeout(r, 800))
+                // No inbox is connected to this form: never tell someone their request was received when it was not.
+                throw new Error("This form is not connected")
             }
             setIsSubmitted(true)
             toast({ title: "Request received!", description: "Our team will be in touch within 2 business days." })

@@ -41,7 +41,7 @@ const articles = [
         category: "Study Tips",
         categoryColor: "bg-emerald-50 text-emerald-700 border-emerald-100",
         author: "MediKarya Team",
-        date: "January 2025",
+        date: "April 2026",
         readTime: "7 min read",
     },
     {
@@ -51,7 +51,7 @@ const articles = [
         category: "Clinical Reasoning",
         categoryColor: "bg-red-50 text-red-700 border-red-100",
         author: "MediKarya Team",
-        date: "January 2025",
+        date: "April 2026",
         readTime: "10 min read",
     },
     {
@@ -61,7 +61,7 @@ const articles = [
         category: "Medical Education",
         categoryColor: "bg-purple-50 text-purple-700 border-purple-100",
         author: "MediKarya Team",
-        date: "December 2024",
+        date: "April 2026",
         readTime: "7 min read",
     },
     {
@@ -71,7 +71,7 @@ const articles = [
         category: "Clinical Reasoning",
         categoryColor: "bg-red-50 text-red-700 border-red-100",
         author: "MediKarya Team",
-        date: "December 2024",
+        date: "April 2026",
         readTime: "9 min read",
     },
     {
@@ -81,7 +81,7 @@ const articles = [
         category: "AI in Medicine",
         categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
         author: "MediKarya Team",
-        date: "November 2024",
+        date: "April 2026",
         readTime: "6 min read",
     },
 ]

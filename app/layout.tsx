@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     default: "MediKarya - AI-Powered Medical Education",
     template: "%s | MediKarya"
   },
-  description: "Talk to a live AI patient with real-time vitals, rank your differential, order investigations, and get instant, honest feedback — before your first real patient.",
+  description: "Talk to a live AI patient with real-time vitals, rank your differential, order investigations, then see where your reasoning broke and practise what you missed — before your first real patient.",
   keywords: [
     "AI patient simulation for medical students",
     "clinical reasoning practice MBBS",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "/",
     title: "MediKarya - Gain Clinical Confidence",
-    description: "Talk to a live AI patient with real-time vitals, rank your differential, and get instant, honest feedback.",
+    description: "Talk to a live AI patient with real-time vitals, rank your differential, then see where your reasoning broke and practise what you missed.",
     siteName: "MediKarya",
     images: [
       {

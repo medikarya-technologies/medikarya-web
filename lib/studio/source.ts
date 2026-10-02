@@ -291,7 +291,8 @@ export async function syncPublishedToStudio(live: Array<{ studioCaseId: string; 
 
 export interface StudioCertificate {
   credentialId: string;
-  kind: "contributor" | "reviewer" | "advisory_board";
+  /** "internship" certificates are issued by hand in the studio (Admin, Certificates); the others are earned. */
+  kind: "contributor" | "reviewer" | "advisory_board" | "internship";
   recipientName: string;
   title: string;
   detail: string;
