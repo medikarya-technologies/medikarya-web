@@ -7,7 +7,7 @@ import type { SimulationCaseConfig } from "../case-schema";
 import { getBundledSimulationCase } from "../../../data/cases/simulation";
 
 export const stemiCase = (): SimulationCaseConfig =>
-    JSON.parse(JSON.stringify(getBundledSimulationCase("acute-anterior-stemi"))) as SimulationCaseConfig;
+    JSON.parse(JSON.stringify(getBundledSimulationCase("61-year-old-man-with-severe-chest-pain-and-sweating"))) as SimulationCaseConfig;
 
 export const newEngine = (): EncounterEngine => new EncounterEngine(stemiCase());
 

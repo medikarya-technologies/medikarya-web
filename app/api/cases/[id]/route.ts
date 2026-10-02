@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getCaseById } from '@/data/cases';
 import { briefingOnly, isAdmin, isDraft, planIncludes, viewerId } from '@/lib/plans/access';
+import { caseForBrowser } from '@/lib/cases/for-browser';
 
-// The whole case only for someone whose plan includes it (anyone, for the free /try case), since it holds the
-// diagnosis, the answers and the patient's script; for everyone else, the briefing only (lib/plans/access.ts).
+// Three views of a case (lib/cases/views.ts, lib/plans/access.ts): the briefing only for someone whose plan does not
+// include it; the play view (no diagnosis, scoring or walkthrough) while they play it; the whole case for someone
+// who has completed it before, and for admins. The answers reach a first-time player with their result.
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -32,7 +34,8 @@ export async function GET(
       console.error('Could not check plan for case fetch:', error);
     }
 
-    return NextResponse.json(whole ? caseData : briefingOnly(caseData as Record<string, any>));
+    if (!whole) return NextResponse.json(briefingOnly(caseData as Record<string, any>));
+    return NextResponse.json(await caseForBrowser(caseData as Record<string, any>, userId));
   } catch (error) {
     console.error(`Error fetching case:`, error);
     return NextResponse.json(

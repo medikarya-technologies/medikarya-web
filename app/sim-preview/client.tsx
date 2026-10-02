@@ -27,7 +27,7 @@ export default function SimPreviewClient() {
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search)
-    const id = query.get("case") || "acute-anterior-stemi"
+    const id = query.get("case") || "61-year-old-man-with-severe-chest-pain-and-sweating"
     setBriefing(query.get("screen") === "briefing")
     setTourOn(query.get("tour") === "1")
     setAttemptCount(Math.min(6, Number(query.get("attempts")) || 0))

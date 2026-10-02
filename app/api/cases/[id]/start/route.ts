@@ -4,6 +4,7 @@ import { getCaseById } from '@/data/cases';
 import { GUEST_CASE_IDS, explain } from '@/lib/plans/limits';
 import { admitCaseStart, caseKind } from '@/lib/plans/server';
 import { isAdmin, isDraft } from '@/lib/plans/access';
+import { caseForBrowser } from '@/lib/cases/for-browser';
 
 export async function POST(
   request: Request,
@@ -59,8 +60,9 @@ export async function POST(
 
     // We append the timestamp for the frontend state,
     // but we DO NOT save this to the global immutable database.
+    // A first-time player's browser gets the play view: no diagnosis, scoring or walkthrough (lib/cases/views.ts).
     const sessionData = {
-      ...caseData,
+      ...(await caseForBrowser(caseData as Record<string, any>, userId)),
       startedAt: new Date().toISOString()
     };
 

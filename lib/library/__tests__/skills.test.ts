@@ -53,7 +53,7 @@ describe("skills: classic scoring", () => {
 
 describe("skills: rubric scoring", () => {
     const rubric = (day: number): AttemptFeedback => ({
-        case_id: "acute-anterior-stemi",
+        case_id: "61-year-old-man-with-severe-chest-pain-and-sweating",
         created_at: at(day),
         simDomains: { clinical_reasoning: 8, investigation_accuracy: 45, management: 0, efficiency: 70 },
         // classic-named fields exist on a rubric attempt too, but they are not what scored it

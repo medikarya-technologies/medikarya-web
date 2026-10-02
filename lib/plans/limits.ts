@@ -15,7 +15,7 @@ import { difficultyLevel } from "../library/case-library";
 export type Plan = "student" | "intern" | "resident";
 
 /** The case a visitor can play without an account (/try). Free for everyone, and never counted against a plan. */
-export const GUEST_CASE_IDS: readonly string[] = ["viral-gastroenteritis"];
+export const GUEST_CASE_IDS: readonly string[] = ["2-year-old-boy-with-vomiting-and-watery-diarrhea"];
 
 export interface PlanLimits {
   /** Highest difficulty level (1 Beginner, 2 Intermediate, 3 Advanced) a normal case can have. */

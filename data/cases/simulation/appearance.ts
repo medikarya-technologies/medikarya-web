@@ -18,7 +18,7 @@ export const appearanceOverlays: Readonly<Record<string, AppearanceSpec>> = {
     // The case's own labs: Hb 8.2 g/dL, MCV 72 (moderate microcytic anaemia), and the patient reports
     // tiredness, weakness, light-headedness and exertional breathlessness. Pallor is the cardinal
     // sign of this presentation but the case does not record an examination.
-    "iron-deficiency-anemia-in-pregnancy": {
+    "24-year-old-pregnant-woman-with-fatigue-and-breathlessness": {
         pallor: 2,
         expression: "tired",
         note: "Looks pale and tired.",
@@ -26,7 +26,7 @@ export const appearanceOverlays: Readonly<Record<string, AppearanceSpec>> = {
 
     // The history lists "moderate dehydration" as an associated symptom, the child is weak, off his
     // food and febrile (38.5 °C). Sunken eyes are the textbook sign of moderate dehydration.
-    "viral-gastroenteritis": {
+    "2-year-old-boy-with-vomiting-and-watery-diarrhea": {
         expression: "tired",
         sunken_eyes: 1,
         note: "Tired, unwell-looking child. Eyes look a little sunken.",

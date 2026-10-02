@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils"
 import { PatientAvatar } from "@/components/cases/patient-avatar"
 import { TelemetryMonitor } from "@/components/cases/telemetry-monitor"
 
-const FREE_CASE = { id: "viral-gastroenteritis", age: 2, gender: "male", label: "2 yrs · Paediatrics" }
+const FREE_CASE = { id: "2-year-old-boy-with-vomiting-and-watery-diarrhea", age: 2, gender: "male", label: "2 yrs · Paediatrics" }
 
 const EXCHANGE: Array<{ from: "patient" | "student"; text: string }> = [
   { from: "student", text: "How long has he been vomiting?" },

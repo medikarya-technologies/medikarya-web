@@ -18,7 +18,7 @@ import { PatientPortraitStyled } from "@/components/cases/patient-portrait-style
 import { TelemetryMonitor } from "@/components/cases/telemetry-monitor"
 import type { ResolvedLook } from "@/lib/simulation/appearance"
 
-const PATIENT = { age: 58, gender: "male", seed: "acute-anterior-stemi" }
+const PATIENT = { age: 58, gender: "male", seed: "61-year-old-man-with-severe-chest-pain-and-sweating" }
 
 const BASELINE_LOOK: ResolvedLook = { pallor: 2, jaundice: 0, cyanosis: 0, flushed: 0, sweating: 3, sunken_eyes: 0, expression: "pain" }
 const CRISIS_LOOK: ResolvedLook = { pallor: 3, jaundice: 0, cyanosis: 1, flushed: 0, sweating: 3, sunken_eyes: 0, expression: "drowsy" }

@@ -3,7 +3,8 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // The MediKarya Case Studio (a separate app and Supabase project, where students write case sheets and faculty
-// review them), read by the admin converter. This module only ever reads from it.
+// review them), read by the admin converter. It writes back only a case's converted report (for the studio's reviewer
+// queue) and when it was published; everything else here is a read.
 
 let client: SupabaseClient | null = null;
 
@@ -41,7 +42,8 @@ export interface StudioCaseSummary {
 }
 
 export interface StudioCase extends StudioCaseSummary {
-  patient: { age: number | null; sex: string | null; occupation: string | null; religion: string | null };
+  /** `state` is the one part of where the patient lives that is passed on (the studio's State choice); the place is not. */
+  patient: { age: number | null; sex: string | null; occupation: string | null; religion: string | null; state: string | null };
   sections: Record<string, unknown>;
   /** What must never reach the playable case: the patient's name and case number, and their address. */
   identifiers: { names: string[]; places: string[] };
@@ -132,7 +134,12 @@ export async function getStudioCase(id: string): Promise<StudioCase | null> {
   const names = [pd.patient_name, pd.case_no, pd.patient_id].filter(
     (v): v is string => typeof v === "string" && v.trim().length > 0 && /[A-Za-z]/.test(v)
   );
-  const places = [pd.address, pd.location].filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+  const state = typeof pd.state === "string" && pd.state.trim() ? pd.state.trim() : null;
+  // The state is kept, so it is taken out of what gets hidden ("Gorakhpur, Uttar Pradesh" hides only "Gorakhpur").
+  const places = [pd.address, pd.location]
+    .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+    .map((v) => (state ? v.replace(new RegExp(state.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ") : v).trim())
+    .filter((v) => v.length > 0);
 
   // The case sheet is sent to the model with the patient's name and address taken out of the text as well.
   const hide = redactor(names, places);
@@ -147,6 +154,7 @@ export async function getStudioCase(id: string): Promise<StudioCase | null> {
       sex: pd.sex ?? pd.gender ?? null,
       occupation: pd.occupation ?? null,
       religion: pd.religion ?? null,
+      state,
     },
     sections,
     identifiers: { names, places },
@@ -250,4 +258,125 @@ export async function queuedInStudio(studioCaseIds: string[]): Promise<Set<strin
   const { data, error } = await db.from("case_conversions").select("case_id").in("case_id", studioCaseIds);
   if (error) return new Set();
   return new Set((data ?? []).map((r) => r.case_id));
+}
+
+// ── Publishing, records and certificates (studio migration 011) ──────────────
+
+/**
+ * Tells the studio a case went live (or was taken down: null). The studio pays its author and counts it towards
+ * their title from this. Returns a message when it could not be recorded, so publishing itself never fails on it.
+ */
+export async function markPublishedInStudio(studioCaseId: string, publishedAt: string | null): Promise<string | null> {
+  const db = studio();
+  if (!db) return "The case studio is not connected, so the author's reward was not recorded.";
+  const { data, error } = await db.from("case_conversions").update({ published_at: publishedAt }).eq("case_id", studioCaseId).select("case_id");
+  if (error) return `Not recorded in the studio: ${error.message} (has the studio's 011_rewards.sql been run?)`;
+  await db.from("cases").update({ added_to_platform: publishedAt !== null }).eq("id", studioCaseId);
+  if (!data?.length) return "This case has no record in the studio's reviewer queue (it was converted before the queue existed), so no payout is recorded for it. Rebuild or re-convert it to add one.";
+  return null;
+}
+
+/** Brings the studio's published dates in line with what is live here (for cases published before the write-back existed). */
+export async function syncPublishedToStudio(live: Array<{ studioCaseId: string; publishedAt: string }>): Promise<void> {
+  const db = studio();
+  if (!db || live.length === 0) return;
+  const { data, error } = await db.from("case_conversions").select("case_id, published_at").in("case_id", live.map((l) => l.studioCaseId));
+  if (error) return;
+  for (const row of data ?? []) {
+    if (row.published_at) continue;
+    const at = live.find((l) => l.studioCaseId === row.case_id)?.publishedAt;
+    if (at) await markPublishedInStudio(row.case_id, at);
+  }
+}
+
+export interface StudioCertificate {
+  credentialId: string;
+  kind: "contributor" | "reviewer" | "advisory_board";
+  recipientName: string;
+  title: string;
+  detail: string;
+  issuedAt: string;
+  revoked: boolean;
+}
+
+/** A certificate by its credential id (e.g. MK-2026-00017); null if there is none. Throws if the studio cannot be read. */
+export async function studioCertificate(credentialId: string): Promise<StudioCertificate | null> {
+  if (!/^MK-\d{4}-\d{3,8}$/.test(credentialId)) return null;
+  const db = studio();
+  if (!db) throw new Error("The case studio is not connected");
+  const { data, error } = await db.from("certificates").select("credential_id, kind, recipient_name, title, detail, issued_at, revoked").eq("credential_id", credentialId).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { credentialId: data.credential_id, kind: data.kind, recipientName: data.recipient_name, title: data.title, detail: data.detail, issuedAt: data.issued_at, revoked: data.revoked };
+}
+
+export interface StudioRecordReview {
+  version: number;
+  reviewer: string;
+  position: string;
+  decision: "approved" | "changes_requested";
+  comments: string | null;
+  showName: boolean;
+  decidedAt: string;
+}
+
+export interface StudioRecordPayout {
+  kind: "case_published" | "review" | "re_review";
+  payee: string;
+  amount: number;
+  status: "owed" | "paid" | "void";
+  paidAt: string | null;
+}
+
+export interface StudioRecord {
+  version: number | null;
+  publishedAt: string | null;
+  reviews: StudioRecordReview[];
+  payouts: StudioRecordPayout[];
+}
+
+/** Everything the studio holds about each studio case's journey: every completed queue review, and what was paid for it. */
+export async function studioRecords(): Promise<Map<string, StudioRecord>> {
+  const out = new Map<string, StudioRecord>();
+  const db = studio();
+  if (!db) return out;
+  const entry = (id: string) => {
+    if (!out.has(id)) out.set(id, { version: null, publishedAt: null, reviews: [], payouts: [] });
+    return out.get(id)!;
+  };
+
+  const [convs, reviews, payouts] = await Promise.all([
+    db.from("case_conversions").select("*"),
+    db.from("conversion_reviews").select("case_id, version, reviewer_id, decision, comments, show_name, decided_at").not("decision", "is", null).order("decided_at", { ascending: true }),
+    db.from("payouts").select("case_id, kind, payee_name, amount, status, paid_at").order("earned_at", { ascending: true }),
+  ]);
+  for (const c of (convs.data ?? []) as Json[]) {
+    const e = entry(c.case_id);
+    e.version = c.version;
+    e.publishedAt = c.published_at ?? null;
+  }
+  const reviewerIds = [...new Set((reviews.data ?? []).map((r) => r.reviewer_id))];
+  const none = ["00000000-0000-0000-0000-000000000000"];
+  const [{ data: users }, { data: profiles }] = await Promise.all([
+    db.from("users").select("id, name").in("id", reviewerIds.length ? reviewerIds : none),
+    db.from("reviewer_profiles").select("user_id, designation, department, institution").in("user_id", reviewerIds.length ? reviewerIds : none),
+  ]);
+  for (const r of reviews.data ?? []) {
+    const p = (profiles ?? []).find((x) => x.user_id === r.reviewer_id);
+    entry(r.case_id).reviews.push({
+      version: r.version,
+      reviewer: (users ?? []).find((u) => u.id === r.reviewer_id)?.name ?? "A reviewer",
+      position: [p?.designation, p?.department, p?.institution].filter(Boolean).join(", "),
+      decision: r.decision,
+      comments: r.comments,
+      showName: r.show_name,
+      decidedAt: r.decided_at,
+    });
+  }
+  // Before the studio's 011_rewards.sql is run there is no payouts table: the records simply show no payouts.
+  for (const p of (payouts.data ?? []) as Json[]) {
+    if (!p.case_id) continue;
+    entry(p.case_id).payouts.push({ kind: p.kind, payee: p.payee_name, amount: p.amount, status: p.status, paidAt: p.paid_at });
+  }
+  return out;
 }

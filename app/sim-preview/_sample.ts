@@ -66,11 +66,11 @@ export function sampleSkills(empty: boolean): SkillProfile {
   if (empty) return NO_SKILLS
   const at = (daysAgo: number) => new Date(Date.now() - daysAgo * DAY).toISOString()
   const rows: AttemptFeedback[] = [
-    { case_id: "malaria-returning-traveller-fever", created_at: at(0), historyScore: 15, testingScore: 17, reasoningScore: 16, diagnosisScore: 15, managementScore: 3, missedRedFlags: ["thrombocytopenia", "haemolytic_anaemia"], clinicalScore: 62, independentScore: 55 },
-    { case_id: "complete-heart-block-syncope", created_at: at(3), historyScore: 9, testingScore: 12, reasoningScore: 12, diagnosisScore: 15, managementScore: 2, missedRedFlags: ["severe_bradycardia", "exertional_syncope"], clinicalScore: 51, independentScore: 51 },
-    { case_id: "complete-heart-block-syncope", created_at: at(4), historyScore: 7, testingScore: 10, reasoningScore: 9, diagnosisScore: 0, managementScore: 0, missedRedFlags: ["severe_bradycardia"], clinicalScore: 26, independentScore: 24 },
-    { case_id: "vitamin-b12-deficiency-pernicious-anaemia", created_at: at(9), historyScore: 12, testingScore: 14, reasoningScore: 14, diagnosisScore: 15, managementScore: 4, missedRedFlags: ["neurological_involvement"] },
-    { case_id: "acute-anterior-stemi", created_at: at(20), simDomains: { clinical_reasoning: 38, investigation_accuracy: 64, management: 20, efficiency: 72 }, simGaps: ["stemi_ecg_recognition", "antiplatelet_vs_reperfusion"], clinicalScore: 44, independentScore: 38 },
+    { case_id: "24-year-old-man-with-fever-after-travel", created_at: at(0), historyScore: 15, testingScore: 17, reasoningScore: 16, diagnosisScore: 15, managementScore: 3, missedRedFlags: ["thrombocytopenia", "haemolytic_anaemia"], clinicalScore: 62, independentScore: 55 },
+    { case_id: "72-year-old-man-with-recurrent-fainting", created_at: at(3), historyScore: 9, testingScore: 12, reasoningScore: 12, diagnosisScore: 15, managementScore: 2, missedRedFlags: ["severe_bradycardia", "exertional_syncope"], clinicalScore: 51, independentScore: 51 },
+    { case_id: "72-year-old-man-with-recurrent-fainting", created_at: at(4), historyScore: 7, testingScore: 10, reasoningScore: 9, diagnosisScore: 0, managementScore: 0, missedRedFlags: ["severe_bradycardia"], clinicalScore: 26, independentScore: 24 },
+    { case_id: "63-year-old-woman-with-tiredness-and-numb-feet", created_at: at(9), historyScore: 12, testingScore: 14, reasoningScore: 14, diagnosisScore: 15, managementScore: 4, missedRedFlags: ["neurological_involvement"] },
+    { case_id: "61-year-old-man-with-severe-chest-pain-and-sweating", created_at: at(20), simDomains: { clinical_reasoning: 38, investigation_accuracy: 64, management: 20, efficiency: 72 }, simGaps: ["stemi_ecg_recognition", "antiplatelet_vs_reperfusion"], clinicalScore: 44, independentScore: 38 },
   ]
   return buildSkillProfile(rows)
 }

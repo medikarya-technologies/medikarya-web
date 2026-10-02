@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 const cases = [
     {
-        id: "neonatal-jaundice-breastmilk",
+        id: "4-week-old-infant-with-yellow-eyes-and-face",
         title: "Prolonged Neonatal Jaundice due to Breastmilk Jaundice",
         specialty: "Paediatrics",
         specialtyColor: "bg-amber-50 text-amber-700 border-amber-200",
@@ -34,7 +34,7 @@ const cases = [
         learningObjectives: ["Distinguishing breastmilk from breastfeeding jaundice", "Recognising red flags: pale stools, dark urine, lethargy", "Appropriate investigation in prolonged neonatal jaundice"],
     },
     {
-        id: "iron-deficiency-anemia-in-pregnancy",
+        id: "24-year-old-pregnant-woman-with-fatigue-and-breathlessness",
         title: "Moderate Iron Deficiency Anemia in Pregnancy",
         specialty: "Obstetrics",
         specialtyColor: "bg-pink-50 text-pink-700 border-pink-200",
@@ -48,7 +48,7 @@ const cases = [
         learningObjectives: ["Microcytic hypochromic anemia workup in pregnancy", "Ganzoni formula for IV iron dosing", "Differentiating IDA from thalassemia trait on investigations"],
     },
     {
-        id: "viral-gastroenteritis",
+        id: "2-year-old-boy-with-vomiting-and-watery-diarrhea",
         title: "Viral Gastroenteritis in a Toddler",
         specialty: "Paediatrics",
         specialtyColor: "bg-amber-50 text-amber-700 border-amber-200",
@@ -62,7 +62,7 @@ const cases = [
         learningObjectives: ["Dehydration assessment and ORS use in paediatrics", "Recognising red flags: blood in stool, bilious vomiting", "Role of Rotavirus vaccination in prevention"],
     },
     {
-        id: "severe-migraine-with-aura",
+        id: "21-year-old-woman-with-visual-disturbances-and-headache",
         title: "Severe Migraine with Aura",
         specialty: "Neurology",
         specialtyColor: "bg-purple-50 text-purple-700 border-purple-200",
@@ -76,7 +76,7 @@ const cases = [
         learningObjectives: ["ICHD-3 diagnostic criteria for migraine with aura", "Acute vs prophylactic migraine management", "Red flag headache features warranting neuroimaging"],
     },
     {
-        id: "acute-anterior-stemi",
+        id: "61-year-old-man-with-severe-chest-pain-and-sweating",
         title: "Acute Anterior STEMI",
         specialty: "Cardiology",
         specialtyColor: "bg-red-50 text-red-700 border-red-200",
@@ -91,7 +91,7 @@ const cases = [
         learningObjectives: ["Recognising the ECG pattern of an anterior STEMI within 10 minutes of arrival", "Choosing and activating a reperfusion strategy without waiting for troponin", "Managing cardiogenic shock and avoiding drugs unsafe in a low-output state"],
     },
     {
-        id: "complete-heart-block-syncope",
+        id: "72-year-old-man-with-recurrent-fainting",
         title: "Syncope Due to Complete Heart Block",
         specialty: "Cardiology",
         specialtyColor: "bg-red-50 text-red-700 border-red-200",
@@ -105,7 +105,7 @@ const cases = [
         learningObjectives: ["Recognising complete AV dissociation on a 12-lead ECG", "Distinguishing a nodal from an infranodal escape rhythm by QRS width", "Excluding reversible causes: hyperkalaemia, drug toxicity, acute MI"],
     },
     {
-        id: "malaria-returning-traveller-fever",
+        id: "24-year-old-man-with-fever-after-travel",
         title: "Malaria in a Returning Traveller",
         specialty: "Infectious Disease",
         specialtyColor: "bg-orange-50 text-orange-700 border-orange-200",
@@ -119,7 +119,7 @@ const cases = [
         learningObjectives: ["Treating fever after travel to an endemic region as malaria until proven otherwise", "Recognising that completed prophylaxis does not exclude malaria", "Diagnosing malaria on a stained peripheral blood film"],
     },
     {
-        id: "autosomal-dominant-polycystic-kidney-disease",
+        id: "49-year-old-woman-with-flank-pain-and-blood-in-urine",
         title: "ADPKD Presenting with Flank Pain and Haematuria",
         specialty: "Nephrology",
         specialtyColor: "bg-blue-50 text-blue-700 border-blue-200",
@@ -133,7 +133,7 @@ const cases = [
         learningObjectives: ["Recognising the classic tetrad: flank masses, hypertension, loin pain, haematuria", "Applying ultrasound diagnostic criteria for ADPKD by age band", "First-line blood pressure control with ACE inhibitors or ARBs"],
     },
     {
-        id: "non-toxic-nodular-goitre-neck-swelling",
+        id: "54-year-old-woman-with-a-neck-swelling",
         title: "Non-Toxic Nodular Goitre with Neck Swelling",
         specialty: "Internal Medicine",
         specialtyColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
@@ -147,7 +147,7 @@ const cases = [
         learningObjectives: ["Assessing a thyroid swelling for compressive symptoms and red flags", "Examining for special signs: Pemberton's, Kocher's, eye signs", "Distinguishing a benign nodular goitre from a malignant thyroid mass"],
     },
     {
-        id: "vitamin-b12-deficiency-pernicious-anaemia",
+        id: "63-year-old-woman-with-tiredness-and-numb-feet",
         title: "Severe Vitamin B12 Deficiency Due to Pernicious Anaemia",
         specialty: "Haematology",
         specialtyColor: "bg-cyan-50 text-cyan-700 border-cyan-200",

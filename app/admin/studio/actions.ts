@@ -11,7 +11,7 @@ import { headers } from "next/headers"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
-import { getStudioCase, pushConversion, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
+import { getStudioCase, markPublishedInStudio, pushConversion, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
 import { getCatalogTest } from "@/lib/clinical-catalog"
 import { caseIdFor, convertStudioCase, type Conversion } from "@/lib/studio/convert"
 import { createReviewLink, latestReviews } from "@/lib/review/links"
@@ -41,6 +41,7 @@ async function convertedFrom(studioId: string): Promise<{ id: string; status: st
 function done() {
   revalidateTag("cases") // the library's cached case list
   revalidatePath("/admin/studio")
+  revalidatePath("/admin/records")
 }
 
 const fail = (error: unknown, fallback: string): ActionResult => {
@@ -258,15 +259,19 @@ export async function publishCase(caseId: string, rewardEmail: string | null): P
     const email = rewardEmail?.trim().toLowerCase() || null
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "That author email does not look right." }
 
+    const publishedAt = new Date().toISOString()
     const { error: updateError } = await supabaseServer
       .from("cases")
-      .update({ status: "published", case_json: { ...caseJson, status: "published" }, updated_at: new Date().toISOString() })
+      .update({ status: "published", case_json: { ...caseJson, status: "published", published_at: publishedAt }, updated_at: publishedAt })
       .eq("id", caseId)
     if (updateError) throw updateError
     done()
 
+    // The studio pays the author and counts the case towards their title from this.
+    const studioCaseId = caseJson.source?.studio_case_id
+    const studioNote = studioCaseId ? await markPublishedInStudio(studioCaseId, publishedAt) : null
     const reward = email ? ` ${await rewardAuthor(email, caseId, adminId)}` : ""
-    return { ok: true, message: `Published: students see it in the library within a minute.${reward}` }
+    return { ok: true, message: `Published: students see it in the library within a minute.${reward}${studioNote ? ` ${studioNote}` : ""}` }
   } catch (error) {
     return fail(error, "Could not publish the case.")
   }
@@ -278,11 +283,13 @@ export async function unpublishCase(caseId: string): Promise<ActionResult> {
     const { data: row, error } = await supabaseServer.from("cases").select("case_json").eq("id", caseId).maybeSingle()
     if (error) throw error
     if (!row) return { ok: false, error: "Case not found." }
+    const { published_at: _was, ...caseJson } = row.case_json as Record<string, any>
     const { error: updateError } = await supabaseServer
       .from("cases")
-      .update({ status: "draft", case_json: { ...(row.case_json as object), status: "draft" }, updated_at: new Date().toISOString() })
+      .update({ status: "draft", case_json: { ...caseJson, status: "draft" }, updated_at: new Date().toISOString() })
       .eq("id", caseId)
     if (updateError) throw updateError
+    if (caseJson.source?.studio_case_id) await markPublishedInStudio(caseJson.source.studio_case_id, null)
     done()
     return { ok: true, message: "Unpublished: back to a draft. Its approval stands until you re-convert or rebuild it." }
   } catch (error) {

@@ -21,6 +21,14 @@
       ],
       "port": 3001,
       "autoPort": true
+    },
+    {
+      "name": "studio-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "../medikarya case studio/scripts/dev-test.mjs"
+      ],
+      "port": 3100
     }
   ]
 }

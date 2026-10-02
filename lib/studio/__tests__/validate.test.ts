@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { checkDraft, diagnosisWords, type CheckContext } from "../validate";
+import { checkDraft, diagnosisWords, settleIdentity, type CheckContext } from "../validate";
 
 const ctx: CheckContext = {
   catalogIds: new Set(["tsh", "ft4", "usg_neck_thyroid", "fnac", "ct_neck", "troponin_i", "lumbar_puncture"]),
@@ -141,5 +141,40 @@ describe("the converter's worked example", () => {
   it("passes the same check every converted case must pass", () => {
     const result = checkDraft(example.case, { catalogIds: new Set(CATALOG_TEST_IDS), identifiers: { names: ["Rubi"], places: ["Mustafabad (U.P.)"] } });
     assert.deepEqual(result, { errors: [], warnings: [] });
+  });
+});
+
+describe("settleIdentity", () => {
+  const draft = (identity: Record<string, unknown>) => ({ patient_facts: { identity } });
+
+  it("removes a religion the case sheet did not give", () => {
+    const c = draft({ name: "Sunita Devi", religion: "Hindu" });
+    settleIdentity(c, { religion: "" }, []);
+    assert.equal("religion" in c.patient_facts.identity, false);
+  });
+
+  it("keeps the religion the case sheet gave", () => {
+    const c = draft({ religion: "Sikh" });
+    settleIdentity(c, { religion: "Sikh" }, []);
+    assert.equal(c.patient_facts.identity.religion, "Sikh");
+  });
+
+  it("lists a state the AI chose, unless the AI already listed it", () => {
+    const c = draft({ location: "Bihar" });
+    const added = settleIdentity(c, {}, ["CBC values proposed."]);
+    assert.equal(added.length, 1);
+    assert.match(added[0], /Bihar/);
+    assert.deepEqual(settleIdentity(c, {}, ["State 'Bihar' chosen: place withheld."]), []);
+  });
+
+  it("uses the state the case sheet gives, over whatever the AI wrote, with nothing to list", () => {
+    const c = draft({ location: "Bihar" });
+    assert.deepEqual(settleIdentity(c, { state: "Kerala" }, []), []);
+    assert.equal(c.patient_facts.identity.location, "Kerala");
+  });
+
+  it("adds nothing when there is no state, or no identity at all", () => {
+    assert.deepEqual(settleIdentity(draft({ name: "A" }), {}, []), []);
+    assert.deepEqual(settleIdentity({}, {}, []), []);
   });
 });

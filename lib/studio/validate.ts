@@ -193,3 +193,31 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
 
   return { errors, warnings };
 }
+
+/**
+ * Two personal details, settled the same way every time instead of trusting the model. Religion: one the sheet did
+ * not give is removed (it is not needed to play the case, and should not be made up). State: the sheet's own state
+ * is used when it gives one; otherwise the state is the model's choice (the sheet's place is withheld for privacy)
+ * and is always listed for the reviewer, because where a patient lives can matter to the diagnosis.
+ * Changes `c` in place; returns the notes to add.
+ */
+export function settleIdentity(
+  c: unknown,
+  sheet: { religion?: string | null; state?: string | null },
+  reviewNotes: readonly string[]
+): string[] {
+  const identity = isObj(c) && isObj(c.patient_facts) && isObj(c.patient_facts.identity) ? c.patient_facts.identity : null;
+  if (!identity) return [];
+  if (!sheet.religion?.trim()) delete identity.religion;
+
+  const sheetState = sheet.state?.trim();
+  if (sheetState) {
+    identity.location = sheetState;
+    return [];
+  }
+
+  const location = typeof identity.location === "string" ? identity.location.trim() : "";
+  if (!location) return [];
+  const listed = reviewNotes.some((n) => n.toLowerCase().includes(location.toLowerCase()));
+  return listed ? [] : [`State '${location}' chosen by the AI: the case sheet's place is withheld for privacy. Check it is a region where this condition is seen.`];
+}

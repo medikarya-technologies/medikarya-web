@@ -25,16 +25,16 @@ interface Row {
 }
 
 const CASES: Row[] = [
-  { title: "Neonatal jaundice · 4 weeks, M", seed: "neonatal-jaundice-breastmilk", age: 0.08, gender: "Male", rr: 38, look: { jaundice: 2 } },
-  { title: "Viral gastroenteritis · 2 y, M", seed: "viral-gastroenteritis", age: 2, gender: "Male", rr: 30, look: { expression: "tired", sunken_eyes: 1 } },
-  { title: "Migraine · 21 y, F", seed: "severe-migraine-with-aura", age: 21, gender: "Female", rr: 18, look: { expression: "photophobic" } },
-  { title: "Iron deficiency · 24 y, F", seed: "iron-deficiency-anemia-in-pregnancy", age: 24, gender: "Female", rr: 20, look: { pallor: 2, expression: "tired" } },
-  { title: "Malaria · 24 y, M", seed: "malaria-returning-traveller-fever", age: 24, gender: "Male", rr: 19, look: { expression: "tired" } },
-  { title: "ADPKD · 49 y, F", seed: "autosomal-dominant-polycystic-kidney-disease", age: 49, gender: "Female", rr: 17, look: {} },
-  { title: "Goitre · 54 y, F", seed: "non-toxic-nodular-goitre-neck-swelling", age: 54, gender: "Female", rr: 20, look: { swelling: "neck_right" } },
-  { title: "STEMI · 61 y, M", seed: "acute-anterior-stemi", age: 61, gender: "Male", rr: 24, look: { pallor: 2, sweating: 3, expression: "anxious" } },
-  { title: "B12 deficiency · 63 y, F", seed: "vitamin-b12-deficiency-pernicious-anaemia", age: 63, gender: "Female", rr: 17, look: { pallor: 2, jaundice: 1, expression: "tired" } },
-  { title: "Complete heart block · 72 y, M", seed: "complete-heart-block-syncope", age: 72, gender: "Male", rr: 18, look: { pallor: 1, expression: "tired" } },
+  { title: "Neonatal jaundice · 4 weeks, M", seed: "4-week-old-infant-with-yellow-eyes-and-face", age: 0.08, gender: "Male", rr: 38, look: { jaundice: 2 } },
+  { title: "Viral gastroenteritis · 2 y, M", seed: "2-year-old-boy-with-vomiting-and-watery-diarrhea", age: 2, gender: "Male", rr: 30, look: { expression: "tired", sunken_eyes: 1 } },
+  { title: "Migraine · 21 y, F", seed: "21-year-old-woman-with-visual-disturbances-and-headache", age: 21, gender: "Female", rr: 18, look: { expression: "photophobic" } },
+  { title: "Iron deficiency · 24 y, F", seed: "24-year-old-pregnant-woman-with-fatigue-and-breathlessness", age: 24, gender: "Female", rr: 20, look: { pallor: 2, expression: "tired" } },
+  { title: "Malaria · 24 y, M", seed: "24-year-old-man-with-fever-after-travel", age: 24, gender: "Male", rr: 19, look: { expression: "tired" } },
+  { title: "ADPKD · 49 y, F", seed: "49-year-old-woman-with-flank-pain-and-blood-in-urine", age: 49, gender: "Female", rr: 17, look: {} },
+  { title: "Goitre · 54 y, F", seed: "54-year-old-woman-with-a-neck-swelling", age: 54, gender: "Female", rr: 20, look: { swelling: "neck_right" } },
+  { title: "STEMI · 61 y, M", seed: "61-year-old-man-with-severe-chest-pain-and-sweating", age: 61, gender: "Male", rr: 24, look: { pallor: 2, sweating: 3, expression: "anxious" } },
+  { title: "B12 deficiency · 63 y, F", seed: "63-year-old-woman-with-tiredness-and-numb-feet", age: 63, gender: "Female", rr: 17, look: { pallor: 2, jaundice: 1, expression: "tired" } },
+  { title: "Complete heart block · 72 y, M", seed: "72-year-old-man-with-recurrent-fainting", age: 72, gender: "Male", rr: 18, look: { pallor: 1, expression: "tired" } },
 ]
 
 // Particular people: an older woman with her saree drawn over her head, children, and the looks a case can put on them.

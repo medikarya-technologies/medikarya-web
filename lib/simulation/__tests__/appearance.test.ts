@@ -323,10 +323,10 @@ describe("appearance: the real classic cases", () => {
     // The two that document nothing about appearance are drafted in the overlay, for review.
     run("iron-deficiency-anemia-in-pregnancy", () => {
         assert.equal(derived("iron-deficiency-anemia-in-pregnancy"), undefined);
-        assert.equal(appearanceOverlays["iron-deficiency-anemia-in-pregnancy"].pallor, 2);
+        assert.equal(appearanceOverlays["24-year-old-pregnant-woman-with-fatigue-and-breathlessness"].pallor, 2);
     });
     run("viral-gastroenteritis", () => {
         assert.equal(derived("viral-gastroenteritis"), undefined, "a pale stool is not a pale patient");
-        assert.equal(appearanceOverlays["viral-gastroenteritis"].sunken_eyes, 1);
+        assert.equal(appearanceOverlays["2-year-old-boy-with-vomiting-and-watery-diarrhea"].sunken_eyes, 1);
     });
 });

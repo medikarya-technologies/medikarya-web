@@ -325,6 +325,19 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
         setEvaluating(false)
         return
       }
+      // Scoring on this device needs the case's rubric, which a first-time player's browser is not given
+      // (lib/cases/views.ts): then, as for a classic case, the student simply submits again.
+      if (!(config as any).scoring_rubric) {
+        console.error("Server scoring failed", error)
+        toast({
+          title: "Couldn't score your encounter",
+          description: "Check your connection and submit again. Your progress is saved.",
+          variant: "destructive",
+          duration: 6000,
+        })
+        setEvaluating(false)
+        return
+      }
       // The server couldn't be reached: score locally so the student still gets their debrief.
       console.error("Server scoring failed; scoring locally", error)
       const scored = scoreEncounter(finalEvents, config)
@@ -344,13 +357,17 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   // ── Reinforcement ─────────────────────────────────────────────────────
   // Rubric cases draw their questions from the case's own bank, by knowledge gap. A classic case
   // gets generated questions from its result, exactly as the classic flow does.
+  // The case as the debrief needs it: what was played, plus the answers that came back with the result (the
+  // diagnosis as its title, the discussion, the walkthrough, the question bank). See lib/cases/views.ts.
+  const debriefCase = useMemo(() => (feedback?.debrief ? { ...caseData, ...feedback.debrief } : caseData), [caseData, feedback])
+
   const quiz = useMemo(() => {
     const sim = feedback?.simulation
     if (!sim || isClassic) return null
     const labels: Record<string, string> = {}
     for (const e of [sim.reasoningError, ...(sim.otherErrors ?? [])]) if (e) labels[e.knowledgeGap] = e.title
-    return selectReinforcement(caseData, sim.knowledgeGaps ?? [], labels, 5)
-  }, [feedback, caseData, isClassic])
+    return selectReinforcement(debriefCase, sim.knowledgeGaps ?? [], labels, 5)
+  }, [feedback, debriefCase, isClassic])
   // One stable promise: CaseQuiz subscribes to it in an effect keyed on identity.
   const quizPromise = useMemo(() => (quiz ? Promise.resolve(quiz) : null), [quiz])
 
@@ -406,7 +423,7 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
     return (
       <CaseQuiz
         quizPromise={isClassic ? classicPromise : quizPromise}
-        caseData={caseData}
+        caseData={debriefCase}
         caseScore={feedback.score ?? 0}
         caseTitle={caseData.displayTitle || caseData.title}
         onComplete={async (results) => {
@@ -443,7 +460,7 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
         )}
         <CaseFeedback
           feedback={feedback}
-          caseData={caseData}
+          caseData={debriefCase}
           orderedTests={[]}
           onExit={onExit}
           onReset={clearAndReload}

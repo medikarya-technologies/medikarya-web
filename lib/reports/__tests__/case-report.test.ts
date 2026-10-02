@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 import { MAX_MESSAGE, MIN_MESSAGE, REPORT_CATEGORIES, categoryLabel, isReportCategory, normaliseReport, reportMailto, type ReportInput } from "../case-report";
 
-const good: ReportInput = { caseId: "viral-gastroenteritis", category: "clinical", message: "The potassium is 6.9 but the patient is drinking normally." };
+const good: ReportInput = { caseId: "2-year-old-boy-with-vomiting-and-watery-diarrhea", category: "clinical", message: "The potassium is 6.9 but the patient is drinking normally." };
 
 function accepted(input: ReportInput) {
     const checked = normaliseReport(input);
@@ -15,7 +15,7 @@ function accepted(input: ReportInput) {
 describe("case report: what is accepted", () => {
     it("accepts a report with a case, a kind of problem and a sentence, and says where it was", () => {
         const r = accepted({ ...good, place: "debrief", clockSeconds: 312.6, tab: "tests" });
-        assert.deepEqual(r, { caseId: "viral-gastroenteritis", category: "clinical", message: good.message, place: "debrief", context: { clockSeconds: 313, tab: "tests" } });
+        assert.deepEqual(r, { caseId: "2-year-old-boy-with-vomiting-and-watery-diarrhea", category: "clinical", message: good.message, place: "debrief", context: { clockSeconds: 313, tab: "tests" } });
     });
 
     it("defaults to the encounter, and leaves out a clock or a tab it does not understand", () => {
@@ -76,7 +76,7 @@ describe("case report: the email to send instead", () => {
         const mail = reportMailto(report);
         assert.ok(mail.startsWith("mailto:support@medikarya.in?subject="));
         const body = decodeURIComponent(mail.split("&body=")[1]);
-        assert.match(body, /Case: viral-gastroenteritis/);
+        assert.match(body, /Case: 2-year-old-boy-with-vomiting-and-watery-diarrhea/);
         assert.match(body, /Problem: A clinical fact looks wrong/);
         assert.match(body, /after the case \(the feedback\), on the diagnose tab, at 2m 5s/);
         assert.match(body, /potassium is 6\.9/);

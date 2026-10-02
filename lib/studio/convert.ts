@@ -3,7 +3,7 @@ import "server-only";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CLINICAL_CATALOG, CATALOG_TEST_IDS } from "@/lib/clinical-catalog";
 import type { StudioCase } from "./source";
-import { checkDraft, type CheckResult } from "./validate";
+import { checkDraft, settleIdentity, type CheckResult } from "./validate";
 import example from "./example-case.json";
 
 // Turns a studio case sheet (history, examination, diagnosis, investigations: what a student presents on the ward)
@@ -43,7 +43,11 @@ Where each value came from (a clinical reviewer reads this instead of playing th
 
 Identity and privacy
 - The sheet's patient name and address have been replaced with "the patient" and "[place]". Invent a new, ordinary
-  Indian name that fits the age, sex and region, and never use a real village, street or hospital: a state is fine.
+  Indian name that fits the age, sex and region, and never use a real village, street or hospital.
+- identity.location: a state only. Use the case sheet's patient.state when it gives one. Only when it gives none,
+  choose a state where this condition is realistically seen (where a patient lives can matter to the diagnosis) and
+  list it in review_notes ("State 'Bihar' chosen: place withheld.").
+- identity.religion: only if the case sheet gives it; otherwise leave it out. Never take either from the example.
 - No hospital names, doctor names or dates.
 
 Tests
@@ -99,7 +103,7 @@ function sheetFor(sc: StudioCase): string {
       title_given_by_student: sc.title,
       specialty: sc.specialty,
       difficulty: sc.difficulty,
-      patient: { age: sc.patient.age, sex: sc.patient.sex, occupation: sc.patient.occupation, religion: sc.patient.religion },
+      patient: { age: sc.patient.age, sex: sc.patient.sex, occupation: sc.patient.occupation, religion: sc.patient.religion, state: sc.patient.state },
       ...sc.sections,
     },
     null,
@@ -155,7 +159,8 @@ export async function convertStudioCase(
     check = checkDraft(out?.case, ctx);
   }
 
-  const reviewNotes = Array.isArray(out?.review_notes) ? out.review_notes.filter((n: unknown) => typeof n === "string") : [];
+  const reviewNotes: string[] = Array.isArray(out?.review_notes) ? out.review_notes.filter((n: unknown) => typeof n === "string") : [];
+  reviewNotes.push(...settleIdentity(out?.case, sc.patient, reviewNotes));
   return { caseJson: out?.case ?? {}, reviewNotes, check };
 }
 

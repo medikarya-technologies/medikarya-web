@@ -4,6 +4,7 @@ import { bundledSimulationCases, getBundledSimulationCase } from './simulation';
 import { upgradeLegacyCase } from '@/lib/simulation/legacy-adapter';
 import { isSimulationCase } from '@/lib/simulation/case-schema';
 import { appearanceOverlays } from './simulation/appearance';
+import { currentCaseId, formerCaseId } from '@/lib/cases/renamed-ids';
 
 export interface CaseMetadata {
   id: string;
@@ -62,17 +63,20 @@ function patientBasics(patient: any): { age?: number; gender?: string } | undefi
 
 /** Library card for a simulation case that ships with the app. */
 function bundledMetadata(c: Record<string, any>): CaseMetadata {
+  // The list goes to every student's browser: a case's real title, tags and description name its diagnosis, so
+  // those three carry the display versions here (see toMetadata).
+  const displayTitle = c.displayTitle || 'Patient case';
   return {
     id: c.id,
-    title: c.title,
-    displayTitle: c.displayTitle || c.title,
-    displayDescription: c.displayDescription || c.description || '',
-    displayTags: c.displayTags || c.tags || [],
+    title: displayTitle,
+    displayTitle,
+    displayDescription: c.displayDescription || '',
+    displayTags: c.displayTags || [],
     category: c.category || 'Uncategorized',
     difficulty: c.difficulty || 'Advanced',
     estimatedTime: c.estimatedTime || 25,
-    tags: c.tags || [],
-    description: c.description || '',
+    tags: c.displayTags || [],
+    description: c.displayDescription || '',
     xpReward: c.xpReward || 50,
     createdAt: c.createdAt || '2026-01-01T00:00:00.000Z',
     updatedAt: c.updatedAt || '2026-01-01T00:00:00.000Z',
@@ -135,17 +139,22 @@ function toMetadata(row: CaseListRow): CaseMetadata {
   const age = typeof row.patientAge === 'number' && Number.isFinite(row.patientAge) ? row.patientAge : undefined;
   const gender = typeof row.patientGender === 'string' ? row.patientGender : undefined;
 
+  // The list goes to every student's browser. A case's real title, tags and description name its diagnosis, so
+  // `title`, `tags` and `description` carry the display versions: nothing here says what the patient has.
+  const displayTitle = row.displayTitle || 'Patient case';
+  const displayDescription = row.displayDescription || `Practice your skills with this ${difficulty.toLowerCase()} case in ${row.category}.`;
+  const displayTags = row.displayTags || [];
   return {
-    id: row.id,
-    title: row.title,
-    displayTitle: row.displayTitle || row.title,
-    displayDescription: row.displayDescription || row.description || `Practice your skills with this ${difficulty.toLowerCase()} case in ${row.category}.`,
-    displayTags: row.displayTags || row.tags || [],
+    id: currentCaseId(row.id), // the patient-describing id, even before the rows are renamed (lib/cases/renamed-ids.ts)
+    title: displayTitle,
+    displayTitle,
+    displayDescription,
+    displayTags,
     category: row.category,
     difficulty,
     estimatedTime: row.estimated_time,
-    tags: row.tags || [],
-    description: row.description || '',
+    tags: displayTags,
+    description: displayDescription,
     xpReward: row.xpReward || 50,
     completionRate: row.completionRate ?? undefined,
     createdAt: row.created_at || new Date().toISOString(),
@@ -169,7 +178,7 @@ const cachedCaseList = unstable_cache(
     if (error) throw error;
     return (data as unknown as CaseListRow[]).map(toMetadata);
   },
-  ['case-list-v3'],
+  ['case-list-v5'],
   { revalidate: 60, tags: ['cases'] }
 );
 
@@ -195,21 +204,25 @@ function forEncounter(caseJson: CaseData): CaseData {
   return upgradeLegacyCase(caseJson as any, { appearance: appearanceOverlays[caseJson.id] }) as CaseData;
 }
 
-export async function getCaseById(id: string): Promise<CaseData | null> {
+export async function getCaseById(requestedId: string): Promise<CaseData | null> {
+  // Ten cases were renamed (lib/cases/renamed-ids.ts). A case is found under its new id or its old one, so an old
+  // link still works and so does a database whose rows have not been renamed yet; it always goes by the new id.
+  const id = currentCaseId(requestedId);
+  const former = formerCaseId(id);
   try {
     const { data, error } = await supabaseServer
       .from('cases')
-      .select('case_json')
-      .eq('id', id)
-      .single();
+      .select('id, case_json')
+      .in('id', former ? [id, former] : [id]);
 
-    if (!error && data) return forEncounter(data.case_json as CaseData);
+    const row = data?.find((r) => r.id === id) ?? data?.[0];
+    if (!error && row) return forEncounter({ ...(row.case_json as CaseData), id });
 
     // Not in the database: fall back to a case that ships with the app.
     const bundled = getBundledSimulationCase(id);
     if (bundled) return bundled as unknown as CaseData;
 
-    console.error(`Error fetching case ${id} from Supabase:`, error);
+    if (error) console.error(`Error fetching case ${id} from Supabase:`, error);
     return null;
   } catch (error) {
     const bundled = getBundledSimulationCase(id);

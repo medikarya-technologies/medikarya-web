@@ -1,6 +1,7 @@
 "use server";
 
 import { EvaluationEngine } from "@/engine/evaluationEngine";
+import { debriefOf } from "@/lib/cases/views";
 import { auth } from "@clerk/nextjs/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getCaseById, getCases } from "@/data/cases";
@@ -325,7 +326,9 @@ export async function evaluateSimulation(
             throw new Error(`Simulation case "${caseId}" not found`);
         }
         const config = authoritative as SimulationCaseConfig & Record<string, any>;
-        if (config.scoring_mode === "classic") return await evaluateClassicEncounter(config, events, timeTaken, guestId);
+        // The browser played this case without its answers (lib/cases/views.ts): they go back with the result.
+        const debrief = debriefOf(config);
+        if (config.scoring_mode === "classic") return { ...(await evaluateClassicEncounter(config, events, timeTaken, guestId)), debrief };
         const rubric = config.scoring_rubric;
         if (!rubric) throw new Error(`Case "${caseId}" has no scoring rubric`);
 
@@ -386,7 +389,7 @@ export async function evaluateSimulation(
             guestId,
         });
 
-        return { ...result, xpEarned, milestones };
+        return { ...result, xpEarned, milestones, debrief };
     } catch (error) {
         console.error("Simulation evaluation failed", error);
         throw new Error("Failed to evaluate simulation");
