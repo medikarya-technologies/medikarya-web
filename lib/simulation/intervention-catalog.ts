@@ -8,7 +8,7 @@
 
 import type { SimulationCaseConfig } from "./case-schema";
 
-export type InterventionGroup = "airway" | "circulation" | "medications" | "cardiac_procedures";
+export type InterventionGroup = "airway" | "circulation" | "medications" | "cardiac_procedures" | "other";
 
 export interface InterventionDef {
     id: string;
@@ -23,6 +23,8 @@ export const INTERVENTION_GROUPS: ReadonlyArray<{ id: InterventionGroup; label: 
     { id: "circulation", label: "Circulation" },
     { id: "medications", label: "Emergency Medications" },
     { id: "cardiac_procedures", label: "Cardiac Procedures" },
+    // Only a case's own treatments use this one (case-schema.ts, custom_interventions).
+    { id: "other", label: "Other Treatments" },
 ];
 
 export const INTERVENTIONS: readonly InterventionDef[] = [
@@ -70,14 +72,29 @@ export function getIntervention(id: string): InterventionDef | undefined {
 
 export const INTERVENTION_IDS: readonly string[] = INTERVENTIONS.map((i) => i.id);
 
+type TrayConfig = Pick<SimulationCaseConfig, "available_interventions" | "custom_interventions">;
+
 /**
- * The tray for a case: the whole tray when the case doesn't say, the subset it
- * offers, or nothing at all (`[]`) for a case with no bedside treatments to give.
+ * The tray for a case: the whole shared tray when the case doesn't say, the subset it
+ * offers, or nothing (`[]`) for a case with no bedside treatments to give; then the
+ * treatments the case defines itself. A case's own treatment wins where an id collides.
  */
-export function interventionsForCase(
-    config: Pick<SimulationCaseConfig, "available_interventions">
-): InterventionDef[] {
+export function interventionsForCase(config: TrayConfig): InterventionDef[] {
     const offered = config.available_interventions;
-    if (offered === undefined) return [...INTERVENTIONS];
-    return INTERVENTIONS.filter((i) => offered.includes(i.id));
+    const own = config.custom_interventions ?? [];
+    const ownIds = new Set(own.map((i) => i.id));
+    const shared = (offered === undefined ? INTERVENTIONS : INTERVENTIONS.filter((i) => offered.includes(i.id))).filter((i) => !ownIds.has(i.id));
+    return [...shared, ...own];
+}
+
+type OwnTreatments = Pick<SimulationCaseConfig, "custom_interventions"> | null | undefined;
+
+/** A treatment by id as this case knows it: its own first, then the shared tray. */
+export function interventionFor(config: OwnTreatments, id: string): InterventionDef | undefined {
+    return config?.custom_interventions?.find((i) => i.id === id) ?? BY_ID.get(id);
+}
+
+/** What to call a treatment on screen. Falls back to the id, so nothing is ever blank. */
+export function interventionLabel(config: OwnTreatments, id: string): string {
+    return interventionFor(config, id)?.label ?? id;
 }

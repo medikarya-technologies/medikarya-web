@@ -16,6 +16,9 @@ import { getCatalogTest } from "@/lib/clinical-catalog"
 import { caseIdFor, convertStudioCase, type Conversion } from "@/lib/studio/convert"
 import { createReviewLink, latestReviews } from "@/lib/review/links"
 import { CASE_REWARD, caseRewardWindow, type GrantRow } from "@/lib/plans/grants"
+import { isSimulationCase } from "@/lib/simulation/case-schema"
+import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
+import { checkLivePlan, measuredOnArrival, normaliseLivePlan } from "@/lib/simulation/live-plan"
 
 export type ActionResult =
   | { ok: true; message: string; caseId?: string; link?: string }
@@ -69,6 +72,21 @@ function testNamesOf(c: Record<string, any>): Record<string, string> {
 async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: string | undefined): Promise<{ id: string; queueWarning?: string }> {
   const { caseJson, reviewNotes, check } = conversion
   let id = existingId
+
+  // A live course the author wrote in the studio goes with the case, as a proposal: it runs for admins to play-test,
+  // and for students only once a clinician has signed it off and an admin has switched it on (app/admin/live).
+  const authored = sc.livePlan ? normaliseLivePlan(sc.livePlan, "author") : null
+  if (authored) {
+    const base = upgradeLegacyCase({ ...caseJson })
+    const planCheck = isSimulationCase(base)
+      ? checkLivePlan(authored, measuredOnArrival(base))
+      : { errors: ["the converted case cannot run at the bedside"], warnings: [] }
+    reviewNotes.push(
+      planCheck.errors.length === 0
+        ? `The author wrote a live course (${authored.stages.length} steps, ${authored.treatments.length} treatments). It needs a clinician's sign-off: Admin → Live cases.`
+        : `The author's live course does not pass the check yet, so it is not running: ${planCheck.errors.slice(0, 3).join(" ")}`
+    )
+  }
   if (!id) {
     const { data: rows, error } = await supabaseServer.from("cases").select("id")
     if (error) throw error
@@ -81,6 +99,7 @@ async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: str
     status: "draft",
     // Shown on the case (who wrote it) and used here to link the draft back to its studio case.
     credit: { author: sc.author, source: "MediKarya Case Studio" },
+    ...(authored ? { live_plan: { ...authored, drafted_at: new Date().toISOString() } } : {}),
     source: {
       studio_case_id: sc.id,
       studio_title: sc.title,

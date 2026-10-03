@@ -14,6 +14,7 @@ import { countBudgetedActions, type ClinicalEvent } from "@/lib/simulation/encou
 import { headers } from "next/headers";
 import { checkAiAccess } from "@/lib/plans/access";
 import { activeInvite } from "@/lib/advisors/invites";
+import { BEDSIDE_SHARE, blendLiveScore, isLivePlanCase, scoreBedside } from "@/lib/simulation/live-plan";
 
 /** Scoring spends AI (classic cases) and records an attempt: same rules as the AI routes (lib/plans/access.ts). */
 async function authorisedCase(caseId: unknown) {
@@ -214,6 +215,15 @@ async function evaluateClassicEncounter(
     const inputs = classicInputsFromEvents(log);
     const result = await EvaluationEngine.evaluate(inputs.diagnosis, inputs.orderedTests, inputs.chatHistory, config);
 
+    // A live case (one running on a live plan) is also scored on what was done at the bedside and when: the
+    // ordinary scoring knows nothing about the tray or the clock. The two are blended in fixed shares.
+    const consultationScore = Math.round(result.score);
+    const bedside = isLivePlanCase(config) ? scoreBedside(config, config.live_plan, log) : null;
+    if (bedside) {
+        result.score = blendLiveScore(consultationScore, bedside.score);
+        result.finalScore = result.score;
+    }
+
     const assistance = computeAssistance(log);
     const clinicalScore = Math.round(result.score);
     const independentScore = Math.min(100, Math.max(0, clinicalScore - assistance.total));
@@ -228,6 +238,8 @@ async function evaluateClassicEncounter(
         independentScore,
         assistanceCost: assistance.total,
         assistance: assistance.lines,
+        // only in a live case: what the bedside scored, and what the score would have been without it
+        ...(bedside ? { bedside: { ...bedside, share: BEDSIDE_SHARE, consultationScore } } : {}),
         milestones: {
             firstOrderedAt,
             budgetedActions: countBudgetedActions(log),

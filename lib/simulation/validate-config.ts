@@ -17,7 +17,7 @@ import {
     SCORING_DOMAINS,
     STABILITY_LEVELS,
 } from "./case-schema";
-import { tryParseBpDelta, tryParseDelta } from "./patient-state";
+import { tryParseBpDelta, tryParseBpSet, tryParseDelta } from "./patient-state";
 import { ACCESSORIES, EXPRESSIONS, GARMENTS, SKIN_TONES, SWELLINGS } from "./appearance";
 
 export interface ValidationIssue {
@@ -315,7 +315,12 @@ export function validateSimulationCase(input: unknown, options: ValidationOption
                 error(`${path}.${key}`, `"${String(changes[key])}" is not a delta like "+8" or "-3".`);
             }
         }
-        if ("hr_set" in changes && !isNum(changes.hr_set)) error(`${path}.hr_set`, "Must be a number.");
+        for (const key of ["hr_set", "spo2_set", "rr_set", "temp_set"] as const) {
+            if (key in changes && !isNum(changes[key])) error(`${path}.${key}`, "Must be a number.");
+        }
+        if ("bp_set" in changes && (typeof changes.bp_set !== "string" || tryParseBpSet(changes.bp_set) === null)) {
+            error(`${path}.bp_set`, 'Must look like "110/70".');
+        }
         if ("bp_delta" in changes && (typeof changes.bp_delta !== "string" || tryParseBpDelta(changes.bp_delta) === null)) {
             error(`${path}.bp_delta`, 'Must look like "-14/-8".');
         }
@@ -346,6 +351,10 @@ export function validateSimulationCase(input: unknown, options: ValidationOption
     };
 
     // ── action_consequences ────────────────────────────────────────────────
+    // A treatment the case defines itself is as real an action as one on the shared tray.
+    const ownTreatments = new Set<string>(
+        Array.isArray(c.custom_interventions) ? c.custom_interventions.filter(isObj).map((t) => String(t.id)) : []
+    );
     const consequenceActions = new Set<string>();
     const settableTo = new Set<string>(); // "flag:value" reachable by some consequence/rule
     if (!Array.isArray(c.action_consequences)) {
@@ -361,7 +370,7 @@ export function validateSimulationCase(input: unknown, options: ValidationOption
             if (entry.trajectory_note !== undefined && typeof entry.trajectory_note !== "string") {
                 error(`${path}.trajectory_note`, "Must be a string.");
             }
-            if (options.knownActions && !options.knownActions.includes(entry.action)) {
+            if (options.knownActions && !options.knownActions.includes(entry.action) && !ownTreatments.has(entry.action)) {
                 const derived = /_ordered$|_performed$/.test(entry.action);
                 const recognised = Array.isArray(c.recognition_rules) &&
                     c.recognition_rules.some((r) => isObj(r) && r.action === entry.action);
@@ -498,6 +507,22 @@ export function validateSimulationCase(input: unknown, options: ValidationOption
     }
     if (c.available_interventions !== undefined && (!Array.isArray(c.available_interventions) || c.available_interventions.some((a) => !isStr(a)))) {
         error("available_interventions", "Must be a list of intervention ids (`[]` for no tray).");
+    }
+    if (c.custom_interventions !== undefined) {
+        if (!Array.isArray(c.custom_interventions)) error("custom_interventions", "Must be a list of { id, label, detail, group }.");
+        else {
+            const seen = new Set<string>();
+            c.custom_interventions.forEach((t, i) => {
+                const path = `custom_interventions[${i}]`;
+                if (!isObj(t) || !isStr(t.id) || !isStr(t.label)) return error(path, "Needs an `id` and a `label`.");
+                if (typeof t.detail !== "string") error(`${path}.detail`, "Must be a string (the dose, route or setting).");
+                if (!["airway", "circulation", "medications", "cardiac_procedures", "other"].includes(t.group as string)) {
+                    error(`${path}.group`, "Must be airway, circulation, medications, cardiac_procedures or other.");
+                }
+                if (seen.has(t.id)) error(`${path}.id`, `"${t.id}" is defined twice.`);
+                seen.add(t.id);
+            });
+        }
     }
 
     // ── investigation_results ───────────────────────────────────────────────

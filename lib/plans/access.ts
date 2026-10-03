@@ -8,6 +8,8 @@ import { allow, clientIp } from "@/lib/rate-limit";
 import { GUEST_CASE_IDS, caseKindOf, indiaDay, lockedFor } from "./limits";
 import { getPlanStatus } from "./server";
 import { invitedTo } from "@/lib/advisors/invites";
+import { isSimulationCase } from "@/lib/simulation/case-schema";
+import { hasProposedLivePlan, withLivePlan } from "@/lib/simulation/live-plan";
 
 // Who may read a whole case, and who may spend AI on one. The start route (app/api/cases/[id]/start) is where a
 // case is opened and counted; these keep the other routes from being a way around it:
@@ -36,6 +38,21 @@ export async function isAdmin(userId: string | null): Promise<boolean> {
   if (!userId) return false;
   const { data } = await supabaseServer.from("user_profiles").select("role").eq("clerk_user_id", userId).maybeSingle();
   return data?.role === "admin";
+}
+
+/**
+ * Who gets a case's live plan running (lib/simulation/live-plan.ts). getCaseById gives everyone the case as students
+ * have it: live only if its plan is approved. A plan that is still proposed (drafted by the AI or written by a
+ * resident, waiting for a clinician's sign-off) runs for admins alone, so they can play-test it. The places that hand
+ * a case to a player call this once they know who is asking: GET /api/cases/[id], its start route, and the AI
+ * routes' access check below (which is also what scores the encounter, so an admin is scored on what they played).
+ */
+export async function asAdminSees<T extends object>(caseData: T, userId: string | null): Promise<T> {
+  if (!hasProposedLivePlan(caseData) || !isSimulationCase(caseData)) return caseData;
+  // On a development machine only, a signed-out visitor counts too: the dev preview pages (/sim-preview) play any case.
+  const devPreview = process.env.NODE_ENV !== "production" && !userId;
+  if (!devPreview && !(await isAdmin(userId))) return caseData;
+  return withLivePlan(caseData, true) as T;
 }
 
 /** Whether this student's plan includes this case at all (daily counts aside). */
@@ -117,10 +134,12 @@ export async function checkAiAccess(caseId: unknown, use: AiUse, ip: string): Pr
     return { ok: false, status: 429, error: "You're going a little fast. Please wait a moment and try again." };
   }
 
-  const caseData = await getCaseById(caseId);
-  if (!caseData) return { ok: false, status: 404, error: "Case not found" };
+  const loaded = await getCaseById(caseId);
+  if (!loaded) return { ok: false, status: 404, error: "Case not found" };
   // A draft is for admins to play-test, never anyone else, not even on the dev preview pages.
-  if (isDraft(caseData) && !(await isAdmin(userId))) return { ok: false, status: 404, error: "Case not found" };
+  if (isDraft(loaded) && !(await isAdmin(userId))) return { ok: false, status: 404, error: "Case not found" };
+  // An admin play-testing a proposed live plan is scored and answered against the live version they are playing.
+  const caseData = await asAdminSees(loaded, userId);
 
   const freeCase = GUEST_CASE_IDS.includes(caseId) || (await invitedTo(caseId));
   const devPreview = process.env.NODE_ENV !== "production";

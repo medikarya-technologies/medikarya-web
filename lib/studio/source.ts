@@ -48,6 +48,8 @@ export interface StudioCase extends StudioCaseSummary {
   sections: Record<string, unknown>;
   /** What must never reach the playable case: the patient's name and case number, and their address. */
   identifiers: { names: string[]; places: string[] };
+  /** A live course written in the studio by a resident or above (studio migration 015), as it was saved there. */
+  livePlan: unknown | null;
 }
 
 const SECTIONS = ["history", "general_physical_examination", "systemic_examination", "local_examination", "diagnosis", "investigations_info", "custom_fields"] as const;
@@ -159,6 +161,7 @@ export async function getStudioCase(id: string): Promise<StudioCase | null> {
     },
     sections,
     identifiers: { names, places },
+    livePlan: row.live_plan ?? null,
   };
 }
 

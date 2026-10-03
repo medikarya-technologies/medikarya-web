@@ -62,6 +62,79 @@ export function AssistanceAudit({
   )
 }
 
+/** What a live case's bedside scored (lib/simulation/live-plan.ts, scoreBedside), as the server returned it. */
+interface Bedside {
+  score: number
+  share: number
+  consultationScore: number
+  items: Array<{ id: string; label: string; status: "on_time" | "late" | "missed"; at_minutes: number | null; within_minutes: number; why?: string }>
+  harmful: Array<{ id: string; label: string; at_minutes: number; why?: string }>
+  outcome: { stabilised: boolean; recovered: boolean; worst_stage: string | null }
+}
+
+const BEDSIDE_STATUS = {
+  on_time: { text: "In time", tone: "bg-enc-ok-soft text-enc-ok" },
+  late: { text: "Late", tone: "bg-enc-warn-soft text-enc-warn" },
+  missed: { text: "Not given", tone: "bg-enc-crit-soft text-enc-crit" },
+} as const
+
+/** "At the bedside": in a live case, what the student gave and when, what harmed, and how the patient ended up. */
+export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: number }) {
+  const { outcome } = bedside
+  const ending = outcome.recovered
+    ? outcome.worst_stage
+      ? `Your patient reached "${outcome.worst_stage}" before you stabilised them, then recovered.`
+      : "You stabilised your patient before they got any worse, and they recovered."
+    : outcome.stabilised
+      ? "You stabilised your patient just before the encounter ended."
+      : outcome.worst_stage
+        ? `Your patient was never stabilised and reached "${outcome.worst_stage}".`
+        : "Your patient was never stabilised."
+  const consultationShare = Math.round((1 - bedside.share) * 100)
+  return (
+    <div className="overflow-hidden rounded-xl border border-enc-line bg-enc-desk">
+      <div className="flex items-center justify-between border-b border-enc-line bg-enc-sheet px-4 py-2.5">
+        <h4 className="text-[10px] font-bold tracking-widest text-enc-ink-3 uppercase">At the bedside</h4>
+        <span className="text-sm font-bold text-enc-ink">
+          {bedside.score}
+          <span className="text-[10px] font-medium text-enc-ink-3"> / 100</span>
+        </span>
+      </div>
+      <div className="space-y-2.5 p-3">
+        <p className="text-sm font-medium text-enc-ink">{ending}</p>
+        <ul className="space-y-1.5">
+          {bedside.items.map((i) => (
+            <li key={i.id} className="rounded-lg bg-enc-sheet p-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-sm font-medium text-enc-ink">{i.label}</span>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${BEDSIDE_STATUS[i.status].tone}`}>{BEDSIDE_STATUS[i.status].text}</span>
+              </div>
+              <p className="mt-0.5 text-xs text-enc-ink-2">
+                {i.at_minutes === null ? `Needed within ${i.within_minutes} min` : `Given at ${i.at_minutes} min; needed within ${i.within_minutes} min`}
+                {i.why ? `. ${i.why}` : ""}
+              </p>
+            </li>
+          ))}
+          {bedside.harmful.map((h) => (
+            <li key={h.id} className="rounded-lg bg-enc-crit-soft p-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-sm font-medium text-enc-ink">{h.label}</span>
+                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-crit">Harmful here</span>
+              </div>
+              <p className="mt-0.5 text-xs text-enc-ink-2">
+                Given at {h.at_minutes} min{h.why ? `. ${h.why}` : ""}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-enc-ink-3">
+          Total {total} = {consultationShare}% of the consultation ({bedside.consultationScore}) + {100 - consultationShare}% of the bedside ({bedside.score}).
+        </p>
+      </div>
+    </div>
+  )
+}
+
 /** "Review the encounter": the headline numbers, and the whole record on request. */
 export function EncounterReview({ sim, examLabels }: { sim: any; examLabels: Record<string, string> }) {
   const [showTimeline, setShowTimeline] = useState(false)

@@ -29,6 +29,8 @@ const WITHHELD = [
   "patient_text_brief",
   "patient_facts",
   "source",
+  // which treatments are essential, which harm, and why: the encounter runs on the rules made from it, not on it
+  "live_plan",
 ] as const;
 
 /** The case as the encounter needs it while it is being played. */

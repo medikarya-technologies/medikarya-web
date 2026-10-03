@@ -63,11 +63,19 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
   return (
     <Shell>
       <style>{PRINT_CSS}</style>
-      <p className="no-print text-[14.5px] text-slate-600">
-        Thank you for reviewing this case. It was written by a medical student and turned into an interactive case for MediKarya; students
-        will interview the patient, examine them, order tests and make a diagnosis. Please read it through, then approve it or tell us what to
-        change.
-      </p>
+      {caseJson.live_plan ? (
+        <p className="no-print text-[14.5px] text-slate-600">
+          Thank you for looking at this case. It is to become a <strong>live</strong> case on MediKarya: a clock runs, the patient gets worse until
+          the right treatments are given, and students are scored on what they give and when. The live course is the first section below. Please
+          check its timings, vital signs, treatments and doses, then sign it off or tell us what to change.
+        </p>
+      ) : (
+        <p className="no-print text-[14.5px] text-slate-600">
+          Thank you for reviewing this case. It was written by a medical student and turned into an interactive case for MediKarya; students
+          will interview the patient, examine them, order tests and make a diagnosis. Please read it through, then approve it or tell us what to
+          change.
+        </p>
+      )}
       <div className="no-print flex flex-wrap items-center justify-between gap-3">
         <p className="text-[14px] text-slate-600">You review this report: there is no need to play the case. Prefer paper? Save it as a PDF, then come back to this page to give your decision.</p>
         <PrintButton />

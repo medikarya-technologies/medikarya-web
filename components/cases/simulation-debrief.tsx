@@ -98,7 +98,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
   const expertImpressions: Array<{ testId: string; title: string; text: string }> = sim.expertImpressions ?? []
 
   const examLabels: Record<string, string> = Object.fromEntries(
-    (caseData?.examination ?? []).map((m: { id: string; label: string }) => [m.id, m.label])
+    [...(caseData?.examination ?? []), ...(caseData?.custom_interventions ?? [])].map((m: { id: string; label: string }) => [m.id, m.label])
   )
 
   useEffect(() => {

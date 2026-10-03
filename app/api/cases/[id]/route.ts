@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCaseById } from '@/data/cases';
-import { briefingOnly, isAdmin, isDraft, planIncludes, viewerId } from '@/lib/plans/access';
+import { asAdminSees, briefingOnly, isAdmin, isDraft, planIncludes, viewerId } from '@/lib/plans/access';
 import { caseForBrowser } from '@/lib/cases/for-browser';
 
 // Three views of a case (lib/cases/views.ts, lib/plans/access.ts): the briefing only for someone whose plan does not
@@ -35,7 +35,8 @@ export async function GET(
     }
 
     if (!whole) return NextResponse.json(briefingOnly(caseData as Record<string, any>));
-    return NextResponse.json(await caseForBrowser(caseData as Record<string, any>, userId));
+    // An admin gets a proposed live plan running, to play-test it; everyone else gets the case as it is live.
+    return NextResponse.json(await caseForBrowser((await asAdminSees(caseData, userId)) as Record<string, any>, userId));
   } catch (error) {
     console.error(`Error fetching case:`, error);
     return NextResponse.json(

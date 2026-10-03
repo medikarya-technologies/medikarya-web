@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatClock, type EventOf } from "@/lib/simulation/encounter-events"
-import { INTERVENTION_GROUPS, getIntervention, interventionsForCase } from "@/lib/simulation/intervention-catalog"
+import { INTERVENTION_GROUPS, interventionLabel, interventionsForCase } from "@/lib/simulation/intervention-catalog"
 import { useClinicalEvents } from "./clinical-event-manager"
 
 interface Props {
@@ -54,7 +54,7 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
     const given = result.appended.find((e) => e.type === "INTERVENTION_GIVEN")
     setOutcome({
       id,
-      label: getIntervention(id)?.label ?? id,
+      label: interventionLabel(config, id),
       consequence: result.consequence,
       unsafe: result.safetyPenalty,
       at: given?.timestamp ?? now,
@@ -150,7 +150,7 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
               {recent.map((e, i) => (
                 <li key={`${e.timestamp}-${i}`} className="flex gap-2 text-[11px] text-enc-ink-2">
                   <span className="font-mono tabular-nums">{formatClock(e.timestamp)}</span>
-                  <span className="font-medium text-enc-ink">{getIntervention(e.action)?.label ?? e.action}</span>
+                  <span className="font-medium text-enc-ink">{interventionLabel(config, e.action)}</span>
                 </li>
               ))}
             </ul>

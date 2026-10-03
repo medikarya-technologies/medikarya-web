@@ -122,6 +122,13 @@ export function tryParseBpDelta(value: string | undefined): [number, number] | n
     return single === null ? null : [single, Math.round(single * 0.6)];
 }
 
+/** "110/70" → [110, 70]: an absolute blood pressure. `null` when it is not one (the validator reports it). */
+export function tryParseBpSet(value: string | undefined): [number, number] | null {
+    if (value === undefined) return null;
+    const m = /^\s*(\d{2,3})\s*\/\s*(\d{2,3})\s*$/.exec(value);
+    return m ? [Number(m[1]), Number(m[2])] : null;
+}
+
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 
 const RHYTHM_LABELS: Record<RhythmType, string> = {
@@ -404,12 +411,18 @@ export class PatientState {
         if (changes.hr_set !== undefined) this.rate = changes.hr_set;
         this.rate += tryParseDelta(changes.hr_delta) ?? 0;
 
+        // An absolute value first, then any delta on top of it (as with hr_set and hr_delta).
+        const bpSet = tryParseBpSet(changes.bp_set);
+        if (bpSet) [this.systolic, this.diastolic] = bpSet;
         const [dSys, dDia] = tryParseBpDelta(changes.bp_delta) ?? [0, 0];
         this.systolic += dSys;
         this.diastolic += dDia;
 
+        if (changes.spo2_set !== undefined) this.spo2 = changes.spo2_set;
         this.spo2 += tryParseDelta(changes.spo2_delta) ?? 0;
+        if (changes.rr_set !== undefined) this.rr = changes.rr_set;
         this.rr += tryParseDelta(changes.rr_delta) ?? 0;
+        if (changes.temp_set !== undefined) this.temperature = changes.temp_set;
         this.temperature += tryParseDelta(changes.temp_delta) ?? 0;
 
         if (changes.rhythm) this.rhythm = changes.rhythm;

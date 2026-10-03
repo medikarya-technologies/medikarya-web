@@ -52,7 +52,8 @@ function describe(e: ClinicalEvent, examLabels: ReadonlyMap<string, string>): Ro
     case "RESULT_REVEALED":
       return { icon: ScanSearch, tone: "warn", title: `Revealed the expert read: ${e.testId.replace(/_/g, " ")}` }
     case "INTERVENTION_GIVEN":
-      return { icon: Syringe, tone: "neutral", title: `Gave: ${getIntervention(e.action)?.label ?? e.action}`, detail: e.consequence }
+      // a treatment the case defines itself is named by the case (passed in beside the manoeuvre labels)
+      return { icon: Syringe, tone: "neutral", title: `Gave: ${examLabels.get(e.action) ?? getIntervention(e.action)?.label ?? e.action}`, detail: e.consequence }
     case "ASSIST_USED":
       return { icon: Lightbulb, tone: "warn", title: `Assist: ${ASSIST_LABELS[e.assistType]} (−${e.cost})` }
     case "STATE_TRANSITION":
@@ -70,7 +71,7 @@ function describe(e: ClinicalEvent, examLabels: ReadonlyMap<string, string>): Ro
 
 interface EncounterTimelineProps {
   events: readonly ClinicalEvent[]
-  /** manoeuvre id → label */
+  /** manoeuvre id → label, and the id → label of any treatment the case defines itself */
   examLabels?: Record<string, string>
   className?: string
 }

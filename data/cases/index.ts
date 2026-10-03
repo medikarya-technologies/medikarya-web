@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 import { bundledSimulationCases, getBundledSimulationCase } from './simulation';
 import { upgradeLegacyCase } from '@/lib/simulation/legacy-adapter';
 import { isSimulationCase } from '@/lib/simulation/case-schema';
+import { withLivePlan } from '@/lib/simulation/live-plan';
 import { appearanceOverlays } from './simulation/appearance';
 import { currentCaseId, formerCaseId } from '@/lib/cases/renamed-ids';
 
@@ -109,6 +110,8 @@ const CASE_LIST_COLUMNS = [
   'initialState:case_json->initial_state',
   'eventRules:case_json->event_rules',
   'actionConsequences:case_json->action_consequences',
+  // an ordinary case with an approved live plan also runs live (lib/simulation/live-plan.ts)
+  'livePlanStatus:case_json->live_plan->>status',
 ].join(', ');
 
 interface CaseListRow {
@@ -132,6 +135,7 @@ interface CaseListRow {
   initialState: unknown;
   eventRules: unknown;
   actionConsequences: unknown;
+  livePlanStatus: string | null;
 }
 
 function toMetadata(row: CaseListRow): CaseMetadata {
@@ -160,7 +164,7 @@ function toMetadata(row: CaseListRow): CaseMetadata {
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
     patient: age === undefined && gender === undefined ? undefined : { age, gender },
-    live: isSimulationCase({ initial_state: row.initialState, event_rules: row.eventRules, action_consequences: row.actionConsequences }),
+    live: isSimulationCase({ initial_state: row.initialState, event_rules: row.eventRules, action_consequences: row.actionConsequences }) || row.livePlanStatus === 'approved',
   };
 }
 
@@ -178,7 +182,7 @@ const cachedCaseList = unstable_cache(
     if (error) throw error;
     return (data as unknown as CaseListRow[]).map(toMetadata);
   },
-  ['case-list-v5'],
+  ['case-list-v6'],
   { revalidate: 60, tags: ['cases'] }
 );
 
@@ -196,9 +200,14 @@ export async function getCases(): Promise<CaseMetadata[]> {
  * encounter (live monitor, clock, examination, investigations that come back
  * after a wait, assists, timeline) using only the case's own data; see
  * lib/simulation/legacy-adapter.ts. The bedside is the only way a case is played.
+ *
+ * A case with an APPROVED live plan (lib/simulation/live-plan.ts) runs as a live case: a clock, a tray, and a
+ * patient who deteriorates until treated. A plan that is only proposed changes nothing for students; an admin sees
+ * it run (asAdminSees, lib/plans/access.ts).
  */
 function forEncounter(caseJson: CaseData): CaseData {
-  return upgradeLegacyCase(caseJson as any, { appearance: appearanceOverlays[caseJson.id] }) as CaseData;
+  const upgraded = upgradeLegacyCase(caseJson as any, { appearance: appearanceOverlays[caseJson.id] });
+  return (isSimulationCase(upgraded) ? withLivePlan(upgraded, false) : upgraded) as CaseData;
 }
 
 export async function getCaseById(requestedId: string): Promise<CaseData | null> {

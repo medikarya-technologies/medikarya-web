@@ -36,6 +36,7 @@ const SimulationDebrief = dynamic(() => import("./simulation-debrief").then((m) 
 const AssistanceAudit = dynamic(() => import("./debrief-parts").then((m) => m.AssistanceAudit), { ssr: false });
 const EncounterReview = dynamic(() => import("./debrief-parts").then((m) => m.EncounterReview), { ssr: false });
 const InfoAccordion = dynamic(() => import("./debrief-parts").then((m) => m.InfoAccordion), { ssr: false });
+const BedsideSummary = dynamic(() => import("./debrief-parts").then((m) => m.BedsideSummary), { ssr: false });
 
 function SubHeading({ children, icon: Icon, tone = "text-enc-ink-3" }: { children: React.ReactNode; icon: React.ElementType; tone?: string }) {
   return (
@@ -447,6 +448,9 @@ function LegacyCaseFeedback({
         </div>
       </div>
 
+      {/* A live case: what was given at the bedside, and when */}
+      {simulation?.bedside && <BedsideSummary bedside={simulation.bedside} total={feedback.score} />}
+
       {/* Score Breakdown Table */}
       <div className="bg-enc-desk rounded-xl border border-enc-line overflow-hidden">
         <div className="px-4 py-2.5 border-b border-enc-line bg-enc-sheet">
@@ -548,7 +552,7 @@ function LegacyCaseFeedback({
       });
     }
     const examLabels: Record<string, string> = Object.fromEntries(
-      (caseData?.examination ?? []).map((m: { id: string; label: string }) => [m.id, m.label])
+      [...(caseData?.examination ?? []), ...(caseData?.custom_interventions ?? [])].map((m: { id: string; label: string }) => [m.id, m.label])
     );
     reviewContent = <EncounterReview sim={simulation} examLabels={examLabels} />;
   }

@@ -5,6 +5,7 @@
 
 import type { ReactNode } from "react"
 import { getCatalogTest } from "@/lib/clinical-catalog"
+import { LivePlanReport } from "./live-plan-report"
 
 type Json = Record<string, any>
 const isObj = (v: unknown): v is Json => !!v && typeof v === "object" && !Array.isArray(v)
@@ -108,6 +109,9 @@ export function CaseReport({ caseJson: c, reviewNotes }: { caseJson: Json; revie
           <Origin origin="case_sheet" /> are the student&apos;s own.
         </p>
       </header>
+
+      {/* A case with a live plan: the plan comes first, since it is what most needs a clinician's eye. */}
+      <LivePlanReport caseJson={c} />
 
       {(reviewNotes.length > 0 || aiTests.length > 0) && (
         <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">

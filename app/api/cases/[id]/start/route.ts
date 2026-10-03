@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { getCaseById } from '@/data/cases';
 import { GUEST_CASE_IDS, explain } from '@/lib/plans/limits';
 import { admitCaseStart, caseKind } from '@/lib/plans/server';
-import { isAdmin, isDraft } from '@/lib/plans/access';
+import { asAdminSees, isAdmin, isDraft } from '@/lib/plans/access';
 import { caseForBrowser } from '@/lib/cases/for-browser';
 import { isSimulationCase } from '@/lib/simulation/case-schema';
 import { invitedTo } from '@/lib/advisors/invites';
@@ -71,7 +71,8 @@ export async function POST(
     // but we DO NOT save this to the global immutable database.
     // A first-time player's browser gets the play view: no diagnosis, scoring or walkthrough (lib/cases/views.ts).
     const sessionData = {
-      ...(await caseForBrowser(caseData as Record<string, any>, userId)),
+      // an admin gets a proposed live plan running, to play-test it
+      ...(await caseForBrowser((await asAdminSees(caseData, userId)) as Record<string, any>, userId)),
       startedAt: new Date().toISOString()
     };
 

@@ -109,9 +109,14 @@ export interface PhysiologicalChanges {
     /** Absolute heart rate — used when the rhythm itself dictates the rate (VT, brady-escape). */
     hr_set?: number;
     bp_delta?: string;
+    /** Absolute blood pressure, "110/70": where the patient settles (a recovery), whatever came before. */
+    bp_set?: string;
     spo2_delta?: string | number;
+    spo2_set?: number;
     rr_delta?: string | number;
+    rr_set?: number;
     temp_delta?: string | number;
+    temp_set?: number;
     rhythm?: RhythmType;
     consciousness?: Consciousness;
     stability?: StabilityLevel;
@@ -203,6 +208,19 @@ export interface StateThreshold {
     lte?: number;
     gt?: number;
     gte?: number;
+}
+
+// ── Treatments a case defines itself ────────────────────────────────────────
+// The shared tray (intervention-catalog.ts) is mostly emergency cardiac care. A case about something else
+// (a dehydrated child, sepsis, an asthma attack) names its own treatments here; they sit on the tray beside
+// whichever shared ones the case offers, and their ids are action keys like any other.
+
+export interface CustomInterventionDef {
+    id: string;
+    label: string;
+    /** Dose / route / setting shown under the label. */
+    detail: string;
+    group: "airway" | "circulation" | "medications" | "cardiac_procedures" | "other";
 }
 
 // ── Recognition (scorer-side flags) ─────────────────────────────────────────
@@ -519,6 +537,8 @@ export interface SimulationCaseConfig {
     learning_objectives?: string[];
     /** Interventions offered in the emergency tray. Omitted = the full tray; `[]` = no tray. */
     available_interventions?: string[];
+    /** Treatments this case defines itself; offered on the tray as well as `available_interventions`. */
+    custom_interventions?: CustomInterventionDef[];
     /** Legacy patient block — used as the vitals source when `initial_state` omits a value. */
     patient?: {
         name?: string;
