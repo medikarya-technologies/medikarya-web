@@ -11,6 +11,14 @@
       "port": 3000
     },
     {
+      "name": "main-test",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/dev-test.mjs"
+      ],
+      "port": 3200
+    },
+    {
       "name": "studio",
       "runtimeExecutable": "node",
       "runtimeArgs": [

@@ -8,7 +8,8 @@ import { submitReview, type ReviewResult } from "./actions"
 
 const field = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[15px] outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
 
-export function ReviewForm({ token }: { token: string }) {
+/** `live`: the review is the sign-off of a live course (lib/simulation/live-plan.ts), which changes what happens next. */
+export function ReviewForm({ token, live = false }: { token: string; live?: boolean }) {
   const [form, setForm] = useState({ name: "", designation: "", department: "", institution: "", showName: false, comments: "" })
   const [result, setResult] = useState<ReviewResult | null>(null)
   const [pending, start] = useTransition()
@@ -26,7 +27,9 @@ export function ReviewForm({ token }: { token: string }) {
         </p>
         <p className="mt-1 text-[14.5px]">
           {result.decision === "approved"
-            ? "The case is approved. The MediKarya team will publish it shortly."
+            ? live
+              ? "The live course is signed off. The MediKarya team will switch it on for students shortly."
+              : "The case is approved. The MediKarya team will publish it shortly."
             : "The team will make the changes you asked for and may send you the revised case."}
         </p>
       </div>

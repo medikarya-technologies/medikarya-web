@@ -84,7 +84,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
         <CaseReport caseJson={caseJson} reviewNotes={notes} />
       </div>
       <div className="no-print">
-        <ReviewForm token={token} />
+        <ReviewForm token={token} live={!!caseJson.live_plan} />
       </div>
     </Shell>
   )

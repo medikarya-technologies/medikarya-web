@@ -6,6 +6,7 @@
     "build": "next build",
     "dev": "node scripts/dev.mjs",
     "dev:webpack": "node scripts/dev.mjs --webpack",
+    "dev:test": "node scripts/dev-test.mjs",
     "lint": "next lint",
     "start": "next start",
     "test:sim": "node scripts/run-sim-tests.mjs",
