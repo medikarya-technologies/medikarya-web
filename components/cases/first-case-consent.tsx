@@ -1,19 +1,17 @@
 "use client"
 
-// Before a student's very first case, ever: a real consent gate, not a toast — the two things
-// this app should say up front rather than leave buried in Terms/Privacy: this is a training
-// simulation, not real medical guidance, and what a student does in a case is recorded. Shown
-// once per browser (localStorage), never again after it's been agreed to once.
+// Before a student's very first case, ever: a short, calm note with the two things worth saying up front rather
+// than leaving them in Terms/Privacy (these are practice cases, not guidance for real patients; answers are saved
+// to score them). Starting the case is the agreement, with the Terms and Privacy links right there: no checkbox or
+// warning styling, which made a teaching tool read like a liability notice. Shown once per browser (localStorage).
 //
 // Wired in wherever a case can be started (app/try/page.tsx for guests, app/dashboard/cases/[id]/
 // page.tsx for signed-in students) by wrapping each page's own onStartCase: check consent first,
 // show this dialog if it hasn't been given yet, and only call the real start function on Agree.
 
 import { useEffect, useState } from "react"
-import { AlertTriangle, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const CONSENT_KEY = "medikarya-first-case-consent"
@@ -57,58 +55,32 @@ export function FirstCaseConsentDialog({
   onAgree: () => void
   onCancel: () => void
 }) {
-  const [checked, setChecked] = useState(false)
-
-  useEffect(() => {
-    if (open) setChecked(false)
-  }, [open])
-
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onCancel() }}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="gap-1 border-b border-enc-line px-5 py-4 pr-12 text-left">
-          <DialogTitle className="flex items-center gap-2 text-[16px] font-semibold text-enc-ink">
-            <ShieldCheck className="h-4 w-4 text-enc-ink-3" strokeWidth={1.9} />
-            Before your first case
-          </DialogTitle>
-          <DialogDescription className="text-[13.5px] leading-snug text-enc-ink-2">
-            Two things worth knowing before you start.
+      <DialogContent className="gap-0 p-0 sm:max-w-sm">
+        <DialogHeader className="gap-1.5 px-5 pt-5 pb-0 pr-12 text-left">
+          <DialogTitle className="text-[15.5px] font-semibold text-enc-ink">A quick note before you start</DialogTitle>
+          <DialogDescription className="text-[13.5px] leading-relaxed text-enc-ink-2">
+            These are teaching cases, made for practice rather than for guiding the care of real patients. We save your answers so we can
+            score them and keep improving the cases.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 px-5 py-4">
-          <div className="flex gap-3 rounded-xl bg-enc-warn-soft p-3.5">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-enc-warn mt-0.5" />
-            <p className="text-[13.5px] leading-relaxed text-enc-ink">
-              <span className="font-semibold">This is a training simulation, not medical advice.</span> Nothing here is a substitute for professional clinical judgment — never use it to guide care for a real patient.
-            </p>
-          </div>
-
-          <p className="text-[13.5px] leading-relaxed text-enc-ink-2">
-            Everything you do in a case — the questions you ask, the tests you order, your diagnosis — is recorded so it can be scored and so we can improve the cases. See our{" "}
-            <Link href="/privacy" target="_blank" className="font-medium text-brand-700 underline-offset-2 hover:underline">
-              Privacy Policy
+        <DialogFooter className="flex-col gap-3 px-5 pt-4 pb-5 sm:flex-col">
+          <Button type="button" onClick={onAgree} className="h-10 w-full rounded-lg bg-brand-600 text-[14px] font-semibold text-white shadow-none hover:bg-brand-700">
+            Start the case
+          </Button>
+          <p className="text-center text-[12px] leading-snug text-enc-ink-3">
+            By starting, you agree to our{" "}
+            <Link href="/terms" target="_blank" className="underline underline-offset-2 hover:text-enc-ink-2">
+              Terms
             </Link>{" "}
             and{" "}
-            <Link href="/terms" target="_blank" className="font-medium text-brand-700 underline-offset-2 hover:underline">
-              Terms of Service
+            <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-enc-ink-2">
+              Privacy Policy
             </Link>
             .
           </p>
-
-          <label className="flex items-start gap-2.5 text-[13.5px] leading-snug text-enc-ink">
-            <Checkbox checked={checked} onCheckedChange={(v) => setChecked(v === true)} className="mt-0.5" />
-            I understand this is a simulation, not real medical advice, and that my attempt is recorded.
-          </label>
-        </div>
-
-        <DialogFooter className="flex-row items-center justify-end gap-2 border-t border-enc-line px-5 py-3">
-          <Button type="button" variant="ghost" onClick={onCancel} className="h-10 rounded-lg px-4 text-[14px] font-medium text-enc-ink-2 hover:bg-enc-console hover:text-enc-ink">
-            Not now
-          </Button>
-          <Button type="button" disabled={!checked} onClick={onAgree} className="h-10 rounded-lg bg-brand-600 px-5 text-[14px] font-semibold text-white shadow-none hover:bg-brand-700 disabled:opacity-50">
-            I understand, continue
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
