@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, BadgeCheck, PenTool, Stethoscope } from "lucide-react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
+import { RoleMark, type ContributorRole } from "@/components/contributors/role-mark"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/flowai/footer"
 import { studioLinks } from "@/lib/site-links"
@@ -9,6 +10,7 @@ import { studioLinks } from "@/lib/site-links"
 // two ways in and sends people straight there. Everything said here is how the programme works today.
 
 export const metadata: Metadata = {
+    alternates: { canonical: "https://www.medikarya.in/contribute" },
     title: "Contribute",
     description: "MediKarya's cases are written by medical students from patients they have seen and checked by doctors. Write a case, or review cases in your specialty.",
     robots: {
@@ -24,28 +26,27 @@ export const metadata: Metadata = {
 
 const JOURNEY = [
     "A student writes up a patient they saw, on a structured case sheet.",
-    "A faculty reviewer approves it, or says what to fix.",
-    "With the author's permission, it becomes an interactive MediKarya patient.",
-    "A doctor of that specialty checks the interactive version.",
+    "With the author's permission, MediKarya turns it into an interactive patient (or sends it back saying what to add).",
+    "One review: a doctor of that specialty approves the interactive version, or says what to fix.",
     "It goes live for students, with the author's name on it.",
 ]
 
 const WRITERS = [
     "Write up a patient you saw on a seven-part case sheet. Made-up name, no real identifiers.",
-    "A faculty reviewer approves it or tells you exactly what to fix.",
-    "You decide whether MediKarya may publish it. If you allow it, you are credited on the case.",
+    "You decide whether MediKarya may publish it. If you allow it, we turn it into an interactive patient and you are credited on it.",
+    "A doctor reviews that patient. If something in your sheet needs fixing, it comes back to you to fix.",
     "Published cases earn a reward and count towards a contributor title. Each title comes with a certificate.",
 ]
 
 const REVIEWERS = [
     "Apply with your medical council registration. We check it on the Indian Medical Register.",
-    "You are given one case at a time in your specialty, as a one-page report with everything the AI added marked.",
+    "You are given one case at a time in your specialty, as a one-page report you can read on your phone or print.",
     "Approve it, or say what is wrong. About ten minutes a case.",
     "Each accepted review earns an honorarium and counts towards a reviewer title. You are named on a case only if you choose to be.",
 ]
 
 function Way({
-    icon: Icon,
+    role,
     who,
     title,
     points,
@@ -53,7 +54,7 @@ function Way({
     cta,
     dark,
 }: {
-    icon: typeof PenTool
+    role: ContributorRole
     who: string
     title: string
     points: string[]
@@ -64,9 +65,7 @@ function Way({
     return (
         <div className={`flex flex-col rounded-2xl p-7 shadow-sm ring-1 ${dark ? "bg-slate-900 text-white ring-slate-900" : "bg-white ring-slate-200"}`}>
             <div className="flex items-center gap-3">
-                <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${dark ? "bg-white/10 text-white" : "bg-brand-600 text-white"}`}>
-                    <Icon className="h-5 w-5" />
-                </span>
+                <RoleMark role={role} size="lg" tone={dark ? "dark" : "light"} />
                 <div>
                     <p className={`text-xs font-semibold uppercase tracking-wide ${dark ? "text-emerald-300" : "text-slate-500"}`}>{who}</p>
                     <h2 className={`text-xl font-bold ${dark ? "text-white" : "text-slate-900"}`}>{title}</h2>
@@ -116,13 +115,13 @@ export default function ContributePage() {
                     </p>
 
                     <div className="mt-10 grid gap-6 md:grid-cols-2">
-                        <Way icon={PenTool} who="MBBS students and interns" title="Write a case" points={WRITERS} href={studioLinks.writeACase} cta="Start writing in the Case Studio" />
-                        <Way icon={Stethoscope} who="PG residents and faculty" title="Review cases" points={REVIEWERS} href={studioLinks.becomeAReviewer} cta="Apply to review" dark />
+                        <Way role="writer" who="MBBS students and interns" title="Write a case" points={WRITERS} href={studioLinks.writeACase} cta="Start writing in the Case Studio" />
+                        <Way role="reviewer" who="Interns, PG residents and faculty" title="Review cases" points={REVIEWERS} href={studioLinks.becomeAReviewer} cta="Apply to review" dark />
                     </div>
 
                     <section className="mt-12 rounded-2xl bg-white p-7 shadow-sm ring-1 ring-slate-200">
                         <p className="text-xs font-semibold uppercase tracking-widest text-brand-600">From the ward to the platform</p>
-                        <ol className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+                        <ol className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                             {JOURNEY.map((step, i) => (
                                 <li key={step}>
                                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">{i + 1}</span>
@@ -134,7 +133,7 @@ export default function ContributePage() {
 
                     <section className="mt-6 flex flex-col items-start gap-4 rounded-2xl bg-emerald-50 p-7 ring-1 ring-emerald-200 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex gap-3">
-                            <BadgeCheck className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
+                            <RoleMark role="advisor" size="sm" />
                             <div>
                                 <p className="font-semibold text-emerald-950">Recognition anyone can check</p>
                                 <p className="mt-1 text-sm leading-relaxed text-emerald-900">

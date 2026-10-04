@@ -6,19 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import Link from "next/link"
-import { ArrowLeft, Database, BarChart2, BookCopy, Check, Loader2, ChevronDown, ChevronUp } from "lucide-react"
+import { ArrowLeft, BookCopy, Check, Loader2, ChevronDown, ChevronUp, PenLine, Users } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
+// Only what MediKarya does today. There is no public API: this page is for colleges and faculty who want to use
+// MediKarya with a batch of students, and its address (/api-docs) is kept so old links still work.
 const features = [
-    { Icon: Database, iconBg: "bg-blue-50", iconColor: "text-blue-600", title: "Patient Simulator Engine", description: "Embed lifelike AI patient simulations directly inside your institution's LMS or clinical training platform. Students interact with realistic patient presentations, order investigations, and receive immediate structured feedback." },
-    { Icon: BookCopy, iconBg: "bg-purple-50", iconColor: "text-purple-600", title: "Case Library Access", description: "Integrate our library of clinical case scenarios — covering cardiology, neurology, paediatrics, endocrinology, and more — mapped directly to your curriculum's learning objectives." },
-    { Icon: BarChart2, iconBg: "bg-emerald-50", iconColor: "text-emerald-600", title: "Analytics & Reporting", description: "Track diagnostic reasoning performance at the individual student and cohort level. See where students commonly anchor on incorrect diagnoses and how clinical confidence develops over time." },
+    { Icon: Users, iconBg: "bg-brand-50", iconColor: "text-brand-600", title: "A workshop or a pilot", description: "We run a session with your students on their own phones or laptops, working real cases end to end, and share what the batch found hard. Our first pilot was with 4th-year MBBS students at Maulana Azad Medical College in May 2026." },
+    { Icon: BookCopy, iconBg: "bg-brand-50", iconColor: "text-brand-600", title: "Access for a batch", description: "We can open MediKarya for a whole batch for a workshop or a term, so every student works the same cases and sees their own debrief after each one." },
+    { Icon: PenLine, iconBg: "bg-brand-50", iconColor: "text-brand-600", title: "Cases from your own wards", description: "Your students can write up patients they have seen, and your faculty can review cases in their specialty. Published cases carry their names, with certificates anyone can verify." },
 ]
 
 const faqs = [
-    { q: "How is pricing structured for institutions?", a: "Institutional pricing is based on enrolled student count and access tier. We offer annual agreements with flexible payment terms. Contact us for a custom quote." },
-    { q: "How is student data handled and protected?", a: "All student performance data is encrypted at rest and in transit. We are GDPR-compliant and do not share or sell institutional data. Your institution retains full ownership of its students' data." },
-    { q: "What technical support is included?", a: "All institutional plans include a dedicated integration engineer during onboarding, documentation access, and ongoing technical support via email. Enterprise plans include a dedicated account manager." },
+    { q: "What does it cost for a college?", a: "It depends on the size of the batch and how long you want access. Write to us with your batch size and dates and we will send you a quote." },
+    { q: "How is student data handled?", a: "We keep only what is needed to run a student's account and show them their results, and we do not sell data. Our privacy policy has the details." },
+    { q: "Who do we talk to?", a: "The founding team, directly. We reply to every message ourselves, usually within two working days." },
 ]
 
 export default function ApiDocsClient() {
@@ -78,18 +80,17 @@ export default function ApiDocsClient() {
                 <div className="mx-auto max-w-6xl px-4">
                     <div className="py-16 md:py-20 text-center space-y-5 max-w-3xl mx-auto">
                         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-700">
-                            <span className="font-mono text-xs bg-slate-200 px-1.5 py-0.5 rounded">API</span>
-                            <span>For Institutions & Developers</span>
+                            <span>For colleges and faculty</span>
                         </div>
                         <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
                             MediKarya{" "}
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-blue-700">for Institutions</span>
                         </h1>
-                        <p className="text-lg text-slate-600 leading-relaxed">Integrate our AI patient simulation engine, case library, and performance analytics directly into your medical school, hospital training programme, or institutional LMS.</p>
+                        <p className="text-lg text-slate-600 leading-relaxed">Use MediKarya with your students: a workshop, a pilot, or access for a whole batch. Tell us what you have in mind and we will work it out with you.</p>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-20">
                         <div className="space-y-8">
-                            <h2 className="text-xl font-bold text-slate-900">What you can integrate</h2>
+                            <h2 className="text-xl font-bold text-slate-900">What we can do with you</h2>
                             {features.map(({ Icon, iconBg, iconColor, title, description }) => (
                                 <div key={title} className="flex gap-4">
                                     <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}><Icon className={`w-5 h-5 ${iconColor}`} /></div>
@@ -98,21 +99,26 @@ export default function ApiDocsClient() {
                             ))}
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 mb-4">Sample API response</h2>
-                            <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-xl">
-                                <div className="flex items-center gap-1.5 px-4 py-3 border-b border-slate-700">
-                                    <span className="w-3 h-3 rounded-full bg-red-500" /><span className="w-3 h-3 rounded-full bg-yellow-500" /><span className="w-3 h-3 rounded-full bg-green-500" />
-                                    <span className="ml-3 text-xs text-slate-400 font-mono">GET /v1/cases/{"{case_id}"}/summary</span>
-                                </div>
-                                <pre className="p-5 text-xs font-mono text-slate-300 leading-relaxed overflow-x-auto">{`{\n  "case_id": "61-year-old-man-with-severe-chest-pain-and-sweating",\n  "title": "61-year-old man with severe chest pain and sweating",\n  "specialty": "Cardiology",\n  "difficulty": "Hard",\n  "student_session": {\n    "differential": {\n      "most_likely": "Acute anterior STEMI",\n      "alternative": "Unstable angina",\n      "cant_miss": "Aortic dissection"\n    },\n    "correct": true,\n    "clinical_score": 87,\n    "independent_score": 74\n  }\n}`}</pre>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-3 text-center">Full API reference provided after access approval.</p>
+                            <h2 className="text-xl font-bold text-slate-900 mb-4">How a pilot works</h2>
+                            <ol className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                                {[
+                                    "You tell us the batch, the year and the subjects you want covered.",
+                                    "We pick cases that fit, and set up access for every student.",
+                                    "Students work the cases in the session, each on their own device, and get a debrief after every case.",
+                                    "Afterwards we share what the batch found hard, case by case, and what they told us in a short survey.",
+                                ].map((step, i) => (
+                                    <li key={step} className="flex gap-3 text-[15px] leading-relaxed text-slate-700">
+                                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{i + 1}</span>
+                                        <span>{step}</span>
+                                    </li>
+                                ))}
+                            </ol>
                         </div>
                     </div>
                     <div className="max-w-2xl mx-auto mb-20">
                         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
-                            <h2 className="text-2xl font-bold text-slate-900 mb-1">Request API Access</h2>
-                            <p className="text-slate-500 text-sm mb-6">We review all institutional requests within 2 business days.</p>
+                            <h2 className="text-2xl font-bold text-slate-900 mb-1">Get in touch</h2>
+                            <p className="text-slate-500 text-sm mb-6">We reply to every message ourselves, usually within two working days.</p>
                             {isSubmitted ? (
                                 <div className="flex flex-col items-center text-center py-6 space-y-3">
                                     <div className="w-12 h-12 rounded-full bg-green-50 ring-1 ring-green-100 flex items-center justify-center text-green-600"><Check className="h-6 w-6" /></div>
@@ -123,13 +129,13 @@ export default function ApiDocsClient() {
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">Your Name</label><Input placeholder="Dr. Jane Smith" value={name} onChange={e => setName(e.target.value)} className="rounded-lg" /></div>
-                                        <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">Work Email <span className="text-red-400">*</span></label><Input type="email" placeholder="jane@university.edu" value={email} onChange={e => setEmail(e.target.value)} required className="rounded-lg" /></div>
+                                        <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">Your Name</label><Input placeholder="Dr. Anjali Mehra" value={name} onChange={e => setName(e.target.value)} className="rounded-lg" /></div>
+                                        <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">Work Email <span className="text-red-400">*</span></label><Input type="email" placeholder="anjali.mehra@college.ac.in" value={email} onChange={e => setEmail(e.target.value)} required className="rounded-lg" /></div>
                                     </div>
                                     <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">Institution / Organisation <span className="text-red-400">*</span></label><Input placeholder="e.g. AIIMS New Delhi" value={institution} onChange={e => setInstitution(e.target.value)} required className="rounded-lg" /></div>
-                                    <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">How would you use MediKarya?</label><Textarea placeholder="e.g. Embedding case simulations into our 3rd year clinical rotations..." value={useCase} onChange={e => setUseCase(e.target.value)} rows={3} className="rounded-lg resize-none" /></div>
+                                    <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">What do you have in mind?</label><Textarea placeholder="e.g. A workshop for our final-year batch before their clinical postations..." value={useCase} onChange={e => setUseCase(e.target.value)} rows={3} className="rounded-lg resize-none" /></div>
                                     <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white">
-                                        {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Submitting...</> : "Request Access"}
+                                        {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Submitting...</> : "Send"}
                                     </Button>
                                     <p className="text-xs text-slate-400 text-center">Or email us directly at <a href="mailto:support@medikarya.in" className="text-blue-600 hover:underline">support@medikarya.in</a></p>
                                 </form>

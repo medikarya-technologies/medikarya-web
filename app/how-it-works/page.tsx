@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, MessageSquare, Activity, FlaskConical, ListCheck
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
+    alternates: { canonical: "https://www.medikarya.in/how-it-works" },
     title: "How MediKarya Works",
     description: "From a live AI patient to a scored debrief: the real step-by-step flow of a MediKarya case, and what happens at each stage.",
     openGraph: {
@@ -23,7 +24,7 @@ const steps = [
         step: "01",
         Icon: MessageSquare,
         title: "Take a history from a live patient",
-        desc: "Every case opens on a real chief complaint. You ask questions in your own words and the patient — or their parent, when they can't speak for themselves — answers in character. Nothing is pre-scripted multiple choice; it's a conversation.",
+        desc: "Every case opens on a real chief complaint. You ask questions in your own words and the patient (or a parent, when the patient can't speak for themselves) answers in character. Nothing is pre-scripted multiple choice; it's a conversation.",
     },
     {
         step: "02",
@@ -35,31 +36,31 @@ const steps = [
         step: "03",
         Icon: FlaskConical,
         title: "Order investigations, on the clock",
-        desc: "Pick from a real test catalogue and results come back on a realistic delay, not instantly. A 12-lead ECG gets its own interpretation view. Ordering everything isn't free — it costs time, and in some cases, score.",
+        desc: "Pick from a real test catalogue and results come back on a realistic delay, not instantly. A 12-lead ECG gets its own interpretation view. Ordering everything isn't free: it costs time, and in some cases, score.",
     },
     {
         step: "04",
         Icon: ListChecks,
         title: "Rank a differential, not just name one",
-        desc: "You commit to three things: your working diagnosis, a real alternative, and the one you can't afford to miss — in that order — then write the reasoning and management plan that go with it.",
+        desc: "You commit to three things: your working diagnosis, a real alternative, and the one you can't afford to miss, in that order. Then you write the reasoning and management plan that go with it.",
     },
     {
         step: "05",
         Icon: Scale,
         title: "Get scored two ways",
-        desc: "A Clinical score for everything you did, and a separate Independent score for what you did without any paid-for help. Using a hint doesn't quietly inflate your result — it shows up as the exact gap between the two numbers.",
+        desc: "A Clinical score for everything you did, and a separate Independent score for what you did without any paid-for help. Using a hint doesn't quietly inflate your result: it shows up as the exact gap between the two numbers.",
     },
     {
         step: "06",
         Icon: ClipboardCheck,
         title: "Walk through a real debrief",
-        desc: "What you did well and the consequences of what you missed, side by side. Then the full encounter record and an expert walkthrough, and finally your performance breakdown — nothing is a single opaque percentage.",
+        desc: "What you did well and the consequences of what you missed, side by side. Then the full encounter record and an expert walkthrough, and finally your performance breakdown. Nothing is a single opaque percentage.",
     },
     {
         step: "07",
         Icon: Brain,
         title: "Close the loop with a reinforcement quiz",
-        desc: "Five questions generated from the specific gaps this attempt actually showed — not a generic quiz bank. It's the same mistake, asked a different way, while it's still fresh.",
+        desc: "Five questions generated from the specific gaps this attempt actually showed, not a generic quiz bank. It's the same mistake, asked a different way, while it's still fresh.",
     },
 ]
 
@@ -101,7 +102,7 @@ export default function HowItWorksPage() {
                             </span>
                         </h1>
                         <p className="text-lg text-slate-600 leading-relaxed">
-                            Every case runs through the same flow, start to finish. This is exactly what happens — no step skipped or simplified for the sake of the pitch.
+                            Every case runs through the same flow, start to finish. This is exactly what happens: no step skipped or simplified for the sake of the pitch.
                         </p>
                     </div>
 
@@ -127,7 +128,7 @@ export default function HowItWorksPage() {
                     <section className="mb-20 bg-slate-900 rounded-2xl p-8 md:p-10 text-white">
                         <h2 className="text-xl font-bold mb-3">Worth knowing before you start</h2>
                         <p className="text-slate-300 leading-relaxed">
-                            Real-time deterioration — a patient who gets worse if you don't act in time — currently runs on our cardiac emergency case. The rest of the library uses the same live monitor, history, investigations, ranked differential and dual scoring, without that deterioration mechanic. We're building it out case by case, not claiming it everywhere at once.
+                            Real-time deterioration, a patient who gets worse if you don't act in time, currently runs on our cardiac emergency case. The rest of the library uses the same live monitor, history, investigations, ranked differential and dual scoring, without that deterioration mechanic. We're building it out case by case, not claiming it everywhere at once.
                         </p>
                     </section>
 

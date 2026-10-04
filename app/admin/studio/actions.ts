@@ -1,27 +1,32 @@
 "use server"
 
-// Admin actions for the studio converter (see page.tsx). The flow for a case:
-//   convert → draft → send for review (a private link to a professor, lib/review/links.ts) → the professor approves,
-//   or asks for changes → rebuild with their comments → send again → approved → publish (and reward the author).
+// Admin actions for the studio converter (see page.tsx). The flow for a case sheet a student submitted:
+//   convert it with AI, as a static case or as a live one (the same conversion plus a live plan), or send it back to
+//   the author with comments → the converted case goes to the studio's reviewer queue, or a private link to a
+//   professor (lib/review/links.ts), whichever approves first → (changes asked: rebuild with their comments, and it
+//   goes back for review) → approved → publish (and reward the author). That one approval is the only one: it covers
+//   the live plan too, so a live case goes live on publish.
 // Every action checks the caller is an admin. Drafts never reach students: the library lists published cases only,
 // and only admins can open a draft (lib/plans/access.ts).
 
-import { auth } from "@clerk/nextjs/server"
+import { auth, currentUser } from "@clerk/nextjs/server"
 import { headers } from "next/headers"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
-import { getStudioCase, markPublishedInStudio, pushConversion, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
+import { getStudioCase, markPublishedInStudio, pushConversion, sendBackInStudio, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
 import { getCatalogTest } from "@/lib/clinical-catalog"
 import { caseIdFor, convertStudioCase, type Conversion } from "@/lib/studio/convert"
 import { createReviewLink, latestReviews } from "@/lib/review/links"
 import { CASE_REWARD, caseRewardWindow, type GrantRow } from "@/lib/plans/grants"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { checkLivePlan, measuredOnArrival, normaliseLivePlan } from "@/lib/simulation/live-plan"
+import { checkLivePlan, isLivePlan, measuredOnArrival, normaliseLivePlan, type LivePlan, type LiveSignOff } from "@/lib/simulation/live-plan"
+import { draftLivePlan } from "@/lib/studio/live-draft"
 
 export type ActionResult =
-  | { ok: true; message: string; caseId?: string; link?: string }
+  /** `live`: the page goes on to call makeLive(caseId, live.comments) for the plan, as a request of its own. */
+  | { ok: true; message: string; caseId?: string; link?: string; live?: { comments?: string } }
   | { ok: false; error: string; details?: string[] }
 
 async function requireAdmin(): Promise<string> {
@@ -65,28 +70,38 @@ function testNamesOf(c: Record<string, any>): Record<string, string> {
 }
 
 /**
- * Saves a conversion as the draft for this studio case, and puts the new version in the studio's reviewer queue. A
- * new version needs a new review, so any review is dropped. Returns a warning if the studio could not be updated
- * (the draft is saved either way; a private review link still works).
+ * Saves a conversion as the draft for this studio case. A new version needs a new review, so any review is dropped.
+ * Returns `needsPlan` when the AI is still to write (or revise) its live plan (makeLive); otherwise this version goes
+ * to the studio's reviewer queue straight away, with a warning if it could not (a private review link still works).
+ *
+ * A static case has no plan. A live one takes, in this order: the plan being revised (a rebuild: makeLive changes it
+ * as the reviewer asked), the live course the author wrote in the studio if it passes the check, or one the AI writes.
  */
-async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: string | undefined): Promise<{ id: string; queueWarning?: string }> {
+async function saveDraft(
+  sc: StudioCase,
+  conversion: Conversion,
+  existingId: string | undefined,
+  kind: "static" | "live",
+  keepPlan?: LivePlan
+): Promise<{ id: string; needsPlan: boolean; queueWarning?: string }> {
   const { caseJson, reviewNotes, check } = conversion
   let id = existingId
 
-  // A live course the author wrote in the studio goes with the case, as a proposal: it runs for admins to play-test,
-  // and for students only once a clinician has signed it off and an admin has switched it on (app/admin/live).
-  const authored = sc.livePlan ? normaliseLivePlan(sc.livePlan, "author") : null
+  let plan: LivePlan | null = kind === "live" && keepPlan ? keepPlan : null
+  const authored = kind === "live" && !keepPlan && sc.livePlan ? normaliseLivePlan(sc.livePlan, "author") : null
   if (authored) {
     const base = upgradeLegacyCase({ ...caseJson })
     const planCheck = isSimulationCase(base)
       ? checkLivePlan(authored, measuredOnArrival(base))
       : { errors: ["the converted case cannot run at the bedside"], warnings: [] }
-    reviewNotes.push(
-      planCheck.errors.length === 0
-        ? `The author wrote a live course (${authored.stages.length} steps, ${authored.treatments.length} treatments). It needs a clinician's sign-off: Admin → Live cases.`
-        : `The author's live course does not pass the check yet, so it is not running: ${planCheck.errors.slice(0, 3).join(" ")}`
-    )
+    if (planCheck.errors.length === 0) {
+      plan = { ...authored, drafted_at: new Date().toISOString() }
+      reviewNotes.push(`The live course is the author's own (${authored.stages.length} steps, ${authored.treatments.length} treatments), not the AI's: check it with the case.`)
+    } else {
+      reviewNotes.push(`The author's live course did not pass the check, so the AI wrote one instead: ${planCheck.errors.slice(0, 3).join(" ")}`)
+    }
   }
+  const needsPlan = kind === "live" && (!plan || !!keepPlan)
   if (!id) {
     const { data: rows, error } = await supabaseServer.from("cases").select("id")
     if (error) throw error
@@ -99,7 +114,7 @@ async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: str
     status: "draft",
     // Shown on the case (who wrote it) and used here to link the draft back to its studio case.
     credit: { author: sc.author, source: "MediKarya Case Studio" },
-    ...(authored ? { live_plan: { ...authored, drafted_at: new Date().toISOString() } } : {}),
+    ...(plan ? { live_plan: plan } : {}),
     source: {
       studio_case_id: sc.id,
       studio_title: sc.title,
@@ -127,16 +142,34 @@ async function saveDraft(sc: StudioCase, conversion: Conversion, existingId: str
   )
   if (error) throw error
 
+  if (needsPlan) return { id, needsPlan }
+  return { id, needsPlan, queueWarning: await toQueue(sc.id, id, full) }
+}
+
+/** Puts this version of the case in the studio's reviewer queue. Returns a warning if it could not. */
+async function toQueue(studioId: string, caseId: string, caseJson: Record<string, any>): Promise<string | undefined> {
   try {
-    await pushConversion(sc.id, { medikaryaCaseId: id, caseJson: full, reviewNotes, warnings: check.warnings, testNames: testNamesOf(full) })
-    return { id }
+    const source = caseJson.source ?? {}
+    await pushConversion(studioId, {
+      medikaryaCaseId: caseId,
+      caseJson,
+      reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
+      warnings: Array.isArray(source.warnings) ? source.warnings : [],
+      testNames: testNamesOf(caseJson),
+    })
+    return undefined
   } catch (e) {
     console.error("Could not put the draft in the studio's reviewer queue:", e)
-    return { id, queueWarning: "It could not be added to the studio's reviewer queue (has studio migration 010 been run?); a private review link still works." }
+    return "It could not be added to the studio's reviewer queue (has studio migration 010 been run?); a private review link still works."
   }
 }
 
-export async function convertToDraft(studioId: string): Promise<ActionResult> {
+/**
+ * Converts a submitted case sheet with AI. "live" converts it the same way and then (unless the author wrote a live
+ * course that passes the check) leaves it for makeLive, which the page calls straight after as a request of its own,
+ * since each AI step takes a few minutes.
+ */
+export async function convertToDraft(studioId: string, kind: "static" | "live" = "static"): Promise<ActionResult> {
   try {
     await requireAdmin()
     const sc = await getStudioCase(studioId)
@@ -150,12 +183,92 @@ export async function convertToDraft(studioId: string): Promise<ActionResult> {
     if (conversion.check.errors.length > 0) {
       return { ok: false, error: "The conversion still had problems after one fix; nothing was saved. Try again.", details: conversion.check.errors }
     }
-    const { id, queueWarning } = await saveDraft(sc, conversion, existing?.id)
+    const { id, needsPlan, queueWarning } = await saveDraft(sc, conversion, existing?.id, kind)
     done()
-    const base = existing ? "Draft re-converted. It needs a new review." : "Draft created and placed in the reviewer queue."
+    if (needsPlan) return { ok: true, message: "Converted. Now writing the live plan (a few minutes)…", caseId: id, live: {} }
+    const base = `${existing ? "Re-converted" : "Converted"} as a ${kind} case${kind === "live" ? " with the author's own live course" : ""} and placed in the reviewer queue.`
     return { ok: true, message: queueWarning ? `${base} ${queueWarning}` : base, caseId: id }
   } catch (error) {
     return fail(error, "Conversion failed.")
+  }
+}
+
+/**
+ * The second half of "Convert to live case": the AI writes a live plan for the converted case (lib/studio/live-draft.ts)
+ * and this version, with the plan, goes for its one review. If the AI judges the condition has no acute course (a
+ * goitre does not crash in twenty minutes), the case goes for review as a static one and the admin is told why.
+ */
+export async function makeLive(caseId: string, comments?: string): Promise<ActionResult> {
+  try {
+    await requireAdmin()
+    const { data: row, error } = await supabaseServer.from("cases").select("status, case_json").eq("id", caseId).maybeSingle()
+    if (error) throw error
+    if (!row) return { ok: false, error: "Case not found." }
+    if (row.status === "published") return { ok: false, error: "This case is live. Unpublish it first." }
+    const caseJson = row.case_json as Record<string, any>
+    const studioId = caseJson.source?.studio_case_id as string | undefined
+    if (!studioId) return { ok: false, error: "This case did not come from the Case Studio." }
+
+    const queueAsItIs = async (why: string, details?: string[]): Promise<ActionResult> => {
+      const notes = [...(caseJson.source?.review_notes ?? []), `Not made live: ${why}`]
+      const next = { ...caseJson, source: { ...caseJson.source, review_notes: notes } }
+      const { error: saveError } = await supabaseServer.from("cases").update({ case_json: next, updated_at: new Date().toISOString() }).eq("id", caseId)
+      if (saveError) throw saveError
+      const warning = await toQueue(studioId, caseId, next)
+      done()
+      return { ok: false, error: `Converted, but not made live: ${why} It went for review as a static case.${warning ? ` ${warning}` : ""}`, details }
+    }
+
+    const base = upgradeLegacyCase({ ...caseJson })
+    if (!isSimulationCase(base)) return queueAsItIs("the converted case cannot run at the bedside (it has no heart rate or no tests).")
+    // a rebuild: change the plan the reviewer read, as they asked; otherwise write one
+    const previous = comments?.trim() && isLivePlan(caseJson.live_plan) ? caseJson.live_plan : null
+    const draft = await draftLivePlan(caseJson, measuredOnArrival(base), previous ? { previous, comments: comments!.trim() } : undefined)
+    if (!draft.ok) {
+      return draft.reason === "not_suitable" ? queueAsItIs(draft.why) : queueAsItIs("the AI's live plan still had problems after one fix.", draft.problems)
+    }
+
+    const plan = draft.plan
+    const notes = [
+      ...(caseJson.source?.review_notes ?? []),
+      previous
+        ? "Live plan changed by AI as the reviewer asked (see its basis for each change)."
+        : `Live plan written by AI (${plan.stages.length} steps, ${plan.treatments.length} treatments): every number in it is for the reviewer to check, starting with its basis.`,
+    ]
+    const now = new Date().toISOString()
+    // a new version (the case with its plan): a review of the version without it does not count
+    const next = { ...caseJson, live_plan: plan, source: { ...caseJson.source, review_notes: notes, converted_at: now } }
+    const { error: updateError } = await supabaseServer.from("cases").update({ case_json: next, updated_at: now }).eq("id", caseId)
+    if (updateError) throw updateError
+    const warning = await toQueue(studioId, caseId, next)
+    done()
+    const flagged = draft.check.warnings.length
+    return {
+      ok: true,
+      message:
+        `Converted as a live case (${plan.stages.length} steps, ${plan.treatments.length} treatments) and placed in the reviewer queue.` +
+        (flagged ? ` The check flagged ${flagged} thing${flagged === 1 ? "" : "s"} for the reviewer.` : "") +
+        (warning ? ` ${warning}` : ""),
+      caseId,
+    }
+  } catch (error) {
+    return fail(error, "Could not write the live plan.")
+  }
+}
+
+/** Sends a submitted case sheet back to its author with comments, instead of converting it. */
+export async function sendBackToAuthor(studioId: string, comments: string): Promise<ActionResult> {
+  try {
+    await requireAdmin()
+    if (comments.trim().length < 10) return { ok: false, error: "Say what the author should change (a sentence or two)." }
+    const existing = await convertedFrom(studioId)
+    if (existing?.status === "published") return { ok: false, error: "This case is live. Unpublish it first." }
+    const me = await currentUser()
+    await sendBackInStudio(studioId, comments, me?.emailAddresses?.[0]?.emailAddress ?? null)
+    done()
+    return { ok: true, message: "Sent back to the author with your comments. It comes back here when they resubmit." }
+  } catch (error) {
+    return fail(error, "Could not send the case back.")
   }
 }
 
@@ -170,20 +283,28 @@ export async function rebuildWithComments(studioId: string): Promise<ActionResul
 
     const asked = await latestChangeRequest(existing.id, studioId)
     if (!asked) return { ok: false, error: "The latest review did not ask for changes." }
+    if (sc.status === "changes_requested") return { ok: false, error: "The sheet is with the author. Rebuild once they have fixed it and resubmitted." }
+    // sent to the author after this review, and resubmitted: their corrected sheet is the source of the fixes
+    const authorUpdated = !!sc.sentBackAt && sc.sentBackAt > asked.at
 
-    const { source, credit, review: _r, status: _s, id: _i, ...current } = existing.case_json
+    const { source, credit, review: _r, status: _s, id: _i, live_plan: oldPlan, ...current } = existing.case_json
+    const keepPlan = isLivePlan(oldPlan) ? oldPlan : undefined
     const conversion = await convertStudioCase(sc, {
       previous: { case: current, review_notes: Array.isArray(source?.review_notes) ? source.review_notes : [] },
       comments: asked.comments,
+      authorUpdated,
     })
     if (conversion.check.errors.length > 0) {
       return { ok: false, error: "The rebuild still had problems; nothing was saved. Try again.", details: conversion.check.errors }
     }
-    const { queueWarning } = await saveDraft(sc, conversion, existing.id)
+    const { needsPlan, queueWarning } = await saveDraft(sc, conversion, existing.id, keepPlan ? "live" : "static", keepPlan)
     done()
+    if (needsPlan) {
+      return { ok: true, message: `Rebuilt for ${asked.reviewer}'s comments. Now changing the live plan as they asked…`, caseId: existing.id, live: { comments: asked.comments } }
+    }
     return {
       ok: true,
-      message: `Rebuilt with ${asked.reviewer}'s comments and put back in the reviewer queue.${queueWarning ? ` ${queueWarning}` : ""}`,
+      message: `Rebuilt ${authorUpdated ? "from the author's corrected sheet" : "with AI"} for ${asked.reviewer}'s comments and put back in the reviewer queue (they are offered it first).${queueWarning ? ` ${queueWarning}` : ""}`,
       caseId: existing.id,
     }
   } catch (error) {
@@ -192,7 +313,7 @@ export async function rebuildWithComments(studioId: string): Promise<ActionResul
 }
 
 /** The newest "changes requested" on this draft, from the studio's queue or a private link. */
-async function latestChangeRequest(caseId: string, studioId: string): Promise<{ comments: string; reviewer: string } | null> {
+async function latestChangeRequest(caseId: string, studioId: string): Promise<{ at: string; comments: string; reviewer: string } | null> {
   const [link, queue] = await Promise.all([latestReviews([caseId]).then((m) => m.get(caseId)), studioReviews([studioId]).then((m) => m.get(studioId))])
   const candidates = [
     link?.decision === "changes_requested" && link.comments ? { at: link.decided_at!, comments: link.comments, reviewer: link.reviewer_name ?? "the reviewer" } : null,
@@ -267,12 +388,37 @@ export async function publishCase(caseId: string, rewardEmail: string | null): P
     if (error) throw error
     if (!row) return { ok: false, error: "Case not found." }
     let caseJson = row.case_json as Record<string, any>
+    const studioId = caseJson.source?.studio_case_id
+    const queued = studioId ? (await studioReviews([studioId])).get(studioId) : undefined
+    const queueApproved = queued?.decision === "approved" ? queued : null
     if (caseJson.review?.decision !== "approved") {
       // Approved in the studio's reviewer queue rather than through a private link: take the approval from there.
-      const studioId = caseJson.source?.studio_case_id
-      const queued = studioId ? (await studioReviews([studioId])).get(studioId) : undefined
-      if (queued?.decision !== "approved") return { ok: false, error: "A reviewer has to approve this case before it can be published." }
-      caseJson = { ...caseJson, review: reviewFromStudio(queued) }
+      if (!queueApproved) return { ok: false, error: "A reviewer has to approve this case before it can be published." }
+      caseJson = { ...caseJson, review: reviewFromStudio(queueApproved) }
+    }
+    // A live case: the same approval signed its plan off (a private link writes the sign-off itself; the queue's
+    // approval is of the version with the plan), and it goes live with the case.
+    const plan = caseJson.live_plan
+    if (isLivePlan(plan)) {
+      let signOff: LiveSignOff | undefined = plan.sign_off?.decision === "approved" ? plan.sign_off : undefined
+      if (!signOff && queueApproved) {
+        const r = reviewFromStudio(queueApproved)
+        signOff = {
+          decision: "approved",
+          decided_at: r.decided_at ?? new Date().toISOString(),
+          show_name: r.show_name,
+          ...(r.show_name
+            ? {
+                reviewer_name: r.reviewer_name,
+                reviewer_designation: r.reviewer_designation ?? undefined,
+                reviewer_department: r.reviewer_department ?? undefined,
+                reviewer_institution: r.reviewer_institution ?? undefined,
+              }
+            : {}),
+        }
+      }
+      if (!signOff) return { ok: false, error: "The live plan has not been approved. Remove it (Admin → Live cases) to publish this as a static case." }
+      caseJson = { ...caseJson, live_plan: { ...plan, sign_off: signOff, status: "approved" } }
     }
 
     const email = rewardEmail?.trim().toLowerCase() || null
@@ -290,7 +436,8 @@ export async function publishCase(caseId: string, rewardEmail: string | null): P
     const studioCaseId = caseJson.source?.studio_case_id
     const studioNote = studioCaseId ? await markPublishedInStudio(studioCaseId, publishedAt) : null
     const reward = email ? ` ${await rewardAuthor(email, caseId, adminId)}` : ""
-    return { ok: true, message: `Published: students see it in the library within a minute.${reward}${studioNote ? ` ${studioNote}` : ""}` }
+    const kind = isLivePlan(caseJson.live_plan) ? "as a live case" : "as a static case"
+    return { ok: true, message: `Published ${kind}: students see it in the library within a minute.${reward}${studioNote ? ` ${studioNote}` : ""}` }
   } catch (error) {
     return fail(error, "Could not publish the case.")
   }

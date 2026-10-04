@@ -8,12 +8,13 @@ import { listStudioCases, queuedInStudio, studioConfigured, studioReviews } from
 import { latestReviews } from "@/lib/review/links"
 import { StudioRow, type Converted } from "./studio-row"
 
-// Studio cases → MediKarya. Each case sheet from the Case Studio can be converted into a draft playable case
-// (lib/studio/convert.ts), reviewed by a professor through a private link (lib/review/links.ts), and published once
-// approved. Drafts never show in the student library.
+// Studio cases → MediKarya. Each case sheet a student submits in the Case Studio is converted here with AI into a
+// static or a live case (lib/studio/convert.ts, lib/studio/live-draft.ts), or sent back to its author. The converted
+// case gets one review, in the studio's reviewer queue or through a private link (lib/review/links.ts), and is
+// published once approved. Drafts never show in the student library.
 
 export const dynamic = "force-dynamic"
-// A conversion is one or two model calls, about a minute; server actions run under this page's limit.
+// Each AI step (the conversion, then a live plan) is a request of its own, a few minutes; server actions run under this limit.
 export const maxDuration = 300
 
 export const metadata = { title: "Studio cases" }
@@ -36,7 +37,10 @@ export default async function StudioCasesPage() {
 
   const [studio, { data: made }] = await Promise.all([
     listStudioCases(),
-    supabaseServer.from("cases").select("id, status, updated_at, source:case_json->source").not("case_json->source->>studio_case_id", "is", null),
+    supabaseServer
+      .from("cases")
+      .select("id, status, updated_at, source:case_json->source, plan:case_json->live_plan->>version")
+      .not("case_json->source->>studio_case_id", "is", null),
   ])
   const studioIds = (made ?? []).map((r) => (r.source as Record<string, any> | null)?.studio_case_id).filter(Boolean) as string[]
   const [reviews, queue, queued] = await Promise.all([latestReviews((made ?? []).map((r) => r.id)), studioReviews(studioIds), queuedInStudio(studioIds)])
@@ -82,8 +86,12 @@ export default async function StudioCasesPage() {
       warnings: Array.isArray(source.warnings) ? source.warnings : [],
       review,
       inQueue: queued.has(source.studio_case_id),
+      live: row.plan != null,
     })
   }
+
+  // a sheet the author is still writing is not ours to act on yet (unless it was converted before)
+  const shown = studio.filter((c) => c.status !== "draft" || byStudioId.has(c.id))
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -93,18 +101,19 @@ export default async function StudioCasesPage() {
         </Link>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Studio cases</h1>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-600">
-          Case sheets from the Case Studio. <strong>Convert</strong> drafts a playable case (about a minute): the AI writes the patient&apos;s
-          script, test results and scoring from the sheet and marks everything it added, and puts it in the <strong>Case Studio&apos;s reviewer
-          queue</strong>, where verified reviewers of that specialty claim and review it. For someone without a studio account, send a{" "}
-          <strong>private link</strong> instead. Once approved, <strong>Publish</strong> it and reward the author. Drafts are hidden from students
-          throughout.
+          Case sheets students have submitted in the Case Studio. Nobody reviews the raw sheet: <strong>convert it to a static case</strong> (the AI
+          writes the patient&apos;s script, test results and scoring from the sheet and marks everything it added), <strong>convert it to a live
+          case</strong> (the same, plus how the patient deteriorates and what treats it), or <strong>send it back to the author</strong> with comments.
+          The converted case then gets its <strong>one review</strong>, as a report: in the Case Studio&apos;s reviewer queue (verified reviewers and
+          faculty), or through a <strong>private link</strong> to a professor, whichever approves first. Then <strong>Publish</strong> it and reward the
+          author. Drafts are hidden from students throughout.
         </p>
 
         <div className="mt-8 space-y-3">
-          {studio.map((c) => (
+          {shown.map((c) => (
             <StudioRow key={c.id} studioCase={c} converted={byStudioId.get(c.id) ?? null} />
           ))}
-          {studio.length === 0 && <p className="text-slate-500">No cases in the studio yet.</p>}
+          {shown.length === 0 && <p className="text-slate-500">No submitted cases yet.</p>}
         </div>
       </div>
     </main>

@@ -48,7 +48,7 @@ export function DashboardPreview() {
       <div className={cn("relative mx-auto max-w-3xl px-4 text-center transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}>
         <Eyebrow className="text-brand-600">Two minutes</Eyebrow>
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink sm:text-4xl">Watch a case, start to finish</h2>
-        <p className="mt-4 text-lg leading-relaxed text-enc-ink-2">History, examination, tests and a diagnosis — the real interface, not a walkthrough of slides.</p>
+        <p className="mt-4 text-lg leading-relaxed text-enc-ink-2">History, examination, tests and a diagnosis: the real interface, not a walkthrough of slides.</p>
       </div>
 
       <div className={cn("relative mx-auto mt-12 max-w-4xl px-4 transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")} style={{ transitionDelay: isVisible ? "120ms" : "0ms" }}>

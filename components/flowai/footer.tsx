@@ -30,7 +30,7 @@ export function Footer() {
               <span className="text-xl font-bold text-enc-ink">MediKarya</span>
             </div>
             <p className="text-sm text-enc-ink-2 max-w-xs">
-              AI patient cases for MBBS students — work the patient up, see exactly where your reasoning broke, and practise what you missed.
+              AI patient cases for MBBS students: work the patient up, see exactly where your reasoning broke, and practise what you missed.
             </p>
             <div className="flex space-x-4">
               <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-brand-50 hover:text-brand-400 transition-colors" asChild>
@@ -119,7 +119,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/api-docs" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
-                  API Documentation
+                  For colleges
                 </Link>
               </li>
             </ul>

@@ -44,7 +44,7 @@ export default function DebriefSection() {
           n="03"
           label="Debrief"
           title="When the case ends, the learning doesn't."
-          text="You see exactly where the case caught you out — every time, not just when it's flattering."
+          text="You see exactly where the case caught you out. Every time, not just when it's flattering."
           reverse={false}
           visible={isVisible}
           delay={0}

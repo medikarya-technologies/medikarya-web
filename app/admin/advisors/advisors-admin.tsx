@@ -92,8 +92,11 @@ export function AdvisorsAdmin({ invites, advisors, cases, studioUrl, canCertify 
       <section className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
         <header className="border-b border-slate-200 bg-slate-100/70 px-5 py-3.5">
           <p className={LABEL}>Step 1</p>
-          <h2 className="text-[19px] font-bold text-slate-900">Send someone a link</h2>
-          <p className="mt-0.5 text-[14px] text-slate-600">It opens the cases you tick, with no sign-up, for 14 days. Everything else on the site stays locked.</p>
+          <h2 className="text-[19px] font-bold text-slate-900">Let someone try MediKarya</h2>
+          <p className="mt-0.5 text-[14px] text-slate-600">
+            It opens the published cases you tick, with no sign-up, for 14 days, for their opinion of the product. Everything else on the site
+            stays locked.
+          </p>
         </header>
         <div className="space-y-4 px-5 py-5">
           <div>

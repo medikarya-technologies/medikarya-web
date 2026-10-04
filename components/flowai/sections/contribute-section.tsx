@@ -5,14 +5,15 @@
 // (/contributors). It says only how the programme works today: what a writer and a reviewer do, and what they get.
 
 import Link from "next/link"
-import { ArrowRight, BadgeCheck, Check, PenTool, type LucideIcon } from "lucide-react"
+import { ArrowRight, Check } from "lucide-react"
+import { RoleMark, type ContributorRole } from "@/components/contributors/role-mark"
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 import { Eyebrow } from "@/components/cases/encounter-ui"
 import { studioLinks } from "@/lib/site-links"
 
 interface Door {
-  icon: LucideIcon
+  role: ContributorRole
   who: string
   title: string
   text: string
@@ -23,19 +24,19 @@ interface Door {
 
 const DOORS: Door[] = [
   {
-    icon: PenTool,
+    role: "writer",
     who: "Medical students, interns and doctors",
     title: "Write a case",
-    text: "Seen a patient worth teaching from? Write them up on a structured case sheet. A doctor checks it, and it becomes a patient other students learn from.",
+    text: "Seen a patient worth teaching from? Write them up on a structured case sheet. We turn it into a patient other students learn from, and a doctor reviews it before it goes live.",
     points: ["Your name on every case of yours that goes live", "A payout for each published case", "Titles and a certificate anyone can verify"],
     cta: "Start writing",
     href: studioLinks.writeACase,
   },
   {
-    icon: BadgeCheck,
-    who: "PG residents, practising doctors and faculty",
+    role: "reviewer",
+    who: "Interns, PG residents, doctors and faculty",
     title: "Review cases",
-    text: "You are handed one case at a time in your specialty, as a one-page report with everything the AI added clearly marked. Approve it, or say what is wrong.",
+    text: "You are handed one case at a time in your specialty, as a one-page report. Approve it, or say what is wrong.",
     points: ["About ten minutes a case, no need to play it", "An honorarium for each case you review", "Named on a case only if you choose to be"],
     cta: "Become a reviewer",
     href: studioLinks.becomeAReviewer,
@@ -65,9 +66,7 @@ export default function ContributeSection() {
           {DOORS.map((d, i) => (
             <div key={d.title} {...appear(100 + i * 100)} className={cn("flex flex-col rounded-2xl border border-enc-line-strong bg-enc-sheet p-6 shadow-enc-lift sm:p-7", appear().className)}>
               <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                  <d.icon className="h-5 w-5" strokeWidth={1.9} />
-                </span>
+                <RoleMark role={d.role} size="lg" />
                 <div>
                   <p className="text-[11px] font-semibold tracking-widest text-enc-ink-3 uppercase">{d.who}</p>
                   <h3 className="text-xl font-bold text-enc-ink">{d.title}</h3>

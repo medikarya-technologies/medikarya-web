@@ -2,12 +2,13 @@ import type { Metadata } from "next"
 import ApiDocsClient from "./ApiDocsClient"
 
 export const metadata: Metadata = {
-    title: "API & Institutional Access",
-    description: "Integrate MediKarya's AI patient simulation engine, case library, and analytics into your medical school or hospital training programme.",
+    alternates: { canonical: "https://www.medikarya.in/api-docs" },
+    title: "For Colleges and Faculty",
+    description: "Run a MediKarya workshop or pilot with your MBBS students, give a whole batch access for a term, or have your faculty write and review cases.",
     robots: { index: true, follow: true },
     openGraph: {
-        title: "MediKarya for Institutions — AI Simulation API",
-        description: "Integrate our AI patient simulation engine, case library, and performance analytics into your medical school or training programme.",
+        title: "MediKarya for Colleges and Faculty",
+        description: "Workshops, pilots and batch access to MediKarya's patient cases for MBBS students, first piloted at Maulana Azad Medical College.",
     },
 }
 

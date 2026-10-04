@@ -24,14 +24,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.medikarya.in"),
-  alternates: {
-    canonical: "/",
-  },
+  // No site-wide canonical here: every page would inherit it and tell Google it is a copy of the home page. Each
+  // public page sets its own (alternates.canonical in its metadata).
   title: {
     default: "MediKarya - AI-Powered Medical Education",
     template: "%s | MediKarya"
   },
-  description: "Talk to a live AI patient with real-time vitals, rank your differential, order investigations, then see where your reasoning broke and practise what you missed — before your first real patient.",
+  description: "Talk to a live AI patient with real-time vitals, rank your differential, order investigations, then see where your reasoning broke and practise what you missed, before your first real patient.",
   keywords: [
     "AI patient simulation for medical students",
     "clinical reasoning practice MBBS",
@@ -65,7 +64,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "MediKarya - AI-Powered Medical Education",
-    description: "Talk to a live AI patient with real-time vitals and rank your differential — before your first real patient.",
+    description: "Talk to a live AI patient with real-time vitals and rank your differential, before your first real patient.",
     images: ["https://www.medikarya.in/og-image.png"],
     creator: "@medikarya", // Replace with actual handle
   },
@@ -145,12 +144,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "@type": "WebSite",
                   "name": "MediKarya",
                   "url": "https://www.medikarya.in",
-                  "description": "AI patient simulation platform for medical students — practice clinical reasoning, diagnostics, and case-based learning.",
-                  "potentialAction": {
-                    "@type": "SearchAction",
-                    "target": "https://www.medikarya.in/blog?q={search_term_string}",
-                    "query-input": "required name=search_term_string"
-                  }
+                  "description": "AI patient simulation platform for medical students: practise clinical reasoning, diagnostics, and case-based learning."
                 }
               ])
             }}

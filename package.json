@@ -13,6 +13,7 @@
     "check:cases": "ts-node --project scripts/tsconfig.migrate.json scripts/migrate-cases.ts --dry-run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@clerk/nextjs": "^6.39.7",
     "@google/generative-ai": "^0.24.1",
     "@radix-ui/react-accordion": "1.2.2",

@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: ['/dashboard', '/api', '/login', '/signup', '/admin'],
+            disallow: ['/dashboard', '/api', '/login', '/signup', '/admin', '/review/', '/advisor/', '/dev/', '/sim-preview', '/og-card'],
         },
         sitemap: process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/sitemap.xml` : 'https://www.medikarya.in/sitemap.xml',
     }

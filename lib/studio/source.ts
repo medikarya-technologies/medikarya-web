@@ -40,6 +40,8 @@ export interface StudioCaseSummary {
   consentNote: string | null;
   /** The author's email when they wrote it in the studio themselves (not when an admin entered it for them). */
   authorEmail: string | null;
+  /** When the sheet was last sent back to its author for changes (studio case_reviews), if ever. */
+  sentBackAt: string | null;
 }
 
 export interface StudioCase extends StudioCaseSummary {
@@ -60,7 +62,7 @@ function specialtyOf(row: Json): string {
   return String(row.specialty ?? "other").replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
-function summary(row: Json, authorEmail: string | null = null): StudioCaseSummary {
+function summary(row: Json, authorEmail: string | null = null, sentBackAt: string | null = null): StudioCaseSummary {
   const d = row.patient_details?.declarations ?? {};
   return {
     id: row.id,
@@ -74,7 +76,18 @@ function summary(row: Json, authorEmail: string | null = null): StudioCaseSummar
     publishConsent: d.publish_consent === true,
     consentNote: typeof d.consent_note === "string" ? d.consent_note : null,
     authorEmail,
+    sentBackAt,
   };
+}
+
+/** When each of these sheets was last sent back to its author. */
+async function sentBack(db: SupabaseClient, caseIds: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (caseIds.length === 0) return out;
+  const { data, error } = await db.from("case_reviews").select("case_id, created_at").eq("decision", "changes_requested").in("case_id", caseIds);
+  if (error) throw error;
+  for (const r of data ?? []) if (!out.has(r.case_id) || r.created_at > out.get(r.case_id)!) out.set(r.case_id, r.created_at);
+  return out;
 }
 
 /** Emails of the studio users who wrote these cases, for authors only: an admin entering a case for someone else is not its author. */
@@ -96,8 +109,8 @@ export async function listStudioCases(): Promise<StudioCaseSummary[]> {
     .select("id, title, status, specialty, difficulty, original_author_name, created_at, added_to_platform, patient_details, author_id")
     .order("created_at", { ascending: true });
   if (error) throw error;
-  const emails = await authorEmails(db, (data ?? []).map((r) => r.author_id));
-  return (data ?? []).map((r) => summary(r, emails.get(r.author_id) ?? null));
+  const [emails, back] = await Promise.all([authorEmails(db, (data ?? []).map((r) => r.author_id)), sentBack(db, (data ?? []).map((r) => r.id))]);
+  return (data ?? []).map((r) => summary(r, emails.get(r.author_id) ?? null, back.get(r.id) ?? null));
 }
 
 // Rich-text fields are stored as HTML; the model reads plain text.
@@ -149,9 +162,9 @@ export async function getStudioCase(id: string): Promise<StudioCase | null> {
   const sections: Record<string, unknown> = {};
   for (const k of SECTIONS) if (row[k] != null) sections[k] = hide(plain(row[k]));
 
-  const emails = await authorEmails(db, [row.author_id]);
+  const [emails, back] = await Promise.all([authorEmails(db, [row.author_id]), sentBack(db, [row.id])]);
   return {
-    ...summary(row, emails.get(row.author_id) ?? null),
+    ...summary(row, emails.get(row.author_id) ?? null, back.get(row.id) ?? null),
     patient: {
       age: typeof pd.age === "number" ? pd.age : null,
       sex: pd.sex ?? pd.gender ?? null,
@@ -193,6 +206,45 @@ export async function pushConversion(
   );
   if (upsertError) throw upsertError;
   return version;
+}
+
+/**
+ * Sends a submitted case sheet back to its author with the admin's comments, instead of converting it: the studio
+ * shows them as a "changes requested" review (filed under a studio admin: the one with this email if there is one),
+ * reopens the sheet for editing, and notifies the author.
+ */
+export async function sendBackInStudio(studioCaseId: string, comments: string, adminEmail: string | null): Promise<void> {
+  const db = studio();
+  if (!db) throw new Error("The case studio is not connected");
+  const { data: row, error } = await db.from("cases").select("id, title, status, author_id").eq("id", studioCaseId).maybeSingle();
+  if (error) throw error;
+  if (!row) throw new Error("That studio case was not found.");
+  if (row.status === "draft") throw new Error("The author has not submitted this case.");
+
+  const { data: admins, error: adminError } = await db.from("users").select("id, email").eq("role", "admin");
+  if (adminError) throw adminError;
+  const filer = (admins ?? []).find((a) => adminEmail && String(a.email).toLowerCase() === adminEmail.toLowerCase()) ?? admins?.[0];
+  if (!filer) throw new Error("The studio has no admin account to file the comments under.");
+
+  // the studio's review comments are a list of section comments (lib/types.ts there, parseReviewComments)
+  const text = comments.trim().slice(0, 4000);
+  const { error: reviewError } = await db.from("case_reviews").insert({
+    case_id: studioCaseId,
+    reviewer_id: filer.id,
+    decision: "changes_requested",
+    comments: JSON.stringify([{ id: "sc_mk", sectionId: "general", sectionLabel: "From the MediKarya team", text }]),
+  });
+  if (reviewError) throw reviewError;
+  const { error: statusError } = await db.from("cases").update({ status: "changes_requested" }).eq("id", studioCaseId);
+  if (statusError) throw statusError;
+  if (row.author_id) {
+    await db.from("notifications").insert({
+      user_id: row.author_id,
+      type: "changes_requested",
+      message: `The MediKarya team sent "${row.title}" back to you: ${text.slice(0, 300)}`,
+      related_case_id: studioCaseId,
+    });
+  }
 }
 
 export interface StudioReview {
@@ -275,7 +327,11 @@ export async function markPublishedInStudio(studioCaseId: string, publishedAt: s
   if (!db) return "The case studio is not connected, so the author's reward was not recorded.";
   const { data, error } = await db.from("case_conversions").update({ published_at: publishedAt }).eq("case_id", studioCaseId).select("case_id");
   if (error) return `Not recorded in the studio: ${error.message} (has the studio's 011_rewards.sql been run?)`;
-  await db.from("cases").update({ added_to_platform: publishedAt !== null }).eq("id", studioCaseId);
+  // there is no approval of the raw sheet any more: the author's sheet shows "approved" once its case is published
+  await db
+    .from("cases")
+    .update({ added_to_platform: publishedAt !== null, ...(publishedAt ? { status: "approved", approved_at: publishedAt } : {}) })
+    .eq("id", studioCaseId);
   if (!data?.length) return "This case has no record in the studio's reviewer queue (it was converted before the queue existed), so no payout is recorded for it. Rebuild or re-convert it to add one.";
   return null;
 }

@@ -61,7 +61,7 @@ export default function DeteriorationSection() {
       {/* No Eyebrow — headline alone is the hook */}
       <div className={cn("relative mx-auto max-w-2xl px-4 text-center transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}>
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">And the patient doesn't wait for you.</h2>
-        <p className="mt-4 text-lg leading-relaxed text-white/60">Delay the right decision, and the case changes underneath you. This is a real run of a real case — nothing here is staged.</p>
+        <p className="mt-4 text-lg leading-relaxed text-white/60">Delay the right decision, and the case changes underneath you. This is a real run of a real case. Nothing here is staged.</p>
       </div>
 
       <div

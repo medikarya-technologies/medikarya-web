@@ -5,6 +5,7 @@ import { ArrowLeft, PlayCircle, Clock, Zap, BookOpen, Target } from "lucide-reac
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
+    alternates: { canonical: "https://www.medikarya.in/tutorials" },
     title: "Tutorials — MediKarya Visual Learning Center",
     description: "Step-by-step video guides for mastering clinical reasoning, diagnostic workflow, and AI patient simulation on MediKarya. Built for medical students.",
     openGraph: {
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 const gettingStarted = [
     {
         title: "Getting Started with MediKarya",
-        description: "A complete walkthrough of the platform — logging in, navigating the dashboard, and starting your first patient simulation.",
+        description: "A complete walkthrough of the platform: logging in, navigating the dashboard, and starting your first patient simulation.",
         duration: "5 min",
         difficulty: "Beginner",
         difficultyColor: "bg-green-50 text-green-700 border-green-100",
@@ -37,7 +38,7 @@ const gettingStarted = [
     },
     {
         title: "Ordering Investigations Effectively",
-        description: "Not every test is the right test. This tutorial covers how to think about investigations — what to order, when, and why.",
+        description: "Not every test is the right test. This tutorial covers how to think about investigations: what to order, when, and why.",
         duration: "10 min",
         difficulty: "Beginner",
         difficultyColor: "bg-green-50 text-green-700 border-green-100",
@@ -56,7 +57,7 @@ const advanced = [
     },
     {
         title: "Reading ECGs in Simulation",
-        description: "A structured approach to ECG interpretation — rhythm, axis, intervals, morphology — applied to real simulation cases.",
+        description: "A structured approach to ECG interpretation (rhythm, axis, intervals, morphology) applied to real simulation cases.",
         duration: "12 min",
         difficulty: "Intermediate",
         difficultyColor: "bg-yellow-50 text-yellow-700 border-yellow-100",
@@ -64,7 +65,7 @@ const advanced = [
     },
     {
         title: "Approaching Rare Clinical Presentations",
-        description: "When the obvious diagnosis doesn't fit — how to widen your differential and think through uncommon conditions methodically.",
+        description: "When the obvious diagnosis doesn't fit: how to widen your differential and think through uncommon conditions methodically.",
         duration: "20 min",
         difficulty: "Advanced",
         difficultyColor: "bg-red-50 text-red-700 border-red-100",
@@ -150,7 +151,7 @@ export default function TutorialsPage() {
                                 </div>
                                 <h3 className="font-semibold text-slate-900">Immediate feedback loops</h3>
                                 <p className="text-sm text-slate-500 leading-relaxed">
-                                    In real clinical placements, you often don't see the outcome of a decision for days. Simulation compresses that feedback to seconds — you see exactly where your reasoning diverged, while it's still fresh.
+                                    In real clinical placements, you often don't see the outcome of a decision for days. Simulation compresses that feedback to seconds: you see exactly where your reasoning diverged, while it's still fresh.
                                 </p>
                             </div>
                             <div className="flex flex-col items-start gap-3">
@@ -159,7 +160,7 @@ export default function TutorialsPage() {
                                 </div>
                                 <h3 className="font-semibold text-slate-900">Practice without consequence</h3>
                                 <p className="text-sm text-slate-500 leading-relaxed">
-                                    Aviation and surgery both rely on simulation because errors in those fields are unacceptable. Medical students deserve the same rehearsal space — a place to make mistakes, learn, and repeat before the stakes are real.
+                                    Aviation and surgery both rely on simulation because errors in those fields are unacceptable. Medical students deserve the same rehearsal space: a place to make mistakes, learn, and repeat before the stakes are real.
                                 </p>
                             </div>
                             <div className="flex flex-col items-start gap-3">
@@ -168,7 +169,7 @@ export default function TutorialsPage() {
                                 </div>
                                 <h3 className="font-semibold text-slate-900">Targeted skill building</h3>
                                 <p className="text-sm text-slate-500 leading-relaxed">
-                                    Clinical attachments are unpredictable — you see what comes in. Simulation lets you specifically target your weak areas: ECG interpretation, differential generation, investigation ordering, and more.
+                                    Clinical attachments are unpredictable. You see what comes in. Simulation lets you specifically target your weak areas: ECG interpretation, differential generation, investigation ordering, and more.
                                 </p>
                             </div>
                         </div>

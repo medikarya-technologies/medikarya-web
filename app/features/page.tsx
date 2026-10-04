@@ -5,8 +5,9 @@ import { ArrowLeft, ArrowRight, HeartPulse, ListChecks, Scale, AlertTriangle, Fl
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
+    alternates: { canonical: "https://www.medikarya.in/features" },
     title: "Features",
-    description: "A live bedside monitor, a ranked differential instead of one guess, dual Clinical and Independent scoring, and a real-time cardiac emergency — what's actually built into MediKarya.",
+    description: "A live bedside monitor, a ranked differential instead of one guess, dual Clinical and Independent scoring, and a real-time cardiac emergency: what's actually built into MediKarya.",
     openGraph: {
         title: "MediKarya Features — What's Actually Built",
         description: "A live bedside monitor, a ranked differential, dual scoring, and a real-time deteriorating patient. See what's actually in the platform.",
@@ -24,7 +25,7 @@ const features = [
         iconBg: "bg-red-50",
         iconColor: "text-red-500",
         title: "A real bedside monitor",
-        desc: "Heart rate, blood pressure, oxygen saturation and a live Lead II ECG trace, running for the whole encounter — not a static vitals table printed once at the top of the case.",
+        desc: "Heart rate, blood pressure, oxygen saturation and a live Lead II ECG trace, running for the whole encounter, not a static vitals table printed once at the top of the case.",
     },
     {
         Icon: ListChecks,
@@ -38,21 +39,21 @@ const features = [
         iconBg: "bg-purple-50",
         iconColor: "text-purple-500",
         title: "Two scores, not one",
-        desc: "A Clinical score for what you did, and a separate Independent score for what you did without any paid-for help — so using an assist has a visible, honest cost.",
+        desc: "A Clinical score for what you did, and a separate Independent score for what you did without any paid-for help, so using an assist has a visible, honest cost.",
     },
     {
         Icon: AlertTriangle,
         iconBg: "bg-amber-50",
         iconColor: "text-amber-600",
         title: "A patient who can get worse",
-        desc: "In our real-time cardiac emergency case, the monitor doesn't wait for you — delay or mismanage it and the patient deteriorates, exactly like it would at the bedside.",
+        desc: "In our real-time cardiac emergency case, the monitor doesn't wait for you: delay or mismanage it and the patient deteriorates, exactly like it would at the bedside.",
     },
     {
         Icon: FlaskConical,
         iconBg: "bg-emerald-50",
         iconColor: "text-emerald-500",
         title: "Investigations that take real time",
-        desc: "Order from a real test catalogue and results come back on a realistic delay, with their own 12-lead ECG interpretation view — not an instant answer key.",
+        desc: "Order from a real test catalogue and results come back on a realistic delay, with their own 12-lead ECG interpretation view, not an instant answer key.",
     },
     {
         Icon: ClipboardCheck,
@@ -66,21 +67,21 @@ const features = [
         iconBg: "bg-cyan-50",
         iconColor: "text-cyan-600",
         title: "A quiz built from your own gaps",
-        desc: "Five questions generated from what this specific attempt showed you missed — not a static bank of generic questions everyone gets.",
+        desc: "Five questions generated from what this specific attempt showed you missed, not a static bank of generic questions everyone gets.",
     },
     {
         Icon: Users,
         iconBg: "bg-pink-50",
         iconColor: "text-pink-500",
         title: "Patients who look like your patients",
-        desc: "Age-accurate portraits in Indian attire, drawn to match each case — not a stock photo or a cartoon avatar that could belong to any patient anywhere.",
+        desc: "Age-accurate portraits in Indian attire, drawn to match each case, not a stock photo or a cartoon avatar that could belong to any patient anywhere.",
     },
     {
         Icon: Unlock,
         iconBg: "bg-slate-100",
         iconColor: "text-slate-600",
         title: "One case, free, no signup",
-        desc: "Run a full case end to end — history, monitor, investigations, differential, debrief — before you decide whether to create an account.",
+        desc: "Run a full case end to end (history, monitor, investigations, differential, debrief) before you decide whether to create an account.",
     },
 ]
 
@@ -122,7 +123,7 @@ export default function FeaturesPage() {
                             </span>
                         </h1>
                         <p className="text-lg text-slate-600 leading-relaxed">
-                            Nothing below is a mockup. Every one of these is in the live platform today — try the free case and you'll see each of them yourself.
+                            Nothing below is a mockup. Every one of these is in the live platform today: try the free case and you'll see each of them yourself.
                         </p>
                     </div>
 
@@ -145,7 +146,7 @@ export default function FeaturesPage() {
                     <section className="mb-20 bg-slate-900 rounded-2xl p-8 md:p-10 text-white">
                         <h2 className="text-xl font-bold mb-3">What's not built yet</h2>
                         <p className="text-slate-300 leading-relaxed">
-                            Real-time deterioration currently runs on our cardiac emergency case only — the rest of the library shares the same live monitor, ranked differential and dual scoring, but doesn't yet deteriorate if mismanaged. We're building that out case by case with clinical review, not all at once.
+                            Real-time deterioration currently runs on our cardiac emergency case only: the rest of the library shares the same live monitor, ranked differential and dual scoring, but doesn't yet deteriorate if mismanaged. We're building that out case by case with clinical review, not all at once.
                         </p>
                     </section>
 

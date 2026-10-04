@@ -6,14 +6,15 @@ import type { Metadata } from "next"
 import ArticleGrid from "./ArticleGrid"
 
 export const metadata: Metadata = {
-    title: "Blog — MediKarya Insights",
+    alternates: { canonical: "https://www.medikarya.in/blog" },
+    title: "Blog: Clinical Reasoning for Medical Students",
     description: "The MediKarya blog explores clinical reasoning training, simulation-based medical education, and AI in healthcare. Written for medical students, educators, and clinicians.",
     robots: {
         index: true,
         follow: true,
     },
     openGraph: {
-        title: "MediKarya Blog — Clinical Reasoning & Medical Education",
+        title: "MediKarya Blog: Clinical Reasoning & Medical Education",
         description: "Deep dives into clinical reasoning, AI-driven medical education, diagnostic thinking, and the future of healthcare simulation.",
         images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Blog" }],
     },
@@ -26,8 +27,8 @@ export const metadata: Metadata = {
 // Featured pillar article (first article)
 const featured = {
     slug: "ai-revolutionizing-medical-education",
-    title: "How AI is Revolutionizing Medical Education",
-    excerpt: "Artificial intelligence is beginning to change how medical students practise clinical reasoning. Instead of relying solely on ward exposure, students can now work through simulated patient cases repeatedly and receive structured feedback — anywhere, anytime.",
+    title: "What AI Patient Cases Can (and Can't) Teach a Medical Student",
+    excerpt: "Ward exposure is shrinking for many students. Here is what working through simulated patient cases can build, what it cannot, and how to use it alongside real patients.",
     category: "AI in Medicine",
     categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
 }
@@ -37,7 +38,7 @@ const articles = [
     {
         slug: "feynman-technique-clinical-reasoning",
         title: "The Feynman Technique for Clinical Reasoning",
-        excerpt: "Nobel physicist Richard Feynman's legendary learning method translates surprisingly well to medicine. Here's how to use it to master clinical decision-making.",
+        excerpt: "If you can't explain a diagnosis simply, you probably don't understand it yet. A ten-minute end-of-day routine that shows you where your understanding has gaps.",
         category: "Study Tips",
         categoryColor: "bg-emerald-50 text-emerald-700 border-emerald-100",
         author: "MediKarya Team",
@@ -57,7 +58,7 @@ const articles = [
     {
         slug: "why-medical-students-need-simulation",
         title: "Why Medical Students Need Simulation Training",
-        excerpt: "The transition from classroom to clinic is one of the hardest leaps in medical education. Simulation bridges that gap — safely, repeatedly, and on demand.",
+        excerpt: "The transition from classroom to clinic is one of the hardest leaps in medical education. Practising on simulated patients lets you make your first mistakes where they cost nothing.",
         category: "Medical Education",
         categoryColor: "bg-purple-50 text-purple-700 border-purple-100",
         author: "MediKarya Team",
@@ -76,8 +77,8 @@ const articles = [
     },
     {
         slug: "future-ai-assisted-diagnosis",
-        title: "The Future of Healthcare: AI-Assisted Diagnosis",
-        excerpt: "AI won't replace doctors — but doctors who use AI will replace those who don't. Explore what AI-assisted diagnosis looks like in practice and what it means for medical students today.",
+        title: "AI-Assisted Diagnosis: What It Means for Today's Medical Students",
+        excerpt: "AI already reads scans and flags deteriorating patients. The skill it makes more valuable, not less, is knowing when to trust it.",
         category: "AI in Medicine",
         categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
         author: "MediKarya Team",

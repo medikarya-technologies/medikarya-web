@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Stethoscope, Brain, BookOpen, Heart } from "luci
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
+    alternates: { canonical: "https://www.medikarya.in/about" },
     title: "About MediKarya",
     description: "MediKarya is an AI-powered clinical simulation platform built for medical students in India. Learn about our mission, what we're building, and the problem we're solving.",
     robots: {
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     },
     openGraph: {
         title: "About MediKarya — AI Clinical Simulation for Medical Students",
-        description: "We're building the practice environment that medical education has always needed — realistic, affordable, and available before your first real patient.",
+        description: "We're building the practice environment that medical education has always needed: realistic, affordable, and available before your first real patient.",
         images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Platform Preview" }],
     },
 }
@@ -24,14 +25,14 @@ const values = [
         iconBg: "bg-blue-50",
         iconColor: "text-blue-500",
         title: "Practice-first learning",
-        desc: "The best way to learn medicine is to do medicine. We build environments where students can attempt, fail, and improve — before the stakes are real.",
+        desc: "The best way to learn medicine is to do medicine. We build environments where students can attempt, fail, and improve, before the stakes are real.",
     },
     {
         Icon: Brain,
         iconBg: "bg-purple-50",
         iconColor: "text-purple-500",
         title: "Diagnostic reasoning over recall",
-        desc: "Knowing facts isn't enough. We train the clinical thought process — differentials, investigation strategies, management decisions — not just what the answer is.",
+        desc: "Knowing facts isn't enough. We train the clinical thought process (differentials, investigation strategies, management decisions), not just what the answer is.",
     },
     {
         Icon: BookOpen,
@@ -45,7 +46,7 @@ const values = [
         iconBg: "bg-rose-50",
         iconColor: "text-rose-500",
         title: "Built for India",
-        desc: "Our cases are grounded in the Indian clinical context — the diseases, presentations, and resource constraints that matter for the students using this platform.",
+        desc: "Our cases are grounded in the Indian clinical context: the diseases, presentations, and resource constraints that matter for the students using this platform.",
     },
 ]
 
@@ -86,7 +87,7 @@ export default function AboutPage() {
                             </span>
                         </h1>
                         <p className="text-lg text-slate-600 leading-relaxed">
-                            Aviation has flight simulators. Surgery has procedure labs. But for most clinical reasoning decisions — the ones that determine diagnoses, investigations, and management — medical students have only textbooks and hope. MediKarya is trying to change that.
+                            Aviation has flight simulators. Surgery has procedure labs. But for most clinical reasoning decisions (the ones that determine diagnoses, investigations, and management) medical students have only textbooks and hope. MediKarya is trying to change that.
                         </p>
                     </div>
 
@@ -96,13 +97,13 @@ export default function AboutPage() {
                             <h2 className="text-2xl font-bold mb-6">The problem we're solving</h2>
                             <div className="space-y-4 text-slate-300 leading-relaxed">
                                 <p>
-                                    Medical students in India spend years learning anatomy, physiology, and pathology. Then they step into a ward and are expected to translate all of that into real-time clinical decisions — often with minimal supervision, on patients they've never seen before.
+                                    Medical students in India spend years learning anatomy, physiology, and pathology. Then they step into a ward and are expected to translate all of that into real-time clinical decisions, often with minimal supervision, on patients they've never seen before.
                                 </p>
                                 <p>
-                                    The supervised bedside learning that used to fill this gap is shrinking. Patient loads are high, attending time is limited, and students observe more than they do. The consequence isn't just slower skill development — it's clinical decisions made with incomplete confidence.
+                                    The supervised bedside learning that used to fill this gap is shrinking. Patient loads are high, attending time is limited, and students observe more than they do. The consequence isn't just slower skill development. It's clinical decisions made with incomplete confidence.
                                 </p>
                                 <p className="text-white font-medium">
-                                    We believe a structured simulation environment, built around realistic Indian clinical cases, can change this. Not by replacing clinical experience — but by preparing students to use it better.
+                                    We believe a structured simulation environment, built around realistic Indian clinical cases, can change this. Not by replacing clinical experience, but by preparing students to use it better.
                                 </p>
                             </div>
                         </div>
@@ -112,10 +113,10 @@ export default function AboutPage() {
                     <section className="mb-20">
                         <h2 className="text-2xl font-bold text-slate-900 mb-3">What MediKarya is</h2>
                         <p className="text-slate-600 leading-relaxed mb-8">
-                            MediKarya is an AI patient simulation platform. Students interact with a virtual patient presented with a chief complaint, working against a real bedside monitor with live vitals. They take a history, order investigations, interpret results, and rank a differential — a working diagnosis, a real alternative, and the one they can't afford to miss — before submitting a management plan. The AI evaluates their reasoning at each step — not just whether the final diagnosis was right, but whether the clinical thinking was sound. Then comes the part that makes it stick: a debrief that sets what they did well beside the consequences of what they missed, an expert walkthrough of the case, and five questions drawn from the gaps that attempt showed.
+                            MediKarya is an AI patient simulation platform. Students interact with a virtual patient presented with a chief complaint, working against a real bedside monitor with live vitals. They take a history, order investigations, interpret results, and rank a differential, a working diagnosis, a real alternative, and the one they can't afford to miss, before submitting a management plan. The AI evaluates their reasoning at each step, not just whether the final diagnosis was right, but whether the clinical thinking was sound. Then comes the part that makes it stick: a debrief that sets what they did well beside the consequences of what they missed, an expert walkthrough of the case, and five questions drawn from the gaps that attempt showed.
                         </p>
                         <p className="text-slate-600 leading-relaxed">
-                            Cases are built around real clinical presentations — the kinds seen at district hospitals and tertiary centres across India. Paediatrics, obstetrics, neurology, medicine. Each case comes with evidence-based learning objectives, structured differentials, and teaching points grounded in current guidelines. New cases are written by medical students from patients they have seen, and checked by a doctor before they are published.
+                            Cases are built around real clinical presentations: the kinds seen at district hospitals and tertiary centres across India. Paediatrics, obstetrics, neurology, medicine. Each case comes with evidence-based learning objectives, structured differentials, and teaching points grounded in current guidelines. New cases are written by medical students from patients they have seen, and checked by a doctor before they are published.
                         </p>
                     </section>
 
@@ -141,7 +142,7 @@ export default function AboutPage() {
                     <section className="mb-20">
                         <h2 className="text-2xl font-bold text-slate-900 mb-3">Where we are right now</h2>
                         <p className="text-slate-600 leading-relaxed mb-4">
-                            MediKarya is in early development. We currently have 10 published clinical cases — including a real-time cardiac emergency that deteriorates based on how it's managed — and are actively building the case library and platform features. If you're a medical student, clinician, or educator who wants to help shape what this becomes — we'd genuinely like to hear from you.
+                            MediKarya is in early development. We currently have 10 published clinical cases, including a real-time cardiac emergency that deteriorates based on how it's managed, and are actively building the case library and platform features. If you're a medical student, clinician, or educator who wants to help shape what this becomes: we'd genuinely like to hear from you.
                         </p>
                         <p className="text-slate-600 leading-relaxed">
                             We're based in India and building this for the Indian medical education context, with a longer-term goal of expanding to other LMIC settings where the same gap exists.

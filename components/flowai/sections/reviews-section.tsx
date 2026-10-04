@@ -55,7 +55,7 @@ export default function ReviewsSection() {
         <div className={cn("mx-auto max-w-xl text-center transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}>
           <Eyebrow className="text-brand-600">Reviews</Eyebrow>
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink sm:text-4xl">What the pilot batch said.</h2>
-          <p className="mt-4 text-[15.5px] leading-relaxed text-enc-ink-2">Real answers from the same MAMC pilot survey, not selected for being positive — this is what came back.</p>
+          <p className="mt-4 text-[15.5px] leading-relaxed text-enc-ink-2">Real answers from the same MAMC pilot survey, not selected for being positive. This is what came back.</p>
         </div>
 
         <div

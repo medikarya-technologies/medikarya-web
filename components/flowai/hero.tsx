@@ -101,7 +101,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-lg text-pretty text-lg leading-relaxed text-enc-ink-2">
-            Talk to a live patient, work through the case, and decide what to do next — before the stakes are real.
+            Talk to a live patient, work through the case, and decide what to do next, before the stakes are real.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

@@ -67,7 +67,7 @@ export default function PilotProofSection() {
             <Eyebrow className="text-brand-600">The pilot</Eyebrow>
             <h2 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink sm:text-4xl">Tested with real students, not just us.</h2>
             <p className="mt-4 text-[15.5px] leading-relaxed text-enc-ink-2">
-              In May 2026, a batch of 4th-year MBBS students at Maulana Azad Medical College worked cases on their own phones and tablets — the same interface shown throughout this page.
+              In May 2026, a batch of 4th-year MBBS students at Maulana Azad Medical College worked cases on their own phones and tablets: the same interface shown throughout this page.
             </p>
 
             <div className="mt-6 flex gap-3 border-l-2 border-brand-300 pl-4">

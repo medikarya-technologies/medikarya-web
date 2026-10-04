@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { caseModelJson } from "@/lib/ai/case-model";
 import { INTERVENTIONS } from "@/lib/simulation/intervention-catalog";
 import { checkLivePlan, normaliseLivePlan, type LivePlan, type LivePlanCheck, type LiveVitals } from "@/lib/simulation/live-plan";
 
@@ -13,8 +13,6 @@ import { checkLivePlan, normaliseLivePlan, type LivePlan, type LivePlanCheck, ty
 //
 // Not every case can honestly be a live one. A patient with a goitre does not crash in twenty minutes, and the model
 // is told to say so instead of inventing an emergency.
-
-const MODEL = "gemini-3.8-flash";
 
 export type LiveDraft =
   | { ok: true; plan: LivePlan; check: LivePlanCheck }
@@ -85,21 +83,8 @@ Rules
 SHARED TRAY (id = label (detail)):
 ${TRAY_LIST}`;
 
-function parseJson(text: string): any {
-  return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, ""));
-}
-
-async function generate(prompt: string): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-    model: MODEL,
-    systemInstruction: RULES,
-    generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 16384 },
-  });
-  const result = await model.generateContent(prompt);
-  return parseJson(result.response.text());
-}
+// Gemini by default, Claude with CASE_AI=claude (lib/ai/case-model.ts). The plan is checked by code afterwards.
+const generate = (prompt: string): Promise<any> => caseModelJson(RULES, prompt, { maxTokens: 16384, temperature: 0.2 });
 
 /** What the model needs of the case: who the patient is, what they have, and how it is managed. Not the AI patient's script. */
 function caseFor(caseJson: Record<string, any>, measured: LiveVitals): string {

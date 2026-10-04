@@ -33,12 +33,20 @@ export default async function AdvisorsAdminPage() {
         </Link>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Advisors</h1>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-600">
-          Send a professor a private link to play cases without signing up, read what they thought, then add them to the Clinical Advisory Board:
-          they get a certificate with a QR code, and their name appears on the{" "}
+          Show MediKarya to a professor: a private link to play cases students already play, without signing up, so they can tell you what
+          they think of the product. Then add them to the Clinical Advisory Board: they get a certificate with a QR code, and their name
+          appears on the{" "}
           <Link href="/contributors" className="font-medium text-sky-700 hover:underline">
             contributors page
           </Link>
           .
+        </p>
+        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-slate-500">
+          This is not for reviewing new cases. To have a professor review a converted case before it is published, use{" "}
+          <Link href="/admin/studio" className="font-medium text-sky-700 hover:underline">
+            Studio cases
+          </Link>{" "}
+          → Send a private link.
         </p>
 
         {!available ? (

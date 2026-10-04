@@ -1,6 +1,6 @@
 import "server-only";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { caseModelJson } from "@/lib/ai/case-model";
 import { CLINICAL_CATALOG, CATALOG_TEST_IDS } from "@/lib/clinical-catalog";
 import type { StudioCase } from "./source";
 import { checkDraft, settleIdentity, type CheckResult } from "./validate";
@@ -12,8 +12,6 @@ import example from "./example-case.json";
 // the actual test values) the model proposes and must list in review_notes, so the game check knows what to
 // verify. The draft is checked (lib/studio/validate.ts) and, if the check finds problems, sent back once to be
 // fixed. Nothing here publishes: the result is saved as a draft (app/admin/studio/actions.ts).
-
-const MODEL = "gemini-3.8-flash";
 
 export interface Conversion {
   caseJson: Record<string, any>;
@@ -111,22 +109,8 @@ function sheetFor(sc: StudioCase): string {
   );
 }
 
-function parseJson(text: string): any {
-  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "");
-  return JSON.parse(trimmed);
-}
-
-async function generate(prompt: string): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-    model: MODEL,
-    systemInstruction: RULES,
-    generationConfig: { temperature: 0.3, responseMimeType: "application/json", maxOutputTokens: 32768 },
-  });
-  const result = await model.generateContent(prompt);
-  return parseJson(result.response.text());
-}
+// Gemini by default, Claude with CASE_AI=claude (lib/ai/case-model.ts). A whole case is a long answer.
+const generate = (prompt: string): Promise<any> => caseModelJson(RULES, prompt, { maxTokens: 32768, temperature: 0.3 });
 
 const catalogIds = new Set(CATALOG_TEST_IDS);
 
@@ -136,7 +120,8 @@ const catalogIds = new Set(CATALOG_TEST_IDS);
  */
 export async function convertStudioCase(
   sc: StudioCase,
-  revise?: { previous: { case: unknown; review_notes: string[] }; comments: string }
+  /** authorUpdated: the author has since corrected the case sheet themselves to answer these comments. */
+  revise?: { previous: { case: unknown; review_notes: string[] }; comments: string; authorUpdated?: boolean }
 ): Promise<Conversion> {
   const ctx = { catalogIds, identifiers: sc.identifiers };
 
@@ -144,7 +129,12 @@ export async function convertStudioCase(
     revise
       ? `A clinical reviewer read this case and asked for changes. Make exactly the changes they ask for, keep everything ` +
           `else as it is, and keep "origin", "basis" and review_notes true for anything you change (a value the reviewer ` +
-          `gave you has origin "reviewer").\n\nREVIEWER'S COMMENTS:\n${revise.comments}\n\n` +
+          `gave you has origin "reviewer").` +
+          (revise.authorUpdated
+            ? ` The student who wrote the case sheet has corrected it to answer these comments: take the corrected facts ` +
+              `from the CASE SHEET (origin "case_sheet"), and do not invent anything the sheet does not now say.`
+            : "") +
+          `\n\nREVIEWER'S COMMENTS:\n${revise.comments}\n\n` +
           `CASE SHEET:\n${sheetFor(sc)}\n\nCURRENT CASE:\n${JSON.stringify(revise.previous)}`
       : `EXAMPLE (a different case, converted well):\n${JSON.stringify(example)}\n\nCASE SHEET TO CONVERT:\n${sheetFor(sc)}`
   );

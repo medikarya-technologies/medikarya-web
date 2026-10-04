@@ -14,6 +14,7 @@ import { GUEST_CASE_IDS } from "@/lib/plans/limits"
 export const revalidate = 300
 
 export const metadata: Metadata = {
+    alternates: { canonical: "https://www.medikarya.in/case-studies" },
     title: "Clinical Cases — MediKarya Case Library",
     description: "Every patient in the MediKarya library, as you first meet them: who they are and what they came in with. Work each one up yourself, then see where your reasoning held and where it broke.",
     openGraph: {

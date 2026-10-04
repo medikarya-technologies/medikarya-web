@@ -72,7 +72,7 @@ export default function ContactClient() {
                                 Partner with <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-accent-600">MediKarya</span>
                             </h1>
-                            <p className="text-base text-slate-600">Empower your institution with next-gen clinical training.</p>
+                            <p className="text-base text-slate-600">For colleges, faculty and student groups: pilots, workshops, or a question about the platform.</p>
                         </div>
                         <Card className="overflow-hidden border-0 shadow-2xl bg-white/80 backdrop-blur-xl ring-1 ring-slate-200/50 rounded-3xl p-8 sm:p-10">
                             {isSubmitted ? (
