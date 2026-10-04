@@ -50,7 +50,6 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
   const [result, setResult] = useState<ActionResult | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [email, setEmail] = useState(c.authorEmail ?? "")
-  const [reward, setReward] = useState(true)
   const [sendingBack, setSendingBack] = useState(false)
   const [backComments, setBackComments] = useState("")
   const [step, setStep] = useState<string | null>(null)
@@ -338,13 +337,14 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
           {converted.live && (
             <p className="mt-1 text-[13px] text-emerald-900">The reviewer&apos;s approval covers its live plan, so students get the live version (clock, tray, deterioration) as soon as it is published.</p>
           )}
-          <label className="mt-3 flex items-center gap-2 text-[14px] text-slate-800">
-            <input type="checkbox" checked={reward} onChange={(e) => setReward(e.target.checked)} className="h-4 w-4" />
-            Reward the author with 1 month of Resident (up to 6 months in all)
-          </label>
-          {reward && (
-            <label className="mt-2 block text-[13.5px] text-slate-700">
-              Author&apos;s email{c.authorEmail ? " (from their Case Studio account)" : " (they submitted by PDF, so type it)"}
+          {/* Every published case gives its author a month of Resident, up to 6 in all (CASE_REWARD in lib/plans/grants.ts) */}
+          {c.authorEmail ? (
+            <p className="mt-3 text-[13.5px] text-slate-700">
+              The author ({c.authorEmail}) automatically gets 1 month of Resident, up to 6 months in all, when they sign in to MediKarya with that email.
+            </p>
+          ) : (
+            <label className="mt-3 block text-[13.5px] text-slate-700">
+              Author&apos;s email, for their free month of Resident (they submitted by PDF, so type it)
               <input
                 type="email"
                 value={email}
@@ -352,11 +352,13 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
                 placeholder="author@example.com"
                 className="mt-1 w-full max-w-sm rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[14px] outline-none focus:border-sky-500"
               />
-              <span className="mt-1 block text-[12px] text-slate-500">They get it when they sign in to MediKarya with this same email.</span>
+              <span className="mt-1 block text-[12px] text-slate-500">
+                1 month per published case, up to 6 in all, when they sign in with this email. Leave it empty if you don&apos;t have it.
+              </span>
             </label>
           )}
           <div className="mt-3 flex gap-2">
-            <Button disabled={pending || (reward && !email.trim())} onClick={() => run("publish", () => publishCase(converted.id, reward ? email : null))}>
+            <Button disabled={pending} onClick={() => run("publish", () => publishCase(converted.id, email.trim() || null))}>
               {spin("publish")}Publish now
             </Button>
             <Button variant="ghost" onClick={() => setPublishing(false)}>

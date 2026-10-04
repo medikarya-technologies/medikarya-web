@@ -349,6 +349,35 @@ export async function syncPublishedToStudio(live: Array<{ studioCaseId: string; 
   }
 }
 
+/**
+ * Profile pictures for /contributors, per studio case: its writer's (only when they wrote it in the studio
+ * themselves, not when an admin typed it in for them) and the reviewer's who approved it in the queue and chose to
+ * be named. Pictures come from each person's sign-in account (studio migration 016); empty before that is run.
+ */
+export async function contributorPictures(studioCaseIds: string[]): Promise<Map<string, { writer?: string; reviewer?: string }>> {
+  const out = new Map<string, { writer?: string; reviewer?: string }>();
+  const db = studio();
+  if (!db || studioCaseIds.length === 0) return out;
+  const [{ data: cases }, { data: reviews }] = await Promise.all([
+    db.from("cases").select("id, author_id, original_author_name").in("id", studioCaseIds),
+    db.from("conversion_reviews").select("case_id, reviewer_id, decided_at").in("case_id", studioCaseIds).eq("decision", "approved").eq("show_name", true),
+  ]);
+  const userIds = [
+    ...new Set([...(cases ?? []).filter((c) => !c.original_author_name).map((c) => c.author_id), ...(reviews ?? []).map((r) => r.reviewer_id)].filter(Boolean)),
+  ];
+  if (userIds.length === 0) return out;
+  const { data: users, error } = await db.from("users").select("id, avatar_url").in("id", userIds);
+  if (error) return out; // studio migration 016 not run yet
+  const picture = new Map((users ?? []).filter((u) => u.avatar_url).map((u) => [u.id, u.avatar_url as string]));
+  for (const c of cases ?? []) {
+    const writer = !c.original_author_name ? picture.get(c.author_id) : undefined;
+    const latest = (reviews ?? []).filter((r) => r.case_id === c.id).sort((a, b) => String(b.decided_at).localeCompare(String(a.decided_at)))[0];
+    const reviewer = latest ? picture.get(latest.reviewer_id) : undefined;
+    if (writer || reviewer) out.set(c.id, { writer, reviewer });
+  }
+  return out;
+}
+
 export interface StudioCertificate {
   credentialId: string;
   /** "internship" certificates are issued by hand in the studio (Admin, Certificates); the others are earned. */

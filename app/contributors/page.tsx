@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/flowai/footer"
 import { supabaseServer } from "@/lib/supabase/server"
 import { listAdvisors } from "@/lib/advisors/invites"
+import { contributorPictures } from "@/lib/studio/source"
 import { studioLinks } from "@/lib/site-links"
 import { ContributorTabs, type EarlyContributor } from "@/components/contributors/contributor-tabs"
 
@@ -31,6 +32,8 @@ interface Person {
     name: string
     line: string
     cases: number
+    /** Their sign-in account's picture, from the Case Studio (contributorPictures). */
+    image?: string
 }
 
 /** The two people who helped before any of this existed (moved here from the old /early-contributors page, which now redirects). */
@@ -58,25 +61,35 @@ const key = (name: string) => name.toLowerCase().replace(/^(dr|prof)\.?\s+/i, ""
 async function load() {
     const [advisors, { data: cases, error }] = await Promise.all([
         listAdvisors(true).catch(() => []),
-        supabaseServer.from("cases").select("id, credit:case_json->credit, review:case_json->review").eq("status", "published"),
+        supabaseServer
+            .from("cases")
+            .select("id, credit:case_json->credit, review:case_json->review, studio:case_json->source->>studio_case_id")
+            .eq("status", "published"),
     ])
     if (error) console.error("Contributors page: could not read cases:", error.message)
 
+    const rows = (cases ?? []) as Array<{ credit: any; review: any; studio: string | null }>
+    // their own photos, for cases that came through the Case Studio (private-link reviewers have no account, so none)
+    const pictures = await contributorPictures(rows.map((c) => c.studio).filter((s): s is string => !!s)).catch(() => new Map())
+
     const writers = new Map<string, Person>()
     const reviewers = new Map<string, Person>()
-    for (const c of (cases ?? []) as Array<{ credit: any; review: any }>) {
+    for (const c of rows) {
+        const pic = c.studio ? pictures.get(c.studio) : undefined
         const author = typeof c.credit?.author === "string" ? c.credit.author.trim() : ""
         if (author) {
             const k = key(author)
             const cur = writers.get(k)
-            writers.set(k, { name: cur?.name ?? author, line: cur?.line || (c.credit.institution ?? ""), cases: (cur?.cases ?? 0) + 1 })
+            writers.set(k, { name: cur?.name ?? author, line: cur?.line || (c.credit.institution ?? ""), cases: (cur?.cases ?? 0) + 1, image: cur?.image ?? pic?.writer })
         }
         const r = c.review
         if (r?.decision === "approved" && r.show_name && typeof r.reviewer_name === "string" && r.reviewer_name.trim()) {
             const k = key(r.reviewer_name)
             const cur = reviewers.get(k)
             const line = [r.reviewer_designation, r.reviewer_department, r.reviewer_institution].filter(Boolean).join(", ")
-            reviewers.set(k, { name: cur?.name ?? r.reviewer_name.trim(), line: cur?.line || line, cases: (cur?.cases ?? 0) + 1 })
+            // a picture only when this approval came from the studio queue (a private link has no account behind it)
+            const image = r.via === "studio" ? pic?.reviewer : undefined
+            reviewers.set(k, { name: cur?.name ?? r.reviewer_name.trim(), line: cur?.line || line, cases: (cur?.cases ?? 0) + 1, image: cur?.image ?? image })
         }
     }
     const byCases = (a: Person, b: Person) => b.cases - a.cases || a.name.localeCompare(b.name)
@@ -128,8 +141,8 @@ export default async function ContributorsPage() {
                     <div className="space-y-16 pb-24">
                         <ContributorTabs
                             advisors={advisors.map((a) => ({ name: a.name, line: [a.designation, a.department, a.institution].filter(Boolean).join(", ") }))}
-                            reviewers={reviewers.map((r) => ({ name: r.name, line: r.line, note: casesNote(r.cases, "reviewed") }))}
-                            writers={writers.map((w) => ({ name: w.name, line: w.line, note: casesNote(w.cases, "published") }))}
+                            reviewers={reviewers.map((r) => ({ name: r.name, line: r.line, note: casesNote(r.cases, "reviewed"), image: r.image }))}
+                            writers={writers.map((w) => ({ name: w.name, line: w.line, note: casesNote(w.cases, "published"), image: w.image }))}
                             early={EARLY}
                             writeHref={studioLinks.writeACase}
                             reviewHref={studioLinks.becomeAReviewer}

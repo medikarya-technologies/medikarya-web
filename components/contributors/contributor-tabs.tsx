@@ -15,6 +15,8 @@ export interface ContributorPerson {
     line: string
     /** e.g. "3 cases reviewed" */
     note?: string
+    /** Their own photo (their sign-in account's); the empty profile picture when there is none. */
+    image?: string
 }
 
 export interface EarlyContributor {
@@ -45,7 +47,12 @@ function PersonCard({ person, badge }: { person: ContributorPerson; badge?: stri
     return (
         <li className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
             <div className="flex items-center gap-4">
-                <EmptyAvatar className="h-14 w-14" />
+                {person.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={person.image} alt="" referrerPolicy="no-referrer" loading="lazy" className="h-14 w-14 shrink-0 rounded-full object-cover ring-1 ring-slate-200" />
+                ) : (
+                    <EmptyAvatar className="h-14 w-14" />
+                )}
                 <div className="min-w-0">
                     <p className="leading-tight">
                         {title && <span className="mr-1 text-[13px] font-semibold text-slate-400">{title}</span>}

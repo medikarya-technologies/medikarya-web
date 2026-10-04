@@ -435,7 +435,8 @@ export async function publishCase(caseId: string, rewardEmail: string | null): P
     // The studio pays the author and counts the case towards their title from this.
     const studioCaseId = caseJson.source?.studio_case_id
     const studioNote = studioCaseId ? await markPublishedInStudio(studioCaseId, publishedAt) : null
-    const reward = email ? ` ${await rewardAuthor(email, caseId, adminId)}` : ""
+    // every published case gives its author a month of Resident (capped in caseRewardWindow); it needs their email
+    const reward = email ? ` ${await rewardAuthor(email, caseId, adminId)}` : " No author email, so no free month of Resident was given."
     const kind = isLivePlan(caseJson.live_plan) ? "as a live case" : "as a static case"
     return { ok: true, message: `Published ${kind}: students see it in the library within a minute.${reward}${studioNote ? ` ${studioNote}` : ""}` }
   } catch (error) {
