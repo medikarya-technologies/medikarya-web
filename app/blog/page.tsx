@@ -77,13 +77,13 @@ const articles = [
     },
     {
         slug: "future-ai-assisted-diagnosis",
-        title: "AI-Assisted Diagnosis: What It Means for Today's Medical Students",
-        excerpt: "AI already reads scans and flags deteriorating patients. The skill it makes more valuable, not less, is knowing when to trust it.",
+        title: "AI in Medical Diagnosis: Uses, Limits and the Doctor's Role",
+        excerpt: "Where AI already helps diagnose, where it goes wrong, and why the skill it makes more valuable is knowing when to trust it.",
         category: "AI in Medicine",
         categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
         author: "MediKarya Team",
         date: "April 2026",
-        readTime: "6 min read",
+        readTime: "7 min read",
     },
 ]
 

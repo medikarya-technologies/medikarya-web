@@ -1,4 +1,6 @@
 import { MetadataRoute } from 'next'
+import { getCases } from '@/data/cases'
+import { CASE_GUIDES } from '@/lib/seo/case-guides'
 
 const blogPosts: { slug: string; lastModified: string }[] = [
     { slug: 'ai-revolutionizing-medical-education',    lastModified: '2026-10-04' },
@@ -6,7 +8,7 @@ const blogPosts: { slug: string; lastModified: string }[] = [
     { slug: 'sepsis-case-based-approach',              lastModified: '2026-04-18' },
     { slug: 'why-medical-students-need-simulation',    lastModified: '2026-04-16' },
     { slug: 'breaking-down-diagnostic-process',        lastModified: '2026-04-14' },
-    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2026-04-12' },
+    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2026-10-06' },
 ]
 
 const staticRoutes: { path: string; lastModified: string; priority: number }[] = [
@@ -22,13 +24,13 @@ const staticRoutes: { path: string; lastModified: string; priority: number }[] =
     { path: '/refund-policy', lastModified: '2026-09-27', priority: 0.3 },
     { path: '/cookies',      lastModified: '2025-12-01', priority: 0.3 },
     { path: '/tutorials',    lastModified: '2026-10-04', priority: 0.8 },
-    { path: '/case-studies', lastModified: '2026-04-20', priority: 0.8 },
+    { path: '/case-studies', lastModified: '2026-10-06', priority: 0.9 },
     { path: '/contribute',   lastModified: '2026-10-04', priority: 0.7 },
     { path: '/contributors', lastModified: '2026-10-04', priority: 0.7 },
     { path: '/api-docs',     lastModified: '2026-10-04', priority: 0.6 },
 ]
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.medikarya.in'
 
     const staticEntries: MetadataRoute.Sitemap = staticRoutes.map(({ path, lastModified, priority }) => ({
@@ -45,6 +47,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.8,
     }))
 
-    return [...staticEntries, ...blogEntries]
+    // One study page per published case that has a guide (a case without one is noindex, so it stays out of here)
+    const cases = await getCases().catch(() => [])
+    const caseEntries: MetadataRoute.Sitemap = cases
+        .filter((c) => CASE_GUIDES[c.id])
+        .map((c) => ({
+            url: `${baseUrl}/case-studies/${c.id}`,
+            lastModified: new Date('2026-10-06'),
+            changeFrequency: 'monthly' as const,
+            priority: 0.8,
+        }))
+
+    return [...staticEntries, ...blogEntries, ...caseEntries]
 }
 

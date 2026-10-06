@@ -18,6 +18,10 @@ const articles: Record<string, {
     isoDate: string
     author: string
     readTime: string
+    /** Last real edit, if after isoDate (dateModified in the structured data). */
+    updatedIsoDate?: string
+    /** Search-result snippet, when the intro does not work as one. */
+    description?: string
     intro: string
     keywords: string[]
     body: BodyBlock[]
@@ -189,26 +193,32 @@ const articles: Record<string, {
         ],
     },
     "future-ai-assisted-diagnosis": {
-        title: "AI-Assisted Diagnosis: What It Means for Today's Medical Students",
+        title: "AI in Medical Diagnosis: Uses, Limits and the Doctor's Role",
         category: "AI in Medicine",
         categoryColor: "bg-blue-50 text-blue-700 border-blue-100",
         date: "April 12, 2026",
         isoDate: "2026-04-12",
+        updatedIsoDate: "2026-10-06",
         author: "MediKarya Founding Team",
-        readTime: "6 min read",
-        wordCount: 450,
+        readTime: "7 min read",
+        wordCount: 900,
         fullArticle: true,
-        keywords: ["AI assisted diagnosis", "AI in healthcare India", "future of AI in medicine", "AI doctor tools medical students", "AI clinical decision support"],
-        intro: "There is a phrase circulating in medical education conferences right now: AI won't replace doctors, but doctors who use AI will replace those who don't. The conversation has shifted from whether AI will change medicine to how fast and how deeply.",
+        keywords: ["AI in medical diagnosis", "AI assisted diagnosis", "AI diagnosis examples", "limitations of AI in diagnosis", "AI in healthcare India", "AI clinical decision support"],
+        description: "Where AI already helps diagnose disease (eye screening, chest X-rays, ECGs, skin lesions), where it goes wrong, and the clinical judgement that still has to come from the doctor.",
+        intro: "AI is already part of how some diseases are diagnosed. It screens retinal photographs, reads chest X-rays and flags abnormal ECGs. It is also wrong in predictable ways. Here is what it does well, where it fails, and what that leaves for the doctor.",
         body: [
-            { type: "heading", text: "Where AI Diagnostic Tools Stand Today" },
-            { type: "paragraph", text: "Current AI diagnostic tools are already performing at or above specialist level in narrow domains. AI systems read diabetic retinopathy screening images with greater accuracy than human graders. Dermatology AI can classify skin lesions from photographs. Radiology AI flags pulmonary emboli on CT scans. These tools are not replacing radiologists or dermatologists. They are augmenting them, handling the high-volume, pattern-recognition tasks so human expertise can be directed toward complexity and communication." },
+            { type: "heading", text: "Where AI Is Already Used in Diagnosis" },
+            { type: "paragraph", text: "The clearest successes are in narrow tasks built on images or signals, where a large set of labelled examples exists. In 2018 the US FDA authorised IDx-DR, a system that screens retinal photographs for diabetic retinopathy without a specialist reading the images first. In chest radiology, AI tools that flag abnormal chest X-rays are used in tuberculosis screening programmes, including in India, where they help decide who needs a sputum test when no radiologist is available. Cardiology has algorithms that read an ordinary 12-lead ECG and estimate the chance of a weak heart muscle. Dermatology tools classify photographs of skin lesions, and radiology software flags possible pulmonary emboli and brain bleeds on CT so the most urgent scans are read first." },
+            { type: "paragraph", text: "What these have in common is that the AI answers one well-defined question about one kind of input. None of them takes a history, examines a patient or weighs a result against everything else known about the person in front of you." },
+            { type: "heading", text: "Where AI Diagnosis Goes Wrong" },
+            { type: "paragraph", text: "The failures are as instructive as the successes. A widely used hospital sepsis-prediction model, when tested independently on patients at a US health system, missed many of the patients who developed sepsis and raised alerts on many who did not, performing far worse than its developers had reported. The model had been built and tested in conditions that did not match the hospitals using it." },
+            { type: "paragraph", text: "That is the general pattern. An algorithm trained on one population, scanner or hospital can lose accuracy on another, a problem called dataset shift. Dermatology models trained mostly on lighter skin perform worse on darker skin. A model can latch onto a shortcut, such as a marker on the image or the type of X-ray machine used in sicker patients, instead of the disease itself. And because the output arrives as a confident number or a highlighted box, these errors are easy to miss." },
             { type: "heading", text: "What This Means for Medical Students" },
             { type: "paragraph", text: "Imagine a clinician reviewing a chest CT scan flagged by an AI system for a possible pulmonary embolism. The AI highlights a suspicious region in the pulmonary artery. The radiologist still reviews the image independently, checks the patient's symptoms and risk factors, and decides whether the finding truly represents a clot or an artifact. The AI speeds up detection, but the clinical judgement remains human. That judgement, knowing which AI alerts to act on and which to question, is a skill that needs to be trained explicitly." },
-            { type: "paragraph", text: "For medical students, the important implication is this: the baseline competency expected of a doctor is rising. Knowing the diagnosis is increasingly assumed. What differentiates clinicians will be clinical judgement under uncertainty, communication, and the ability to work effectively with AI decision-support tools without becoming dependent on them." },
+            { type: "paragraph", text: "For medical students, the important implication is this: the baseline competency expected of a doctor is rising. Recognising the pattern is increasingly something a machine can help with. What differentiates clinicians will be clinical judgement under uncertainty, communication, and the ability to work with AI decision-support tools without becoming dependent on them." },
             { type: "heading", text: "Calibrated Scepticism" },
-            { type: "paragraph", text: "The critical skill for the next generation of doctors is calibrated scepticism of AI output. An AI that is 95% accurate will be wrong 1 in 20 times. Knowing when you are in that 5%, recognising when the algorithm's confidence is misplaced, requires the same clinical reasoning skills that have always defined good medicine." },
-            { type: "paragraph", text: "The doctors best positioned for this future are not those who fear AI, nor those who trust it uncritically. They are those who understand how it works well enough to use it intelligently. And developing that understanding starts during training." },
+            { type: "paragraph", text: "The critical skill for the next generation of doctors is calibrated scepticism of AI output. An AI that is 95% accurate will be wrong 1 in 20 times. Knowing when you are in that 5%, recognising when the algorithm's confidence is misplaced, requires the same clinical reasoning skills that have always defined good medicine: a pre-test probability, a differential, and the habit of asking whether a result fits the patient." },
+            { type: "paragraph", text: "Those skills come from working through patients and getting feedback on your reasoning, not from reading about AI. The doctors best positioned for this future are not those who fear AI, nor those who trust it uncritically. They are those who can reason through a case well enough to notice when the machine has not." },
             { type: "callout", text: "This is why training in clinical reasoning frameworks remains essential even as AI tools become more common. See", href: "/blog/breaking-down-diagnostic-process", linkLabel: "Breaking Down the Diagnostic Process" },
         ],
     },
@@ -225,7 +235,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!article) return { title: "Article Not Found", robots: { index: false, follow: false } }
     return {
         title: article.title,
-        description: article.intro,
+        description: article.description ?? article.intro,
         keywords: article.keywords,
         alternates: {
             canonical: `${BASE_URL}/blog/${slug}`,
@@ -240,9 +250,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         },
         openGraph: {
             title: article.title,
-            description: article.intro,
+            description: article.description ?? article.intro,
             type: "article",
             publishedTime: article.isoDate,
+            ...(article.updatedIsoDate ? { modifiedTime: article.updatedIsoDate } : {}),
             authors: [article.author],
             url: `${BASE_URL}/blog/${slug}`,
             images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: article.title }],
@@ -250,7 +261,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         twitter: {
             card: "summary_large_image",
             title: article.title,
-            description: article.intro,
+            description: article.description ?? article.intro,
             images: [OG_IMAGE],
         },
     }
@@ -269,7 +280,7 @@ export default async function BlogArticlePage({ params }: Props) {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
         "headline": article.title,
-        "description": article.intro,
+        "description": article.description ?? article.intro,
         "keywords": article.keywords.join(", "),
         "articleSection": article.category,
         "inLanguage": "en-IN",
@@ -303,7 +314,7 @@ export default async function BlogArticlePage({ params }: Props) {
         },
         "url": `${BASE_URL}/blog/${slug}`,
         "datePublished": article.isoDate,
-        "dateModified": article.isoDate,
+        "dateModified": article.updatedIsoDate ?? article.isoDate,
         "wordCount": article.wordCount ?? 800,
         "mainEntityOfPage": {
             "@type": "WebPage",
@@ -401,7 +412,7 @@ export default async function BlogArticlePage({ params }: Props) {
                         {article.fullArticle && (
                             <p className="mt-8 text-slate-600 border-t border-slate-100 pt-6">
                                 Clinical reasoning improves through repeated exposure to real patient scenarios.{" "}
-                                <Link href="/login" className="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-900">
+                                <Link href="/case-studies" className="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-900">
                                     Explore interactive patient cases on MediKarya
                                 </Link>{" "}to practise this process directly.
                             </p>
@@ -452,7 +463,7 @@ export default async function BlogArticlePage({ params }: Props) {
                             <Link href="/blog"><ArrowLeft className="mr-2 h-4 w-4" /> All Articles</Link>
                         </Button>
                         <Button asChild className="rounded-full bg-slate-900 text-white hover:bg-slate-800">
-                            <Link href="/login">Try a Patient Case →</Link>
+                            <Link href="/try">Try a Patient Case →</Link>
                         </Button>
                     </div>
                 </div>

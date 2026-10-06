@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Activity, Baby, Brain, Clock, Droplet, HeartPuls
 import type { Metadata } from "next"
 import { getCases, type CaseMetadata } from "@/data/cases"
 import { GUEST_CASE_IDS } from "@/lib/plans/limits"
+import { CASE_GUIDES } from "@/lib/seo/case-guides"
 
 // The public case library: every published case as a student first meets it (who the patient is and what they came
 // in with), never what they turn out to have. It reads the same list the signed-in library does, so a new case
@@ -15,10 +16,10 @@ export const revalidate = 300
 
 export const metadata: Metadata = {
     alternates: { canonical: "https://www.medikarya.in/case-studies" },
-    title: "Clinical Cases — MediKarya Case Library",
+    title: "Clinical Cases for Medical Students: Case Library",
     description: "Every patient in the MediKarya library, as you first meet them: who they are and what they came in with. Work each one up yourself, then see where your reasoning held and where it broke.",
     openGraph: {
-        title: "MediKarya Case Library — Patients to Work Up Yourself",
+        title: "MediKarya Case Library: Patients to Work Up Yourself",
         description: "Real presentations across paediatrics, obstetrics, medicine, surgery and more. Take the history, order the tests, commit to a diagnosis, then get a debrief and questions on what you missed.",
         images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Clinical Cases" }],
     },
@@ -69,7 +70,9 @@ function CaseCard({ c }: { c: CaseMetadata }) {
                         {c.live && <span className="rounded-full border border-slate-900 bg-slate-900 px-2.5 py-0.5 text-xs font-semibold text-white">Live simulation</span>}
                         {free && <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Free, no account</span>}
                     </div>
-                    <h2 className="font-bold leading-snug text-slate-900">{c.displayTitle}</h2>
+                    <h2 className="font-bold leading-snug text-slate-900">
+                        <Link href={`/case-studies/${c.id}`} className="hover:text-indigo-700 hover:underline underline-offset-2">{c.displayTitle}</Link>
+                    </h2>
                 </div>
             </div>
 
@@ -81,6 +84,12 @@ function CaseCard({ c }: { c: CaseMetadata }) {
                     <Clock className="h-3.5 w-3.5" /> About {c.estimatedTime} minutes
                     {c.live ? " · the patient changes with what you do, and with what you leave undone" : ""}
                 </p>
+
+                {CASE_GUIDES[c.id] && (
+                    <Link href={`/case-studies/${c.id}`} className="mt-4 text-sm font-medium text-indigo-700 hover:text-indigo-900 hover:underline underline-offset-2">
+                        How to approach this presentation →
+                    </Link>
+                )}
 
                 <Button asChild className="group mt-5 w-full rounded-xl bg-slate-900 text-white hover:bg-slate-800">
                     <Link href={free ? "/try" : `/dashboard/cases/${c.id}`}>
