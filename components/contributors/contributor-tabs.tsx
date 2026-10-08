@@ -169,15 +169,23 @@ export function ContributorTabs({
                             title="Clinical Advisory Board"
                             text="Professors and senior doctors who have worked through our cases as a student would, and told us what to change. Membership is honorary."
                         />
-                        {advisors.length > 0 ? (
+                        {advisors.length > 0 && (
                             <ul className="grid gap-4 sm:grid-cols-2">
                                 {advisors.map((a) => (
                                     <PersonCard key={a.name} person={a} badge="Clinical Advisory Board" />
                                 ))}
                             </ul>
-                        ) : (
-                            <Invitation text="We are forming the board now. If you teach clinical medicine and would look at a case for us, write to us." cta="Write to us" href="/contact" external={false} />
                         )}
+                        <Invitation
+                            text={
+                                advisors.length > 0
+                                    ? "Teach clinical medicine? Join the board: verify our live cases, review cases in your specialty, and help shape what we build."
+                                    : "We are forming the board now. If you teach clinical medicine and would check our cases, we would like to hear from you."
+                            }
+                            cta="Apply to join"
+                            href="/contact?topic=advisor"
+                            external={false}
+                        />
                     </>
                 )}
 

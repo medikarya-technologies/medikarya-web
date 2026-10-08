@@ -39,3 +39,6 @@ data/cases/*.json
 public/sw.js
 public/sw.js.map
 .serwist
+
+# Flyers and other print material (built from marketing/*/flyer.html; not part of the site)
+/marketing/
