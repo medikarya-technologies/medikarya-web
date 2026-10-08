@@ -148,7 +148,10 @@ export default function ContributePage() {
                     </section>
 
                     <p className="mt-8 text-center text-sm text-slate-500">
-                        A question first? Write to{" "}
+                        <a href={studioLinks.rewards} className="font-semibold text-brand-700 hover:underline">
+                            See what you get at each milestone
+                        </a>
+                        . A question first? Write to{" "}
                         <a href="mailto:collab@medikarya.in" className="font-medium text-brand-700 hover:underline">
                             collab@medikarya.in
                         </a>

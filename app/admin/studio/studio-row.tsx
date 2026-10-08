@@ -337,14 +337,15 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
           {converted.live && (
             <p className="mt-1 text-[13px] text-emerald-900">The reviewer&apos;s approval covers its live plan, so students get the live version (clock, tray, deterioration) as soon as it is published.</p>
           )}
-          {/* Every published case gives its author a month of Resident, up to 6 in all (CASE_REWARD in lib/plans/grants.ts) */}
+          {/* Free Resident months by milestone: 1 at the 1st published case, 2 more at the 3rd, 3 more at the 5th (CASE_REWARD in lib/plans/grants.ts) */}
           {c.authorEmail ? (
             <p className="mt-3 text-[13.5px] text-slate-700">
-              The author ({c.authorEmail}) automatically gets 1 month of Resident, up to 6 months in all, when they sign in to MediKarya with that email.
+              Free Resident for the author ({c.authorEmail}) is given automatically at their 1st, 3rd and 5th published case (1, 2 and 3 months), when
+              they sign in to MediKarya with that email.
             </p>
           ) : (
             <label className="mt-3 block text-[13.5px] text-slate-700">
-              Author&apos;s email, for their free month of Resident (they submitted by PDF, so type it)
+              Author&apos;s email, for their free months of Resident (they submitted by PDF, so type it)
               <input
                 type="email"
                 value={email}
@@ -353,7 +354,8 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
                 className="mt-1 w-full max-w-sm rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[14px] outline-none focus:border-sky-500"
               />
               <span className="mt-1 block text-[12px] text-slate-500">
-                1 month per published case, up to 6 in all, when they sign in with this email. Leave it empty if you don&apos;t have it.
+                1 month at their 1st published case, 2 more at the 3rd, 3 more at the 5th, when they sign in with this email. Leave it empty if you
+                don&apos;t have it.
               </span>
             </label>
           )}

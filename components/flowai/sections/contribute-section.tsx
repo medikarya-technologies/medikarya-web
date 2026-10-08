@@ -99,6 +99,9 @@ export default function ContributeSection() {
           <Link href="/contribute" className="text-enc-ink-2 hover:text-enc-ink hover:underline">
             How contributing works
           </Link>
+          <a href={studioLinks.rewards} className="text-enc-ink-2 hover:text-enc-ink hover:underline">
+            Rewards at each milestone
+          </a>
         </div>
       </div>
     </section>

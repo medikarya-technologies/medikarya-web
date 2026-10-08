@@ -13,6 +13,8 @@ export const studioLinks = {
   writeACase: `${CASE_STUDIO_URL}/sign-up`,
   /** The reviewer application (verified against the medical register). */
   becomeAReviewer: `${CASE_STUDIO_URL}/join/reviewer`,
+  /** What writers and reviewers get at each milestone: pay, free months of MediKarya, titles and certificates. */
+  rewards: `${CASE_STUDIO_URL}/rewards`,
   /** Everyone who has written or reviewed a published case. */
   contributors: `${CASE_STUDIO_URL}/contributors`,
 } as const

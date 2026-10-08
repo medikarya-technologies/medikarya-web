@@ -336,6 +336,28 @@ export async function markPublishedInStudio(studioCaseId: string, publishedAt: s
   return null;
 }
 
+/**
+ * How many cases this studio case's author has published (this one included, once it is marked published), counted
+ * the way the studio counts them for pay: a case typed in for someone (a PDF submission) belongs to the name on it,
+ * any other case to the account that wrote it. null when the studio cannot be read.
+ */
+export async function authorPublishedCount(studioCaseId: string): Promise<number | null> {
+  const db = studio();
+  if (!db) return null;
+  const { data: me, error } = await db.from("cases").select("author_id, original_author_name").eq("id", studioCaseId).maybeSingle();
+  if (error || !me) return null;
+  const named = String(me.original_author_name ?? "").trim().toLowerCase();
+  const { data: rows, error: listError } = await db
+    .from("case_conversions")
+    .select("case_id, cases!inner(author_id, original_author_name)")
+    .not("published_at", "is", null);
+  if (listError) return null;
+  return (rows ?? []).filter((r: any) => {
+    const theirs = String(r.cases?.original_author_name ?? "").trim().toLowerCase();
+    return named ? theirs === named : !theirs && r.cases?.author_id === me.author_id;
+  }).length;
+}
+
 /** Brings the studio's published dates in line with what is live here (for cases published before the write-back existed). */
 export async function syncPublishedToStudio(live: Array<{ studioCaseId: string; publishedAt: string }>): Promise<void> {
   const db = studio();

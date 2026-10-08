@@ -14,7 +14,7 @@ import { headers } from "next/headers"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
-import { getStudioCase, markPublishedInStudio, pushConversion, sendBackInStudio, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
+import { authorPublishedCount, getStudioCase, markPublishedInStudio, pushConversion, sendBackInStudio, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
 import { getCatalogTest } from "@/lib/clinical-catalog"
 import { caseIdFor, convertStudioCase, type Conversion } from "@/lib/studio/convert"
 import { createReviewLink, latestReviews } from "@/lib/review/links"
@@ -356,15 +356,27 @@ export async function sendForReview(caseId: string): Promise<ActionResult> {
   }
 }
 
-/** Gives the author their reward for a published case, once per case. Returns a line for the admin. */
-async function rewardAuthor(email: string, caseId: string, adminId: string): Promise<string> {
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th"}`
+
+/**
+ * Gives the author the free Resident months their published cases have reached (milestones in lib/plans/grants.ts:
+ * the 1st, 3rd and 5th case). `published` = how many they have published, this case included. Returns a line for
+ * the admin.
+ */
+async function rewardAuthor(email: string, caseId: string, adminId: string, published: number | null): Promise<string> {
+  if (published === null) return `Could not count ${email}'s published cases in the studio, so no free months were given this time.`
   const { data, error } = await supabaseServer.from("plan_grants").select("tier, months, starts_at, ends_at, reason, case_id").eq("email", email)
   if (error) return `Reward not given: ${error.message} (has create_reviews_and_grants.sql been run?)`
   const rows = (data ?? []) as Array<GrantRow & { case_id: string | null }>
   if (rows.some((g) => g.case_id === caseId)) return `${email} was already rewarded for this case.`
 
-  const window = caseRewardWindow(rows)
-  if (!window) return `${email} has already had the maximum ${CASE_REWARD.capMonths} months of rewards.`
+  const window = caseRewardWindow(rows, published)
+  if (!window) {
+    const next = CASE_REWARD.milestones.find((m) => m.at > published)
+    return next
+      ? `No free months this time (${published} published case${published === 1 ? "" : "s"}); the next ${next.months} come at their ${ordinal(next.at)} case.`
+      : `${email} has already had the full ${CASE_REWARD.capMonths} months of free Resident.`
+  }
 
   const { error: insertError } = await supabaseServer.from("plan_grants").insert({
     email,
@@ -378,7 +390,7 @@ async function rewardAuthor(email: string, caseId: string, adminId: string): Pro
   })
   if (insertError) return `Reward not given: ${insertError.message}`
   const until = window.endsAt.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
-  return `${email} gets Resident free until ${until} (it applies when they sign in to MediKarya with this email).`
+  return `${email} gets ${window.months} month${window.months === 1 ? "" : "s"} of Resident free, until ${until} (for reaching ${published} published case${published === 1 ? "" : "s"}; it applies when they sign in to MediKarya with this email).`
 }
 
 export async function publishCase(caseId: string, rewardEmail: string | null): Promise<ActionResult> {
@@ -436,7 +448,10 @@ export async function publishCase(caseId: string, rewardEmail: string | null): P
     const studioCaseId = caseJson.source?.studio_case_id
     const studioNote = studioCaseId ? await markPublishedInStudio(studioCaseId, publishedAt) : null
     // every published case gives its author a month of Resident (capped in caseRewardWindow); it needs their email
-    const reward = email ? ` ${await rewardAuthor(email, caseId, adminId)}` : " No author email, so no free month of Resident was given."
+    // free Resident months by milestone (lib/plans/grants.ts), counted from the studio once this case is marked published
+    const reward = email
+      ? ` ${await rewardAuthor(email, caseId, adminId, studioCaseId ? await authorPublishedCount(studioCaseId) : null)}`
+      : " No author email, so no free months of Resident could be given."
     const kind = isLivePlan(caseJson.live_plan) ? "as a live case" : "as a static case"
     return { ok: true, message: `Published ${kind}: students see it in the library within a minute.${reward}${studioNote ? ` ${studioNote}` : ""}` }
   } catch (error) {
