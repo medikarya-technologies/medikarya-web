@@ -5,11 +5,12 @@
 import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Award, Check, Copy, Loader2, Plus, Ticket, Trash2, Trophy } from "lucide-react"
+import { Award, Check, Copy, Link2, Loader2, Plus, Power, QrCode, Ticket, Trash2, Trophy } from "lucide-react"
 import { PLAN_NAME, indiaDay } from "@/lib/plans/limits"
-import { PASS_LIMITS, parseEmails, passWindow } from "@/lib/plans/passes"
+import { JOIN_LIMITS, PASS_LIMITS, parseEmails, passWindow } from "@/lib/plans/passes"
 import type { PassBatch } from "@/lib/plans/pass-batches"
-import { givePassesAction, removeBatchAction } from "./actions"
+import type { JoinLink } from "@/lib/plans/join-links"
+import { createJoinLinkAction, givePassesAction, removeBatchAction, setJoinLinkActiveAction } from "./actions"
 
 const LABEL = "text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500"
 const field = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-[15px] outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
@@ -30,9 +31,26 @@ function status(b: PassBatch): { text: string; tone: string } {
   return { text: "Ended", tone: "bg-slate-100 text-slate-600" }
 }
 
-const EMPTY = { name: "", plan: "intern" as "intern" | "resident", days: 14, emails: "" }
+const LINK_STATE: Record<JoinLink["state"], { text: (l: JoinLink) => string; tone: string }> = {
+  open: { text: () => "Open now", tone: "bg-emerald-50 text-emerald-800" },
+  not_yet: { text: (l) => `Opens ${day(l.opensAt, false)}`, tone: "bg-amber-50 text-amber-800" },
+  closed: { text: () => "Closed", tone: "bg-slate-100 text-slate-600" },
+  full: { text: () => "Full", tone: "bg-slate-100 text-slate-600" },
+  off: { text: () => "Switched off", tone: "bg-red-50 text-red-700" },
+}
 
-export function PassesAdmin({ batches, today }: { batches: PassBatch[]; today: string }) {
+const EMPTY = { name: "", plan: "intern" as "intern" | "resident", days: 14, emails: "", openDay: "", openDays: 1, maxJoins: JOIN_LIMITS.defaultJoins as number }
+
+interface Props {
+  batches: PassBatch[]
+  today: string
+  links: JoinLink[]
+  /** false until scripts/create_pass_codes.sql has been run. */
+  linksAvailable: boolean
+  origin: string
+}
+
+export function PassesAdmin({ batches, today, links, linksAvailable, origin }: Props) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [busy, setBusy] = useState<string | null>(null)
@@ -40,10 +58,51 @@ export function PassesAdmin({ batches, today }: { batches: PassBatch[]; today: s
   const [notice, setNotice] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [form, setForm] = useState({ ...EMPTY, startDay: today })
+  const [mode, setMode] = useState<"link" | "emails">("link")
 
   const parsed = useMemo(() => parseEmails(form.emails), [form.emails])
   const span = passWindow(form.startDay, form.days)
-  const ready = form.name.trim().length >= 3 && parsed.valid.length > 0 && !!span && form.days >= PASS_LIMITS.minDays && form.days <= PASS_LIMITS.maxDays
+  const openDay = form.openDay || form.startDay
+  const detailsReady = form.name.trim().length >= 3 && !!span && form.days >= PASS_LIMITS.minDays && form.days <= PASS_LIMITS.maxDays
+  const ready = detailsReady && parsed.valid.length > 0
+  const linkReady = detailsReady && linksAvailable && form.openDays >= 1 && form.maxJoins >= JOIN_LIMITS.minJoins
+  const joinUrl = (code: string) => `${origin}/join/${code}`
+  const shortUrl = (code: string) => joinUrl(code).replace(/^https?:\/\/(www\.)?/, "")
+
+  const makeLink = () =>
+    start(async () => {
+      setBusy("link")
+      setError(null)
+      setNotice(null)
+      const r = await createJoinLinkAction({ name: form.name, plan: form.plan, startDay: form.startDay, days: form.days, openDay, openDays: form.openDays, maxJoins: form.maxJoins })
+      setBusy(null)
+      if (!r.ok) return setError(r.error)
+      setNotice(`Join link ready: ${shortUrl(r.code)}. Use “Show QR” below on the projector.`)
+      router.refresh()
+    })
+
+  const toggleLink = (l: JoinLink) => {
+    if (l.active && !window.confirm(`Switch off ${shortUrl(l.code)}? Nobody new can join with it until you switch it back on. Students who already joined keep their pass.`)) return
+    start(async () => {
+      setBusy(l.code)
+      setError(null)
+      setNotice(null)
+      const r = await setJoinLinkActiveAction(l.code, !l.active)
+      setBusy(null)
+      if (!r.ok) return setError(r.error)
+      router.refresh()
+    })
+  }
+
+  const copyText = async (key: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      setTimeout(() => setCopied(null), 2000)
+    } catch {
+      setError("Could not copy. Your browser blocked the clipboard.")
+    }
+  }
 
   const give = () => {
     if (!span) return
@@ -69,7 +128,7 @@ export function PassesAdmin({ batches, today }: { batches: PassBatch[]; today: s
   }
 
   const remove = (b: PassBatch) => {
-    if (!window.confirm(`Remove the pass “${b.name}” from all ${b.emails.length} students? Anyone using it goes back to their own plan at once.`)) return
+    if (!window.confirm(`Remove the pass “${b.name}” from all ${b.emails.length} students? Anyone using it goes back to their own plan at once, and its join links are switched off.`)) return
     start(async () => {
       setBusy(b.reason)
       setError(null)
@@ -94,7 +153,8 @@ export function PassesAdmin({ batches, today }: { batches: PassBatch[]; today: s
   }
 
   const addMore = (b: PassBatch) => {
-    setForm({ name: b.name, plan: b.plan, startDay: indiaDay(new Date(b.startsAt)), days: b.days, emails: "" })
+    setForm({ ...form, name: b.name, plan: b.plan, startDay: indiaDay(new Date(b.startsAt)), days: b.days, emails: "" })
+    setMode("emails")
     document.getElementById("new-pass")?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
@@ -108,8 +168,29 @@ export function PassesAdmin({ batches, today }: { batches: PassBatch[]; today: s
         <header className="border-b border-slate-200 bg-slate-100/70 px-5 py-3.5">
           <p className={LABEL}>New pass</p>
           <h2 className="text-[19px] font-bold text-slate-900">Give a workshop pass</h2>
-          <p className="mt-0.5 text-[14px] text-slate-600">
-            To add late registrations to a batch you already gave, use “Add emails” on it below: everyone already in it is skipped.
+          <div className="mt-3 inline-flex rounded-lg border border-slate-300 bg-white p-1" role="tablist">
+            {(
+              [
+                ["link", "Join link for the room (QR)"],
+                ["emails", "Paste registered emails"],
+              ] as const
+            ).map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => setMode(m)}
+                className={`rounded-md px-3 py-1.5 text-[14px] font-semibold ${mode === m ? "bg-sky-600 text-white" : "text-slate-700 hover:bg-slate-100"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[14px] text-slate-600">
+            {mode === "link"
+              ? "Whoever opens the link while it is open and signs in gets the pass, with any email. Same name and dates as a list you pasted? They join that same batch."
+              : "To add late registrations to a batch you already gave, use “Add emails” on it below: everyone already in it is skipped."}
           </p>
         </header>
         <div className="space-y-4 px-5 py-5">
@@ -162,35 +243,124 @@ export function PassesAdmin({ batches, today }: { batches: PassBatch[]; today: s
             </p>
           )}
 
-          <label className="block text-[14px] font-medium text-slate-700">
-            Emails
-            <textarea
-              className={`${field} min-h-40 font-mono text-[13.5px]`}
-              value={form.emails}
-              onChange={(e) => setForm({ ...form, emails: e.target.value })}
-              placeholder={"One per line, or separated by commas. A column pasted from the registration sheet works too.\nstudent1@gmail.com\nstudent2@gmail.com"}
-            />
-          </label>
-          {form.emails.trim() && (
-            <p className="text-[13.5px] text-slate-600">
-              <span className="font-semibold text-slate-900">{plural(parsed.valid.length, "email")}</span>
-              {parsed.invalid.length > 0 && (
-                <span className="text-amber-800">
-                  {" "}
-                  · {parsed.invalid.length} {parsed.invalid.length === 1 ? "looks" : "look"} wrong and will be skipped: {parsed.invalid.slice(0, 5).join(", ")}
-                  {parsed.invalid.length > 5 ? "…" : ""}
-                </span>
+          {mode === "link" ? (
+            <>
+              {!linksAvailable && (
+                <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-[14px] text-amber-950">
+                  One step first: run <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[13px]">scripts/create_pass_codes.sql</code> in the Supabase SQL editor
+                  of the <strong>main site&apos;s</strong> project.
+                </p>
               )}
-              {parsed.valid.length > PASS_LIMITS.maxEmails && <span className="text-red-700"> · up to {PASS_LIMITS.maxEmails} at a time</span>}
-            </p>
-          )}
+              <div className="flex flex-wrap gap-4">
+                <label className="block text-[14px] font-medium text-slate-700">
+                  Link works from
+                  <input type="date" className={field} value={openDay} onChange={(e) => setForm({ ...form, openDay: e.target.value })} />
+                </label>
+                <label className="block w-32 text-[14px] font-medium text-slate-700">
+                  For days
+                  <input
+                    type="number"
+                    min={1}
+                    max={JOIN_LIMITS.maxOpenDays}
+                    className={field}
+                    value={form.openDays}
+                    onChange={(e) => setForm({ ...form, openDays: Math.round(Number(e.target.value) || 0) })}
+                  />
+                </label>
+                <label className="block w-40 text-[14px] font-medium text-slate-700">
+                  Up to students
+                  <input
+                    type="number"
+                    min={JOIN_LIMITS.minJoins}
+                    max={JOIN_LIMITS.maxJoins}
+                    className={field}
+                    value={form.maxJoins}
+                    onChange={(e) => setForm({ ...form, maxJoins: Math.round(Number(e.target.value) || 0) })}
+                  />
+                </label>
+              </div>
+              <button type="button" className={primary} disabled={pending || !linkReady} onClick={makeLink}>
+                {busy === "link" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Create join link
+              </button>
+            </>
+          ) : (
+            <>
+              <label className="block text-[14px] font-medium text-slate-700">
+                Emails
+                <textarea
+                  className={`${field} min-h-40 font-mono text-[13.5px]`}
+                  value={form.emails}
+                  onChange={(e) => setForm({ ...form, emails: e.target.value })}
+                  placeholder={"One per line, or separated by commas. A column pasted from the registration sheet works too.\nstudent1@gmail.com\nstudent2@gmail.com"}
+                />
+              </label>
+              {form.emails.trim() && (
+                <p className="text-[13.5px] text-slate-600">
+                  <span className="font-semibold text-slate-900">{plural(parsed.valid.length, "email")}</span>
+                  {parsed.invalid.length > 0 && (
+                    <span className="text-amber-800">
+                      {" "}
+                      · {parsed.invalid.length} {parsed.invalid.length === 1 ? "looks" : "look"} wrong and will be skipped: {parsed.invalid.slice(0, 5).join(", ")}
+                      {parsed.invalid.length > 5 ? "…" : ""}
+                    </span>
+                  )}
+                  {parsed.valid.length > PASS_LIMITS.maxEmails && <span className="text-red-700"> · up to {PASS_LIMITS.maxEmails} at a time</span>}
+                </p>
+              )}
 
-          <button type="button" className={primary} disabled={pending || !ready} onClick={give}>
-            {busy === "give" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
-            {parsed.valid.length ? `Give ${plural(parsed.valid.length, "pass", "passes")}` : "Give passes"}
-          </button>
+              <button type="button" className={primary} disabled={pending || !ready} onClick={give}>
+                {busy === "give" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
+                {parsed.valid.length ? `Give ${plural(parsed.valid.length, "pass", "passes")}` : "Give passes"}
+              </button>
+            </>
+          )}
         </div>
       </section>
+
+      {/* ── join links ── */}
+      {linksAvailable && links.length > 0 && (
+        <section>
+          <p className={LABEL}>For the room</p>
+          <h2 className="text-[19px] font-bold text-slate-900">Join links ({links.length})</h2>
+          <ul className="mt-3 space-y-3">
+            {links.map((l) => {
+              const s = LINK_STATE[l.state]
+              return (
+                <li key={l.code} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2 text-[16px] font-semibold text-slate-900">
+                        <span className="font-mono">{shortUrl(l.code)}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${s.tone}`}>{s.text(l)}</span>
+                      </p>
+                      <p className="mt-0.5 text-[14px] text-slate-600">
+                        {l.event} · {PLAN_NAME[l.plan]} · {day(l.startsAt)} to {day(lastDay(l.endsAt))}
+                      </p>
+                      <p className="mt-1 text-[13px] text-slate-500">
+                        <span className="font-semibold text-slate-800">
+                          {l.joined} of {l.maxJoins}
+                        </span>{" "}
+                        joined · the link works {day(l.opensAt, false)} to {day(lastDay(l.closesAt), false)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <Link href={`/admin/passes/qr?${new URLSearchParams({ code: l.code })}`} target="_blank" className={quiet}>
+                        <QrCode className="h-4 w-4" /> Show QR
+                      </Link>
+                      <button type="button" className={quiet} onClick={() => void copyText(l.code, joinUrl(l.code))}>
+                        {copied === l.code ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />} {copied === l.code ? "Copied" : "Copy link"}
+                      </button>
+                      <button type="button" className={`${quiet} ${l.active ? "text-red-700" : ""}`} disabled={pending} onClick={() => toggleLink(l)}>
+                        {busy === l.code ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />} {l.active ? "Switch off" : "Switch on"}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* ── batches given ── */}
       <section>

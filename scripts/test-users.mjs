@@ -46,6 +46,8 @@ async function clean() {
     ["problem reports", db.from("case_reports").delete({ count: "exact" }).like("user_id", DEV)],
     ["case starts", db.from("case_starts").delete({ count: "exact" }).like("clerk_user_id", DEV)],
     ["subscriptions", db.from("subscriptions").delete({ count: "exact" }).like("clerk_user_id", DEV)],
+    ["joins through workshop links", db.from("pass_code_joins").delete({ count: "exact" }).like("clerk_user_id", DEV)],
+    ["workshop join links they made", db.from("pass_codes").delete({ count: "exact" }).like("created_by", DEV)],
     ["plan grants they gave", db.from("plan_grants").delete({ count: "exact" }).like("granted_by", DEV)],
     ["users", db.from("user_profiles").delete({ count: "exact" }).like("clerk_user_id", DEV)],
   ];

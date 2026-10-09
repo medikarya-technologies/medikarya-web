@@ -6,7 +6,8 @@
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import { isAdmin } from "@/lib/plans/access"
-import { checkPassRequest, type PassRequest } from "@/lib/plans/passes"
+import { PASS_REASON_PREFIX, checkJoinRequest, checkPassRequest, cleanJoinCode, type JoinRequest, type PassRequest } from "@/lib/plans/passes"
+import { createJoinLink, setJoinLinkActive, switchOffLinksOf } from "@/lib/plans/join-links"
 import { emailsWithAccounts, getPassBatch, givePasses, removePassBatch } from "@/lib/plans/pass-batches"
 import { issueWorkshopCertificate } from "@/lib/studio/source"
 import { CERTIFICATE_LIMITS, certificateProblem, finishedAll, printableName, workshopDetail } from "@/lib/workshops/rank"
@@ -95,9 +96,39 @@ export async function issueCertificatesAction(
   }
 }
 
+/** Makes a join link (medikarya.in/join/<code>) that gives this workshop's pass to whoever opens it while it is open. */
+export async function createJoinLinkAction(request: JoinRequest): Promise<Result<{ code: string }>> {
+  try {
+    const admin = await adminId()
+    const check = checkJoinRequest(request)
+    if (!check.ok) return check
+    const link = await createJoinLink(check, admin)
+    revalidatePath("/admin/passes")
+    return { ok: true, code: link.code }
+  } catch (error) {
+    console.error("Could not make a join link:", error)
+    return { ok: false, error: message(error, "Could not make the link.") }
+  }
+}
+
+export async function setJoinLinkActiveAction(code: string, active: boolean): Promise<Result> {
+  try {
+    await adminId()
+    const clean = cleanJoinCode(code)
+    if (!clean) return { ok: false, error: "That is not a join link." }
+    await setJoinLinkActive(clean, active)
+    revalidatePath("/admin/passes")
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: message(error, "Could not change the link.") }
+  }
+}
+
 export async function removeBatchAction(reason: string): Promise<Result<{ removed: number }>> {
   try {
     await adminId()
+    // its join links go off first, so nobody can bring the passes back by joining
+    if (reason.startsWith(PASS_REASON_PREFIX)) await switchOffLinksOf(reason.slice(PASS_REASON_PREFIX.length))
     const removed = await removePassBatch(reason)
     revalidatePath("/admin/passes")
     return { ok: true, removed }

@@ -1,7 +1,20 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { PASS_LIMITS, checkPassRequest, monthsLabel, parseEmails, passDays, passWindow, type PassRequest } from "../passes";
+import {
+  PASS_LIMITS,
+  checkJoinRequest,
+  checkPassRequest,
+  cleanJoinCode,
+  joinCodeFor,
+  joinState,
+  monthsLabel,
+  parseEmails,
+  passDays,
+  passWindow,
+  type JoinRequest,
+  type PassRequest,
+} from "../passes";
 
 describe("parseEmails", () => {
   it("reads one per line, commas, semicolons and a pasted spreadsheet column, once each and in lower case", () => {
@@ -72,5 +85,48 @@ describe("checkPassRequest", () => {
       const r = checkPassRequest({ ...ok, ...change });
       assert.equal(r.ok, false, JSON.stringify(change).slice(0, 80));
     }
+  });
+});
+
+describe("join links", () => {
+  const fixed = () => 0.5; // always the same random letters, for the tests
+
+  it("makes a short code from the event's first real word", () => {
+    assert.equal(joinCodeFor("the MAMC workshop", fixed), "mamc-ssss");
+    assert.equal(joinCodeFor("Workshop at Lady Hardinge", fixed), "lady-ssss");
+    assert.equal(joinCodeFor("!!!", fixed), "join-ssss");
+    assert.match(joinCodeFor("the MAMC workshop"), /^mamc-[a-z2-9]{4}$/);
+  });
+
+  it("reads a code from a link, and refuses anything that cannot be one", () => {
+    assert.equal(cleanJoinCode("MAMC-4K7Q"), "mamc-4k7q");
+    assert.equal(cleanJoinCode("mamc-4k7q%20"), "mamc-4k7q");
+    for (const bad of ["mamc", "mamc-4k7", "../admin", "%E0%A4%A", "a b-cdef"]) assert.equal(cleanJoinCode(bad), null, bad);
+  });
+
+  const request: JoinRequest = { name: "the MAMC workshop", plan: "intern", startDay: "2026-10-24", days: 14, openDay: "2026-10-24", openDays: 1, maxJoins: 250 };
+
+  it("opens the link for the days asked, while the pass runs", () => {
+    const r = checkJoinRequest(request);
+    assert.ok(r.ok);
+    assert.equal(r.opensAt.toISOString(), "2026-10-23T18:30:00.000Z");
+    assert.equal(r.closesAt.toISOString(), "2026-10-24T18:30:00.000Z");
+    assert.equal(r.pass.reason, "workshop: the MAMC workshop");
+  });
+
+  it("says what is wrong", () => {
+    for (const change of [{ openDays: 0 }, { openDays: 15 }, { maxJoins: 0 }, { maxJoins: 5000 }, { openDay: "2026-12-01" }, { openDay: "" }, { name: "x" }]) {
+      assert.equal(checkJoinRequest({ ...request, ...change }).ok, false, JSON.stringify(change));
+    }
+  });
+
+  it("lets people in only while the link is on, open and not full", () => {
+    const link = { active: true, opensAt: "2026-10-23T18:30:00Z", closesAt: "2026-10-24T18:30:00Z", maxJoins: 2 };
+    const during = new Date("2026-10-24T05:00:00Z");
+    assert.equal(joinState(link, 0, during), "open");
+    assert.equal(joinState(link, 2, during), "full");
+    assert.equal(joinState({ ...link, active: false }, 0, during), "off");
+    assert.equal(joinState(link, 0, new Date("2026-10-23T18:00:00Z")), "not_yet");
+    assert.equal(joinState(link, 0, new Date("2026-10-24T18:30:00Z")), "closed");
   });
 });
