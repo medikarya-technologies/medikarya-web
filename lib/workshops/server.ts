@@ -58,13 +58,13 @@ export async function attemptsOf(userIds: readonly string[], from: Date, to: Dat
   return out;
 }
 
-/** Everyone's finished attempts between two moments, without advisors' (no account) or admins' (testing). */
+/** Everyone's finished attempts between two moments, without advisors' or visitors' (no account) or admins' (testing). */
 async function everyonesAttempts(from: Date, to: Date): Promise<{ rows: AttemptRow[]; names: Map<string, string | null> }> {
   const rows = (
     await everyRow<AttemptRow>((a, b) =>
       supabaseServer.from("case_attempts").select("user_id, case_id, score, created_at").gte("created_at", from.toISOString()).lt("created_at", to.toISOString()).order("created_at").range(a, b)
     )
-  ).filter((r) => r.user_id && !r.user_id.startsWith("advisor:"));
+  ).filter((r) => r.user_id && !r.user_id.startsWith("advisor:") && !r.user_id.startsWith("guest:"));
   const ids = [...new Set(rows.map((r) => r.user_id))];
   const names = new Map<string, string | null>();
   const admins = new Set<string>();

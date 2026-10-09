@@ -37,6 +37,13 @@ const AVATAR_COLORS = [
     { bg: "#ede9fe", text: "#5b21b6" },
 ]
 
+/** Who an attempt without a profile belongs to: a visitor on /try, someone on an advisor link, or an account. */
+function ownerLabel(uid: string): { name: string; detail: string } {
+    if (uid.startsWith("guest:")) return { name: "Visitor without an account", detail: `Played the free case on /try · same browser ${uid.slice(6, 14)}` }
+    if (uid.startsWith("advisor:")) return { name: "Advisor link", detail: "Played through a private advisor link (Admin → Advisors)" }
+    return { name: uid.startsWith("user_") ? "Clerk User" : "Unknown User", detail: uid }
+}
+
 export default async function AdminAttemptsPage() {
     const { userId } = await auth()
 
@@ -157,10 +164,10 @@ export default async function AdminAttemptsPage() {
                                             </div>
                                             <div>
                                                 <h3 className="font-bold text-slate-900 leading-none mb-1">
-                                                    {user?.name || (uid.startsWith("user_") ? "Clerk User" : "Unknown User")}
+                                                    {user?.name || ownerLabel(uid).name}
                                                 </h3>
                                                 <p className="text-xs text-slate-500 font-medium truncate max-w-[200px] sm:max-w-none">
-                                                    {user?.email || uid}
+                                                    {user?.email || ownerLabel(uid).detail}
                                                 </p>
                                             </div>
                                         </div>

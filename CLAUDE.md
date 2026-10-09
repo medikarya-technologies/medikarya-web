@@ -25,8 +25,8 @@ on the user. Detailed notes per feature live in the auto-memory folder (index `M
 
 - `npm run dev`: the user's own dev server (scripts/dev.mjs, port 3000). Never stop or restart it.
 - `npm run test:sim`: every unit test (node:test). Must stay green; add tests for pure logic.
-- `npx tsc --noEmit -p .`: the build does not type-check. There is a baseline of about 18 old errors; add none in
-  files you touch.
+- `npx tsc --noEmit -p .`: the build does not type-check, so run this yourself. It is clean (0 errors since
+  2026-10-09); keep it that way.
 - `npm run check:cases`: checks the case JSON.
 - Scripts that need secrets: `node --env-file=.env.local <script>`.
 - **Test mode** (to use signed-in screens without Clerk): launch config `main-test` (`npm run dev:test`, port 3200).
@@ -66,3 +66,6 @@ on the user. Detailed notes per feature live in the auto-memory folder (index `M
   and no detail of how cases are built with AI (it is our moat). The studio's rewards and terms pages do show pay.
 - Studio: no second Google font (it breaks the Turbopack dev server).
 - Write like the code around you; comments say why, in plain English.
+- Clerk's own components (sign-in box, sign-in buttons) are drawn only after mount (`hooks/use-mounted.ts`), or React
+  reports a hydration mismatch. Supabase upserts take `{ onConflict, ignoreDuplicates }` as an option; there is no
+  `.onConflict()` method.

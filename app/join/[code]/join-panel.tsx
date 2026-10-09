@@ -10,6 +10,7 @@ import { ArrowRight, CircleCheck, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PRIMARY_BUTTON } from "@/components/dashboard/button-styles"
 import { cn } from "@/lib/utils"
+import { useMounted } from "@/hooks/use-mounted"
 import { joinWorkshopAction } from "./actions"
 
 interface Props {
@@ -30,6 +31,8 @@ export function JoinPanel({ code, joined: joinedAtFirst, signedIn = true, email,
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
   const { signOut } = useClerk()
+  // Clerk's buttons are drawn once the page has loaded, so the server and the first browser render match
+  const mounted = useMounted()
   const here = `/join/${code}`
 
   if (joined) {
@@ -55,16 +58,26 @@ export function JoinPanel({ code, joined: joinedAtFirst, signedIn = true, email,
   if (!signedIn) {
     return (
       <div>
-        <SignInButton mode="modal" forceRedirectUrl={here} signUpForceRedirectUrl={here}>
-          <Button className={BIG}>Sign in to join</Button>
-        </SignInButton>
+        {mounted ? (
+          <SignInButton mode="modal" forceRedirectUrl={here} signUpForceRedirectUrl={here}>
+            <Button className={BIG}>Sign in to join</Button>
+          </SignInButton>
+        ) : (
+          <Button className={BIG} disabled>
+            Sign in to join
+          </Button>
+        )}
         <div className="mt-3 text-center text-[14px] text-slate-600">
           New to MediKarya?{" "}
-          <SignUpButton mode="modal" forceRedirectUrl={here} signInForceRedirectUrl={here}>
-            <button type="button" className="font-semibold text-brand-700 hover:underline">
-              Create a free account
-            </button>
-          </SignUpButton>
+          {mounted ? (
+            <SignUpButton mode="modal" forceRedirectUrl={here} signInForceRedirectUrl={here}>
+              <button type="button" className="font-semibold text-brand-700 hover:underline">
+                Create a free account
+              </button>
+            </SignUpButton>
+          ) : (
+            <span className="font-semibold text-brand-700">Create a free account</span>
+          )}
         </div>
         <p className="mt-4 text-center text-[13px] leading-relaxed text-slate-500">Any account works, including Google. You come straight back here.</p>
       </div>

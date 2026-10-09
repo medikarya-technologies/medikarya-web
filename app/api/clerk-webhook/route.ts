@@ -52,19 +52,19 @@ export async function POST(req: Request) {
 
         if (type === "user.created") {
             // Eagerly create the profile row so the user appears in admin from day 1
-            const { error } = await supabaseServer
-                .from("user_profiles")
-                .insert({
+            // If a row already exists (the dashboard made it first), leave it as it is. (This used to call
+            // .onConflict().ignore(), which supabase-js does not have, so it threw and no profile was ever made here.)
+            const { error } = await supabaseServer.from("user_profiles").upsert(
+                {
                     clerk_user_id: clerkUserId,
                     full_name: fullName,
                     email: email,
                     role: "student",
                     current_streak: 0,
                     longest_streak: 0,
-                })
-                // If somehow a row already exists (e.g. from evaluate.ts fallback), do nothing
-                .onConflict("clerk_user_id")
-                .ignore()
+                },
+                { onConflict: "clerk_user_id", ignoreDuplicates: true }
+            )
 
             if (error) {
                 console.error("Failed to create user profile on signup:", error)

@@ -8,7 +8,8 @@ declare global {
   }
 }
 
-declare const self: ServiceWorkerGlobalScope;
+// WorkerGlobalScope (in the DOM types the site already uses) is enough: only self.__SW_MANIFEST is read, added above.
+declare const self: WorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,

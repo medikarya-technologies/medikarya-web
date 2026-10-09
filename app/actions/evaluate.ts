@@ -64,6 +64,9 @@ async function milestonesEarnedBy(before: AttemptRow[], attempt: AttemptRow): Pr
     }
 }
 
+/** The id a visitor's browser keeps for them on /try (crypto.randomUUID). */
+const GUEST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Saves the attempt and bumps the user's streak. A database failure never fails
  * the evaluation the student is waiting on.
@@ -87,13 +90,21 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
             if (userId) {
                 insertPayload.user_id = userId;
             } else if (guestId) {
-                insertPayload.guest_id = guestId;
                 // An attempt needs an owner (user_id cannot be empty). Someone playing through an advisor link has
                 // no account, so theirs is filed under the link itself; Admin → Advisors finds it by guest_id. The
                 // link is read from their cookie on the server, so a guest id sent by a browser cannot claim one.
                 const invite = await activeInvite();
-                if (invite && invite.id === guestId) insertPayload.user_id = `advisor:${invite.id}`;
+                if (invite && invite.id === guestId) {
+                    insertPayload.guest_id = guestId;
+                    insertPayload.user_id = `advisor:${invite.id}`;
+                } else if (GUEST_ID.test(guestId)) {
+                    // A visitor on /try with no account: filed as "guest:<the id their browser keeps>", so their plays
+                    // show in Admin → User Activity (they were thrown away before). guest_id is left empty, because
+                    // that column is how advisor plays are found.
+                    insertPayload.user_id = `guest:${guestId}`;
+                }
             }
+            if (!insertPayload.user_id) return { milestones };
 
             const { error: dbError } = await supabaseServer
                 .from("case_attempts")
@@ -170,18 +181,17 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
                 } else {
                     // Safety fallback: profile doesn't exist yet
                     // (normally the Clerk webhook pre-creates it on signup)
-                    await supabaseServer
-                        .from("user_profiles")
-                        .insert({
+                    // If the webhook already created the row, don't overwrite anything
+                    await supabaseServer.from("user_profiles").upsert(
+                        {
                             clerk_user_id: userId,
                             role: "student",
                             current_streak: 1,
                             longest_streak: 1,
                             last_active_date: todayStr
-                        })
-                        // If the webhook already created the row, don't overwrite anything
-                        .onConflict("clerk_user_id")
-                        .ignore()
+                        },
+                        { onConflict: "clerk_user_id", ignoreDuplicates: true }
+                    )
                 }
             } catch (streakErr) {
                 console.error("Failed to update user streak:", streakErr);

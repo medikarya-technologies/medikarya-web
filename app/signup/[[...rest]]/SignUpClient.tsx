@@ -1,11 +1,15 @@
 "use client"
 
 import { SignUp } from "@clerk/nextjs"
+import { useMounted } from "@/hooks/use-mounted"
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 
 export default function SignUpClient() {
   const { ref, isVisible } = useScrollAnimation()
+  // Clerk's box is drawn once the page has loaded, so the server and the first browser render match (hooks/use-mounted.ts)
+  const mounted = useMounted()
+
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-brand-50 via-white to-accent-50">
@@ -49,26 +53,30 @@ export default function SignUpClient() {
           </div>
 
           {/* Clerk SignUp Component */}
-          <SignUp
-            signInUrl="/login"
-            afterSignUpUrl="/dashboard"
-            appearance={{
-              elements: {
-                formButtonPrimary: "w-full rounded-xl py-4 sm:py-6 text-sm sm:text-base font-medium bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
-                card: "shadow-none bg-transparent border-none",
-                headerTitle: "hidden",
-                headerSubtitle: "hidden",
-                socialButtons: "block",
-                dividerLine: "block",
-                dividerText: "block",
-                formFieldInput: "rounded-xl border-slate-200 bg-white/50 backdrop-blur-sm focus:bg-white focus:border-brand-400 transition-all duration-200 text-sm sm:text-base",
-                formFieldLabel: "text-sm font-medium text-slate-700",
-                footerActionText: "text-sm text-slate-600",
-                footerActionLink: "font-medium text-brand-600 hover:text-brand-700 transition-colors",
-              },
-            }}
-            redirectUrl="/dashboard"
-          />
+          {mounted ? (
+            <SignUp
+              signInUrl="/login"
+              afterSignUpUrl="/dashboard"
+              appearance={{
+                elements: {
+                  formButtonPrimary: "w-full rounded-xl py-4 sm:py-6 text-sm sm:text-base font-medium bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
+                  card: "shadow-none bg-transparent border-none",
+                  headerTitle: "hidden",
+                  headerSubtitle: "hidden",
+                  socialButtons: "block",
+                  dividerLine: "block",
+                  dividerText: "block",
+                  formFieldInput: "rounded-xl border-slate-200 bg-white/50 backdrop-blur-sm focus:bg-white focus:border-brand-400 transition-all duration-200 text-sm sm:text-base",
+                  formFieldLabel: "text-sm font-medium text-slate-700",
+                  footerActionText: "text-sm text-slate-600",
+                  footerActionLink: "font-medium text-brand-600 hover:text-brand-700 transition-colors",
+                },
+              }}
+              redirectUrl="/dashboard"
+            />
+          ) : (
+            <div aria-hidden className="min-h-[420px]" />
+          )}
         </div>
       </div>
     </main>

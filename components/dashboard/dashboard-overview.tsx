@@ -30,6 +30,7 @@ import { CertificateCard, type MyCertificate } from "./certificate-card"
 import { usePlan } from "@/components/plans/use-plan"
 import { useUpgrade } from "@/components/plans/upgrade-dialog"
 import { GUEST_CASE_IDS, lockedFor } from "@/lib/plans/limits"
+import { markWelcomed } from "@/lib/library/first-case"
 
 interface Props {
   initialStats?: DashboardStats
@@ -162,6 +163,8 @@ export function DashboardOverview({ initialStats, cases = [], progress = {}, use
   // The greeting and the date depend on the visitor's clock, so they are filled in after the page loads.
   const [now, setNow] = useState<Date | null>(null)
   useEffect(() => setNow(new Date()), [])
+  // Someone who has seen the dashboard is never sent to the first-patient welcome after this.
+  useEffect(() => markWelcomed(), [])
   const greeting = now ? greetingFor(now.getHours()) : "Welcome back"
   const today = now ? now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) : "Dashboard"
 

@@ -231,16 +231,16 @@ async function runTests() {
 
     // Check vague questions
     const extractedVague = IntentExtractor.extract(CHAT_VAGUE_ONLY, []);
-    const allVague = extractedVague.doctorQuestions.every(q => q.specificityScore < 3);
+    const allVague = extractedVague.doctorQuestions.every((q: any) => q.specificityScore < 3);
     assert(
         "S3: All vague questions have specificityScore < 3",
         allVague,
-        `scores: ${extractedVague.doctorQuestions.map(q => q.specificityScore.toFixed(1)).join(", ")}`
+        `scores: ${extractedVague.doctorQuestions.map((q: any) => q.specificityScore.toFixed(1)).join(", ")}`
     );
 
     // Check spam detection (redundancy)
     const extractedSpam = IntentExtractor.extract(CHAT_SPAM_VAGUE, []);
-    const redundancyRatio = extractedSpam.doctorQuestions.filter(q => q.isRedundant).length
+    const redundancyRatio = extractedSpam.doctorQuestions.filter((q: any) => q.isRedundant).length
         / extractedSpam.doctorQuestions.length;
     assert(
         "S9: Spam 'anything else' — majority questions marked redundant",
@@ -316,11 +316,11 @@ async function runTests() {
 
     // Specificity cap test: one specific question should not exceed perQuestionMax
     const perQMax = 17.5 / caseData.evaluation_config.history.required_questions.length;
-    const allWithinCap = coverageEarly.matrix.every(e => e.score <= perQMax + 0.01);
+    const allWithinCap = coverageEarly.matrix.every((e: any) => e.score <= perQMax + 0.01);
     assert(
         "S1: No single question exceeds per-question max score",
         allWithinCap,
-        `perQMax=${perQMax.toFixed(2)}, max seen=${Math.max(...coverageEarly.matrix.map(e => e.score)).toFixed(2)}`
+        `perQMax=${perQMax.toFixed(2)}, max seen=${Math.max(...coverageEarly.matrix.map((e: any) => e.score)).toFixed(2)}`
     );
 
     // ───────────────────────────────────────────────────────────────────────────
@@ -449,3 +449,6 @@ runTests().catch(err => {
     console.error(red("\nTest runner crashed:"), err);
     process.exit(1);
 });
+
+// A module of its own, so its top-level names do not clash with the other scripts'.
+export {};

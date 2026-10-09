@@ -99,15 +99,22 @@ function Person({ userName }: { userName?: string }) {
   const { signOut } = useAuth()
   const me = useDisplayName(userName)
   return (
-    <div className="flex items-center gap-2.5 border-t border-enc-line-strong px-3 py-3">
-      <Avatar className="h-8 w-8 ring-1 ring-enc-line-strong">
-        <AvatarImage src={me.imageUrl} alt={me.name} />
-        <AvatarFallback className="bg-enc-sheet text-[12px] font-semibold text-enc-ink-2">{me.initials}</AvatarFallback>
-      </Avatar>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] leading-tight font-medium text-enc-ink">{me.name || (me.isLoaded ? "Signed in" : " ")}</p>
-        <p className="truncate text-[12px] leading-tight text-enc-ink-3">Medical student</p>
-      </div>
+    <div className="flex items-center gap-1.5 border-t border-enc-line-strong px-3 py-3">
+      {/* people click their own name expecting their profile (Clarity showed dead clicks here), so it opens it */}
+      <Link
+        href="/dashboard/profile"
+        title="Your profile"
+        className="-m-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1 outline-none transition-colors hover:bg-enc-console-hover focus-visible:ring-2 focus-visible:ring-brand-300"
+      >
+        <Avatar className="h-8 w-8 ring-1 ring-enc-line-strong">
+          <AvatarImage src={me.imageUrl} alt={me.name} />
+          <AvatarFallback className="bg-enc-sheet text-[12px] font-semibold text-enc-ink-2">{me.initials}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13.5px] leading-tight font-medium text-enc-ink">{me.name || (me.isLoaded ? "Signed in" : " ")}</p>
+          <p className="truncate text-[12px] leading-tight text-enc-ink-3">Medical student</p>
+        </div>
+      </Link>
       <ThemeToggle />
       <button
         type="button"

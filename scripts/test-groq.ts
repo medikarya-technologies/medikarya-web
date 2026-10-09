@@ -36,3 +36,6 @@ async function testGroq() {
 }
 
 testGroq();
+
+// A module of its own, so its top-level names do not clash with the other scripts'.
+export {};

@@ -20,6 +20,7 @@ export default function StudioPreview() {
     publishConsent: true,
     consentNote: "Given by the author to MediKarya with their PDF submission",
     authorEmail: null,
+    sentBackAt: null,
   }
   const now = new Date().toISOString()
   const later = new Date(Date.now() + 10 * 86_400_000).toISOString()
@@ -29,6 +30,7 @@ export default function StudioPreview() {
     updatedAt: now,
     reviewNotes: ["SpO2 of 98% on room air proposed: not recorded in the case sheet.", "Ultrasound groin findings proposed: not in the case sheet."],
     warnings: [],
+    live: false,
   }
   return (
     <main className="min-h-screen bg-slate-50">
@@ -46,7 +48,7 @@ export default function StudioPreview() {
           studioCase={{ ...base, id: "d4", authorEmail: "author@example.com" }}
           converted={{ ...draft, review: { sentAt: now, expiresAt: later, decision: "approved", reviewer: "Dr. A. Reviewer, Professor, General Surgery, Sample Medical College", showName: true, comments: null, decidedAt: now, via: "queue" as const }, inQueue: true }}
         />
-        <StudioRow studioCase={{ ...base, id: "e", title: "Chronic lower limb ulcer with varicose veins" }} converted={{ id: "56-year-old-man-with-a-leg-ulcer", status: "published", updatedAt: now, reviewNotes: [], warnings: [], review: null, inQueue: true }} />
+        <StudioRow studioCase={{ ...base, id: "e", title: "Chronic lower limb ulcer with varicose veins" }} converted={{ id: "56-year-old-man-with-a-leg-ulcer", status: "published", updatedAt: now, reviewNotes: [], warnings: [], review: null, inQueue: true, live: false }} />
       </div>
     </main>
   )

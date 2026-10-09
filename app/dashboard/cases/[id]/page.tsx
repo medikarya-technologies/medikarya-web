@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { PatientCard } from "@/components/cases/patient-card"
+import { FirstCaseWelcome } from "@/components/cases/first-case-welcome"
+import { markWelcomed } from "@/lib/library/first-case"
 import { CaseInteraction } from "@/components/cases/case-interaction"
 import { CaseFeedback } from "@/components/cases/case-feedback"
 import { FirstCaseConsentDialog, useFirstCaseConsent } from "@/components/cases/first-case-consent"
@@ -60,6 +62,12 @@ function Briefing({ caseId, caseData, isStarting, onStart }: { caseId: string; c
 export default function CasePage() {
   const params = useParams()
   const router = useRouter()
+  // ?first=1: a brand-new account sent here from the dashboard (lib/library/first-case.ts). Remembered at once, not
+  // when the case has loaded, so going straight back to the dashboard never sends them here a second time.
+  const firstVisit = useSearchParams().get("first") === "1"
+  useEffect(() => {
+    if (firstVisit) markWelcomed()
+  }, [firstVisit])
   
   // State
   const [caseStarted, setCaseStarted] = useState(false)
@@ -289,6 +297,8 @@ export default function CasePage() {
           </Button>
 
           {planBlock && <PlanNotice block={planBlock} />}
+
+          {firstVisit && attempts.length === 0 && <FirstCaseWelcome />}
 
           <Briefing caseId={params.id as string} caseData={caseData} isStarting={isStarting} onStart={requestStartCase} />
 
