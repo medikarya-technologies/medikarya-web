@@ -6,6 +6,7 @@
 //   2. what you did last: recent attempts, each a way back into the case;
 //   3. what to do next: one suggested case, chosen by lib/library/case-library.ts;
 //   4. and your plan: what it opens, and how much of today's allowance is left (components/plans/plan-card.tsx).
+// A student who took part in a workshop also sees their certificate at the top of the side column.
 // A student with no attempts yet gets the four steps of a case in place of a table of nothing.
 
 import { useEffect, useMemo, useState } from "react"
@@ -25,6 +26,7 @@ import { specialtyIcon } from "./specialty-icon"
 import { TrainingPanel } from "./training-panel"
 import { useDisplayName } from "./use-display-name"
 import { PlanCard } from "@/components/plans/plan-card"
+import { CertificateCard, type MyCertificate } from "./certificate-card"
 import { usePlan } from "@/components/plans/use-plan"
 import { useUpgrade } from "@/components/plans/upgrade-dialog"
 import { GUEST_CASE_IDS, lockedFor } from "@/lib/plans/limits"
@@ -36,6 +38,8 @@ interface Props {
   progress?: ProgressMap
   /** Shown instead of the signed-in user's name (the dev preview). */
   userName?: string
+  /** Workshop certificates the student has been given. */
+  certificates?: MyCertificate[]
 }
 
 // ── For someone who has not started ─────────────────────────────────────────
@@ -151,7 +155,7 @@ function ResumeCard({ one, c }: { one: InProgress; c: LibraryCase }) {
 
 // ── The page ────────────────────────────────────────────────────────────────
 
-export function DashboardOverview({ initialStats, cases = [], progress = {}, userName }: Props) {
+export function DashboardOverview({ initialStats, cases = [], progress = {}, userName, certificates = [] }: Props) {
   const stats = initialStats ?? NO_STATS
   const me = useDisplayName(userName)
 
@@ -204,6 +208,7 @@ export function DashboardOverview({ initialStats, cases = [], progress = {}, use
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         {started ? <RecentAttempts attempts={stats.recentCases} byId={byId} /> : <FirstCase />}
         <div className="space-y-6">
+          <CertificateCard certificates={certificates} />
           <PlanCard cases={cases} />
           {resume && resumeCase && <ResumeCard one={resume} c={resumeCase} />}
           <Suggested next={next} progress={progress} planLimited={cases.some((c) => !openToPlan(c))} />

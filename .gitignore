@@ -42,3 +42,6 @@ public/sw.js.map
 
 # Flyers and other print material (built from marketing/*/flyer.html; not part of the site)
 /marketing/
+
+# Private notes for Claude Code (goals, status, outreach); this repo is public
+CLAUDE.local.md

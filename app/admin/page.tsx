@@ -5,7 +5,7 @@ import { isAdminUser } from "./actions"
 import { RoleToggleButton } from "./role-toggle"
 import {
     ShieldCheck, Users, Crown, GraduationCap,
-    AlertCircle, Activity, Clock, FileText, ScrollText, Stethoscope, Zap
+    AlertCircle, Activity, Clock, FileText, ScrollText, Stethoscope, Ticket, Trophy, Zap
 } from "lucide-react"
 
 export const dynamic = "force-dynamic"
@@ -75,7 +75,7 @@ export default async function AdminPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <a href="/admin/attempts"
                             className="bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2">
                             <Activity className="w-4 h-4 text-sky-500" />
@@ -100,6 +100,16 @@ export default async function AdminPage() {
                             className="bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2">
                             <Zap className="w-4 h-4 text-amber-500" />
                             Live Cases
+                        </a>
+                        <a href="/admin/passes"
+                            className="bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2">
+                            <Ticket className="w-4 h-4 text-sky-500" />
+                            Workshop Passes
+                        </a>
+                        <a href="/admin/scores"
+                            className="bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2">
+                            <Trophy className="w-4 h-4 text-amber-500" />
+                            Top Scores
                         </a>
                         <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm w-fit">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />

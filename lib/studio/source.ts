@@ -402,8 +402,11 @@ export async function contributorPictures(studioCaseIds: string[]): Promise<Map<
 
 export interface StudioCertificate {
   credentialId: string;
-  /** "internship" certificates are issued by hand in the studio (Admin, Certificates); the others are earned. */
-  kind: "contributor" | "reviewer" | "advisory_board" | "internship";
+  /**
+   * "internship" certificates are issued by hand in the studio (Admin, Certificates); "workshop" ones from here, to
+   * students who finished a workshop's cases (Admin → Workshop passes → Certificates); the others are earned.
+   */
+  kind: "contributor" | "reviewer" | "advisory_board" | "internship" | "workshop";
   recipientName: string;
   title: string;
   detail: string;
@@ -456,6 +459,112 @@ export async function issueAdvisoryCertificate(name: string): Promise<string> {
   });
   if (error) throw error;
   return credentialId as string;
+}
+
+// ── Workshop participation certificates (studio migration 017) ───────────────
+// One per student per workshop. Its ref is "workshop:<event name>:<email>" (lower case), so asking twice gives back
+// the same certificate, a batch's certificates can be found by the event, and a student's by their email.
+
+export interface WorkshopCertificate {
+  credentialId: string;
+  email: string;
+  name: string;
+  title: string;
+  detail: string;
+  issuedAt: string;
+  revoked: boolean;
+}
+
+const workshopRef = (event: string, email: string) => `workshop:${event.toLowerCase()}:${email.toLowerCase()}`;
+/** For a LIKE pattern: % and _ in a name or an email are themselves, not wildcards. */
+const literal = (s: string) => s.replace(/[\\%_]/g, "\\$&");
+
+function toWorkshopCertificate(row: { credential_id: string; ref: string; recipient_name: string; title: string; detail: string; issued_at: string; revoked: boolean }): WorkshopCertificate {
+  return {
+    credentialId: row.credential_id,
+    email: row.ref.slice(row.ref.lastIndexOf(":") + 1),
+    name: row.recipient_name,
+    title: row.title,
+    detail: row.detail,
+    issuedAt: row.issued_at,
+    revoked: row.revoked,
+  };
+}
+
+const CERTIFICATE_COLUMNS = "credential_id, ref, recipient_name, title, detail, issued_at, revoked";
+
+/** The certificates already issued for a workshop, by email. */
+export async function workshopCertificates(event: string): Promise<Map<string, WorkshopCertificate>> {
+  const db = studio();
+  if (!db) throw new Error("The case studio is not connected, so certificates cannot be read from here.");
+  const prefix = `workshop:${event.toLowerCase()}:`;
+  const { data, error } = await db.from("certificates").select(CERTIFICATE_COLUMNS).like("ref", `${literal(prefix)}%`);
+  if (error) throw error;
+  const out = new Map<string, WorkshopCertificate>();
+  // an event called "MAMC" must not pick up one called "MAMC: day 2"
+  for (const row of data ?? []) if (!row.ref.slice(prefix.length).includes(":")) out.set(row.ref.slice(prefix.length), toWorkshopCertificate(row));
+  return out;
+}
+
+/** A student's own workshop certificates (not withdrawn), newest first. Empty if the studio cannot be read. */
+export async function myWorkshopCertificates(email: string): Promise<WorkshopCertificate[]> {
+  const db = studio();
+  if (!db || !email) return [];
+  const { data, error } = await db
+    .from("certificates")
+    .select(CERTIFICATE_COLUMNS)
+    .eq("kind", "workshop")
+    .eq("revoked", false)
+    .like("ref", `workshop:%:${literal(email.toLowerCase())}`)
+    .order("issued_at", { ascending: false });
+  if (error) {
+    console.error("Could not read workshop certificates:", error.message);
+    return [];
+  }
+  return (data ?? []).map(toWorkshopCertificate);
+}
+
+/** Issues one participation certificate, or gives back the one this student already has for this workshop. */
+export async function issueWorkshopCertificate(c: { event: string; email: string; name: string; title: string; detail: string }): Promise<{ credentialId: string; existed: boolean }> {
+  const db = studio();
+  if (!db) throw new Error("The case studio is not connected, so a certificate cannot be issued from here.");
+  const ref = workshopRef(c.event, c.email);
+  const { data: existing, error: readError } = await db.from("certificates").select("credential_id").eq("ref", ref).maybeSingle();
+  if (readError) throw readError;
+  if (existing) return { credentialId: existing.credential_id as string, existed: true };
+
+  // The row goes in first under a stand-in id, and only then takes a number: a refused row (the studio not ready, or the
+  // same student issued twice at once) never uses up a credential number, and numbers are never reused.
+  const placeholder = `pending-${crypto.randomUUID()}`;
+  const { error } = await db.from("certificates").insert({
+    credential_id: placeholder,
+    ref,
+    kind: "workshop",
+    user_id: null,
+    recipient_name: c.name,
+    title: c.title,
+    detail: c.detail,
+  });
+  if (error) {
+    if (/certificates_kind_check/.test(error.message)) {
+      throw new Error("The studio cannot store workshop certificates yet: run supabase/migrations/017_workshop_certificates.sql in the Case Studio's Supabase project.");
+    }
+    if (error.code === "23505") {
+      const { data: other } = await db.from("certificates").select("credential_id").eq("ref", ref).maybeSingle();
+      if (other && !String(other.credential_id).startsWith("pending-")) return { credentialId: other.credential_id as string, existed: true };
+    }
+    throw error;
+  }
+  try {
+    const { data: credentialId, error: idError } = await db.rpc("next_credential_id");
+    if (idError) throw idError;
+    const { error: numberError } = await db.from("certificates").update({ credential_id: credentialId }).eq("credential_id", placeholder);
+    if (numberError) throw numberError;
+    return { credentialId: credentialId as string, existed: false };
+  } catch (failure) {
+    await db.from("certificates").delete().eq("credential_id", placeholder);
+    throw failure;
+  }
 }
 
 export interface StudioRecordReview {

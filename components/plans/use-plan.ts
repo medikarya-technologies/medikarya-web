@@ -19,12 +19,23 @@ export interface PlanInfo {
   openedToday: string[]
   /** null = no limit. */
   limits: { maxDifficulty: 1 | 2 | 3; casesPerDay: number | null; livePerDay: number | null; liveEver: number | null }
-  /** Free plan time (e.g. the reward for a published case) giving this plan, and when it ends. */
-  grant?: { plan: Plan; endsAt: string } | null
+  /** Free plan time (the reward for a published case, a workshop pass) giving this plan, when it ends, and why. */
+  grant?: { plan: Plan; endsAt: string; from?: "case" | "pass" | "other"; pass?: string | null } | null
   /** The account is an admin (even while viewing as a student plan). */
   realAdmin?: boolean
   /** An admin viewing the site as this plan. */
   viewingAs?: Plan | null
+}
+
+/** The last day free plan time covers, for "Free until …": a pass ends at midnight, so the day before. */
+export const freeUntil = (endsAt: string) =>
+  new Date(Date.parse(endsAt) - 1).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" })
+
+/** Why the plan is free, after "Free until <date>": a published case, a workshop pass, or a gift. */
+export function freeBecause(grant: NonNullable<PlanInfo["grant"]>): string {
+  if (grant.from === "pass") return grant.pass ? `with your pass from ${grant.pass}` : "with your workshop pass"
+  if (grant.from === "other") return "from the MediKarya team"
+  return "thanks to your published case"
 }
 
 let current: PlanInfo | null = null

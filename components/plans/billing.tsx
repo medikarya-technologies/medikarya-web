@@ -26,7 +26,7 @@ import { PageContainer, PageHeader, PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/c
 import type { LibraryCase } from "@/lib/library/case-library"
 import { PLAN_OFFERS, rupees } from "@/lib/plans/catalog"
 import { PlanCard } from "./plan-card"
-import { refreshPlan, usePlan } from "./use-plan"
+import { freeBecause, freeUntil, refreshPlan, usePlan } from "./use-plan"
 import { useUpgrade } from "./upgrade-dialog"
 
 export interface Subscription {
@@ -147,8 +147,9 @@ function SubscriptionPanel({ preview }: { preview?: Subscription | null }) {
           <p className="flex items-start gap-2.5 text-[14px] leading-relaxed text-enc-ink">
             <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-enc-ok" strokeWidth={1.9} />
             <span>
-              Free until <span className="font-semibold">{longDate(grant.endsAt)}</span>: our thank-you for your case published on MediKarya. Nothing
-              to pay, and it doesn&apos;t renew. After that you move to the free Student plan, unless you subscribe.
+              Free until <span className="font-semibold">{freeUntil(grant.endsAt)}</span>
+              {grant.from === "pass" || grant.from === "other" ? `, ${freeBecause(grant)}.` : ": our thank-you for your case published on MediKarya."} Nothing to
+              pay, and it doesn&apos;t renew. After that you move to the free Student plan, unless you subscribe.
             </span>
           </p>
         </div>

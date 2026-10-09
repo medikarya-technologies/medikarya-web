@@ -11,7 +11,7 @@ import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/components/dashboard/dashboa
 import { difficultyLevel, DIFFICULTY_LABEL, type LibraryCase } from "@/lib/library/case-library"
 import { PLAN_OFFERS } from "@/lib/plans/catalog"
 import { GUEST_CASE_IDS, lockedFor } from "@/lib/plans/limits"
-import { usePlan, type PlanInfo } from "./use-plan"
+import { freeBecause, freeUntil, usePlan, type PlanInfo } from "./use-plan"
 import { useUpgrade } from "./upgrade-dialog"
 
 function Meter({ label, used, cap }: { label: string; used: number; cap: number | null }) {
@@ -71,7 +71,7 @@ export function PlanCard({ cases }: { cases: readonly LibraryCase[] }) {
       </div>
       {info.grant && info.grant.plan === info.plan && (
         <p className="mt-1 text-[12.5px] text-enc-ok">
-          Free until {new Date(info.grant.endsAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}, thanks to your published case
+          Free until {freeUntil(info.grant.endsAt)}, {freeBecause(info.grant)}
         </p>
       )}
 

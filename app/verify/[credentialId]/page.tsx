@@ -4,8 +4,9 @@ import { BadgeCheck, CircleSlash, SearchX } from "lucide-react"
 import { studioCertificate, type StudioCertificate } from "@/lib/studio/source"
 
 // Public proof that a MediKarya certificate is real: medikarya.in/verify/<credential id> is the link printed on the
-// certificate and the "credential URL" people put on LinkedIn. Certificates are issued in the Case Studio to case
-// contributors and clinical reviewers (studio: lib/rewards/); this page only reads them.
+// certificate and the "credential URL" people put on LinkedIn. Certificates live in the Case Studio: earned there by
+// case contributors and clinical reviewers (studio: lib/rewards/), or issued from here to students who took part in a
+// workshop (Admin → Workshop passes → Certificates). This page only reads them.
 
 export const dynamic = "force-dynamic"
 
@@ -21,10 +22,17 @@ const KIND: Record<StudioCertificate["kind"], string> = {
   reviewer: "Clinical reviewer",
   advisory_board: "Clinical Advisory Board",
   internship: "Internship",
+  workshop: "Workshop participation",
 }
 
-// On a development machine only, /verify/MK-0000-00000 (a contributor) and /verify/MK-0000-00001 (an internship) show
-// these samples, to see the page a scanned QR code opens without a real certificate.
+/** What the rows are called: a workshop certificate is for an event taken part in, not a title earned. */
+const LABELS: Partial<Record<StudioCertificate["kind"], { title: string; detail: string }>> = {
+  internship: { title: "Role", detail: "Details" },
+  workshop: { title: "Took part in", detail: "Details" },
+}
+
+// On a development machine only, /verify/MK-0000-00000 (a contributor), /verify/MK-0000-00001 (an internship) and
+// /verify/MK-0000-00002 (a workshop) show these samples, to see the page a scanned QR code opens without a real certificate.
 const SAMPLE_INTERNSHIP: StudioCertificate = {
   credentialId: "MK-0000-00001",
   kind: "internship",
@@ -32,6 +40,16 @@ const SAMPLE_INTERNSHIP: StudioCertificate = {
   title: "Developer Intern",
   detail: "Completed an internship at MediKarya Technologies Pvt. Ltd. from 3 July 2026 to 2 September 2026. Built and developed MediKarya's Case Studio.",
   issuedAt: "2026-09-02T06:30:00Z",
+  revoked: false,
+}
+
+const SAMPLE_WORKSHOP: StudioCertificate = {
+  credentialId: "MK-0000-00002",
+  kind: "workshop",
+  recipientName: "Sample Student Name",
+  title: "Clinical Reasoning Workshop",
+  detail: "held at Maulana Azad Medical College, New Delhi on 24 October 2026, working through 2 simulated patient cases on MediKarya",
+  issuedAt: "2026-10-24T12:30:00Z",
   revoked: false,
 }
 
@@ -79,7 +97,7 @@ export default async function VerifyPage({ params }: Props) {
   let certificate: StudioCertificate | null = null
   let unavailable = false
   try {
-    const sample = process.env.NODE_ENV !== "production" ? [SAMPLE, SAMPLE_INTERNSHIP].find((c) => c.credentialId === id) : undefined
+    const sample = process.env.NODE_ENV !== "production" ? [SAMPLE, SAMPLE_INTERNSHIP, SAMPLE_WORKSHOP].find((c) => c.credentialId === id) : undefined
     certificate = sample ?? (await studioCertificate(id))
   } catch (error) {
     console.error("Could not read certificate:", error)
@@ -140,8 +158,8 @@ export default async function VerifyPage({ params }: Props) {
         </div>
         <dl className="divide-y divide-slate-100 px-6">
           <Row label="Awarded to">{certificate.recipientName}</Row>
-          <Row label={certificate.kind === "internship" ? "Role" : "Title"}>{certificate.title}</Row>
-          <Row label={certificate.kind === "internship" ? "Details" : "Awarded"}>{certificate.detail.replace(/^for /, "For ")}</Row>
+          <Row label={LABELS[certificate.kind]?.title ?? "Title"}>{certificate.title}</Row>
+          <Row label={LABELS[certificate.kind]?.detail ?? "Awarded"}>{certificate.detail.replace(/^(for|held) /, (w) => w[0].toUpperCase() + w.slice(1))}</Row>
           <Row label="Category">{KIND[certificate.kind]}</Row>
           <Row label="Issued on">{issued}</Row>
           <Row label="Credential ID">
@@ -151,7 +169,8 @@ export default async function VerifyPage({ params }: Props) {
       </div>
       <p className="mt-5 text-[14px] leading-relaxed text-slate-600">
         MediKarya is a clinical simulation platform for medical students. New cases are written by medical students from patients they have seen, and checked by a
-        doctor before they are published. Contributors and reviewers earn titles for that work.{" "}
+        doctor before they are published.{" "}
+        {certificate.kind === "workshop" ? "Workshop certificates go to students who work through the workshop's cases." : "Contributors and reviewers earn titles for that work."}{" "}
         <Link href="/" className="font-medium text-sky-700 hover:underline">
           About MediKarya
         </Link>

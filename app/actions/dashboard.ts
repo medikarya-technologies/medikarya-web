@@ -5,6 +5,29 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { getCases } from "@/data/cases";
 import { buildDashboardStats, NO_STATS, summariseAttempts, type CaseProgress, type DashboardStats } from "@/lib/library/case-library";
 import { computeMilestones, type Milestone } from "@/lib/library/milestones";
+import { myWorkshopCertificates } from "@/lib/studio/source";
+import { CASE_STUDIO_URL } from "@/lib/site-links";
+import type { MyCertificate } from "@/components/dashboard/certificate-card";
+
+/** The signed-in student's workshop certificates, for a card on the dashboard. Empty if none or the studio cannot be read. */
+export async function getMyCertificates(): Promise<MyCertificate[]> {
+    try {
+        const { userId } = await auth();
+        if (!userId) return [];
+        const { data } = await supabaseServer.from("user_profiles").select("email").eq("clerk_user_id", userId).maybeSingle();
+        if (!data?.email) return [];
+        return (await myWorkshopCertificates(data.email)).map((c) => ({
+            credentialId: c.credentialId,
+            title: c.title,
+            issuedAt: c.issuedAt,
+            url: `${CASE_STUDIO_URL}/certificate/${c.credentialId}`,
+            verifyUrl: `https://www.medikarya.in/verify/${c.credentialId}`,
+        }));
+    } catch (error) {
+        console.error("Could not read the student's certificates:", error);
+        return [];
+    }
+}
 
 /**
  * Everything the dashboard home and the profile page need about the signed-in student, in one go: the

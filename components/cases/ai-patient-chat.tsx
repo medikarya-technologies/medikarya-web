@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, Loader2, User, Mic, MicOff, Lightbulb, X, ArrowUpRight, CornerDownLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/clarity"
+import { HISTORY_LIMITS } from "@/engine/chatHistory"
 
 interface Message {
   id: string
@@ -40,6 +41,9 @@ interface AIPatientChatProps {
   /** How the patient looks/behaves right now (bedside encounters only) — lets the chat voice react to deterioration or recovery instead of always sounding the same. */
   currentCondition?: { observation?: string; consciousness?: string }
 }
+
+/** The id prefix of a stand-in line shown when a reply failed: the patient never said it, so it is not sent back as conversation. */
+const UNANSWERED = "unanswered-"
 
 // Two icebreaker chips shown only before the student sends their first message
 const ICEBREAKERS = [
@@ -174,6 +178,13 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
       content: input.trim(),
       timestamp: new Date(),
     }
+    // The conversation so far goes with the question: the server keeps none, so whichever server answers knows
+    // what was said (engine/chatHistory.ts). `messages` is still the list from before this question.
+    const history = messages
+      .filter((m) => !m.id.startsWith(UNANSWERED))
+      .slice(-HISTORY_LIMITS.turns)
+      .map(({ role, content }) => ({ role, content }))
+
     setMessages((prev) => [...prev, userMessage])
     onMessageSent(userMessage)
     trackEvent("Message_Sent")
@@ -184,7 +195,7 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
       const response = await fetch("/api/chat/patient", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.content, caseId: caseData?.id, currentCondition }),
+        body: JSON.stringify({ message: userMessage.content, caseId: caseData?.id, currentCondition, history }),
       })
       if (!response.ok) throw new Error("Failed")
       const data = await response.json()
@@ -197,10 +208,11 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
       setMessages((prev) => [...prev, assistantMessage])
       onMessageSent(assistantMessage)
     } catch {
+      // The reply failed (a network blip, or the AI busy): a line any patient or parent could say, asking again.
       const fallback: Message = {
-        id: (Date.now() + 1).toString(),
+        id: `${UNANSWERED}${Date.now() + 1}`,
         role: "assistant",
-        content: "I'm not sure about that, Doctor. Is that important for my child's condition?",
+        content: "Sorry, doctor, could you ask me that again?",
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, fallback])

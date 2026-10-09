@@ -3,7 +3,7 @@ import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 import { currentSubscription } from "@/lib/payments/subscriptions";
 import { decide, higherPlan, indiaDay, type CaseKind, type Decision, type Plan } from "./limits";
-import { activeGrant, type GrantRow } from "./grants";
+import { activeGrant, type ActiveGrant, type GrantRow } from "./grants";
 import { readViewAs } from "./view-as";
 
 export { caseKindOf as caseKind } from "./limits";
@@ -23,8 +23,8 @@ export interface PlanStatus {
   liveEver: number;
   /** Case ids opened today; opening one of these again is free. */
   openedToday: string[];
-  /** Free plan time (e.g. a reward for a published case) that is giving this plan, and when it ends. */
-  grant: { plan: Plan; endsAt: string } | null;
+  /** Free plan time (a reward for a published case, a workshop pass) that is giving this plan, and when it ends. */
+  grant: ActiveGrant | null;
 }
 
 /** Free plan time given to this email (plan_grants). Missing table or a failed read = none: never blocks a case. */

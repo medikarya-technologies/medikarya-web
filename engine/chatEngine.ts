@@ -1,5 +1,6 @@
 import { CaseData } from '../data/cases/index';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { toGeminiHistory, type ChatTurn } from "./chatHistory";
 
 export interface CaseResponse {
     response: string;
@@ -16,9 +17,6 @@ export interface CurrentCondition {
 }
 
 export class ChatEngine {
-
-    private static sessionHistories: Map<string, Array<{ role: 'user' | 'assistant'; content: string }>> = new Map();
-    private static readonly MAX_HISTORY_MESSAGES = 12; // ~6 exchanges
 
     private static isGuardianRole(caseData: CaseData): boolean {
         const speaker = caseData.ai_role?.speaker?.toLowerCase() || "";
@@ -57,10 +55,14 @@ export class ChatEngine {
         }
     }
 
+    /**
+     * The patient's reply to `message`. `history` is the conversation so far, as the browser sent it and
+     * engine/chatHistory.ts cleaned it: the server keeps no conversation of its own, so any server can answer.
+     */
     static async processRequest(
         message: string,
         caseData: CaseData,
-        userId: string,
+        history: ChatTurn[],
         currentCondition?: CurrentCondition
     ): Promise<CaseResponse | { error: string, status: number }> {
 
@@ -68,7 +70,7 @@ export class ChatEngine {
             return { error: "Missing message or patient data", status: 400 };
         }
 
-        return await this.generateLLMResponse(message, caseData, userId, currentCondition);
+        return await this.generateLLMResponse(message, caseData, history, currentCondition);
     }
 
     static async generateOpening(caseData: CaseData, currentCondition?: CurrentCondition): Promise<string> {
@@ -149,7 +151,7 @@ ${examples || "Simple, worried, conversational language."}${conditionNow}
     private static async generateLLMResponse(
         message: string,
         caseData: CaseData,
-        userId: string,
+        history: ChatTurn[],
         currentCondition?: CurrentCondition
     ): Promise<CaseResponse | { error: string, status: number }> {
 
@@ -173,10 +175,6 @@ ${compiledMemory}
 `.trim();
 
 
-        const historyKey = `${userId}:${caseData.id}`;
-        let history = this.sessionHistories.get(historyKey) || [];
-        history = history.filter(h => h.content?.trim());
-
         try {
             const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) {
@@ -189,14 +187,8 @@ ${compiledMemory}
                 systemInstruction: systemPrompt,
             });
 
-            // Build Gemini chat history from session history
-            const chatHistory = history.map(msg => ({
-                role: msg.role === "assistant" ? "model" : "user" as "user" | "model",
-                parts: [{ text: msg.content }],
-            }));
-
             const chat = model.startChat({
-                history: chatHistory,
+                history: toGeminiHistory(history),
                 generationConfig: { temperature: 0.4, maxOutputTokens: 256 },
             });
 
@@ -213,16 +205,6 @@ ${compiledMemory}
             text = text.replace(/^["'""'']|["'""'']$/g, "").trim();
 
             const finalResponse = text || "I don't know.";
-
-            // Save history
-            history.push({ role: "user", content: message });
-            history.push({ role: "assistant", content: finalResponse });
-
-            if (history.length > this.MAX_HISTORY_MESSAGES) {
-                history = history.slice(-this.MAX_HISTORY_MESSAGES);
-            }
-
-            this.sessionHistories.set(historyKey, history);
 
             return {
                 response: finalResponse,
