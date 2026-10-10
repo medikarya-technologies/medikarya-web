@@ -283,6 +283,15 @@ describe("legacy adapter: the monitor", () => {
         assert.equal(upgraded(adultCase()).initial_state.rhythm, "complete_heart_block");
     });
 
+    it("reads sinoatrial node disease as sick sinus, not as plain sinus rhythm", () => {
+        const c = adultCase();
+        c.tests[0].result.ecg_parameters = { rhythm: "Sinoatrial node disease (sick sinus syndrome)", ventricularRate: 90 };
+        const u = upgraded(c);
+        assert.equal(u.initial_state.rhythm, "sinus_node_disease");
+        const ecg = resolveInvestigation(u, "ecg", PatientState.initial(u).snapshot(), 0, demographicsOf(u as any));
+        assert.equal(ecg?.ecg?.rhythm, "sinus_node_disease");
+    });
+
     it("calls 130/min normal sinus rhythm in a two-year-old, not tachycardia", () => {
         assert.equal(upgraded(toddlerCase()).initial_state.rhythm, "sinus_normal");
     });

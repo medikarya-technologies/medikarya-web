@@ -145,7 +145,7 @@ export function liveReading(base: LiveBase, t: number, { seed, age, thresholds }
     const ctx: BoundaryContext = { limits: vitalLimitsForAge(age), thresholds };
 
     // A fibrillating ventricle has no rate; an irregular rhythm reads less steadily than a regular one.
-    const hrAmp = base.rhythm === "afib" ? Math.max(2, base.rate * 0.05) : Math.min(3, Math.max(1, base.rate * 0.018));
+    const hrAmp = base.rhythm === "afib" || base.rhythm === "sinus_node_disease" ? Math.max(2, base.rate * 0.05) : Math.min(3, Math.max(1, base.rate * 0.018));
     const hr = base.rhythm === "vf" ? base.rate : round(base.rate + hrAmp * drift(seed, "hr", t, [7.3, 3.1, 1.7]));
     const spo2 = round(Math.min(100, base.spo2 + 1.2 * drift(seed, "spo2", t, [11.7, 5.3, 2.3])));
     const rr = round(base.rr + 1.4 * drift(seed, "rr", t, [13.1, 6.7]));

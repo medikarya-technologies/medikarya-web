@@ -22,6 +22,7 @@ export const RHYTHM_TYPES = [
     "sinus_normal",
     "sinus_tachycardia",
     "sinus_bradycardia",
+    "sinus_node_disease",
     "afib",
     "flutter",
     "complete_heart_block",
