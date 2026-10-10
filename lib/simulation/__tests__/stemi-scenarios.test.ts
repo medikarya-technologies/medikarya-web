@@ -274,19 +274,16 @@ describe("stemi: results are pure functions of the log", () => {
         assert.equal(r.stateConsequence, "confirms_myocardial_injury");
     });
 
-    it("turnaround gates availability: ECG in 30 s, troponin in 6 minutes, unknown tests use the catalog", () => {
+    it("turnaround gates availability, but no result takes longer than 30 seconds, even a day-long blood culture", () => {
         const config = stemiCase();
         const engine = new EncounterEngine(config);
         engine.orderTest("ecg_12_lead", "ECG", 100);
         engine.orderTest("troponin_i", "Troponin", 100);
         engine.orderTest("blood_culture", "Blood cultures", 100);
-        const [ecg, trop, cx] = listOrders(engine.events);
-
-        assert.equal(isResultReady(config, ecg, 129), false);
-        assert.equal(isResultReady(config, ecg, 130), true);
-        assert.equal(isResultReady(config, trop, 100 + min(6) - 1), false);
-        assert.equal(isResultReady(config, trop, 100 + min(6)), true);
-        assert.equal(isResultReady(config, cx, 100 + min(120)), false, "blood cultures take a day");
+        for (const order of listOrders(engine.events)) {
+            assert.equal(isResultReady(config, order, 129), false, `${order.testId} is not instant`);
+            assert.equal(isResultReady(config, order, 130), true, `${order.testId} is back by 30 s`);
+        }
     });
 
     it("an unknown test id resolves to null rather than throwing", () => {

@@ -536,6 +536,16 @@ describe("legacy adapter: investigations", () => {
         assert.ok(turnaroundMinutes(upgraded(adultCase()), "ecg") < 0.5);
     });
 
+    it("brings back a catalog test the case did not write within 30 seconds, quick ones sooner, live or not", () => {
+        const ordinary = upgraded(toddlerCase());
+        assert.equal(turnaroundMinutes(ordinary, "glucose_random"), 5 / 60, "a 5-minute test: 5 seconds");
+        assert.equal(turnaroundMinutes(ordinary, "mri_brain"), 0.5, "a 90-minute scan: capped at 30 seconds");
+        assert.equal(turnaroundMinutes(ordinary, "blood_culture"), 0.5, "a day-long culture: 30 seconds");
+        const timed = { ...ordinary, clinical_constraints: { hard_time_limit_minutes: 25, time_scale: 1 } };
+        assert.equal(turnaroundMinutes(timed, "ct_head_noncontrast"), 25 / 60, "a live case's CT head: 25 seconds, not 25 minutes");
+        assert.equal(turnaroundMinutes(timed, "blood_culture"), 0.5);
+    });
+
     it("lets a case's own definition of a test win over the catalog's", () => {
         const c = upgraded(toddlerCase());
         assert.equal(c.order_menu, "catalog", "the default now, not something this test needs to force");
