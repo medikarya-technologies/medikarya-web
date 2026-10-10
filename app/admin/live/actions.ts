@@ -2,8 +2,9 @@
 
 // Admin → Live cases. Turning an ordinary case into a live one (lib/simulation/live-plan.ts):
 //   draft a plan with AI (or it arrives written by a resident in the Case Studio) → read the report and play-test it
-//   (a proposed plan runs for admins only) → send a clinician a private link to sign it off → switch it on.
-// Students get the live version only when the plan is approved, and it can be approved only after a sign-off.
+//   (a proposed plan runs for admins only) → switch it on.
+// The MediKarya team checks the plan and switches it on; a clinician's sign-off (a private link) is optional while we
+// have no reviewers. Students get the live version only once it is switched on, and only if it passes the check.
 // Every action checks the caller is an admin.
 
 import { auth } from "@clerk/nextjs/server"
@@ -14,7 +15,7 @@ import { isAdmin } from "@/lib/plans/access"
 import { createReviewLink } from "@/lib/review/links"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { isLivePlan, measuredOnArrival, type LivePlan } from "@/lib/simulation/live-plan"
+import { checkLivePlan, isLivePlan, measuredOnArrival, type LivePlan } from "@/lib/simulation/live-plan"
 import { draftLivePlan } from "@/lib/studio/live-draft"
 
 export type LiveResult = { ok: true; message: string; link?: string } | { ok: false; error: string; details?: string[] }
@@ -52,7 +53,7 @@ async function savePlan(caseId: string, caseJson: Record<string, any>, plan: Liv
 /**
  * Drafts a live plan for this case with AI, or (when it already has one) changes it: as `instructions` say, or else as
  * the clinician who asked for changes said. The result is a proposal: any earlier sign-off is dropped, and students
- * keep (or go back to) the ordinary case until the new plan is signed off and switched on.
+ * keep (or go back to) the ordinary case until the new plan is switched on.
  */
 export async function draftLivePlanAction(caseId: string, instructions = ""): Promise<LiveResult> {
   try {
@@ -80,7 +81,7 @@ export async function draftLivePlanAction(caseId: string, instructions = ""): Pr
     const warned = draft.check.warnings.length > 0 ? ` ${draft.check.warnings.length} thing${draft.check.warnings.length === 1 ? "" : "s"} to look at.` : ""
     return {
       ok: true,
-      message: `${existing ? "Plan changed" : "Live plan drafted"}: ${draft.plan.stages.length} steps, ${draft.plan.treatments.length} treatments.${warned} It is a proposal: read the report, play-test it, then send it for sign-off.`,
+      message: `${existing ? "Plan changed" : "Live plan drafted"}: ${draft.plan.stages.length} steps, ${draft.plan.treatments.length} treatments.${warned} It is a proposal: read the report and play-test it, then switch it on.`,
     }
   } catch (error) {
     return fail(error, "Could not draft a live plan.")
@@ -117,15 +118,25 @@ export async function sendLiveSignOffAction(caseId: string): Promise<LiveResult>
   }
 }
 
-/** Switches the live version on for students (only after a clinician's sign-off), or back off. */
+/**
+ * Switches the live version on for students, or back off. Switching on needs a plan that passes the check (students
+ * would otherwise silently get the ordinary case), not a sign-off; without one it is recorded as the team's check.
+ */
 export async function setLiveAction(caseId: string, on: boolean): Promise<LiveResult> {
   try {
     await requireAdmin()
     const caseJson = await load(caseId)
     const plan = caseJson?.live_plan
     if (!caseJson || !isLivePlan(plan)) return { ok: false, error: "This case has no live plan." }
-    if (on && plan.sign_off?.decision !== "approved") return { ok: false, error: "A clinician has to sign the plan off before students can meet it." }
-    await savePlan(caseId, caseJson, { ...plan, status: on ? "approved" : "proposed" })
+    let next: LivePlan = { ...plan, status: on ? "approved" : "proposed" }
+    if (on) {
+      const base = upgradeLegacyCase(caseJson)
+      if (!isSimulationCase(base)) return { ok: false, error: "This case cannot run at the bedside, so it cannot be made live." }
+      const check = checkLivePlan(plan, measuredOnArrival(base))
+      if (check.errors.length > 0) return { ok: false, error: "The plan does not pass the check. Fix it first.", details: check.errors }
+      if (plan.sign_off?.decision !== "approved") next = { ...next, team_checked_at: new Date().toISOString() }
+    }
+    await savePlan(caseId, caseJson, next)
     done()
     return {
       ok: true,
@@ -133,7 +144,7 @@ export async function setLiveAction(caseId: string, on: boolean): Promise<LiveRe
         ? caseJson.status === "published"
           ? "Live: students now get this case with the clock, the tray and the deterioration. It counts as a live case on their plan."
           : "Switched on. The case is still a draft: students get the live version once you publish it."
-        : "Switched off: students get the ordinary case again. The plan and its sign-off are kept.",
+        : "Switched off: students get the ordinary case again. The plan is kept.",
     }
   } catch (error) {
     return fail(error, "Could not change that.")

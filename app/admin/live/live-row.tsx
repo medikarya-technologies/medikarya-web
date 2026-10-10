@@ -28,6 +28,7 @@ export interface LiveCase {
     window: number
     limit: number
     draftedAt: string | null
+    teamCheckedAt: string | null
     signOff: { decision: "approved" | "changes_requested"; by: string | null; at: string; comments: string | null } | null
     errors: string[]
     warnings: string[]
@@ -145,6 +146,9 @@ export function LiveRow({ c }: { c: LiveCase }) {
               </ul>
             )}
 
+            {p.teamCheckedAt && !signedOff && p.status === "approved" && (
+              <p className="rounded-lg bg-emerald-50 p-3 text-[14px] text-emerald-950">✓ Checked by the MediKarya team and switched on on {day(p.teamCheckedAt)}.</p>
+            )}
             {p.signOff && (
               <p className={`rounded-lg p-3 text-[14px] ${signedOff ? "bg-emerald-50 text-emerald-950" : "bg-rose-50 text-rose-950"}`}>
                 {signedOff ? "✓ Signed off" : "Changes asked for"} by <strong>{p.signOff.by ?? "the clinician (name kept private)"}</strong> on {day(p.signOff.at)}.
@@ -160,19 +164,19 @@ export function LiveRow({ c }: { c: LiveCase }) {
               <Link href={`/dashboard/cases/${c.id}`} target="_blank" className={quiet} title="As an admin you get the live version even while it is only proposed">
                 <Play className="h-4 w-4" /> Play-test it
               </Link>
-              {!signedOff && !broken && (
-                <button type="button" className={changesAsked ? quiet : primary} disabled={pending} onClick={() => run("link", () => sendLiveSignOffAction(c.id))}>
-                  {spin("link", <Send className="h-4 w-4" />)} {p.signOff ? "New sign-off link" : "Send for sign-off"}
+              {p.status !== "approved" && !broken && (
+                <button type="button" className={primary} disabled={pending} onClick={() => run("on", () => setLiveAction(c.id, true), c.status === "published" ? "Switch the live version on? Students will get this case with the clock and the tray from now on, and it counts as a live case on their plan." : undefined)}>
+                  {spin("on", <Zap className="h-4 w-4" />)} Switch it on
                 </button>
               )}
               {changesAsked && (
-                <button type="button" className={primary} disabled={pending} onClick={() => run("revise", () => draftLivePlanAction(c.id), "Change the plan as the clinician asked? It takes about half a minute, and the new plan needs a new sign-off.")}>
+                <button type="button" className={quiet} disabled={pending} onClick={() => run("revise", () => draftLivePlanAction(c.id), "Change the plan as the clinician asked? It takes about half a minute, and the new plan has to be switched on again.")}>
                   {spin("revise", <Sparkles className="h-4 w-4" />)} Change it as they asked
                 </button>
               )}
-              {signedOff && p.status !== "approved" && !broken && (
-                <button type="button" className={primary} disabled={pending} onClick={() => run("on", () => setLiveAction(c.id, true), c.status === "published" ? "Switch the live version on? Students will get this case with the clock and the tray from now on." : undefined)}>
-                  {spin("on", <Zap className="h-4 w-4" />)} Switch it on
+              {!signedOff && !broken && (
+                <button type="button" className={quiet} disabled={pending} onClick={() => run("link", () => sendLiveSignOffAction(c.id))} title="Optional: a private link for a clinician to check the plan">
+                  {spin("link", <Send className="h-4 w-4" />)} {p.signOff ? "New sign-off link" : "Send to a clinician (optional)"}
                 </button>
               )}
               {p.status === "approved" && (
@@ -204,7 +208,7 @@ export function LiveRow({ c }: { c: LiveCase }) {
                     placeholder="e.g. Decompensation should come at 15 minutes, not 12. Add IV antibiotics as an essential treatment within 10 minutes."
                   />
                 </label>
-                <p className="mt-1 text-[13px] text-slate-500">The AI changes only what you ask. The changed plan is a new proposal and needs a new sign-off{p.status === "approved" ? "; students go back to the ordinary case until then" : ""}.</p>
+                <p className="mt-1 text-[13px] text-slate-500">The AI changes only what you ask. The changed plan is a new proposal and has to be switched on again{p.status === "approved" ? "; students go back to the ordinary case until then" : ""}.</p>
                 <button type="button" className={`${primary} mt-2`} disabled={pending || changes.trim().length < 8} onClick={() => run("change", () => draftLivePlanAction(c.id, changes))}>
                   {spin("change", <Sparkles className="h-4 w-4" />)} Change the plan
                 </button>
