@@ -93,24 +93,25 @@ export function listOrders(events: readonly ClinicalEvent[]): InvestigationOrder
     return orders;
 }
 
+/** The longest a student waits for any result, in real seconds. A virtual case is not a real lab queue. */
+export const MAX_RESULT_WAIT_SECONDS = 30;
+
 /**
- * Sim minutes until the result is back: the case's override, else the catalog's standard.
+ * Sim minutes until the result is back.
  *
- * An untimed encounter ("a consultation, not a race" — see `ClinicalConstraints.untimed`) authors
- * deliberately short turnarounds for its OWN tests (`custom_tests[i].turnaround_minutes`, see
- * TURNAROUND_MINUTES in legacy-adapter.ts) but never for the wider catalog it also opens up, so a
- * catalog test's raw clinical turnaround (a real PET-CT takes 4 hours; a bone marrow biopsy, a day)
- * would otherwise play out literally at `time_scale: 1` — a real multi-hour wait for one result.
- * Only THAT fallback path is scaled down 60x and capped at a sim-minute (= 60 real seconds at
- * time_scale 1); a test the case authored itself keeps its real value untouched either way.
+ * A case's own times (an override in investigation_results, or its own test's turnaround: see TURNAROUND_MINUTES in
+ * legacy-adapter.ts) are already playing times. The catalog's are real clinical ones (a CT head 25 minutes, a blood
+ * culture a day), so a catalog test the case did not write is scaled down 60x: a 20-minute troponin is back in 20
+ * seconds, and quick tests still come back before slow ones. Either way nothing takes longer than
+ * MAX_RESULT_WAIT_SECONDS of real time, in an ordinary case or a live one.
  */
 export function turnaroundMinutes(config: SimulationCaseConfig, testId: string): number {
     const override = config.investigation_results?.[testId]?.turnaround_minutes;
-    if (typeof override === "number") return override;
-    const catalogMinutes = getTestDef(config, testId)?.turnaroundMinutes ?? 30;
     const isCaseAuthored = config.custom_tests?.some((t) => t.id === testId) ?? false;
-    if (isCaseAuthored || !config.clinical_constraints?.untimed) return catalogMinutes;
-    return Math.min(catalogMinutes / 60, 1);
+    const catalogMinutes = getTestDef(config, testId)?.turnaroundMinutes ?? 30;
+    const minutes = typeof override === "number" ? override : isCaseAuthored ? catalogMinutes : catalogMinutes / 60;
+    const cap = (MAX_RESULT_WAIT_SECONDS / 60) * (config.clinical_constraints?.time_scale ?? 1);
+    return Math.min(minutes, cap);
 }
 
 export function readyAt(config: SimulationCaseConfig, order: InvestigationOrder): number {
