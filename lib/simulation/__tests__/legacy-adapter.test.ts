@@ -690,6 +690,7 @@ describe("legacy adapter: the real cases", () => {
         "32-year-old-woman-with-unsteady-walking",
         "48-year-old-woman-with-worsening-upper-back-pain",
         "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes",
+        "79-year-old-man-in-a-care-home-who-has-become-confused",
         "autosomal-dominant-polycystic-kidney-disease",
         "complete-heart-block-syncope",
         "malaria-returning-traveller-fever",

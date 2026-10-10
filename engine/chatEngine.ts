@@ -1,6 +1,7 @@
 import { CaseData } from '../data/cases/index';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { toGeminiHistory, type ChatTurn } from "./chatHistory";
+import { caseRules } from "./caseRules";
 
 export interface CaseResponse {
     response: string;
@@ -128,6 +129,9 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
             ? `You are speaking as: ${caseData.ai_role.first_person_description || "the patient"}`
             : `You are speaking as: the patient`;
 
+        const rules = caseRules(caseData.ai_role);
+        const caseRulesBlock = rules ? `\n${rules}\n` : "";
+
         const guidance = this.consciousnessGuidance(currentCondition?.consciousness, this.isGuardianRole(caseData));
         const conditionLines = [currentCondition?.observation, guidance].filter(Boolean).join("\n");
         const conditionNow = conditionLines
@@ -136,7 +140,7 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
 
         return `
 ${role}
-
+${caseRulesBlock}
 PATIENT NARRATIVE:
 ${caseData.patient_text_brief || ""}
 
