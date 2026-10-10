@@ -197,7 +197,19 @@ export async function pushConversion(
   // Sending the same conversion again (a retry, or "Put in the reviewer queue") is not a new version: a new version
   // drops its review and pays a re-review.
   const same = !!existing && existing.converted != null && existing.converted === sourceConvertedAt(c.caseJson);
-  const version = same ? existing.version : (existing?.version ?? 0) + 1;
+  let version = same ? existing.version : (existing?.version ?? 0) + 1;
+  if (!existing) {
+    // the row is gone if its draft was deleted (withdrawConversion): carry on past the versions already reviewed, or an
+    // old review of version 1 would count for this new version 1
+    const { data: reviewed, error: reviewedError } = await db
+      .from("conversion_reviews")
+      .select("version")
+      .eq("case_id", studioCaseId)
+      .order("version", { ascending: false })
+      .limit(1);
+    if (reviewedError) throw reviewedError;
+    version = Math.max(version, (reviewed?.[0]?.version ?? 0) + 1);
+  }
   const { error: upsertError } = await db.from("case_conversions").upsert(
     {
       case_id: studioCaseId,
@@ -213,6 +225,22 @@ export async function pushConversion(
   );
   if (upsertError) throw upsertError;
   return version;
+}
+
+/**
+ * Takes a deleted draft out of the studio's reviewer queue, so no reviewer claims (and is paid for) a case that no
+ * longer exists. Only the row for this MediKarya case, and never one that was published (its date pays the author).
+ */
+export async function withdrawConversion(studioCaseId: string, medikaryaCaseId: string): Promise<void> {
+  const db = studio();
+  if (!db) return;
+  const { error } = await db
+    .from("case_conversions")
+    .delete()
+    .eq("case_id", studioCaseId)
+    .eq("medikarya_case_id", medikaryaCaseId)
+    .is("published_at", null);
+  if (error) throw error;
 }
 
 /**

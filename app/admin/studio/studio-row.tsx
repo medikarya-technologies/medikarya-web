@@ -15,6 +15,7 @@ import { Activity, AlertTriangle, CheckCircle2, Copy, ExternalLink, FileText, Lo
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { StudioCaseSummary } from "@/lib/studio/source"
+import { studioStage } from "@/lib/studio/stage"
 import { convertToDraft, deleteDraft, makeLive, publishCase, rebuildWithComments, requeueDraft, sendBackToAuthor, sendForReview, unpublishCase, type ActionResult } from "./actions"
 
 export interface Converted {
@@ -76,20 +77,10 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
     })
   }
 
-  const live = converted?.status === "published"
+  // the same rules the page uses to pick this case's tab (lib/studio/stage.ts)
+  const { live, approved, changes, waiting, expired, addedByHand, sentBack, toAuthor, withAuthor, resubmitted, tab } = studioStage(c, converted)
   const draft = converted && !live
   const review = converted?.review ?? null
-  const approved = review?.decision === "approved"
-  const changes = review?.decision === "changes_requested"
-  const waiting = review && !review.decision && Date.parse(review.expiresAt) > Date.now()
-  const expired = review && !review.decision && !waiting
-  // Marked "added to platform" in the studio but not made by the converter: it was added by hand before.
-  const addedByHand = c.addedToPlatform && !converted
-  const sentBack = c.status === "changes_requested"
-  // the reviewer's changes were sent to the author: waiting for them, or they have fixed the sheet and resubmitted
-  const toAuthor = changes && !!c.sentBackAt && !!review?.decidedAt && c.sentBackAt > review.decidedAt
-  const withAuthor = toAuthor && sentBack
-  const resubmitted = toAuthor && c.status === "submitted"
   const openSendBack = (prefill: string) => {
     setBackComments(prefill)
     setSendingBack(true)
@@ -103,7 +94,7 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-semibold text-slate-900">{c.title}</h2>
-            {live && <Badge tone="green">On MediKarya</Badge>}
+            {(live || addedByHand) && <Badge tone="green">On MediKarya</Badge>}
             {converted && <Badge tone={converted.live ? "red" : "slate"}>{converted.live ? "Live case" : "Static case"}</Badge>}
             {!converted && sentBack && <Badge tone="amber">Sent back to the author</Badge>}
             {!converted && c.status === "submitted" && <Badge tone="amber">Submitted, to convert</Badge>}
@@ -132,7 +123,12 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
               </>
             )}
           </p>
-          {addedByHand && <p className="mt-1.5 text-[13px] text-slate-500">Marked &quot;added to platform&quot; in the studio: it was added to MediKarya by hand before.</p>}
+          {addedByHand && (
+            <p className="mt-1.5 text-[13px] text-slate-500">
+              Added to MediKarya by hand before the converter existed, so there is nothing to convert: converting it would make a second copy of a live
+              case.
+            </p>
+          )}
           {converted && <p className="mt-1.5 text-[12.5px] text-slate-500">MediKarya case <code>{converted.id}</code> · updated {when(converted.updatedAt)}</p>}
 
           {/* Where the review stands */}
@@ -192,15 +188,10 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-[420px] lg:justify-end">
-          {!converted && (
+          {/* a sheet already live (added by hand, or approved in the studio before the converter) is not converted again */}
+          {!converted && tab !== "live" && (
             <>
-              <Button
-                disabled={pending || !c.publishConsent}
-                onClick={() =>
-                  run("static", () => convertToDraft(c.id, "static"), addedByHand ? "This case was already added to MediKarya by hand. Converting makes a second, separate draft. Continue?" : undefined)
-                }
-                variant={addedByHand ? "outline" : "default"}
-              >
+              <Button disabled={pending || !c.publishConsent} onClick={() => run("static", () => convertToDraft(c.id, "static"))}>
                 {busy === "static" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 {convertLabel("static", "Convert to static case")}
               </Button>
@@ -306,7 +297,7 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
               </Button>
             </>
           )}
-          {live && (
+          {live && converted && (
             <>
               <Button asChild variant="outline">
                 <Link href={`/dashboard/cases/${converted.id}`} target="_blank">

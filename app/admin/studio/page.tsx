@@ -6,6 +6,8 @@ import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
 import { listStudioCases, queuedInStudio, studioConfigured, studioReviews } from "@/lib/studio/source"
 import { latestReviews } from "@/lib/review/links"
+import { cn } from "@/lib/utils"
+import { defaultStudioTab, STUDIO_TABS, studioStage, type StudioTab } from "@/lib/studio/stage"
 import { StudioRow, type Converted } from "./studio-row"
 
 // Studio cases → MediKarya. Each case sheet a student submits in the Case Studio is converted here with AI into a
@@ -19,7 +21,9 @@ export const maxDuration = 300
 
 export const metadata = { title: "Studio cases" }
 
-export default async function StudioCasesPage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function StudioCasesPage({ searchParams }: Props) {
   const { userId } = await auth()
   if (!(await isAdmin(userId ?? null))) redirect("/")
 
@@ -93,6 +97,12 @@ export default async function StudioCasesPage() {
 
   // a sheet the author is still writing is not ours to act on yet (unless it was converted before)
   const shown = studio.filter((c) => c.status !== "draft" || byStudioId.has(c.id))
+  const now = Date.now()
+  const tabOf = new Map(shown.map((c) => [c.id, studioStage(c, byStudioId.get(c.id) ?? null, now).tab]))
+  const counts = Object.fromEntries(STUDIO_TABS.map((t) => [t.key, shown.filter((c) => tabOf.get(c.id) === t.key).length])) as Record<StudioTab, number>
+  const asked = (await searchParams).tab
+  const tab = STUDIO_TABS.find((t) => t.key === asked)?.key ?? defaultStudioTab(counts)
+  const inTab = shown.filter((c) => tabOf.get(c.id) === tab)
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -110,11 +120,39 @@ export default async function StudioCasesPage() {
           author. Drafts are hidden from students throughout.
         </p>
 
-        <div className="mt-8 space-y-3">
-          {shown.map((c) => (
+        <nav className="mt-8 flex gap-1 overflow-x-auto border-b border-slate-200" aria-label="Where the cases stand">
+          {STUDIO_TABS.map((t) => (
+            <Link
+              key={t.key}
+              href={`/admin/studio?tab=${t.key}`}
+              aria-current={t.key === tab ? "page" : undefined}
+              className={cn(
+                "-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium",
+                t.key === tab ? "border-slate-900 text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800"
+              )}
+            >
+              {t.label}
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs tabular-nums",
+                  t.key === "todo" && counts.todo > 0 ? "bg-red-100 text-red-800" : "bg-slate-100 text-slate-600"
+                )}
+              >
+                {counts[t.key]}
+              </span>
+            </Link>
+          ))}
+        </nav>
+
+        <div className="mt-5 space-y-3">
+          {inTab.map((c) => (
             <StudioRow key={c.id} studioCase={c} converted={byStudioId.get(c.id) ?? null} />
           ))}
-          {shown.length === 0 && <p className="text-slate-500">No submitted cases yet.</p>}
+          {shown.length === 0 ? (
+            <p className="text-slate-500">No submitted cases yet.</p>
+          ) : (
+            inTab.length === 0 && <p className="text-slate-500">{STUDIO_TABS.find((t) => t.key === tab)!.empty}</p>
+          )}
         </div>
       </div>
     </main>

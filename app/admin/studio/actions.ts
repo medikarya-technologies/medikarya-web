@@ -14,7 +14,7 @@ import { headers } from "next/headers"
 import { revalidatePath, revalidateTag } from "next/cache"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
-import { authorPublishedCount, getStudioCase, markPublishedInStudio, pushConversion, sendBackInStudio, studioReviews, type StudioCase, type StudioReview } from "@/lib/studio/source"
+import { authorPublishedCount, getStudioCase, markPublishedInStudio, pushConversion, sendBackInStudio, studioReviews, withdrawConversion, type StudioCase, type StudioReview } from "@/lib/studio/source"
 import { getCatalogTest } from "@/lib/clinical-catalog"
 import { caseIdFor, convertStudioCase, type Conversion } from "@/lib/studio/convert"
 import { createReviewLink, latestReviews } from "@/lib/review/links"
@@ -512,11 +512,24 @@ export async function unpublishCase(caseId: string): Promise<ActionResult> {
 export async function deleteDraft(caseId: string): Promise<ActionResult> {
   try {
     await requireAdmin()
-    const { error, count } = await supabaseServer.from("cases").delete({ count: "exact" }).eq("id", caseId).eq("status", "draft")
+    const { data: deleted, error } = await supabaseServer
+      .from("cases")
+      .delete()
+      .eq("id", caseId)
+      .eq("status", "draft")
+      .select("studio:case_json->source->>studio_case_id")
     if (error) throw error
-    if (!count) return { ok: false, error: "Only a draft can be deleted." }
+    if (!deleted?.length) return { ok: false, error: "Only a draft can be deleted." }
     done()
-    return { ok: true, message: "Draft deleted." }
+    const studioId = deleted[0].studio as string | null
+    if (!studioId) return { ok: true, message: "Draft deleted." }
+    try {
+      await withdrawConversion(studioId, caseId)
+      return { ok: true, message: "Draft deleted and taken out of the studio's reviewer queue." }
+    } catch (e) {
+      console.error("Could not take the deleted draft out of the studio's reviewer queue:", e)
+      return { ok: true, message: "Draft deleted, but it could not be taken out of the studio's reviewer queue. Tell the developer before a reviewer claims it." }
+    }
   } catch (error) {
     return fail(error, "Could not delete the draft.")
   }
