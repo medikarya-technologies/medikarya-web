@@ -15,7 +15,7 @@ import { Activity, AlertTriangle, CheckCircle2, Copy, ExternalLink, FileText, Lo
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { StudioCaseSummary } from "@/lib/studio/source"
-import { convertToDraft, deleteDraft, makeLive, publishCase, rebuildWithComments, sendBackToAuthor, sendForReview, unpublishCase, type ActionResult } from "./actions"
+import { convertToDraft, deleteDraft, makeLive, publishCase, rebuildWithComments, requeueDraft, sendBackToAuthor, sendForReview, unpublishCase, type ActionResult } from "./actions"
 
 export interface Converted {
   id: string
@@ -112,7 +112,7 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
             {draft && withAuthor && <Badge tone="amber">With the author for changes</Badge>}
             {draft && resubmitted && <Badge tone="green">Author resubmitted, ready to rebuild</Badge>}
             {draft && waiting && <Badge tone="amber">With reviewer</Badge>}
-            {draft && !review && <Badge tone="amber">{converted.inQueue ? "In the reviewer queue" : "Draft, not reviewed"}</Badge>}
+            {draft && !review && (converted.inQueue ? <Badge tone="amber">In the reviewer queue</Badge> : <Badge tone="red">Not in the reviewer queue</Badge>)}
             {draft && expired && <Badge tone="amber">Review link expired</Badge>}
           </div>
           <p className="mt-1 text-[13.5px] text-slate-600">
@@ -138,6 +138,15 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
           {/* Where the review stands */}
           {draft && !review && converted.inQueue && (
             <p className="mt-2 text-[13.5px] text-slate-600">Waiting in the studio&apos;s reviewer queue for a verified reviewer of this specialty. Or send a private link to someone you know.</p>
+          )}
+          {draft && !review && !converted.inQueue && (
+            <p className="mt-2 flex items-start gap-1.5 text-[13.5px] text-red-700">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                The studio&apos;s reviewers cannot see this version: copying it to the studio failed when it was converted. Put it in the queue (no AI, a
+                few seconds), or send a private link.
+              </span>
+            </p>
           )}
           {draft && review && (
             <div className="mt-2 text-[13.5px]">
@@ -249,10 +258,17 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
                   )}
                 </>
               ) : (
-                <Button disabled={pending} variant={converted.inQueue ? "outline" : "default"} onClick={() => run("send", () => sendForReview(converted.id))}>
-                  {spin("send") || <Send className="mr-1.5 h-4 w-4" />}
-                  {waiting && review?.via === "link" ? "New private link" : "Send a private link"}
-                </Button>
+                <>
+                  {!converted.inQueue && !review && (
+                    <Button disabled={pending} onClick={() => run("requeue", () => requeueDraft(converted.id))}>
+                      {spin("requeue")}Put in the reviewer queue
+                    </Button>
+                  )}
+                  <Button disabled={pending} variant={converted.inQueue || !review ? "outline" : "default"} onClick={() => run("send", () => sendForReview(converted.id))}>
+                    {spin("send") || <Send className="mr-1.5 h-4 w-4" />}
+                    {waiting && review?.via === "link" ? "New private link" : "Send a private link"}
+                  </Button>
+                </>
               )}
               {changes && (
                 <Button disabled={pending} variant="outline" onClick={() => run("send", () => sendForReview(converted.id))}>

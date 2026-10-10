@@ -188,9 +188,16 @@ export async function pushConversion(
 ): Promise<number> {
   const db = studio();
   if (!db) throw new Error("The case studio is not connected");
-  const { data: existing, error } = await db.from("case_conversions").select("version").eq("case_id", studioCaseId).maybeSingle();
+  const { data: existing, error } = await db
+    .from("case_conversions")
+    .select("version, converted:case_json->source->>converted_at")
+    .eq("case_id", studioCaseId)
+    .maybeSingle();
   if (error) throw error;
-  const version = (existing?.version ?? 0) + 1;
+  // Sending the same conversion again (a retry, or "Put in the reviewer queue") is not a new version: a new version
+  // drops its review and pays a re-review.
+  const same = !!existing && existing.converted != null && existing.converted === sourceConvertedAt(c.caseJson);
+  const version = same ? existing.version : (existing?.version ?? 0) + 1;
   const { error: upsertError } = await db.from("case_conversions").upsert(
     {
       case_id: studioCaseId,
@@ -308,12 +315,27 @@ export async function studioReviews(studioCaseIds: string[]): Promise<Map<string
 }
 
 /** Which of these studio cases have a version in the reviewer queue (case_conversions). */
-export async function queuedInStudio(studioCaseIds: string[]): Promise<Set<string>> {
+/** When the conversion a case carries was made (its source.converted_at): it tells two versions apart. */
+export function sourceConvertedAt(caseJson: Record<string, unknown>): string | null {
+  const source = caseJson.source as Record<string, unknown> | undefined;
+  return typeof source?.converted_at === "string" ? source.converted_at : null;
+}
+
+/**
+ * Which version of each case the studio's reviewer queue holds: studio case id → the converted_at of that version.
+ * The draft here is in the queue only if they match; a failed copy after a rebuild leaves the old version there.
+ * Null if the studio could not be read, so the page does not claim every case is missing from the queue.
+ */
+export async function queuedInStudio(studioCaseIds: string[]): Promise<Map<string, string | null> | null> {
   const db = studio();
-  if (!db || studioCaseIds.length === 0) return new Set();
-  const { data, error } = await db.from("case_conversions").select("case_id").in("case_id", studioCaseIds);
-  if (error) return new Set();
-  return new Set((data ?? []).map((r) => r.case_id));
+  if (!db) return null;
+  if (studioCaseIds.length === 0) return new Map();
+  const { data, error } = await db
+    .from("case_conversions")
+    .select("case_id, converted:case_json->source->>converted_at")
+    .in("case_id", studioCaseIds);
+  if (error) return null;
+  return new Map((data ?? []).map((r) => [r.case_id as string, (r.converted as string | null) ?? null]));
 }
 
 // ── Publishing, records and certificates (studio migration 011) ──────────────

@@ -85,7 +85,8 @@ export default async function StudioCasesPage() {
       reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
       warnings: Array.isArray(source.warnings) ? source.warnings : [],
       review,
-      inQueue: queued.has(source.studio_case_id),
+      // unknown (studio unreadable) counts as in the queue, so a read error does not flag every draft
+      inQueue: queued === null || (queued.has(source.studio_case_id) && queued.get(source.studio_case_id) === (source.converted_at ?? null)),
       live: row.plan != null,
     })
   }

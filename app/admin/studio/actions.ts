@@ -146,21 +146,51 @@ async function saveDraft(
   return { id, needsPlan, queueWarning: await toQueue(sc.id, id, full) }
 }
 
-/** Puts this version of the case in the studio's reviewer queue. Returns a warning if it could not. */
+/**
+ * Puts this version of the case in the studio's reviewer queue. Returns a warning if it could not.
+ * Tried three times: the draft is already saved here by then, and a single failed call to the studio (two cases on
+ * 2026-10-04) left drafts that no queue reviewer could see. Repeating it is safe (pushConversion keeps the version).
+ */
 async function toQueue(studioId: string, caseId: string, caseJson: Record<string, any>): Promise<string | undefined> {
+  const source = caseJson.source ?? {}
+  let lastError: unknown
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await pushConversion(studioId, {
+        medikaryaCaseId: caseId,
+        caseJson,
+        reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
+        warnings: Array.isArray(source.warnings) ? source.warnings : [],
+        testNames: testNamesOf(caseJson),
+      })
+      return undefined
+    } catch (e) {
+      lastError = e
+      if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1500))
+    }
+  }
+  console.error("Could not put the draft in the studio's reviewer queue:", lastError)
+  const why = lastError instanceof Error ? lastError.message : (lastError as { message?: string })?.message
+  return `It could not be added to the studio's reviewer queue${why ? ` (${why})` : ""}. Use "Put in the reviewer queue" on it to try again; a private review link still works.`
+}
+
+/** Puts an existing draft in the studio's reviewer queue as it is, with no AI step (when the copy failed on convert). */
+export async function requeueDraft(caseId: string): Promise<ActionResult> {
   try {
-    const source = caseJson.source ?? {}
-    await pushConversion(studioId, {
-      medikaryaCaseId: caseId,
-      caseJson,
-      reviewNotes: Array.isArray(source.review_notes) ? source.review_notes : [],
-      warnings: Array.isArray(source.warnings) ? source.warnings : [],
-      testNames: testNamesOf(caseJson),
-    })
-    return undefined
-  } catch (e) {
-    console.error("Could not put the draft in the studio's reviewer queue:", e)
-    return "It could not be added to the studio's reviewer queue (has studio migration 010 been run?); a private review link still works."
+    await requireAdmin()
+    const { data: row, error } = await supabaseServer.from("cases").select("status, case_json").eq("id", caseId).maybeSingle()
+    if (error) throw error
+    if (!row) return { ok: false, error: "Case not found." }
+    if (row.status === "published") return { ok: false, error: "This case is already live." }
+    const caseJson = row.case_json as Record<string, any>
+    const studioId = caseJson.source?.studio_case_id as string | undefined
+    if (!studioId) return { ok: false, error: "This case did not come from the Case Studio." }
+    const warning = await toQueue(studioId, caseId, caseJson)
+    if (warning) return { ok: false, error: warning }
+    done()
+    return { ok: true, message: "Placed in the studio's reviewer queue." }
+  } catch (error) {
+    return fail(error, "Could not put the case in the reviewer queue.")
   }
 }
 
