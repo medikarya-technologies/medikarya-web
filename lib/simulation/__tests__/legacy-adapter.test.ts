@@ -697,6 +697,8 @@ describe("legacy adapter: the real cases", () => {
         "40-year-old-man-found-unconscious-at-home",
         "48-year-old-woman-with-worsening-upper-back-pain",
         "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes",
+        "66-year-old-man-with-numb-feet",
+        "69-year-old-man-with-a-long-cough-and-worsening-breathlessness",
         "79-year-old-man-in-a-care-home-who-has-become-confused",
         "85-year-old-man-who-keeps-falling",
         "autosomal-dominant-polycystic-kidney-disease",
