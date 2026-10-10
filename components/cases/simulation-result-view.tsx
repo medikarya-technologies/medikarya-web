@@ -33,6 +33,7 @@ import {
   ScanSearch,
 } from "lucide-react"
 
+import { imageCredit } from "@/lib/simulation/image-credits"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -124,9 +125,12 @@ function ImagingPanel({ result }: { result: ResolvedResult }) {
     <div className="space-y-3">
       <div className="overflow-hidden rounded-lg border border-enc-line-strong bg-slate-900/5">
         {result.imageUrl ? (
-          <div className="flex aspect-video w-full items-center justify-center bg-black/90 p-2">
-            <img src={result.imageUrl} alt={result.testName} className="max-h-[360px] w-auto max-w-full rounded object-contain shadow" />
-          </div>
+          <figure>
+            <div className="flex aspect-video w-full items-center justify-center bg-black/90 p-2">
+              <img src={result.imageUrl} alt={result.testName} className="max-h-[360px] w-auto max-w-full rounded object-contain shadow" />
+            </div>
+            {imageCredit(result.imageUrl) && <figcaption className="px-3 py-1.5 text-[11px] text-enc-ink-3">{imageCredit(result.imageUrl)}</figcaption>}
+          </figure>
         ) : (
           <div className="flex flex-col items-center gap-1.5 px-4 py-8 text-center">
             <ScanSearch className="h-8 w-8 text-enc-ink-3" />

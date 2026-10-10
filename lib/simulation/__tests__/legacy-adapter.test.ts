@@ -685,6 +685,11 @@ describe("legacy adapter: the real cases", () => {
 
     // Which cases have authored examination findings today. If someone adds some, update this on purpose.
     const HAS_EXAM = new Set([
+        "25-year-old-woman-with-sudden-chest-pain-and-breathlessness",
+        "28-year-old-man-with-a-spreading-rash-and-mouth-sores",
+        "32-year-old-woman-with-unsteady-walking",
+        "48-year-old-woman-with-worsening-upper-back-pain",
+        "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes",
         "autosomal-dominant-polycystic-kidney-disease",
         "complete-heart-block-syncope",
         "malaria-returning-traveller-fever",

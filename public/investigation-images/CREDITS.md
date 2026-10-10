@@ -1,4 +1,5 @@
-Reusable "normal" investigation images. Each shows an unremarkable/reference finding, so any case whose patient
+Investigation images: reusable "normal" ones, plus a few abnormal ones that match a specific case's findings
+(usg-dilated-bile-ducts.jpg: dilated intrahepatic bile ducts, used by the pancreatic head carcinoma case). Each shows an unremarkable/reference finding, so any case whose patient
 would genuinely have a normal result for that test can reuse the same file — the whole point being that a normal
 scan looks the same regardless of the patient's unrelated diagnosis (see `lib/simulation/case-resolvers.ts`,
 `NORMAL_IMAGE`, and each case's own `investigation_results[testId].image_url` override).
@@ -18,6 +19,7 @@ radiology journals) does not apply.
 | mri-brain-normal.jpg | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Normal_axial_T2-weighted_MR_image_of_the_brain.jpg) | Novaksean | CC BY-SA 4.0 | **Yes** — credit "Novaksean, CC BY-SA 4.0, via Wikimedia Commons" wherever this image is publicly shown |
 | echo-4chamber-normal.jpg | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Echocardiogram_4chambers.jpg) | Uploader-granted public domain | Public domain | No |
 | xray-abdomen-normal.jpg | Figure 1, [PMC13148455](https://pmc.ncbi.nlm.nih.gov/articles/PMC13148455/) (Cureus, 2026) | Alotaibi, Alghamdi, Wazzan, Alzahrani, Banjar | CC BY 4.0 | **Yes** — credit "Alotaibi AA, Alghamdi MA, Wazzan QR, Alzahrani AA, Banjar AT. *Perforated Appendicitis in a 52-Year-Old Male With Previously Undiagnosed Intestinal Malrotation.* Cureus 2026. doi:10.7759/cureus.106530. CC BY 4.0." wherever shown |
+| usg-dilated-bile-ducts.jpg | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Ultrasonography_of_dilated_bile_ducts.jpg) | Mikael Häggström, M.D. | CC0 1.0 (public domain) | No |
 
 Not sourced: a normal CT pulmonary angiogram, a normal cerebral MR angiogram. Several near-misses worth recording
 so they aren't re-tried the same way: a CTPA candidate (`Computed_tomograph_of_pulmonary_vessels.jpg`, Häggström,

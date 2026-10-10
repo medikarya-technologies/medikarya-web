@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils"
 import { ECGStrip } from "./ecg-strip"
 import dynamic from "next/dynamic"
 import type { InvestigationOrder } from "@/lib/simulation/case-resolvers"
+import { imageCredit } from "@/lib/simulation/image-credits"
 
 // Loaded on demand: only simulation cases open the interpret → reveal viewer.
 const SimulationResultView = dynamic(() => import("./simulation-result-view").then((m) => m.SimulationResultView), {
@@ -50,6 +51,15 @@ export function TestResultModal({ isOpen, onClose, test, result, simulationOrder
     return <SimulationResultView order={simulationOrder} open={isOpen} onClose={onClose} />
   }
   if (!result) return null
+
+  const imageSrc: string | undefined =
+    test?.imageUrl ||
+    test?.image ||
+    result?.imageUrl ||
+    result?.image ||
+    result?.results?.imageUrl ||
+    result?.results?.image ||
+    result?._meta?.imageUrl
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -134,15 +144,7 @@ export function TestResultModal({ isOpen, onClose, test, result, simulationOrder
             )}
 
             {/* Test Image / Visual Findings */}
-            {Boolean(
-              test?.imageUrl ||
-              test?.image ||
-              result?.imageUrl ||
-              result?.image ||
-              result?.results?.imageUrl ||
-              result?.results?.image ||
-              result?._meta?.imageUrl
-            ) && (
+            {Boolean(imageSrc) && (
               <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-900/5">
                 <div className="p-2 sm:p-3 border-b border-slate-200 bg-white">
                   <h3 className="font-semibold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
@@ -152,19 +154,12 @@ export function TestResultModal({ isOpen, onClose, test, result, simulationOrder
                 </div>
                 <div className="relative aspect-video w-full bg-black/90 flex items-center justify-center p-2">
                   <img
-                    src={
-                      test?.imageUrl ||
-                      test?.image ||
-                      result?.imageUrl ||
-                      result?.image ||
-                      result?.results?.imageUrl ||
-                      result?.results?.image ||
-                      result?._meta?.imageUrl
-                    }
+                    src={imageSrc}
                     alt={result?.imageAlt || test?.name || "Medical Imaging"}
                     className="max-h-[380px] w-auto max-w-full rounded object-contain shadow"
                   />
                 </div>
+                {imageCredit(imageSrc) && <p className="bg-white px-3 py-1.5 text-[11px] text-slate-500">{imageCredit(imageSrc)}</p>}
               </div>
             )}
 
