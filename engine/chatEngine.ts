@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { toGeminiHistory, type ChatTurn } from "./chatHistory";
 import { caseRules } from "./caseRules";
 import { consciousnessGuidance, speakerKind } from "./consciousnessGuidance";
+import { patientFactsText } from "./patientFacts";
 
 export interface CaseResponse {
     response: string;
@@ -86,9 +87,7 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
 
     // 🔥 THE BIG FIX — convert entire case into patient memory
     private static buildPatientMemory(caseData: CaseData, currentCondition?: CurrentCondition): string {
-        const facts = Object.entries(caseData.patient_facts || {})
-            .map(([k, v]) => `${k}: ${v}`)
-            .join("\n");
+        const facts = patientFactsText(caseData.patient_facts);
 
         const examples = (caseData.ai_examples || [])
             .map(ex => `"${ex.patient}"`)
