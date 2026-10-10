@@ -2,6 +2,7 @@ import { CaseData } from '../data/cases/index';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { toGeminiHistory, type ChatTurn } from "./chatHistory";
 import { caseRules } from "./caseRules";
+import { consciousnessGuidance, speakerKind } from "./consciousnessGuidance";
 
 export interface CaseResponse {
     response: string;
@@ -22,38 +23,6 @@ export class ChatEngine {
     private static isGuardianRole(caseData: CaseData): boolean {
         const speaker = caseData.ai_role?.speaker?.toLowerCase() || "";
         return speaker.includes("mother") || speaker.includes("father") || speaker.includes("guardian");
-    }
-
-    /**
-     * How the CURRENT consciousness level should change the way the speaker talks — separate guidance for the
-     * patient speaking for themselves vs. a guardian speaking about them, since a drowsy child does not mean a
-     * drowsy parent: the parent gets more urgent, not less coherent.
-     */
-    private static consciousnessGuidance(level: string | undefined, isGuardian: boolean): string {
-        if (!level) return "";
-        if (isGuardian) {
-            switch (level) {
-                case "drowsy":
-                case "altered":
-                    return "Your child is very sleepy and hard to rouse right now. You are frightened and urgent — speak quickly, in short anxious sentences, and press the doctor for reassurance and action.";
-                case "unresponsive":
-                    return "Your child is not responding to you at all right now. You are panicking — short, urgent, pleading sentences.";
-                default:
-                    return "";
-            }
-        }
-        switch (level) {
-            case "drowsy":
-                return "You are drowsy and fading. Answer in short, slow, half-finished sentences (3-6 words). You may need a question repeated before you respond.";
-            case "altered":
-                return "Your thinking is confused. Answers may be brief, slightly off-topic, or trail off. You may not fully track what was asked.";
-            case "unresponsive":
-                return "You cannot speak right now. You may only groan or make a wordless sound — do not form real words or answer the question.";
-            case "anxious":
-                return "You are alert but frightened — answer normally, but let the fear show.";
-            default:
-                return "";
-        }
     }
 
     /**
@@ -132,7 +101,7 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
         const rules = caseRules(caseData.ai_role);
         const caseRulesBlock = rules ? `\n${rules}\n` : "";
 
-        const guidance = this.consciousnessGuidance(currentCondition?.consciousness, this.isGuardianRole(caseData));
+        const guidance = consciousnessGuidance(currentCondition?.consciousness, speakerKind(caseData.ai_role));
         const conditionLines = [currentCondition?.observation, guidance].filter(Boolean).join("\n");
         const conditionNow = conditionLines
             ? `\n\nRIGHT NOW, IN THIS ROOM (this can change as the encounter goes on — speak from THIS, not just the narrative above, if the two differ):\n${conditionLines}`

@@ -89,6 +89,12 @@ const MIN = 60;
 // ── Reading and checking ────────────────────────────────────────────────────
 
 describe("live plan: tidying what was written", () => {
+    it("does not carry the team's switch-on over to a redrafted plan: it has to be switched on again", () => {
+        const tidied = normaliseLivePlan({ ...rawPlan(), status: "approved", team_checked_at: "2026-10-10T00:00:00Z" }, "ai");
+        assert.equal(tidied.status, "proposed");
+        assert.equal(tidied.team_checked_at, undefined);
+    });
+
     it("takes a shared-tray treatment's label and dose from the tray, never from the plan", () => {
         const p = normaliseLivePlan(rawPlan({ treatments: [{ id: "furosemide_iv", label: "Lasix", detail: "400 mg IV", role: "harmful", says: "Furosemide given, and it is harmful here." }] }), "ai");
         assert.equal(p.treatments[0].label, "Furosemide IV");

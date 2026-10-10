@@ -135,6 +135,8 @@ export interface LivePlan {
     basis?: string[];
     drafted_at?: string;
     sign_off?: LiveSignOff;
+    /** When the MediKarya team switched it on without a clinician's sign-off. A changed plan has to be switched on again. */
+    team_checked_at?: string;
 }
 
 export function isLivePlan(v: unknown): v is LivePlan {

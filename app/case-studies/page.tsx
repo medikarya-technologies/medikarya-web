@@ -176,7 +176,7 @@ export default async function CaseStudiesPage() {
                     </div>
 
                     <div className="py-16 text-center">
-                        <p className="mb-4 text-sm text-slate-500">New cases are written by medical students from patients they have seen, and checked by a doctor before they go live.</p>
+                        <p className="mb-4 text-sm text-slate-500">New cases are written by medical students from patients they have seen, and checked by a doctor before they are published.</p>
                         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                             <Button asChild size="lg" className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:opacity-90">
                                 <Link href="/try">Try a case free →</Link>
