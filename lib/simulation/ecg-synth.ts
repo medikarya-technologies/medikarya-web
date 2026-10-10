@@ -89,6 +89,8 @@ export interface RhythmModel {
     beats: Beat[];
     /** P-wave onsets. For heart block these are independent of the QRS complexes. */
     pWaves: number[];
+    /** Per-P-wave height and width multipliers, when the P waves are not all alike (sinus node disease). */
+    pVary?: { amp: number; width: number }[];
     atrial: "p" | "fibrillation" | "flutter" | "none";
     vf: boolean;
     pr: number;
@@ -134,6 +136,20 @@ export function buildRhythm(
             for (let t = start + 0.3; t < end; t += rr * (1 + (rng() - 0.5) * 0.04)) {
                 model.beats.push({ t, kind: "sinus", rr });
                 model.pWaves.push(t - pr);
+            }
+            break;
+        }
+
+        case "sinus_node_disease": {
+            // Sick sinus: every QRS still has a P wave in front of it (which is what tells it apart from AF),
+            // but the sinus node fires unevenly, so the R-R interval wanders and the P waves change in shape
+            // and timing. Pauses and fast runs are left out: a case asks for them through its own course.
+            model.pVary = [];
+            for (let t = start + 0.3; t < end; t += Math.max(0.4, rr * (1 + (rng() - 0.5) * 0.5))) {
+                const beatPr = pr * (0.8 + rng() * 0.45);
+                model.beats.push({ t, kind: "sinus", rr });
+                model.pWaves.push(t - beatPr);
+                model.pVary.push({ amp: 0.35 + rng() * 0.8, width: 0.75 + rng() * 0.6 });
             }
             break;
         }
@@ -296,10 +312,12 @@ export function sampleLead(model: RhythmModel, lead: LeadName, shape: LeadShape,
 
     // Atrial activity
     if (model.atrial === "p") {
-        for (const p of model.pWaves) {
+        for (let i = 0; i < model.pWaves.length; i++) {
+            const p = model.pWaves[i];
             if (p > t + 0.2) break;
             if (p < t - 0.25) continue;
-            v += shape.p * gauss(t, p + 0.05, 0.022);
+            const vary = model.pVary?.[i];
+            v += shape.p * (vary?.amp ?? 1) * gauss(t, p + 0.05, 0.022 * (vary?.width ?? 1));
         }
     } else if (model.atrial === "fibrillation") {
         v += fibrillatorySample(t, shape);

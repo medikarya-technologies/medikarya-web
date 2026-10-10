@@ -60,6 +60,21 @@ describe("rhythm scheduling", () => {
         assert.ok(cv(intervals(m.beats.map((b) => b.t))) > 0.15, "R-R variability");
     });
 
+    it("sinus node disease is irregular, but every QRS has its own P wave and the P waves differ", () => {
+        const m = beatsOf("sinus_node_disease", 90, 30);
+        assert.equal(m.atrial, "p");
+        assert.equal(m.pWaves.length, m.beats.length, "a P wave before every QRS: not atrial fibrillation");
+        m.beats.forEach((b, i) => {
+            const pr = b.t - m.pWaves[i];
+            assert.ok(pr >= 0.12 && pr <= 0.21, `PR ${pr}`);
+        });
+        assert.ok(cv(intervals(m.beats.map((b) => b.t))) > 0.08, "R-R variability");
+        const perMinute = (m.beats.length / 30) * 60;
+        assert.ok(Math.abs(perMinute - 90) <= 90 * 0.15, `${perMinute} vs 90`);
+        const amps = m.pVary!.map((p) => p.amp);
+        assert.ok(Math.max(...amps) - Math.min(...amps) > 0.3, "the P waves change in shape");
+    });
+
     it("flutter conducts at a fixed ratio from a 300/min atrial rate", () => {
         const m = beatsOf("flutter", 150);
         assert.equal(m.atrial, "flutter");

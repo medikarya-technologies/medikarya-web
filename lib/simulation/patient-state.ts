@@ -135,6 +135,7 @@ const RHYTHM_LABELS: Record<RhythmType, string> = {
     sinus_normal: "sinus rhythm",
     sinus_tachycardia: "sinus tachycardia",
     sinus_bradycardia: "sinus bradycardia",
+    sinus_node_disease: "sinus node disease (sick sinus syndrome)",
     afib: "atrial fibrillation",
     flutter: "atrial flutter",
     complete_heart_block: "complete heart block",

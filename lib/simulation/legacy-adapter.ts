@@ -119,6 +119,8 @@ function rhythmFromText(text: string): RhythmType | undefined {
     if (/flutter/.test(t)) return "flutter";
     if (/ventricular fibrillation/.test(t)) return "vf";
     if (/ventricular tachycardia/.test(t)) return "vt_sustained";
+    // before the plain "sinus" matches: "sinoatrial node disease" is not sinus rhythm
+    if (/sick sinus|sin(o-?atrial|us) node (disease|dysfunction)/.test(t)) return "sinus_node_disease";
     if (/sinus bradycardia/.test(t)) return "sinus_bradycardia";
     if (/sinus tachycardia/.test(t)) return "sinus_tachycardia";
     if (/sinus/.test(t)) return "sinus_normal";
