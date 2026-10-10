@@ -7,6 +7,7 @@
 
 const CREDITS: Readonly<Record<string, string>> = {
   "/investigation-images/mri-brain-normal.jpg": "Image: Novaksean, CC BY-SA 4.0, via Wikimedia Commons",
+  "/investigation-images/cxr-right-pneumothorax.png": "Image: Hellerhoff, CC BY-SA 3.0, via Wikimedia Commons",
   "/investigation-images/xray-abdomen-normal.jpg":
     "Image: Alotaibi AA, Alghamdi MA, Wazzan QR, Alzahrani AA, Banjar AT. Cureus 2026. doi:10.7759/cureus.106530. CC BY 4.0",
 };
