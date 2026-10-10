@@ -195,7 +195,7 @@ export function ContributorTabs({
                             role="reviewer"
                             eyebrow="Doctors"
                             title="Our case reviewers"
-                            text="Every case is reviewed by a doctor before a student sees it. Reviewers are named only if they choose to be, so this list is shorter than the work behind it."
+                            text="Every contributed case is reviewed by a doctor before a student sees it. Reviewers are named only if they choose to be, so this list is shorter than the work behind it."
                         />
                         {reviewers.length > 0 && (
                             <ul className="grid gap-4 sm:grid-cols-2">

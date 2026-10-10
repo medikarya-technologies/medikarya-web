@@ -10,7 +10,7 @@ import { checkLivePlan, isLivePlan, measuredOnArrival } from "@/lib/simulation/l
 import { LiveRow, type LiveCase } from "./live-row"
 
 // Admin → Live cases. Every case in the library, and where each stands on becoming a live one: no plan, a proposed
-// plan (drafted by AI, or written by a resident in the Case Studio), signed off by a clinician, or live for students.
+// plan (drafted by AI, or written by a resident in the Case Studio), signed off by a clinician (optional), or live for students.
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Live cases" }
@@ -44,6 +44,7 @@ async function load(): Promise<LiveCase[]> {
             window: plan.critical_window_minutes,
             limit: plan.time_limit_minutes,
             draftedAt: plan.drafted_at ?? null,
+            teamCheckedAt: plan.team_checked_at ?? null,
             signOff: plan.sign_off
               ? { decision: plan.sign_off.decision, by: plan.sign_off.reviewer_name ?? null, at: plan.sign_off.decided_at, comments: plan.sign_off.comments ?? null }
               : null,
@@ -72,7 +73,8 @@ export default async function LiveCasesPage() {
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-slate-600">
           A live case has a clock, a treatment tray and a patient who gets worse until the right things are done. Any ordinary case with an acute
           course can become one: the AI drafts the plan (what happens untreated, what each treatment does, what stops it), you read it and
-          play-test it, a clinician signs it off through a private link, and then you switch it on. Until then students keep the ordinary case.
+          play-test it, and then you switch it on. Until then students keep the ordinary case. A live case counts against the live allowance on
+          a student&apos;s plan.
         </p>
 
         <div className="mt-6 grid grid-cols-3 gap-3 sm:max-w-xl">

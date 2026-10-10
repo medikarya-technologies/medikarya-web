@@ -57,7 +57,7 @@ export default function ContributeSection() {
           <Eyebrow className="text-brand-600">Write or review</Eyebrow>
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink sm:text-4xl">Our patients come from people who saw them.</h2>
           <p className="mt-4 text-[15.5px] leading-relaxed text-enc-ink-2">
-            Every case here is written by a medical student or doctor from a real presentation, then checked by a doctor before a student meets it.
+            Cases contributed here are written by a medical student or doctor from a real presentation, then checked by a doctor before a student meets them.
             We are looking for both.
           </p>
         </div>
