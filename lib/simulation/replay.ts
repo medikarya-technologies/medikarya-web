@@ -24,6 +24,7 @@ import { sanitizeEvents } from "./encounter-events";
 import { hardLimitSeconds, type SimulationCaseConfig } from "./case-schema";
 import { assistTypeForTest } from "../clinical-catalog";
 import { getTestDef } from "./test-catalog";
+import { interventionsForCase } from "./intervention-catalog";
 
 export function replayStudentEvents(config: SimulationCaseConfig, untrusted: unknown): EncounterEngine {
     const engine = new EncounterEngine(config);
@@ -42,8 +43,9 @@ export function replayStudentEvents(config: SimulationCaseConfig, untrusted: unk
                 break;
 
             // Consequence text and safety are the case's to decide. A case with no tray has nothing to give.
+            // The tray is the shared items it offers plus its own: an empty shared list alone is not an empty tray.
             case "INTERVENTION_GIVEN":
-                if (config.available_interventions?.length === 0) break;
+                if (interventionsForCase(config).length === 0) break;
                 engine.giveIntervention(event.action, timestamp);
                 break;
 

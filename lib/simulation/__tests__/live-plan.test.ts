@@ -22,6 +22,8 @@ import {
     type LivePlan,
 } from "../live-plan";
 import { validateSimulationCase } from "../validate-config";
+import { replayStudentEvents } from "../replay";
+import type { ClinicalEvent } from "../encounter-events";
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -366,6 +368,31 @@ describe("live plan: the bedside score", () => {
         });
         assert.equal(s.score, 85);
         assert.deepEqual(s.harmful, [{ id: "furosemide_iv", label: "Furosemide IV", at_minutes: 5, why: "A diuretic in a volume-depleted child deepens the shock." }]);
+    });
+
+    it("is scored the same on the server when every treatment is the case's own, with nothing from the shared tray", () => {
+        // A plan of only its own treatments compiles to an empty shared tray; the server must still see them given.
+        const own = plan({
+            treatments: [
+                { id: "two_cannulae", label: "Two IV cannulae", detail: "Two wide-bore cannulae; bloods sent", group: "circulation", role: "essential", within_minutes: 5, says: "Two cannulae in; bloods sent.", why: "No fluids can be given without access." },
+                { id: "fluid_bolus_20ml_kg", label: "IV fluid bolus", detail: "20 mL/kg Ringer's lactate over 15 minutes", group: "circulation", role: "essential", within_minutes: 8, effect: { hr: -14, sbp: 8, dbp: 5 }, says: "The bolus is running. His pulse is coming down." },
+                { id: "furosemide_20mg", label: "Furosemide", detail: "20 mg IV", group: "medications", role: "harmful", effect: { sbp: -10, dbp: -6 }, says: "Furosemide given. His pressure falls further.", why: "A diuretic deepens the shock." },
+            ],
+            stabilised_by: ["two_cannulae", "fluid_bolus_20ml_kg"],
+        });
+        const c = compileLivePlan(base(), own);
+        assert.deepEqual(c.available_interventions, []);
+        assert.deepEqual(interventionsForCase(c).map((i) => i.id), ["two_cannulae", "fluid_bolus_20ml_kg", "furosemide_20mg"]);
+
+        const fromBrowser: ClinicalEvent[] = [
+            { type: "INTERVENTION_GIVEN", timestamp: 2 * MIN, action: "two_cannulae", consequence: "x" },
+            { type: "INTERVENTION_GIVEN", timestamp: 4 * MIN, action: "fluid_bolus_20ml_kg", consequence: "x" },
+        ];
+        const replayed = replayStudentEvents(c, fromBrowser);
+        replayed.advanceTo(19 * MIN);
+        const s = scoreBedside(c, own, replayed.events);
+        assert.equal(s.score, 100);
+        assert.deepEqual(s.outcome, { stabilised: true, recovered: true, worst_stage: null });
     });
 
     it("counts for 40% of a live case's final score", () => {
