@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { PatientCard } from "@/components/cases/patient-card"
-import { FirstCaseWelcome } from "@/components/cases/first-case-welcome"
+import { FirstCaseWelcomeDialog } from "@/components/cases/first-case-welcome"
 import { markWelcomed } from "@/lib/library/first-case"
 import { CaseInteraction } from "@/components/cases/case-interaction"
 import { CaseFeedback } from "@/components/cases/case-feedback"
@@ -83,6 +83,20 @@ export default function CasePage() {
   const [consentOpen, setConsentOpen] = useState(false)
   // Set when the student's plan will not open this case (see app/api/cases/[id]/start).
   const [planBlock, setPlanBlock] = useState<PlanBlock | null>(null)
+
+  // A brand-new account's welcome, as a dialog over the briefing: once the case has loaded, and only if they have
+  // not played it before. Closing it drops ?first=1 from the address, so a refresh or Back does not bring it back.
+  const [welcomeOpen, setWelcomeOpen] = useState(false)
+  const [welcomeShown, setWelcomeShown] = useState(false)
+  useEffect(() => {
+    if (!firstVisit || welcomeShown || loading || !caseData || attempts.length > 0) return
+    setWelcomeOpen(true)
+    setWelcomeShown(true)
+  }, [firstVisit, welcomeShown, loading, caseData, attempts.length])
+  const closeWelcome = () => {
+    setWelcomeOpen(false)
+    router.replace(`/dashboard/cases/${params.id}`, { scroll: false })
+  }
 
   // Say so on arrival, not only after Start is pressed. (The start route is what actually enforces it.)
   const planInfo = usePlan()
@@ -298,13 +312,20 @@ export default function CasePage() {
 
           {planBlock && <PlanNotice block={planBlock} />}
 
-          {firstVisit && attempts.length === 0 && <FirstCaseWelcome />}
-
           <Briefing caseId={params.id as string} caseData={caseData} isStarting={isStarting} onStart={requestStartCase} />
 
           <AttemptHistory attempts={attempts} onReview={handleReviewAttempt} />
         </div>
       </div>
+      <FirstCaseWelcomeDialog
+        open={welcomeOpen}
+        onSeePatient={() => {
+          // it carries the first-case note, so Start goes straight in afterwards
+          markConsented()
+          closeWelcome()
+        }}
+        onDismiss={closeWelcome}
+      />
       <FirstCaseConsentDialog
         open={consentOpen}
         onCancel={() => setConsentOpen(false)}
