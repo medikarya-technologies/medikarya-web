@@ -36,6 +36,8 @@ import type {
     Ecg12LeadSpec,
     ExamManoeuvreDef,
     ExamRegion,
+    LeadMorphology,
+    LeadName,
     ResultRow,
     RhythmType,
     SimulationCaseConfig,
@@ -43,6 +45,7 @@ import type {
     ValueStatus,
 } from "./case-schema";
 import { isSimulationCase } from "./case-schema";
+import { LEADS } from "./ecg-synth";
 import type { TestCategory, TestKind } from "../clinical-catalog";
 import { vitalLimitsForAge } from "./vitals-assess";
 import { deriveAppearance, type AppearanceSpec } from "./appearance";
@@ -139,7 +142,32 @@ function ecgSpecOf(params: unknown): Ecg12LeadSpec | undefined {
     const axis = String(params.axis ?? "").toLowerCase();
     if (/left axis/.test(axis)) spec.axis_deg = -45;
     else if (/right axis/.test(axis)) spec.axis_deg = 110;
+    const leads = leadsOf(params.leads);
+    if (leads) spec.leads = leads;
     return spec;
+}
+
+const LEAD_FIELDS = ["p", "q", "r", "s", "qs", "st", "t"] as const;
+
+/**
+ * A case's own voltages for some leads, in mV (10 mm = 1 mV), e.g. tall R and deep S waves for left ventricular
+ * hypertrophy. Anything that is not a lead name, a known wave or a believable number is dropped, so a typo in a
+ * case cannot draw a nonsense trace.
+ */
+function leadsOf(raw: unknown): Partial<Record<LeadName, LeadMorphology>> | undefined {
+    if (!isObj(raw)) return undefined;
+    const out: Partial<Record<LeadName, LeadMorphology>> = {};
+    for (const lead of LEADS) {
+        const given = raw[lead];
+        if (!isObj(given)) continue;
+        const shape: LeadMorphology = {};
+        for (const field of LEAD_FIELDS) {
+            const n = num(given[field]);
+            if (n !== undefined && Math.abs(n) <= 5) shape[field] = n;
+        }
+        if (Object.keys(shape).length) out[lead] = shape;
+    }
+    return Object.keys(out).length ? out : undefined;
 }
 
 /**

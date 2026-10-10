@@ -292,6 +292,18 @@ describe("legacy adapter: the monitor", () => {
         assert.equal(ecg?.ecg?.rhythm, "sinus_node_disease");
     });
 
+    it("draws a case's own lead voltages and drops anything that is not one", () => {
+        const c = adultCase();
+        c.tests[0].result.ecg_parameters = {
+            rhythm: "Sinus rhythm",
+            ventricularRate: 76,
+            leads: { V1: { s: 1.8 }, V5: { r: 2.4, t: "tall" }, V9: { r: 3 }, II: { r: 40 } },
+        };
+        const u = upgraded(c);
+        const ecg = resolveInvestigation(u, "ecg", PatientState.initial(u).snapshot(), 0, demographicsOf(u as any));
+        assert.deepEqual(ecg?.ecg?.leads, { V1: { s: 1.8 }, V5: { r: 2.4 } });
+    });
+
     it("calls 130/min normal sinus rhythm in a two-year-old, not tachycardia", () => {
         assert.equal(upgraded(toddlerCase()).initial_state.rhythm, "sinus_normal");
     });
@@ -705,10 +717,12 @@ describe("legacy adapter: the real cases", () => {
         "32-year-old-woman-with-unsteady-walking",
         "40-year-old-man-found-unconscious-at-home",
         "48-year-old-woman-with-worsening-upper-back-pain",
+        "50-year-old-man-having-a-health-check-for-life-insurance",
         "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes",
         "66-year-old-man-with-numb-feet",
         "69-year-old-man-with-a-long-cough-and-worsening-breathlessness",
         "79-year-old-man-in-a-care-home-who-has-become-confused",
+        "79-year-old-man-who-has-been-tired-and-unwell-for-weeks",
         "85-year-old-man-who-keeps-falling",
         "autosomal-dominant-polycystic-kidney-disease",
         "complete-heart-block-syncope",
