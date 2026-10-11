@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { activeGrant, caseRewardWindow, monthsEarned, type GrantRow } from "../grants";
+import { activeGrant, caseRewardsDue, type GrantRow } from "../grants";
 
 const now = new Date("2026-10-01T00:00:00Z");
 const grant = (starts: string, ends: string, over: Partial<GrantRow> = {}): GrantRow => ({
@@ -13,59 +13,45 @@ const grant = (starts: string, ends: string, over: Partial<GrantRow> = {}): Gran
   ...over,
 });
 
-describe("monthsEarned", () => {
-  it("gives 1 month at the 1st case, 3 by the 3rd and 6 by the 5th, and no more", () => {
-    assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 30].map(monthsEarned), [0, 1, 1, 3, 3, 6, 6, 6]);
-  });
-});
-
-describe("caseRewardWindow", () => {
-  it("gives a first-time author one month from now", () => {
-    const w = caseRewardWindow([], 1, now)!;
-    assert.equal(w.months, 1);
-    assert.equal(w.startsAt.toISOString(), "2026-10-01T00:00:00.000Z");
-    assert.equal(w.endsAt.toISOString(), "2026-11-01T00:00:00.000Z");
+describe("caseRewardsDue", () => {
+  it("gives a month of Intern at the 1st published case, from now", () => {
+    const [r, ...rest] = caseRewardsDue([], 1, now);
+    assert.equal(rest.length, 0);
+    assert.deepEqual([r.at, r.tier, r.months], [1, "intern", 1]);
+    assert.equal(r.startsAt.toISOString(), "2026-10-01T00:00:00.000Z");
+    assert.equal(r.endsAt.toISOString(), "2026-11-01T00:00:00.000Z");
   });
 
-  it("gives nothing between milestones", () => {
-    assert.equal(caseRewardWindow([grant("2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z")], 2, now), null);
-    assert.equal(caseRewardWindow([grant("2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z", { months: 3 })], 4, now), null);
+  it("gives nothing between milestones, the 3rd case included", () => {
+    const first = [grant("2026-09-01T00:00:00Z", "2026-10-01T00:00:00Z", { tier: "intern" })];
+    for (const n of [2, 3, 4]) assert.deepEqual(caseRewardsDue(first, n, now), []);
   });
 
-  it("gives the next milestone's months, stacked after free time still running", () => {
-    const w = caseRewardWindow([grant("2026-09-15T00:00:00Z", "2026-10-15T00:00:00Z")], 3, now)!;
-    assert.equal(w.months, 2);
-    assert.equal(w.startsAt.toISOString(), "2026-10-15T00:00:00.000Z");
-    assert.equal(w.endsAt.toISOString(), "2026-12-15T00:00:00.000Z");
+  it("gives 2 months of Resident at the 5th, and nothing after", () => {
+    const first = [grant("2026-09-01T00:00:00Z", "2026-09-30T00:00:00Z", { tier: "intern" })];
+    const [r] = caseRewardsDue(first, 5, now);
+    assert.deepEqual([r.at, r.tier, r.months], [5, "resident", 2]);
+    assert.equal(r.endsAt.toISOString(), "2026-12-01T00:00:00.000Z");
+    const both = [...first, grant("2026-10-01T00:00:00Z", "2026-12-01T00:00:00Z")];
+    for (const n of [5, 6, 15, 40]) assert.deepEqual(caseRewardsDue(both, n, now), []);
   });
 
-  it("starts now when earlier rewards have run out", () => {
-    const w = caseRewardWindow([grant("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z")], 3, now)!;
-    assert.equal(w.startsAt.toISOString(), now.toISOString());
+  it("gives both if a reward was missed, the Resident not waiting for the Intern", () => {
+    const due = caseRewardsDue([], 5, now);
+    assert.deepEqual(due.map((r) => r.tier), ["intern", "resident"]);
+    assert.equal(due[1].startsAt.toISOString(), now.toISOString());
   });
 
-  it("never gives twice for the same milestone, and stops at 6 months in all", () => {
-    const three = [grant("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z", { months: 3 })];
-    assert.equal(caseRewardWindow(three, 3, now), null);
-    assert.equal(caseRewardWindow(three, 5, now)!.months, 3);
-    const six = [grant("2026-01-01T00:00:00Z", "2026-07-01T00:00:00Z", { months: 6 })];
-    assert.equal(caseRewardWindow(six, 12, now), null);
-  });
-
-  it("lets authors rewarded under the old one-month-per-case rule keep what they had", () => {
-    const four = Array.from({ length: 4 }, () => grant("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"));
-    assert.equal(caseRewardWindow(four, 4, now), null);
-    assert.equal(caseRewardWindow(four, 5, now)!.months, 2);
-  });
-
-  it("does not count other kinds of grant", () => {
-    const other = [grant("2026-01-01T00:00:00Z", "2026-07-01T00:00:00Z", { months: 6, reason: "manual" })];
-    assert.equal(caseRewardWindow(other, 1, now)!.months, 1);
-  });
-
-  it("starts now even while an Intern workshop pass is running, since Resident is better", () => {
+  it("starts Intern after any Intern or Resident still running, and Resident only after Resident", () => {
     const pass = [grant("2026-09-25T00:00:00Z", "2026-10-09T00:00:00Z", { tier: "intern", reason: "workshop: the MAMC workshop" })];
-    assert.equal(caseRewardWindow(pass, 1, now)!.startsAt.toISOString(), now.toISOString());
+    assert.equal(caseRewardsDue(pass, 1, now)[0].startsAt.toISOString(), "2026-10-09T00:00:00.000Z");
+    const passThenFirst = [...pass, grant("2026-09-01T00:00:00Z", "2026-09-30T00:00:00Z", { tier: "intern" })];
+    assert.equal(caseRewardsDue(passThenFirst, 5, now)[0].startsAt.toISOString(), now.toISOString());
+  });
+
+  it("does not count other kinds of grant as rewards already given", () => {
+    const other = [grant("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z", { reason: "manual" })];
+    assert.equal(caseRewardsDue(other, 1, now).length, 1);
   });
 });
 
