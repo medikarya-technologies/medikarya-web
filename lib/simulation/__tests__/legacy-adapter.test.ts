@@ -734,6 +734,7 @@ describe("legacy adapter: the real cases", () => {
         "48-year-old-woman-with-worsening-upper-back-pain",
         "50-year-old-man-having-a-health-check-for-life-insurance",
         "52-year-old-man-vomiting-blood-at-2-am",
+        "54-year-old-man-with-black-stools-who-vomited-blood",
         "57-year-old-taxi-driver-who-keeps-dozing-off",
         "58-year-old-woman-who-woke-up-gasping-for-breath",
         "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes",
