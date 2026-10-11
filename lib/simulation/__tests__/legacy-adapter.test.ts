@@ -720,6 +720,7 @@ describe("legacy adapter: the real cases", () => {
         "25-year-old-woman-with-sudden-chest-pain-and-breathlessness",
         "26-year-old-woman-who-cannot-catch-her-breath",
         "28-year-old-man-with-a-spreading-rash-and-mouth-sores",
+        "32-year-old-man-brought-in-fitting",
         "32-year-old-woman-with-unsteady-walking",
         "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing",
         "36-year-old-man-with-sudden-breathlessness",
