@@ -732,6 +732,7 @@ describe("legacy adapter: the real cases", () => {
         "52-year-old-man-vomiting-blood-at-2-am",
         "57-year-old-taxi-driver-who-keeps-dozing-off",
         "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes",
+        "58-year-old-man-who-is-sweaty-and-hard-to-wake",
         "66-year-old-man-with-numb-feet",
         "69-year-old-man-with-a-long-cough-and-worsening-breathlessness",
         "70-year-old-woman-with-abdominal-pain-and-vomiting",
