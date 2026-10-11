@@ -61,7 +61,10 @@ on the user. Detailed notes per feature live in the auto-memory folder (index `M
 - `lib/cases/renamed-ids.ts` is never imported in client code.
 - No npm package upgrades while the user's dev servers are running.
 - Clinical images: lossless only.
-- Clinical content needs a clinician's review. Never invent clinical facts.
+- Clinical content: cases contributed through the Case Studio are checked by a doctor. Cases the MediKarya team
+  writes (book conversions, original live cases) need no clinician sign-off for now, and the team switches live
+  cases on in Admin > Live; keep the sign-off link working for later. Never invent clinical facts: every dose,
+  threshold and timing comes from the source or a current guideline, checked and cited.
 - Public site copy: sounds like a person wrote it, no em dashes, no rupee amounts on the main site's marketing pages,
   and no detail of how cases are built with AI (it is our moat). The studio's rewards and terms pages do show pay.
 - Studio: no second Google font (it breaks the Turbopack dev server).
