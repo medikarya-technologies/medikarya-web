@@ -728,6 +728,7 @@ describe("legacy adapter: the real cases", () => {
         "40-year-old-man-found-unconscious-at-home",
         "45-year-old-woman-with-fever-who-has-become-confused",
         "46-year-old-man-whose-legs-are-too-weak-to-stand",
+        "48-year-old-man-who-suddenly-could-not-breathe-and-fainted",
         "48-year-old-man-whose-fever-came-back-after-a-chest-infection",
         "48-year-old-man-with-weak-legs-after-a-stomach-upset",
         "48-year-old-woman-with-worsening-upper-back-pain",
