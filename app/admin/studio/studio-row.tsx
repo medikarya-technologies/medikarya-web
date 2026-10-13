@@ -344,15 +344,15 @@ export function StudioRow({ studioCase: c, converted }: { studioCase: StudioCase
           {converted.live && (
             <p className="mt-1 text-[13px] text-emerald-900">The reviewer&apos;s approval covers its live plan, so students get the live version (clock, tray, deterioration) as soon as it is published.</p>
           )}
-          {/* Free Resident months by milestone: 1 at the 1st published case, 2 more at the 3rd, 3 more at the 5th (CASE_REWARD in lib/plans/grants.ts) */}
+          {/* Free plan time by milestone: 1 month of Intern at the 1st published case, 2 of Resident at the 5th (CASE_REWARD in lib/plans/grants.ts) */}
           {c.authorEmail ? (
             <p className="mt-3 text-[13.5px] text-slate-700">
-              Free Resident for the author ({c.authorEmail}) is given automatically at their 1st, 3rd and 5th published case (1, 2 and 3 months), when
-              they sign in to MediKarya with that email.
+              Free MediKarya for the author ({c.authorEmail}) is given automatically: 1 month of Intern at their 1st published case and 2 months of
+              Resident at their 5th, when they sign in to MediKarya with that email.
             </p>
           ) : (
             <label className="mt-3 block text-[13.5px] text-slate-700">
-              Author&apos;s email, for their free months of Resident (they submitted by PDF, so type it)
+              Author&apos;s email, for their free MediKarya (they submitted by PDF, so type it)
               <input
                 type="email"
                 value={email}

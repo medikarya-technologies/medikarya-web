@@ -1,27 +1,26 @@
 // Free plan time given outside Razorpay (table plan_grants, scripts/create_reviews_and_grants.sql): the reward for
-// publishing cases, by milestone (1 month of Resident at the 1st published case, 2 more at the 3rd and 3 more at the
-// 5th, 6 in all, each stacking after Resident time still running), and workshop passes (lib/plans/passes.ts). Pure,
-// so it is tested; lib/plans/server.ts reads the rows and admin actions write them.
+// publishing cases, by milestone (1 month of Intern at the 1st published case, 2 months of Resident at the 5th), and
+// workshop passes (lib/plans/passes.ts). Pure, so it is tested; lib/plans/server.ts reads the rows and admin actions
+// write them.
 
 import type { Plan } from "./limits";
 import { PASS_REASON_PREFIX } from "./passes";
 
-export const CASE_REWARD = {
-  tier: "resident" as const,
-  /** Months given when an author's published cases reach `at`. The 1st, 3rd and 5th line up with the titles. */
+type Tier = "intern" | "resident";
+
+/**
+ * What a writer gets when their published cases reach `at`; the 1st and 5th line up with the first two titles. Must
+ * stay the same as FREE_PLAN_MILESTONES in the Case Studio's lib/rewards/config.ts, which shows it to writers.
+ */
+export const CASE_REWARD: { milestones: ReadonlyArray<{ at: number; tier: Tier; months: number }> } = {
   milestones: [
-    { at: 1, months: 1 },
-    { at: 3, months: 2 },
-    { at: 5, months: 3 },
+    { at: 1, tier: "intern", months: 1 },
+    { at: 5, tier: "resident", months: 2 },
   ],
-  capMonths: 6,
 };
 
-/** Months of Resident an author has earned in all with this many published cases. */
-export function monthsEarned(published: number): number {
-  const total = CASE_REWARD.milestones.filter((m) => published >= m.at).reduce((sum, m) => sum + m.months, 0);
-  return Math.min(total, CASE_REWARD.capMonths);
-}
+/** The next milestone after this many published cases, or null after the last. */
+export const nextCaseReward = (published: number) => CASE_REWARD.milestones.find((m) => m.at > published) ?? null;
 
 export interface GrantRow {
   tier: string;
@@ -37,27 +36,33 @@ function addMonths(d: Date, months: number): Date {
   return out;
 }
 
+export interface CaseReward {
+  at: number;
+  tier: Tier;
+  months: number;
+  startsAt: Date;
+  endsAt: Date;
+}
+
 /**
- * The reward due now that the author has `published` cases: whatever their milestones have earned in all, less what
- * case rewards have already given them (so publishing again, or republishing a case, never gives twice, and authors
- * rewarded under the old one-month-per-case rule keep what they had). It starts when any free time still running ends
- * (or now). null when nothing is due.
+ * The milestone rewards due now that the author has `published` cases: those reached, less those already given. Each
+ * milestone is one case_published grant, so publishing again or republishing a case never gives twice. Each starts
+ * when the free time it would only overlap ends: Resident after Resident still running; Intern after any Intern or
+ * Resident still running (under Resident it would be wasted). Usually one, empty when nothing is due.
  */
-export function caseRewardWindow(
-  existing: readonly GrantRow[],
-  published: number,
-  now = new Date()
-): { months: number; startsAt: Date; endsAt: Date } | null {
-  const given = existing.filter((g) => g.reason === "case_published").reduce((sum, g) => sum + g.months, 0);
-  const months = monthsEarned(published) - given;
-  if (months <= 0) return null;
-  // only Resident time pushes it back: an Intern workshop pass running now would just hide the better plan
-  const running = existing
-    .filter((g) => g.tier === CASE_REWARD.tier)
-    .map((g) => new Date(g.ends_at))
-    .filter((d) => d > now);
-  const startsAt = running.length ? new Date(Math.max(...running.map((d) => d.getTime()))) : now;
-  return { months, startsAt, endsAt: addMonths(startsAt, months) };
+export function caseRewardsDue(existing: readonly GrantRow[], published: number, now = new Date()): CaseReward[] {
+  const given = existing.filter((g) => g.reason === "case_published").length;
+  const due = CASE_REWARD.milestones.filter((m) => published >= m.at).slice(given);
+  const running = existing.map((g) => ({ tier: g.tier, end: new Date(g.ends_at) })).filter((r) => r.end > now);
+  const out: CaseReward[] = [];
+  for (const m of due) {
+    const overlaps = running.filter((r) => r.tier === "resident" || (m.tier === "intern" && r.tier === "intern")).map((r) => r.end.getTime());
+    const startsAt = overlaps.length ? new Date(Math.max(...overlaps)) : now;
+    const reward = { ...m, startsAt, endsAt: addMonths(startsAt, m.months) };
+    out.push(reward);
+    running.push({ tier: m.tier, end: reward.endsAt });
+  }
+  return out;
 }
 
 export interface ActiveGrant {

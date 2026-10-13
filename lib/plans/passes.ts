@@ -1,5 +1,5 @@
 // Workshop passes: free plan time for everyone at an event, given in one go from Admin → Workshop passes. A pass is
-// a row in plan_grants (the same table as a case writer's free Resident months), one per email, with the reason
+// a row in plan_grants (the same table as a case writer's free plan time), one per email, with the reason
 // "workshop: <name of the event>" so a batch can be listed and removed together. It applies when the student signs
 // in with that email (lib/plans/server.ts), starts at midnight India time on the chosen day, and simply ends: the
 // student goes back to the free plan, nothing is charged. Pure, so it is tested.
