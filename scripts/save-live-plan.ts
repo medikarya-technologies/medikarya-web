@@ -1,6 +1,7 @@
 // Saves a checked live plan onto a case as "proposed" (admins only; the admin switches it on in Admin > Live).
-// Snapshots the case first, and refuses to overwrite an existing plan.
-//   node --env-file=.env.local node_modules/ts-node/dist/bin.js --project scripts/tsconfig.migrate.json scripts/save-live-plan.ts <case id> <plan.json>
+// Snapshots the case first, and refuses to overwrite an existing plan unless --replace is given, and even then never a
+// plan that is switched on for students (that one has to be switched off in Admin > Live first).
+//   node --env-file=.env.local node_modules/ts-node/dist/bin.js --project scripts/tsconfig.migrate.json scripts/save-live-plan.ts <case id> <plan.json> [--replace]
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 const R = "../lib/simulation/";
@@ -10,14 +11,18 @@ const { normaliseLivePlan, checkLivePlan, measuredOnArrival } = require(R + "liv
 const S = require("os").tmpdir();
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
 (async () => {
-  const [id, planFile] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const replace = args.includes("--replace");
+  const [id, planFile] = args.filter((a) => a !== "--replace");
   const { data, error } = await db.from("cases").select("case_json").eq("id", id).single();
   if (error) throw error;
   const caseJson = data.case_json as Record<string, any>;
   fs.writeFileSync(`${S}/${id}.snapshot.json`, JSON.stringify(caseJson, null, 2));
-  if (caseJson.live_plan) throw new Error(`${id} already has a live plan; not overwriting`);
+  const old = caseJson.live_plan;
+  if (old && !replace) throw new Error(`${id} already has a live plan; not overwriting (pass --replace to swap a proposed plan)`);
+  if (old && old.status === "approved") throw new Error(`${id}: its live plan is switched on for students; switch it off in Admin > Live first`);
   const raw = JSON.parse(fs.readFileSync(planFile, "utf8"));
-  const plan = { ...normaliseLivePlan(raw.plan ?? raw, "ai"), drafted_at: new Date().toISOString() };
+  const plan = { ...normaliseLivePlan(raw.plan ?? raw, "ai"), drafted_at: new Date().toISOString(), ...(old ? { version: (old.version ?? 1) + 1 } : {}) };
   const base = upgradeLegacyCase(caseJson);
   if (!isSimulationCase(base)) throw new Error("not playable");
   const check = checkLivePlan(plan, measuredOnArrival(base));

@@ -93,6 +93,9 @@ export function CaseReport({ caseJson: c, reviewNotes }: { caseJson: Json; revie
   const tests: Json[] = Array.isArray(c.tests) ? c.tests : []
   const ev: Json = c.evaluation_config ?? {}
   const aiTests = tests.filter((t) => t.result?.origin === "ai")
+  // A converted case lists what the AI added in its review notes. A case added straight from a file has no notes, so
+  // the box falls back to its AI-marked results, or it would read "(0)" above a case that is all proposed values.
+  const added = reviewNotes.length > 0 ? reviewNotes : aiTests.map((t) => `${t.name ?? t.id}: ${t.result?.basis ?? "values proposed"}`)
 
   return (
     <article className="space-y-6">
@@ -113,11 +116,11 @@ export function CaseReport({ caseJson: c, reviewNotes }: { caseJson: Json; revie
       {/* A case with a live plan: the plan comes first, since it is what most needs a clinician's eye. */}
       <LivePlanReport caseJson={c} />
 
-      {(reviewNotes.length > 0 || aiTests.length > 0) && (
+      {added.length > 0 && (
         <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4">
-          <h2 className="text-[16px] font-bold text-amber-950">Everything the AI added ({reviewNotes.length})</h2>
+          <h2 className="text-[16px] font-bold text-amber-950">Everything the AI added ({added.length})</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-[14px] text-amber-950">
-            {reviewNotes.map((n) => (
+            {added.map((n) => (
               <li key={n}>{n}</li>
             ))}
           </ul>
@@ -215,7 +218,7 @@ export function CaseReport({ caseJson: c, reviewNotes }: { caseJson: Json; revie
           <span className="text-slate-500">Red flags (missing these costs most):</span> {(ev.history?.red_flag_questions ?? []).join(" · ")}
         </p>
         <div className="space-y-2">
-          <p><span className="text-slate-500">Tests that confirm the diagnosis:</span> <Pills ids={ev.testing?.core_tests} tests={tests} tone="bg-emerald-100 text-emerald-900" /></p>
+          <p><span className="text-slate-500">Tests the student must order (to diagnose or to judge severity):</span> <Pills ids={ev.testing?.core_tests} tests={tests} tone="bg-emerald-100 text-emerald-900" /></p>
           <p><span className="text-slate-500">Reasonable extras:</span> <Pills ids={ev.testing?.optional_tests} tests={tests} tone="bg-slate-100 text-slate-800" /></p>
           <p><span className="text-slate-500">Low-value here (lose marks):</span> <Pills ids={ev.testing?.distractor_tests} tests={tests} tone="bg-amber-100 text-amber-900" /></p>
           <p><span className="text-slate-500">Unsafe here (lose most):</span> <Pills ids={ev.testing?.dangerous_tests} tests={tests} tone="bg-red-100 text-red-900" /></p>
