@@ -1,0 +1,132 @@
+{
+  "plan_sha": "1c5fb24119c8f35e90dc9eb39ccb2760e5bf5043fdf8374f3625d26fc63b75a9",
+  "compiled_sha": "279f3adc0f43dca11101c8eb0ea8a569159afa44778531b0432f5333f8f877d0",
+  "playthroughs": {
+    "untreated": {
+      "score": 0,
+      "items": [
+        [
+          "iv_access",
+          "missed"
+        ],
+        [
+          "fluid_bolus_20ml_kg",
+          "missed"
+        ]
+      ],
+      "harmful": [],
+      "outcome": {
+        "stabilised": false,
+        "recovered": false,
+        "worst_stage": "Decompensated shock"
+      },
+      "final": {
+        "hr": 178,
+        "sbp": 62,
+        "dbp": 38,
+        "spo2": 92,
+        "rr": 48,
+        "temp": 37.9,
+        "consciousness": "altered",
+        "stability": "critical",
+        "rhythm": "sinus_tachycardia"
+      },
+      "events_sha": "5805016c3594186b80b5ad400d117216ee9903ce68d1f28ff5847ad127ac0a5f"
+    },
+    "correct": {
+      "score": 100,
+      "items": [
+        [
+          "iv_access",
+          "on_time"
+        ],
+        [
+          "fluid_bolus_20ml_kg",
+          "on_time"
+        ]
+      ],
+      "harmful": [],
+      "outcome": {
+        "stabilised": true,
+        "recovered": true,
+        "worst_stage": null
+      },
+      "final": {
+        "hr": 126,
+        "sbp": 94,
+        "dbp": 58,
+        "spo2": 99,
+        "rr": 30,
+        "temp": 37.9,
+        "consciousness": "alert",
+        "stability": "stable",
+        "rhythm": "sinus_tachycardia"
+      },
+      "events_sha": "cea74167abbc9d1ca83b65fca1fe686b3c4f77ef9fa472d06e828120726846ec"
+    },
+    "harmful": {
+      "score": 85,
+      "items": [
+        [
+          "iv_access",
+          "on_time"
+        ],
+        [
+          "fluid_bolus_20ml_kg",
+          "on_time"
+        ]
+      ],
+      "harmful": [
+        "furosemide_iv"
+      ],
+      "outcome": {
+        "stabilised": true,
+        "recovered": true,
+        "worst_stage": null
+      },
+      "final": {
+        "hr": 126,
+        "sbp": 94,
+        "dbp": 58,
+        "spo2": 99,
+        "rr": 30,
+        "temp": 37.9,
+        "consciousness": "alert",
+        "stability": "stable",
+        "rhythm": "sinus_tachycardia"
+      },
+      "events_sha": "ccce562fa4dab666fe91ab5864a898a8ab4932b658a0bea3359ab8b30688d9c1"
+    },
+    "late": {
+      "score": 50,
+      "items": [
+        [
+          "iv_access",
+          "late"
+        ],
+        [
+          "fluid_bolus_20ml_kg",
+          "late"
+        ]
+      ],
+      "harmful": [],
+      "outcome": {
+        "stabilised": true,
+        "recovered": true,
+        "worst_stage": "Compensated shock"
+      },
+      "final": {
+        "hr": 126,
+        "sbp": 94,
+        "dbp": 58,
+        "spo2": 99,
+        "rr": 30,
+        "temp": 37.9,
+        "consciousness": "alert",
+        "stability": "stable",
+        "rhythm": "sinus_tachycardia"
+      },
+      "events_sha": "e0e2895be86e9b3b96e21e51aaeea19b84f1924649107adb870bffed79a5255c"
+    }
+  }
+}

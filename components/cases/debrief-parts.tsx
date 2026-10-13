@@ -67,8 +67,18 @@ interface Bedside {
   score: number
   share: number
   consultationScore: number
-  items: Array<{ id: string; label: string; status: "on_time" | "late" | "missed"; at_minutes: number | null; within_minutes: number; why?: string }>
+  items: Array<{
+    id: string
+    label: string
+    status: "on_time" | "late" | "missed"
+    at_minutes: number | null
+    within_minutes: number
+    why?: string
+    doses?: Array<{ dose: number; at_minutes: number | null; status: "on_time" | "late" | "missed" }>
+  }>
   harmful: Array<{ id: string; label: string; at_minutes: number; why?: string }>
+  /** Further doses the engine refused: they had no effect and did not count. */
+  refused?: Array<{ id: string; label: string; at_minutes: number; said: string }>
   outcome: { stabilised: boolean; recovered: boolean; worst_stage: string | null }
 }
 
@@ -112,6 +122,26 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
               <p className="mt-0.5 text-xs text-enc-ink-2">
                 {i.at_minutes === null ? `Needed within ${i.within_minutes} min` : `Given at ${i.at_minutes} min; needed within ${i.within_minutes} min`}
                 {i.why ? `. ${i.why}` : ""}
+              </p>
+              {i.doses && (
+                <ul className="mt-1 space-y-0.5">
+                  {i.doses.map((d) => (
+                    <li key={d.dose} className="text-xs text-enc-ink-2">
+                      Dose {d.dose}: {d.at_minutes === null ? "not given" : `given at ${d.at_minutes} min`} ({BEDSIDE_STATUS[d.status].text.toLowerCase()})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+          {bedside.refused?.map((r, n) => (
+            <li key={`${r.id}-${n}`} className="rounded-lg bg-enc-warn-soft p-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-sm font-medium text-enc-ink">{r.label}</span>
+                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-warn">Dose refused</span>
+              </div>
+              <p className="mt-0.5 text-xs text-enc-ink-2">
+                At {r.at_minutes} min. {r.said}
               </p>
             </li>
           ))}

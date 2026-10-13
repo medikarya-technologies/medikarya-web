@@ -23,6 +23,7 @@ import type {
     EventRule,
     PhysiologicalChanges,
     RhythmType,
+    RuleCondition,
     SimulationCaseConfig,
     StabilityLevel,
 } from "./case-schema";
@@ -80,6 +81,22 @@ export interface LiveTreatment {
     says: string;
     /** For the debrief: why it matters, or why it harms. */
     why?: string;
+
+    // ── Repeat doses. All optional: a treatment without them is given once, exactly as before.
+    /** How many doses may be given (2 to 10). Absent: one. */
+    max_doses?: number;
+    /** Minutes that must pass after a dose before the next one counts. An earlier attempt is refused and has no effect. */
+    min_interval_minutes?: number;
+    /** What each dose does to the monitor, in order; the last entry repeats. Absent: `effect` for every dose. */
+    effect_per_dose?: LiveVitals[];
+    /** What the student sees for each dose, in order; the last entry repeats. Absent: `says` for every dose. */
+    says_per_dose?: string[];
+    /** For an essential treatment: how many valid doses the student must give. Absent: one. */
+    doses_required?: number;
+    /** A required later dose is on time if given within this many minutes of the one before it. */
+    repeat_within_minutes?: number;
+    /** When a further dose is indicated. "not_stabilised": only while the patient is still deteriorating. */
+    repeat_only_while?: "not_stabilised";
 }
 
 export interface LiveRecovery {
@@ -173,6 +190,19 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         return out;
     };
 
+    // Repeat-dose fields are kept only when present, so a plan that does not use them reads exactly as before.
+    const repeatFields = (t: any, role: TreatmentRole): Partial<LiveTreatment> => {
+        const out: Partial<LiveTreatment> = {};
+        if (num(t?.max_doses) !== undefined) out.max_doses = Math.round(num(t.max_doses) as number);
+        if (num(t?.min_interval_minutes) !== undefined) out.min_interval_minutes = num(t.min_interval_minutes);
+        if (Array.isArray(t?.effect_per_dose) && t.effect_per_dose.length > 0) out.effect_per_dose = t.effect_per_dose.map(vitals);
+        if (Array.isArray(t?.says_per_dose) && t.says_per_dose.length > 0) out.says_per_dose = t.says_per_dose.map((s: unknown) => text(s));
+        if (role === "essential" && num(t?.doses_required) !== undefined) out.doses_required = Math.round(num(t.doses_required) as number);
+        if (role === "essential" && num(t?.repeat_within_minutes) !== undefined) out.repeat_within_minutes = num(t.repeat_within_minutes);
+        if (oneOf(t?.repeat_only_while, ["not_stabilised"] as const)) out.repeat_only_while = "not_stabilised";
+        return out;
+    };
+
     const stages: LiveStage[] = (Array.isArray(p.stages) ? p.stages : []).map((s: any, i: number) => ({
         id: slug(s?.id) || slug(s?.name) || `stage_${i + 1}`,
         name: text(s?.name, 80),
@@ -201,6 +231,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
             ...(oneOf(t?.consciousness, CONSCIOUSNESS_LEVELS) ? { consciousness: oneOf(t?.consciousness, CONSCIOUSNESS_LEVELS) } : {}),
             says: text(t?.says),
             ...(text(t?.why) ? { why: text(t?.why) } : {}),
+            ...repeatFields(t, role),
         };
     });
 
@@ -258,6 +289,49 @@ function checkAbsolute(v: LiveVitals, where: string, errors: string[]): void {
     }
     if (v.sbp !== undefined && v.dbp !== undefined && v.dbp >= v.sbp) errors.push(`${where}: diastolic BP (${v.dbp}) must be below systolic (${v.sbp}).`);
     if ((v.sbp === undefined) !== (v.dbp === undefined)) errors.push(`${where}: give both systolic and diastolic BP, or neither.`);
+}
+
+/** Tray items that only watch the patient. They may be essential, but they never stop a deterioration. */
+const MONITORING_ONLY = new Set(["continuous_monitoring"]);
+
+/** The repeat-dose fields of one treatment, when it uses them. */
+function checkRepeat(t: LiveTreatment, where: string, timeLimit: number, errors: string[]): void {
+    const max = t.max_doses ?? 1;
+    const repeats = t.max_doses !== undefined;
+    if (repeats && (!Number.isInteger(t.max_doses) || max < 1 || max > 10)) errors.push(`${where}: max_doses must be a whole number from 1 to 10.`);
+    const needsRepeat = (field: string) => errors.push(`${where}: ${field} only makes sense when max_doses is 2 or more.`);
+    if (t.min_interval_minutes !== undefined) {
+        if (max < 2) needsRepeat("min_interval_minutes");
+        else if (t.min_interval_minutes < 0 || t.min_interval_minutes >= timeLimit) errors.push(`${where}: min_interval_minutes must be from 0 to less than the encounter (${timeLimit} min).`);
+    }
+    if (t.effect_per_dose !== undefined) {
+        if (max < 2) needsRepeat("effect_per_dose");
+        if (t.effect_per_dose.length > max) errors.push(`${where}: effect_per_dose lists ${t.effect_per_dose.length} doses but max_doses is ${max}.`);
+        t.effect_per_dose.forEach((e, i) => {
+            for (const k of Object.keys(e) as Array<keyof LiveVitals>) {
+                if (Math.abs(e[k] as number) > MAX_EFFECT[k]) errors.push(`${where}: dose ${i + 1} changes ${VITAL_NAME[k]} by ${e[k]}, more than one dose can do (±${MAX_EFFECT[k]}).`);
+            }
+            if ((e.sbp === undefined) !== (e.dbp === undefined)) errors.push(`${where}: dose ${i + 1} effect needs both sbp and dbp, or neither.`);
+        });
+    }
+    if (t.says_per_dose !== undefined) {
+        if (max < 2) needsRepeat("says_per_dose");
+        if (t.says_per_dose.length > max) errors.push(`${where}: says_per_dose lists ${t.says_per_dose.length} doses but max_doses is ${max}.`);
+        if (t.says_per_dose.some((s) => s.length < 10)) errors.push(`${where}: each says_per_dose entry is what the student sees; write a sentence.`);
+    }
+    if (t.repeat_only_while !== undefined && max < 2) needsRepeat("repeat_only_while");
+    if (t.doses_required !== undefined) {
+        if (t.role !== "essential") errors.push(`${where}: doses_required is for essential treatments.`);
+        else if (!Number.isInteger(t.doses_required) || t.doses_required < 1 || t.doses_required > max) errors.push(`${where}: doses_required must be a whole number from 1 to max_doses (${max}).`);
+        else if (t.doses_required > 1) {
+            const earliestLast = (t.within_minutes ?? 0) + (t.doses_required - 1) * (t.min_interval_minutes ?? 0);
+            if (Number.isFinite(timeLimit) && earliestLast >= timeLimit) errors.push(`${where}: ${t.doses_required} doses ${t.min_interval_minutes ?? 0} min apart cannot all be given before the encounter ends (${timeLimit} min).`);
+        }
+    }
+    if (t.repeat_within_minutes !== undefined) {
+        if ((t.doses_required ?? 1) < 2) errors.push(`${where}: repeat_within_minutes only makes sense when doses_required is 2 or more.`);
+        else if (t.repeat_within_minutes < (t.min_interval_minutes ?? 0)) errors.push(`${where}: repeat_within_minutes (${t.repeat_within_minutes}) is shorter than min_interval_minutes (${t.min_interval_minutes}): no dose could be on time.`);
+    }
 }
 
 /**
@@ -331,6 +405,7 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
             if (Math.abs(n) > MAX_EFFECT[k]) errors.push(`${where}: a change of ${n} in ${VITAL_NAME[k]} is more than one treatment can do (±${MAX_EFFECT[k]}). effect is a change, not a target.`);
         }
         if ((t.effect?.sbp === undefined) !== (t.effect?.dbp === undefined)) errors.push(`${where}: effect needs both sbp and dbp, or neither.`);
+        checkRepeat(t, where, plan.time_limit_minutes, errors);
     });
     if (essential.length === 0) errors.push("treatments: at least one must be essential.");
     if (plan.treatments.length - essential.length < 2) warnings.push("Fewer than two treatments are not essential: the tray gives the answer away. Add reasonable-but-unnecessary or harmful options.");
@@ -342,6 +417,7 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
         const t = plan.treatments.find((x) => x.id === id);
         if (!t) errors.push(`stabilised_by: "${id}" is not one of the treatments.`);
         else if (t.role !== "essential") errors.push(`stabilised_by: "${id}" stops the deterioration, so it has to be essential.`);
+        if (MONITORING_ONLY.has(id)) errors.push(`stabilised_by: "${id}" watches the patient but does not treat; keep it essential if it must be done, but it cannot be what stops the deterioration.`);
     }
 
     // ── recovery
@@ -360,6 +436,50 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
 
 const STABILISED = "live_stabilised";
 const given = (treatmentId: string) => `given_${treatmentId}`;
+/** The flag set by a valid dose. Dose 1 keeps the single-dose flag, so everything that reads it is unchanged. */
+export const doseFlag = (treatmentId: string, dose: number) => (dose === 1 ? given(treatmentId) : `given_${treatmentId}_dose${dose}`);
+/** A treatment that uses the repeat-dose fields at all; every other treatment compiles exactly as before. */
+export const isRepeatable = (t: LiveTreatment) => (t.max_doses ?? 1) >= 2;
+/** The flag that means a treatment has done its part in stopping the deterioration: its last required dose. */
+const stabilisingFlag = (t: LiveTreatment | undefined, id: string) => (t && isRepeatable(t) ? doseFlag(id, Math.max(1, t.doses_required ?? 1)) : given(id));
+
+/** Every refusal starts with this, so the tray can tell a refused dose from a given one. */
+export const REFUSED_PREFIX = "Not given:";
+/** Why a further dose was refused, in the words the student sees. */
+export const REFUSED = {
+    too_soon: (t: LiveTreatment) => `Not given: too soon for another dose. Wait at least ${t.min_interval_minutes} minutes after the last dose, reassess, then give it if it is still needed.`,
+    not_indicated: () => "Not given: another dose is not indicated now, because the patient has stopped deteriorating.",
+    limit: (t: LiveTreatment) => `Not given: all ${t.max_doses} doses have already been given.`,
+} as const;
+export type RefusalReason = keyof typeof REFUSED;
+
+/** The engine's consequences for one dose-by-dose treatment: a valid dose, a refused one, and the limit. */
+function repeatConsequences(t: LiveTreatment): ActionConsequence[] {
+    const max = t.max_doses ?? 1;
+    const effectFor = (n: number) => (t.effect_per_dose ? t.effect_per_dose[Math.min(n, t.effect_per_dose.length) - 1] : t.effect);
+    const saysFor = (n: number) => (t.says_per_dose ? t.says_per_dose[Math.min(n, t.says_per_dose.length) - 1] : t.says);
+    const out: ActionConsequence[] = [];
+    for (let n = 1; n <= max; n++) {
+        const due: RuleCondition[] = [{ flag: doseFlag(t.id, n), is: false }];
+        if (n > 1) due.unshift({ flag: doseFlag(t.id, n - 1), is: true });
+        const intervalOk: RuleCondition | null = n > 1 && (t.min_interval_minutes ?? 0) > 0 ? { minutes_since_flag: { flag: doseFlag(t.id, n - 1), gte: t.min_interval_minutes as number } } : null;
+        const indicated: RuleCondition | null = n > 1 && t.repeat_only_while === "not_stabilised" ? { flag: STABILISED, is: false } : null;
+        const valid = [...due, ...(intervalOk ? [intervalOk] : []), ...(indicated ? [indicated] : [])];
+        out.push({
+            action: t.id,
+            when: { all: valid },
+            sets: { [doseFlag(t.id, n)]: true },
+            physiological_changes: { ...effectOf(effectFor(n)), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) },
+            trajectory_note: saysFor(n),
+            ...(t.role === "harmful" ? { safety_penalty: true } : {}),
+        });
+        // Refusals, most basic reason first; each is exclusive of the valid dose and of the others.
+        if (intervalOk) out.push({ action: t.id, when: { all: [...due, { not: intervalOk }] }, trajectory_note: REFUSED.too_soon(t) });
+        if (indicated) out.push({ action: t.id, when: { all: [...due, ...(intervalOk ? [intervalOk] : []), { flag: STABILISED, is: true }] }, trajectory_note: REFUSED.not_indicated() });
+    }
+    out.push({ action: t.id, when: { flag: doseFlag(t.id, max), is: true }, trajectory_note: REFUSED.limit(t) });
+    return out;
+}
 const signed = (n: number) => (n >= 0 ? `+${n}` : String(n));
 
 function deltas(from: LiveVitals, to: LiveVitals): PhysiologicalChanges {
@@ -400,7 +520,10 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
     const arrival: LiveVitals = { ...(plan.arrival?.vitals ?? {}), ...measured };
 
     const flags: Record<string, boolean> = { ...base.initial_state.flags, [STABILISED]: false };
-    for (const t of plan.treatments) flags[given(t.id)] = false;
+    for (const t of plan.treatments) {
+        flags[given(t.id)] = false;
+        if (isRepeatable(t)) for (let n = 2; n <= (t.max_doses as number); n++) flags[doseFlag(t.id, n)] = false;
+    }
 
     // ── the untreated course: each step moves the monitor by the difference from the step before, so whatever a
     //    treatment has already improved stays improved.
@@ -428,7 +551,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         // First, so that at the instant the last stabilising treatment goes in, it wins over a step that is also due.
         {
             id: "live_stabilised",
-            when: { all: [{ flag: STABILISED, is: false }, ...plan.stabilised_by.map((id) => ({ flag: given(id), is: true }))] },
+            when: { all: [{ flag: STABILISED, is: false }, ...plan.stabilised_by.map((id) => ({ flag: stabilisingFlag(plan.treatments.find((t) => t.id === id), id), is: true }))] },
             transition: "stabilised",
             sets: { [STABILISED]: true },
             narrative: null,
@@ -452,8 +575,9 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         ...stageRules,
     ];
 
-    // ── the tray: a treatment acts once; giving it again changes nothing.
-    const consequences: ActionConsequence[] = plan.treatments.flatMap((t) => [
+    // ── the tray: a treatment acts once; giving it again changes nothing. A treatment with repeat doses acts once per
+    //    valid dose instead (repeatConsequences).
+    const consequences: ActionConsequence[] = plan.treatments.flatMap((t) => isRepeatable(t) ? repeatConsequences(t) : [
         {
             action: t.id,
             when: { flag: given(t.id), is: false },
@@ -538,6 +662,17 @@ export interface BedsideItem {
     at_minutes: number | null;
     within_minutes: number;
     why?: string;
+    /** For a treatment that needs several doses: each required dose, when it was validly given, and how it scored. */
+    doses?: Array<{ dose: number; at_minutes: number | null; status: "on_time" | "late" | "missed" }>;
+}
+
+/** A further dose the engine refused (too soon, not indicated, or over the limit). It had no effect and did not count. */
+export interface RefusedDose {
+    id: string;
+    label: string;
+    at_minutes: number;
+    reason: RefusalReason;
+    said: string;
 }
 
 export interface BedsideScore {
@@ -545,6 +680,8 @@ export interface BedsideScore {
     score: number;
     items: BedsideItem[];
     harmful: Array<{ id: string; label: string; at_minutes: number; why?: string }>;
+    /** Further doses the engine refused. Present only when there were any. */
+    refused?: RefusedDose[];
     outcome: {
         stabilised: boolean;
         recovered: boolean;
@@ -564,30 +701,91 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
         if (e.type === "INTERVENTION_GIVEN" && !firstGiven.has(e.action)) firstGiven.set(e.action, e.timestamp / 60);
     }
     const minutes = (id: string) => (firstGiven.has(id) ? Math.round((firstGiven.get(id) as number) * 10) / 10 : null);
+    const final = PatientState.fromEvents(config, events);
+    const credit = new Map<string, number>();
 
     const items: BedsideItem[] = plan.treatments
         .filter((t) => t.role === "essential")
         .map((t) => {
-            const at = minutes(t.id);
             const within = t.within_minutes ?? plan.critical_window_minutes;
-            return { id: t.id, label: t.label, status: at === null ? "missed" : at <= within ? "on_time" : "late", at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
+            if (isRepeatable(t)) return scoreDoses(t, within, final.flagSetAt, credit);
+            const at = minutes(t.id);
+            const item: BedsideItem = { id: t.id, label: t.label, status: at === null ? "missed" : at <= within ? "on_time" : "late", at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
+            credit.set(t.id, item.status === "on_time" ? 1 : item.status === "late" ? 0.5 : 0);
+            return item;
         });
     const harmful = plan.treatments
         .filter((t) => t.role === "harmful" && firstGiven.has(t.id))
         .map((t) => ({ id: t.id, label: t.label, at_minutes: minutes(t.id) as number, ...(t.why ? { why: t.why } : {}) }));
 
-    const credit = items.reduce((sum, i) => sum + (i.status === "on_time" ? 1 : i.status === "late" ? 0.5 : 0), 0);
-    const raw = items.length > 0 ? (100 * credit) / items.length : 100;
+    const total = items.reduce((sum, i) => sum + (credit.get(i.id) ?? 0), 0);
+    const raw = items.length > 0 ? (100 * total) / items.length : 100;
     const score = Math.max(0, Math.min(100, Math.round(raw - HARMFUL_TREATMENT_PENALTY * harmful.length)));
 
-    const final = PatientState.fromEvents(config, events);
     const reached = [...plan.stages].reverse().find((s) => final.firedRules.has(`live_stage_${s.id}`));
+    const refused = refusedDoses(config, plan, events);
     return {
         score,
         items,
         harmful,
         outcome: { stabilised: final.flags[STABILISED] === true, recovered: final.firedRules.has("live_recovery"), worst_stage: reached?.name ?? null },
+        // Only when there is something to report, so a plan without repeat doses scores to exactly the same shape.
+        ...(refused.length > 0 ? { refused } : {}),
     };
+}
+
+const toMinutes = (seconds: number) => Math.round((seconds / 60) * 10) / 10;
+
+/**
+ * A dose-by-dose essential treatment. Only valid doses count (the engine sets a dose's flag only when it is given at
+ * a permitted time), so a refused attempt can never stand in for a dose. The first dose is on time within the plan's
+ * window; a later required dose is on time within repeat_within_minutes of the dose before it. Each required dose is
+ * worth an equal share: on time 1, late 0.5, missed 0.
+ */
+function scoreDoses(t: LiveTreatment, within: number, flagSetAt: Readonly<Record<string, number>>, credit: Map<string, number>): BedsideItem {
+    const required = Math.max(1, t.doses_required ?? 1);
+    const doses: NonNullable<BedsideItem["doses"]> = [];
+    let previous: number | null = null;
+    for (let n = 1; n <= required; n++) {
+        const setAt = flagSetAt[doseFlag(t.id, n)];
+        const at = setAt === undefined ? null : toMinutes(setAt);
+        let status: "on_time" | "late" | "missed";
+        if (at === null) status = "missed";
+        else if (n === 1) status = at <= within ? "on_time" : "late";
+        else status = t.repeat_within_minutes === undefined || previous === null || at - previous <= t.repeat_within_minutes ? "on_time" : "late";
+        doses.push({ dose: n, at_minutes: at, status });
+        previous = at;
+    }
+    credit.set(t.id, doses.reduce((sum, d) => sum + (d.status === "on_time" ? 1 : d.status === "late" ? 0.5 : 0), 0) / required);
+    const status = doses.every((d) => d.status === "on_time") ? "on_time" : doses.every((d) => d.status === "missed") ? "missed" : "late";
+    return { id: t.id, label: t.label, status, at_minutes: doses[0].at_minutes, within_minutes: within, ...(t.why ? { why: t.why } : {}), ...(required > 1 ? { doses } : {}) };
+}
+
+/** Every attempt at a further dose that the engine refused, with the reason, in the order they happened. */
+function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: readonly ClinicalEvent[]): RefusedDose[] {
+    const byId = new Map(plan.treatments.filter(isRepeatable).map((t) => [t.id, t]));
+    if (byId.size === 0) return [];
+    const count = (state: PatientState, t: LiveTreatment) => {
+        let n = 0;
+        while (n < (t.max_doses as number) && state.flags[doseFlag(t.id, n + 1)] === true) n++;
+        return n;
+    };
+    const out: RefusedDose[] = [];
+    events.forEach((e, i) => {
+        if (e.type !== "INTERVENTION_GIVEN") return;
+        const t = byId.get(e.action);
+        if (!t) return;
+        // The state just before and just after this attempt, from the log itself.
+        const before = PatientState.fromEvents(config, events.slice(0, i));
+        const after = PatientState.fromEvents(config, events.slice(0, i + 1));
+        const had = count(before, t);
+        if (count(after, t) > had) return;
+        const sinceLast = had > 0 ? e.timestamp - (before.flagSetAt[doseFlag(t.id, had)] ?? e.timestamp) : Infinity;
+        const reason: RefusalReason =
+            had >= (t.max_doses as number) ? "limit" : sinceLast < (t.min_interval_minutes ?? 0) * 60 ? "too_soon" : "not_indicated";
+        out.push({ id: t.id, label: t.label, at_minutes: toMinutes(e.timestamp), reason, said: e.consequence });
+    });
+    return out;
 }
 
 /** The final score of a live case: the ordinary score and the bedside score, in fixed shares. */

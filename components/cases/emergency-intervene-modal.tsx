@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatClock, type EventOf } from "@/lib/simulation/encounter-events"
 import { INTERVENTION_GROUPS, interventionLabel, interventionsForCase } from "@/lib/simulation/intervention-catalog"
+import { REFUSED_PREFIX } from "@/lib/simulation/live-plan"
 import { useClinicalEvents } from "./clinical-event-manager"
 
 interface Props {
@@ -42,7 +43,8 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
   )
   const givenCount = useMemo(() => {
     const counts = new Map<string, number>()
-    for (const e of events) if (e.type === "INTERVENTION_GIVEN") counts.set(e.action, (counts.get(e.action) ?? 0) + 1)
+    // A further dose the engine refused (too soon, not indicated, over the limit) was not given, so it is not counted.
+    for (const e of events) if (e.type === "INTERVENTION_GIVEN" && !e.consequence.startsWith(REFUSED_PREFIX)) counts.set(e.action, (counts.get(e.action) ?? 0) + 1)
     return counts
   }, [events])
 
