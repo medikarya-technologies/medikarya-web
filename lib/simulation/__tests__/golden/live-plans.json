@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
     "plan_sha": "d1e1d07eb3685d123b4ede091395a85edc74e2ac3f37911e6aa74ec0a2e99156",
-    "compiled_sha": "6654750fffb0e186b0ac3001658dd03e50e07e8f11f77b63ba7e749c95dc4db2",
+    "compiled_sha": "43962ba0e8595666aad01de0321a4ff4b49207f63a4def2d0769fbbe49e0a36b",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -88,7 +88,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "dbbd73c4b66f1e3f6f4e9cf0e43be27a9e669de1b72221d31e5fc712b2de528c"
+        "events_sha": "c358da403f62028305aa5dbafcced03c6ce998f51d469764d3c47cae0db21fa5"
       },
       "harmful": {
         "score": 55,
@@ -135,10 +135,10 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "9bb2d1322242b6db8fb2bbd9310ae17aca3044ec67c2daec1a8e0090f44c1742"
+        "events_sha": "0d6182c4766a78826a80de57d1862d65953a66e8f23f2fab0d5b99cb2a590878"
       },
       "late": {
-        "score": 61,
+        "score": 25,
         "items": [
           [
             "iv_access",
@@ -150,36 +150,35 @@
           ],
           [
             "atropine_iv_titrated",
-            "late"
+            "missed"
           ],
           [
             "atropine_infusion",
-            "not_due"
+            "not_needed"
           ],
           [
             "intubation_rsi",
-            "not_needed"
+            "missed"
           ]
         ],
         "harmful": [],
         "outcome": {
-          "stabilised": true,
-          "recovered": true,
-          "worst_stage": "Respiratory muscle fatigue",
-          "path": "usual"
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Respiratory failure"
         },
         "final": {
-          "hr": 92,
-          "sbp": 112,
-          "dbp": 70,
-          "spo2": 95,
-          "rr": 20,
+          "hr": 36,
+          "sbp": 72,
+          "dbp": 42,
+          "spo2": 63,
+          "rr": 6,
           "temp": 36.8,
-          "consciousness": "drowsy",
-          "stability": "stable",
-          "rhythm": "sinus_normal"
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "c8aa6f9fd95346626236bf5cdd4a77133ae90f2b9ebbe19794db5ae718f79a3d"
+        "events_sha": "f29e51b413e4b96f6b34cd5da50d6be713fb28c82eb382ed354b134786f0ffb0"
       },
       "rescue": {
         "score": 71,
@@ -727,7 +726,7 @@
   },
   "32-year-old-man-brought-in-fitting": {
     "plan_sha": "12dda86824d12952bcc7ef143a55978357f8a83889fe09ddc1bc71987f3a0d10",
-    "compiled_sha": "b1834b551d6ed0e078a22886d30d5c0f3e1fc6ccd72e5f50a9b27a438f0dad34",
+    "compiled_sha": "31c69cda8b89d30fccbd47abd82b8c392f509778d4f2072e5b8b0b5dceebe1eb",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -860,10 +859,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e6bdc96d22705bc973c68efa8bd3711cbad60a4e5d4b435a485199d70ccd519b"
+        "events_sha": "1560e73848fc53d9f9f9c59e457d4b52345c06d0fa3ffbcbc9310051edd532d4"
       },
       "late": {
-        "score": 45,
+        "score": 30,
         "items": [
           [
             "high_flow_oxygen",
@@ -879,7 +878,7 @@
           ],
           [
             "lorazepam_iv",
-            "late"
+            "missed"
           ],
           [
             "second_line_antiseizure_iv",
@@ -893,7 +892,7 @@
           "worst_stage": "Respiratory failure and falling BP"
         },
         "final": {
-          "hr": 140,
+          "hr": 148,
           "sbp": 102,
           "dbp": 60,
           "spo2": 79,
@@ -903,7 +902,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e14a83c3987e1100b2c70e767ced5fa3b9b0c0fe64a38f718b9b6bde2f5ba6fc"
+        "events_sha": "840e18b05a5fbca8e564d6ab4f9593919a1c91c39d6b84dfc727de62b11a750f"
       },
       "rescue": {
         "score": 65,
@@ -946,7 +945,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "6820f2582ca3495ea5b9e0f7f5bff8bd4792d57ab7989847133f050367e5660e"
+        "events_sha": "ded936361f6c4b79fbe01ddc35b958e2a7334b3730acae1a97d30edfe9e4e1d2"
       }
     }
   },
@@ -1103,7 +1102,7 @@
   },
   "36-year-old-man-with-sudden-breathlessness": {
     "plan_sha": "d0ecc1cd5d7c74458ea20e892b21a4f74a94294811703b7ea19a1f82c36f83f7",
-    "compiled_sha": "9f85296d734dbd41baf4bf0f1483ed7f41df332b20d7c49e495dfe4688d1d7c7",
+    "compiled_sha": "c335f941af13f24129bcf5c67731b86bf305a53f1312b8f1434701ae1d98d0b0",
     "playthroughs": {
       "untreated": {
         "score": 0,

@@ -94,6 +94,9 @@ export async function removeLivePlanAction(caseId: string): Promise<LiveResult> 
     await requireAdmin()
     const caseJson = await load(caseId)
     if (!caseJson) return { ok: false, error: "Case not found." }
+    // Removing the plan would lose its release blockers, and a new plan could then be switched on unchecked.
+    const blockers = openReleaseBlockers(caseJson.live_plan)
+    if (blockers.length > 0) return { ok: false, error: "This plan has open release blockers. Settle them first; removing the plan would lose them.", details: blockers.map((b) => b.text) }
     await savePlan(caseId, caseJson, null)
     done()
     return { ok: true, message: "Live plan removed. The case is an ordinary one again." }

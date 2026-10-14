@@ -94,6 +94,8 @@ export function LiveRow({ c }: { c: LiveCase }) {
             <Badge tone="emerald">Written as a live case</Badge>
           ) : !p ? (
             <Badge tone="slate">Ordinary case</Badge>
+          ) : p.status === "approved" && p.blockers.length > 0 ? (
+            <Badge tone="rose">Switched on, but blocked: students get the ordinary case</Badge>
           ) : p.status === "approved" ? (
             <Badge tone="emerald">Live for students</Badge>
           ) : signedOff ? (

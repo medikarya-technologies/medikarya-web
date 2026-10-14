@@ -61,7 +61,8 @@ export default async function LiveCasesPage() {
   const { userId } = await auth()
   if (!(await isAdmin(userId))) redirect("/")
   const cases = await load()
-  const live = cases.filter((c) => c.plan?.status === "approved" && c.status === "published").length
+  // A switched-on plan with an open release blocker does not reach students, so it is not counted as live.
+  const live = cases.filter((c) => c.plan?.status === "approved" && c.plan.blockers.length === 0 && c.status === "published").length
   const waiting = cases.filter((c) => c.plan && c.plan.status !== "approved").length
 
   return (

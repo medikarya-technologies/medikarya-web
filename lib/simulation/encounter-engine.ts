@@ -192,11 +192,15 @@ export class EncounterEngine {
      * early at the first nurse alert so a wait never sleeps through a deterioration. Logged as TIME_SKIPPED at the
      * moment the wait ended, so the server's replay reaches the same place.
      */
-    skipTime(from: number, seconds: number): { appended: ClinicalEvent[]; to: number } {
+    skipTime(from: number, seconds: number): { appended: ClinicalEvent[]; to: number; stopped: "alert" | "limit" | null } {
         const start = Math.min(Math.max(from, this.lastTimestamp), this.limitSeconds);
-        const target = Math.min(start + Math.max(0, seconds), this.limitSeconds);
-        const appended: ClinicalEvent[] = [];
+        const asked = start + Math.max(0, seconds);
+        const target = Math.min(asked, this.limitSeconds);
+        // Whatever was already due by the moment the wait began happens first (the UI's tick may not have fired it
+        // yet), so the wait starts from the present and never ends before it began.
+        const appended: ClinicalEvent[] = this.fireDue(start, true);
         let to = target;
+        let stopped: "alert" | "limit" | null = target < asked ? "limit" : null;
         for (let guard = 0; guard < 256; guard++) {
             const transition = this.patient.due(target, { inclusive: true });
             if (!transition) break;
@@ -206,16 +210,17 @@ export class EncounterEngine {
             }
             if (transition.narrative) {
                 to = transition.at;
+                stopped = to < asked ? "alert" : stopped;
                 break;
             }
         }
         // Anything else due at the same instant as the alert happens with it.
         appended.push(...this.fireDue(to, true));
-        const event: ClinicalEvent = { type: "TIME_SKIPPED", timestamp: to, from: start, minutes: Math.round((seconds / 60) * 10) / 10 };
+        const event: ClinicalEvent = { type: "TIME_SKIPPED", timestamp: to, from: start, minutes: Math.round((seconds / 60) * 10) / 10, ...(stopped ? { stopped } : {}) };
         this.appendRaw(event);
         appended.push(event);
         this.commit();
-        return { appended, to };
+        return { appended, to, stopped };
     }
 
     // ── Assists ─────────────────────────────────────────────────────────────

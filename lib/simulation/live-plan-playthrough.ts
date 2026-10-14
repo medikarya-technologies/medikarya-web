@@ -89,7 +89,7 @@ function play(config: SimulationCaseConfig, plan: LivePlan, events: ClinicalEven
  * An essential treatment that cannot go on a fixed schedule: it is required, or on the tray, only in some states, or
  * (given once) it has prerequisites, such as a second-line drug after two benzodiazepine doses.
  */
-const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when || (t.requires?.length && !isRepeatable(t)));
+const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when || t.requires?.length);
 
 /**
  * The scheduled events, and each conditional essential a minute after it becomes required (or, if it is always
@@ -109,7 +109,8 @@ function playRescue(config: SimulationCaseConfig, plan: LivePlan, scheduled: Cli
             const due = t.required_when ? engine.state.flags[requiredFlag(t.id)] === true && ready : ready;
             if (!done.has(t.id) && due) {
                 done.add(t.id);
-                pending.push(given(t.id, m));
+                // Every dose it needs, the first now and each further one as its interval allows.
+                pending.push(...dosesAt(t, isRepeatable(t) ? doseTimes(t, m) : [m]));
             }
         }
         pending.sort((a, b) => a.timestamp - b.timestamp);
@@ -143,9 +144,9 @@ const given = (action: string, minutes: number): ClinicalEvent => ({ type: "INTE
 
 /**
  * A treatment's doses at these minutes, each further dose preceded by a reassessment when the plan asks for one: a
- * minute before it (a reassessment takes time), and never before the dose it follows.
+ * minute before it (a reassessment takes time), and never before the dose it follows. Shared with check-live-plan.
  */
-const dosesAt = (t: LiveTreatment, times: number[]): ClinicalEvent[] =>
+export const dosesAt = (t: LiveTreatment, times: number[]): ClinicalEvent[] =>
     times.flatMap((at, i) => (i > 0 && t.reassess_before_repeat ? [given(REASSESS_ID, Math.max(times[i - 1], at - 1)), given(t.id, at)] : [given(t.id, at)]));
 
 export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playthroughs {

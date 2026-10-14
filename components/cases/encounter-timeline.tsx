@@ -67,7 +67,7 @@ function describe(e: ClinicalEvent, examLabels: ReadonlyMap<string, string>): Ro
     case "DIAGNOSIS_SUBMITTED":
       return { icon: Stethoscope, tone: "good", title: `Diagnosis: ${e.primary}`, detail: e.reasoning }
     case "TIME_SKIPPED":
-      return { icon: Clock, tone: "muted", title: `Waited ${formatClock(e.timestamp - e.from)}${e.timestamp - e.from < e.minutes * 60 ? " (stopped early: the nurse called)" : ""}` }
+      return { icon: Clock, tone: "muted", title: `Waited ${formatClock(e.timestamp - e.from)}${e.stopped === "alert" ? " (stopped early: the nurse called)" : e.stopped === "limit" ? " (until the encounter ended)" : ""}` }
     case "MANAGEMENT_SUBMITTED":
       return { icon: ClipboardList, tone: "good", title: `Management plan (${e.steps.length} ${e.steps.length === 1 ? "step" : "steps"})`, detail: e.steps.join("  ·  ") }
   }

@@ -118,6 +118,19 @@ describe("prerequisites: what has to be true before a treatment can be given", (
         assert.equal(score.outcome.stabilised, true);
     });
 
+    it("once given, a second click says it is already given, even if a prerequisite no longer holds", () => {
+        const p = withReqs([{ when: { vital: "sbp", below: 95 }, says: "a bolus is only for a low blood pressure." }]);
+        const c = compileLivePlan(base(), p);
+        const e = new EncounterEngine(c);
+        e.giveIntervention("fluid_bolus_20ml_kg", 1 * MIN); // 86 -> 94
+        e.giveIntervention("furosemide_iv", 2 * MIN); // harmful, but BP: 84
+        e.giveIntervention("oxygen_supplemental", 2 * MIN);
+        const again = e.giveIntervention("fluid_bolus_20ml_kg", 3 * MIN);
+        assert.equal(again.consequence, "Already given. No further change.");
+        e.advanceTo(19 * MIN);
+        assert.equal(scoreBedside(c, p, e.events, 19).refused, undefined, "a repeat click on something given is not a refused dose");
+    });
+
     it("gives the first unmet requirement's reason, in order", () => {
         const p = withReqs([IV, { when: { stage_reached: "compensated_shock" }, says: "a bolus is not indicated before he is shocked." }]);
         const c = compileLivePlan(base(), p);
@@ -254,7 +267,7 @@ describe("fast-forward: waiting moves the clock, stops at a nurse alert, and rep
         const { to } = e.skipTime(1 * MIN, 10 * MIN);
         assert.equal(to, 6 * MIN, "compensated shock is announced at 6 min");
         const last = e.events.at(-1)!;
-        assert.deepEqual(last, { type: "TIME_SKIPPED", timestamp: 6 * MIN, from: 1 * MIN, minutes: 10 });
+        assert.deepEqual(last, { type: "TIME_SKIPPED", timestamp: 6 * MIN, from: 1 * MIN, minutes: 10, stopped: "alert" });
         assert.equal(e.state.state, "compensated_shock");
     });
 
@@ -265,7 +278,20 @@ describe("fast-forward: waiting moves the clock, stops at a nurse alert, and rep
         // Stabilised at 2, recovery announced at 6 (an alert), then nothing: the next wait runs its full length.
         assert.equal(e.skipTime(2 * MIN, 10 * MIN).to, 6 * MIN);
         assert.equal(e.skipTime(6 * MIN, 5 * MIN).to, 11 * MIN);
-        assert.equal(e.skipTime(11 * MIN, 30 * MIN).to, 20 * MIN, "capped at the 20-minute limit");
+        const capped = e.skipTime(11 * MIN, 30 * MIN);
+        assert.equal(capped.to, 20 * MIN, "capped at the 20-minute limit");
+        assert.equal(capped.stopped, "limit", "ended by the time limit, not by a nurse alert");
+    });
+
+    it("a wait that starts after an alert was due fires it first and never ends before it began", () => {
+        // The UI's tick has not yet fired the 6-minute alert when the student clicks wait at 6:00.1.
+        const { e } = fresh();
+        const start = 6 * MIN + 0.1;
+        const { to, stopped } = e.skipTime(start, 5 * MIN);
+        assert.ok(to >= start, `the wait ended at ${to}, after it began`);
+        assert.equal(stopped, null, "the 6-minute alert happened before the wait, so the wait ran its full length");
+        const last = e.events.at(-1) as { from: number; timestamp: number };
+        assert.ok(last.from <= last.timestamp);
     });
 
     it("the server's replay of a log with waits reaches the same patient and the same score", () => {

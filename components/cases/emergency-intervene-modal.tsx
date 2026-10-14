@@ -39,10 +39,8 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
 
   // Waiting moves the clock on; a nurse alert ends the wait early, so a deterioration is never skipped past.
   const waitFor = (minutes: number) => {
-    const from = now
-    const to = actions.wait(minutes)
-    const early = to - from < minutes * 60 - 1
-    setWaited(`Waited until ${formatClock(to)}${early ? ": stopped early, the nurse is calling." : "."}`)
+    const { to, stopped } = actions.wait(minutes)
+    setWaited(`Waited until ${formatClock(to)}${stopped === "alert" ? ": stopped early, the nurse is calling." : stopped === "limit" ? ": the encounter has ended." : "."}`)
     setOutcome(null)
   }
 

@@ -293,7 +293,7 @@ export interface ReleaseBlocker {
 }
 
 /** The blockers still open on a plan. */
-export const openReleaseBlockers = (plan: Pick<LivePlan, "release_blockers"> | null | undefined): ReleaseBlocker[] => (plan?.release_blockers ?? []).filter((b) => !b.cleared_at);
+export const openReleaseBlockers = (plan: unknown): ReleaseBlocker[] => (isLivePlan(plan) ? (plan.release_blockers ?? []).filter((b) => !b.cleared_at) : []);
 
 /** A new or changed plan keeps the case's release blockers: they are cleared on purpose, never by redrafting. */
 export function carryReleaseBlockers(next: LivePlan, previous: unknown): LivePlan {
@@ -929,7 +929,6 @@ function stabilisingConditions(t: LiveTreatment | undefined, id: string): RuleCo
 /** A rule that only records something: it sets a flag the moment its condition first holds, and the patient's state is unchanged. */
 const latch = (id: string, when: RuleCondition, flag: string): EventRule => ({ id, when, transition: "unchanged", keeps_state: true, sets: { [flag]: true }, narrative: null });
 
-/** The record-only rules a treatment's state fields need. */
 /**
  * An infusion's effect, one share per minute after it was started. Each share acts in its own minute only, only while
  * the infusion's condition holds and the patient is not yet stabilised. Shares are whole numbers that add up exactly.
@@ -967,6 +966,7 @@ function infusionRules(t: LiveTreatment): EventRule[] {
     return out;
 }
 
+/** The rules a treatment's state fields need: its infusion's shares, and the record-only rules (available, required, doses falling due). */
 function stateRules(t: LiveTreatment): EventRule[] {
     const out: EventRule[] = [...infusionRules(t)];
     if (t.available_when) out.push(latch(`live_available_${t.id}`, compileCondition(t.available_when), availableFlag(t.id)));
@@ -1028,8 +1028,10 @@ function stateConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[
     let guarded = base;
     const reqs = (t.requires ?? []).map((r) => ({ cond: compileCondition(r.when), says: r.says }));
     if (reqs.length > 0) {
-        const refusals: ActionConsequence[] = reqs.map((r, i) => ({ action: t.id, when: { all: [...reqs.slice(0, i).map((x) => x.cond), { not: r.cond }] }, trajectory_note: REFUSED.needs_first(r.says) }));
-        guarded = [...refusals, ...guard({ all: reqs.map((r) => r.cond) }, base)];
+        // Once every dose is in, the student hears "already given" or "all doses given", never a missing prerequisite.
+        const done: RuleCondition = { flag: doseFlag(t.id, t.max_doses ?? 1), is: true };
+        const refusals: ActionConsequence[] = reqs.map((r, i) => ({ action: t.id, when: { all: [{ not: done }, ...reqs.slice(0, i).map((x) => x.cond), { not: r.cond }] }, trajectory_note: REFUSED.needs_first(r.says) }));
+        guarded = [...refusals, ...guard({ any: [done, { all: reqs.map((r) => r.cond) }] }, base)];
     }
     if (!t.available_when) return guarded;
     // Not yet available: refused, with no effect. Once available, everything as usual.
@@ -1039,6 +1041,8 @@ function stateConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[
 
 /** Every refusal starts with this, so the tray can tell a refused dose from a given one. */
 export const REFUSED_PREFIX = "Not given:";
+/** A plan's own words for a refusal, with the prefix the tray relies on. */
+const refusal = (says: string) => (says.startsWith(REFUSED_PREFIX) ? says : `${REFUSED_PREFIX} ${says}`);
 /** Why a further dose was refused, in the words the student sees. */
 export const REFUSED = {
     too_soon: (t: LiveTreatment) => `Not given: too soon for another dose. Wait at least ${t.min_interval_minutes} minutes after the last dose, reassess, then give it if it is still needed.`,
@@ -1046,7 +1050,7 @@ export const REFUSED = {
     limit: (t: LiveTreatment) => `Not given: all ${t.max_doses} doses have already been given.`,
     unavailable: () => "Not given: not indicated at the moment.",
     not_reassessed: (label: string) => `Not given: reassess first (${label}) to see whether another dose is needed.`,
-    needs_first: (says: string) => (says.startsWith(REFUSED_PREFIX) ? says : `${REFUSED_PREFIX} ${says}`),
+    needs_first: (says: string) => refusal(says),
 } as const;
 export type RefusalReason = keyof typeof REFUSED;
 
@@ -1072,7 +1076,7 @@ function repeatConsequences(t: LiveTreatment, reassessLabel = ""): ActionConsequ
         if (reassessed) out.push({ action: t.id, when: { all: [...due, ...(intervalOk ? [intervalOk] : []), { flag: reassessedFlag(t.id), is: false }] }, trajectory_note: REFUSED.not_reassessed(reassessLabel) });
         if (indicated) {
             const notNow = gate ? { not: gate } : { flag: STABILISED, is: true };
-            const said = gate && t.not_indicated_says ? (t.not_indicated_says.startsWith(REFUSED_PREFIX) ? t.not_indicated_says : `${REFUSED_PREFIX} ${t.not_indicated_says}`) : REFUSED.not_indicated();
+            const said = gate && t.not_indicated_says ? refusal(t.not_indicated_says) : REFUSED.not_indicated();
             out.push({ action: t.id, when: { all: [...due, ...(intervalOk ? [intervalOk] : []), ...(reassessed ? [reassessed] : []), notNow] }, trajectory_note: said });
         }
     }
@@ -1298,10 +1302,10 @@ export function withLivePlan<T extends SimulationCaseConfig>(base: T, viewerIsAd
     return compileLivePlan(base, plan);
 }
 
-/** Does this case have a plan that only an admin would currently see run? */
+/** Does this case have a plan that only an admin would currently see run: one still proposed, or one an open release blocker keeps from students? */
 export function hasProposedLivePlan(caseData: unknown): boolean {
     const plan = (caseData as { live_plan?: unknown } | null)?.live_plan;
-    return isLivePlan(plan) && plan.status === "proposed";
+    return isLivePlan(plan) && (plan.status === "proposed" || openReleaseBlockers(plan).length > 0);
 }
 
 // ── Scoring what was done at the bedside ────────────────────────────────────

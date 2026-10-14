@@ -21,7 +21,7 @@ import { createReviewLink, latestReviews } from "@/lib/review/links"
 import { caseRewardsDue, nextCaseReward, type GrantRow } from "@/lib/plans/grants"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { checkLivePlan, isLivePlan, measuredOnArrival, normaliseLivePlan, type LivePlan, type LiveSignOff } from "@/lib/simulation/live-plan"
+import { carryReleaseBlockers, checkLivePlan, isLivePlan, measuredOnArrival, normaliseLivePlan, openReleaseBlockers, type LivePlan, type LiveSignOff } from "@/lib/simulation/live-plan"
 import { draftLivePlan } from "@/lib/studio/live-draft"
 
 export type ActionResult =
@@ -102,6 +102,16 @@ async function saveDraft(
     }
   }
   const needsPlan = kind === "live" && (!plan || !!keepPlan)
+
+  // Release blockers belong to the case: a re-conversion keeps them. Until the new plan is written (needsPlan), the old
+  // plan stays, switched off, to hold them; a conversion to a static case would lose them, so it waits until they are settled.
+  const existing = id ? ((await supabaseServer.from("cases").select("case_json").eq("id", id).maybeSingle()).data?.case_json as Record<string, any> | undefined) : undefined
+  const previousPlan = isLivePlan(existing?.live_plan) ? existing!.live_plan : null
+  if (kind === "static" && openReleaseBlockers(previousPlan).length > 0) {
+    throw new Error(`This case has open release blockers on its live plan (${openReleaseBlockers(previousPlan).map((b) => b.id).join(", ")}). Settle them before converting it as a static case.`)
+  }
+  if (plan) plan = carryReleaseBlockers(plan, previousPlan)
+  else if (needsPlan && previousPlan?.release_blockers?.length) plan = { ...previousPlan, status: "proposed" }
   if (!id) {
     const { data: rows, error } = await supabaseServer.from("cases").select("id")
     if (error) throw error
@@ -267,7 +277,8 @@ export async function makeLive(caseId: string, comments?: string): Promise<Actio
     ]
     const now = new Date().toISOString()
     // a new version (the case with its plan): a review of the version without it does not count
-    const next = { ...caseJson, live_plan: plan, source: { ...caseJson.source, review_notes: notes, converted_at: now } }
+    // Release blockers belong to the case: the new plan keeps them.
+    const next = { ...caseJson, live_plan: carryReleaseBlockers(plan, caseJson.live_plan), source: { ...caseJson.source, review_notes: notes, converted_at: now } }
     const { error: updateError } = await supabaseServer.from("cases").update({ case_json: next, updated_at: now }).eq("id", caseId)
     if (updateError) throw updateError
     const warning = await toQueue(studioId, caseId, next)
