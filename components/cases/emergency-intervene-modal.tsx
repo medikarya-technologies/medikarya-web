@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatClock, type EventOf } from "@/lib/simulation/encounter-events"
 import { INTERVENTION_GROUPS, interventionLabel, interventionsForCase } from "@/lib/simulation/intervention-catalog"
-import { REFUSED_PREFIX } from "@/lib/simulation/live-plan"
+import { REFUSED_PREFIX, availableFlag } from "@/lib/simulation/live-plan"
 import { useClinicalEvents } from "./clinical-event-manager"
 
 interface Props {
@@ -109,7 +109,8 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
 
           <div className="space-y-5 px-4 py-4 sm:px-6">
             {INTERVENTION_GROUPS.map((group) => {
-              const items = tray.filter((i) => i.group === group.id)
+              // A treatment that is only on the tray once the patient needs it (available_when) stays hidden until then.
+              const items = tray.filter((i) => i.group === group.id && patient.flags[availableFlag(i.id)] !== false)
               if (items.length === 0) return null
               return (
                 <section key={group.id}>
