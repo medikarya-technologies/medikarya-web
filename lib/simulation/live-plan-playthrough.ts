@@ -7,7 +7,7 @@ import type { SimulationCaseConfig } from "./case-schema";
 import type { ClinicalEvent } from "./encounter-events";
 import { EncounterEngine } from "./encounter-engine";
 import { replayStudentEvents } from "./replay";
-import { compileLivePlan, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { availableFlag, compileLivePlan, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
 
 const MIN = 60;
 
@@ -26,6 +26,12 @@ export interface Playthroughs {
     correct: PlaythroughResult;
     harmful: PlaythroughResult;
     late: PlaythroughResult;
+    /**
+     * Only in a plan with treatments that are required only in some states: the late path, plus each such treatment
+     * given a minute after it becomes required (a late student who then rescues the patient). In such a plan the
+     * correct and harmful paths also give each one a minute after it becomes required.
+     */
+    rescue?: PlaythroughResult;
 }
 
 /** JSON with keys sorted at every level, so equal objects hash equally whatever order they were built in. */
@@ -57,7 +63,46 @@ function play(config: SimulationCaseConfig, plan: LivePlan, events: ClinicalEven
     const limit = plan.time_limit_minutes;
     const engine = events ? replayStudentEvents(config, events) : new EncounterEngine(config);
     for (let m = 1; m <= limit; m++) engine.advanceTo(m * MIN);
-    const s = scoreBedside(config, plan, engine.events);
+    return result(config, plan, engine);
+}
+
+/** An essential treatment that cannot go on a fixed schedule: it is required, or on the tray, only in some states. */
+const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when);
+
+/**
+ * The scheduled events, and each conditional essential a minute after it becomes required (or, if it is always
+ * required, a minute after it becomes available), then replayed as the server would.
+ */
+function playRescue(config: SimulationCaseConfig, plan: LivePlan, scheduled: ClinicalEvent[]): PlaythroughResult {
+    const limit = plan.time_limit_minutes;
+    const conditional = plan.treatments.filter(isConditional);
+    const engine = new EncounterEngine(config);
+    const pending = [...scheduled];
+    const done = new Set<string>();
+    for (let m = 1; m <= limit; m++) {
+        for (const t of conditional) {
+            const due = t.required_when ? engine.state.flags[requiredFlag(t.id)] === true : engine.state.flags[availableFlag(t.id)] === true;
+            if (!done.has(t.id) && due) {
+                done.add(t.id);
+                pending.push(given(t.id, m));
+            }
+        }
+        pending.sort((a, b) => a.timestamp - b.timestamp);
+        while (pending.length > 0 && pending[0].timestamp <= m * MIN) {
+            const e = pending.shift() as ClinicalEvent & { action: string };
+            engine.giveIntervention(e.action, e.timestamp);
+        }
+        engine.advanceTo(m * MIN);
+    }
+    // Scored from the server's replay of what was given, as a real attempt is.
+    const replayed = replayStudentEvents(config, engine.events.filter((e) => e.type === "INTERVENTION_GIVEN"));
+    for (let m = 1; m <= limit; m++) replayed.advanceTo(m * MIN);
+    return result(config, plan, replayed);
+}
+
+function result(config: SimulationCaseConfig, plan: LivePlan, engine: EncounterEngine): PlaythroughResult {
+    // The playthroughs run to the time limit, so that is when the encounter ends.
+    const s = scoreBedside(config, plan, engine.events, plan.time_limit_minutes);
     const st = engine.state;
     return {
         score: s.score,
@@ -78,7 +123,8 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
 
     const correct: ClinicalEvent[] = [];
     let next = 1;
-    for (const t of essentials) {
+    // A treatment required or available only in some states is given only once it is; on a fixed schedule it would be refused.
+    for (const t of essentials.filter((x) => !isConditional(x))) {
         const times = correctTimes(t, next, limit);
         for (const at of times) correct.push(given(t.id, at));
         next = times[0] + 1;
@@ -88,8 +134,17 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
     const harmful = [...correct, ...plan.treatments.filter((t) => t.role === "harmful").map((t, i) => given(t.id, next + i))].sort((a, b) => a.timestamp - b.timestamp);
 
     const late: ClinicalEvent[] = essentials
+        .filter((t) => !isConditional(t))
         .flatMap((t) => doseTimes(t, Math.min(limit - 1, (t.within_minutes ?? 5) + 2)).map((at) => given(t.id, Math.min(limit - 1, at))))
         .sort((a, b) => a.timestamp - b.timestamp);
 
-    return { untreated: play(config, plan, null), correct: play(config, plan, correct), harmful: play(config, plan, harmful), late: play(config, plan, late) };
+    // With treatments required only in some states, correct care also gives each one as soon as it is required.
+    const conditional = plan.treatments.some(isConditional);
+    return {
+        untreated: play(config, plan, null),
+        correct: conditional ? playRescue(config, plan, correct) : play(config, plan, correct),
+        harmful: conditional ? playRescue(config, plan, harmful) : play(config, plan, harmful),
+        late: play(config, plan, late),
+        ...(conditional ? { rescue: playRescue(config, plan, late) } : {}),
+    };
 }

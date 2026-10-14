@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { formatClock } from "@/lib/simulation/encounter-events"
 import { EncounterTimeline } from "./encounter-timeline"
+import type { BedsideScore, BedsideStatus } from "@/lib/simulation/live-plan"
 
 interface AssistanceLine {
   label: string
@@ -63,30 +64,24 @@ export function AssistanceAudit({
 }
 
 /** What a live case's bedside scored (lib/simulation/live-plan.ts, scoreBedside), as the server returned it. */
-interface Bedside {
-  score: number
-  share: number
-  consultationScore: number
-  items: Array<{
-    id: string
-    label: string
-    status: "on_time" | "late" | "missed"
-    at_minutes: number | null
-    within_minutes: number
-    why?: string
-    doses?: Array<{ dose: number; at_minutes: number | null; status: "on_time" | "late" | "missed" }>
-  }>
-  harmful: Array<{ id: string; label: string; at_minutes: number; why?: string }>
-  /** Further doses the engine refused: they had no effect and did not count. */
-  refused?: Array<{ id: string; label: string; at_minutes: number; said: string }>
-  outcome: { stabilised: boolean; recovered: boolean; worst_stage: string | null }
-}
+type Bedside = BedsideScore & { share: number; consultationScore: number }
 
-const BEDSIDE_STATUS = {
+// Every status the engine can return has to be here: a missing one is a type error, not a crash in the debrief.
+const BEDSIDE_STATUS: Record<BedsideStatus, { text: string; tone: string }> = {
   on_time: { text: "In time", tone: "bg-enc-ok-soft text-enc-ok" },
   late: { text: "Late", tone: "bg-enc-warn-soft text-enc-warn" },
   missed: { text: "Not given", tone: "bg-enc-crit-soft text-enc-crit" },
-} as const
+  not_needed: { text: "Not needed", tone: "bg-enc-sheet text-enc-ink-3" },
+  not_due: { text: "Still in time", tone: "bg-enc-sheet text-enc-ink-3" },
+}
+
+/** The line under a bedside item: when it was needed and when it was given. */
+function bedsideTiming(i: Bedside["items"][number]): string {
+  if (i.status === "not_needed") return "Your patient never came to need this, so it does not count either way"
+  if (i.status === "not_due") return `Needed from ${i.required_at_minutes} min, but the encounter ended while there was still time to give it, so it does not count either way`
+  const from = i.required_at_minutes !== undefined ? `needed from ${i.required_at_minutes} min, within ${i.within_minutes} min` : `needed within ${i.within_minutes} min`
+  return i.at_minutes === null ? from.charAt(0).toUpperCase() + from.slice(1) : `Given at ${i.at_minutes} min; ${from}`
+}
 
 /** "At the bedside": in a live case, what the student gave and when, what harmed, and how the patient ended up. */
 export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: number }) {
@@ -112,6 +107,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
       </div>
       <div className="space-y-2.5 p-3">
         <p className="text-sm font-medium text-enc-ink">{ending}</p>
+        {outcome.path && outcome.path !== "usual" && <p className="text-xs text-enc-ink-2">They were stabilised through: {outcome.path}.</p>}
         <ul className="space-y-1.5">
           {bedside.items.map((i) => (
             <li key={i.id} className="rounded-lg bg-enc-sheet p-2.5">
@@ -120,14 +116,14 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${BEDSIDE_STATUS[i.status].tone}`}>{BEDSIDE_STATUS[i.status].text}</span>
               </div>
               <p className="mt-0.5 text-xs text-enc-ink-2">
-                {i.at_minutes === null ? `Needed within ${i.within_minutes} min` : `Given at ${i.at_minutes} min; needed within ${i.within_minutes} min`}
+                {bedsideTiming(i)}
                 {i.why ? `. ${i.why}` : ""}
               </p>
               {i.doses && (
                 <ul className="mt-1 space-y-0.5">
                   {i.doses.map((d) => (
                     <li key={d.dose} className="text-xs text-enc-ink-2">
-                      Dose {d.dose}: {d.at_minutes === null ? "not given" : `given at ${d.at_minutes} min`} ({BEDSIDE_STATUS[d.status].text.toLowerCase()})
+                      Dose {d.dose}: {d.status === "not_needed" ? "not needed" : `${d.at_minutes === null ? "not given" : `given at ${d.at_minutes} min`} (${BEDSIDE_STATUS[d.status].text.toLowerCase()})`}
                     </li>
                   ))}
                 </ul>
@@ -138,7 +134,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
             <li key={`${r.id}-${n}`} className="rounded-lg bg-enc-warn-soft p-2.5">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-sm font-medium text-enc-ink">{r.label}</span>
-                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-warn">Dose refused</span>
+                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-warn">{r.reason === "unavailable" ? "Not given" : "Dose refused"}</span>
               </div>
               <p className="mt-0.5 text-xs text-enc-ink-2">
                 At {r.at_minutes} min. {r.said}
