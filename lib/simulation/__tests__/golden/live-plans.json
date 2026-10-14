@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
     "plan_sha": "02c37989ee684c94526a76b1f61deab1fb3f248cee2b0a0ac0aa0285d9bdec89",
-    "compiled_sha": "1539946ad01b7cc25c5160d195702691d7bd648348cd2fad8497bd31e90c53c0",
+    "compiled_sha": "10756a0ab8b120092c6ad20edc9602fb0e5bf3d15bdd7cbdf3790c38a371aed8",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -727,7 +727,7 @@
   },
   "32-year-old-man-brought-in-fitting": {
     "plan_sha": "cb2fdf6cad36a8c806cbfe53477b75b0ba43c03c51995be6fa2890bd70aa95c8",
-    "compiled_sha": "c6519492890edba71fcd49d56abbceda1a63834e838f9f63b4f261e16dd72b1b",
+    "compiled_sha": "d47026dabd87c0be937c3979d8317fce66eecaff4a8e232aa442ac63afc8acc6",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1060,7 +1060,7 @@
   },
   "36-year-old-man-with-sudden-breathlessness": {
     "plan_sha": "f8dd6e122bfe7abecda2420651a5dc5e1e23fcb88f725b786c06458eddd385e4",
-    "compiled_sha": "7ca5b3bdf2346bf010b8c385dea52d758239e77ce694431978d982e05abec421",
+    "compiled_sha": "24e2b6fb2be5916d943c8015bc6701736d54c23ae2bdb8c9d6eeac002ddd2791",
     "playthroughs": {
       "untreated": {
         "score": 0,

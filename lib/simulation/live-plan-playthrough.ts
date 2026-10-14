@@ -7,7 +7,7 @@ import type { SimulationCaseConfig } from "./case-schema";
 import type { ClinicalEvent } from "./encounter-events";
 import { EncounterEngine } from "./encounter-engine";
 import { replayStudentEvents } from "./replay";
-import { compileLivePlan, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { availableFlag, compileLivePlan, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
 
 const MIN = 60;
 
@@ -66,16 +66,23 @@ function play(config: SimulationCaseConfig, plan: LivePlan, events: ClinicalEven
     return result(config, plan, engine);
 }
 
-/** The scheduled events, and each conditionally required treatment a minute after it becomes required, then replayed as the server would. */
+/** An essential treatment that cannot go on a fixed schedule: it is required, or on the tray, only in some states. */
+const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when);
+
+/**
+ * The scheduled events, and each conditional essential a minute after it becomes required (or, if it is always
+ * required, a minute after it becomes available), then replayed as the server would.
+ */
 function playRescue(config: SimulationCaseConfig, plan: LivePlan, scheduled: ClinicalEvent[]): PlaythroughResult {
     const limit = plan.time_limit_minutes;
-    const conditional = plan.treatments.filter((t) => t.required_when);
+    const conditional = plan.treatments.filter(isConditional);
     const engine = new EncounterEngine(config);
     const pending = [...scheduled];
     const done = new Set<string>();
     for (let m = 1; m <= limit; m++) {
         for (const t of conditional) {
-            if (!done.has(t.id) && engine.state.flags[`required_${t.id}`] === true) {
+            const due = t.required_when ? engine.state.flags[requiredFlag(t.id)] === true : engine.state.flags[availableFlag(t.id)] === true;
+            if (!done.has(t.id) && due) {
                 done.add(t.id);
                 pending.push(given(t.id, m));
             }
@@ -94,7 +101,8 @@ function playRescue(config: SimulationCaseConfig, plan: LivePlan, scheduled: Cli
 }
 
 function result(config: SimulationCaseConfig, plan: LivePlan, engine: EncounterEngine): PlaythroughResult {
-    const s = scoreBedside(config, plan, engine.events);
+    // The playthroughs run to the time limit, so that is when the encounter ends.
+    const s = scoreBedside(config, plan, engine.events, plan.time_limit_minutes);
     const st = engine.state;
     return {
         score: s.score,
@@ -115,8 +123,8 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
 
     const correct: ClinicalEvent[] = [];
     let next = 1;
-    // A treatment required only in some states is given only once it is (the rescue path); on a fixed schedule it would be refused.
-    for (const t of essentials.filter((x) => !x.required_when)) {
+    // A treatment required or available only in some states is given only once it is; on a fixed schedule it would be refused.
+    for (const t of essentials.filter((x) => !isConditional(x))) {
         const times = correctTimes(t, next, limit);
         for (const at of times) correct.push(given(t.id, at));
         next = times[0] + 1;
@@ -126,12 +134,12 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
     const harmful = [...correct, ...plan.treatments.filter((t) => t.role === "harmful").map((t, i) => given(t.id, next + i))].sort((a, b) => a.timestamp - b.timestamp);
 
     const late: ClinicalEvent[] = essentials
-        .filter((t) => !t.required_when)
+        .filter((t) => !isConditional(t))
         .flatMap((t) => doseTimes(t, Math.min(limit - 1, (t.within_minutes ?? 5) + 2)).map((at) => given(t.id, Math.min(limit - 1, at))))
         .sort((a, b) => a.timestamp - b.timestamp);
 
     // With treatments required only in some states, correct care also gives each one as soon as it is required.
-    const conditional = plan.treatments.some((t) => t.required_when);
+    const conditional = plan.treatments.some(isConditional);
     return {
         untreated: play(config, plan, null),
         correct: conditional ? playRescue(config, plan, correct) : play(config, plan, correct),

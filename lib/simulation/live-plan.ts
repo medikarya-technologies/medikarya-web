@@ -316,7 +316,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
     const withFindings = (v: unknown) => (findingSets(v) ? { findings: findingSets(v) } : {});
 
     // State fields are kept only when present, so a plan that does not use them reads exactly as before.
-    const stateFields = (t: any, role: TreatmentRole): Partial<LiveTreatment> => {
+    const stateFields = (t: any): Partial<LiveTreatment> => {
         const out: Partial<LiveTreatment> = {};
         if (Array.isArray(t?.responses) && t.responses.length > 0) {
             out.responses = t.responses.map((r: any) => {
@@ -333,7 +333,8 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
             });
         }
         if (t?.available_when !== undefined) out.available_when = condition(t.available_when);
-        if (role === "essential" && t?.required_when !== undefined) out.required_when = condition(t.required_when);
+        // Kept on any role, so the check can refuse it on one that is not essential rather than it vanishing.
+        if (t?.required_when !== undefined) out.required_when = condition(t.required_when);
         if (t?.repeat_only_while && typeof t.repeat_only_while === "object") out.repeat_only_while = condition(t.repeat_only_while);
         if (text(t?.not_indicated_says)) out.not_indicated_says = text(t.not_indicated_says);
         return out;
@@ -382,7 +383,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
             says: text(t?.says),
             ...(text(t?.why) ? { why: text(t?.why) } : {}),
             ...repeatFields(t, role),
-            ...stateFields(t, role),
+            ...stateFields(t),
         };
     });
 
@@ -717,11 +718,17 @@ const findingFlag = (id: string) => `finding_${id}`;
 const reachedFlag = (stageId: string) => `reached_${stageId}`;
 /** Set once a treatment with available_when has become available. The tray shows it only then. */
 export const availableFlag = (treatmentId: string) => `available_${treatmentId}`;
-const requiredFlag = (treatmentId: string) => `required_${treatmentId}`;
+export const requiredFlag = (treatmentId: string) => `required_${treatmentId}`;
 /** A further required dose fell due while its condition held: it is required. */
 const indicatedFlag = (treatmentId: string, dose: number) => `indicated_${treatmentId}_dose${dose}`;
 /** A further required dose fell due while its condition did not hold (or the dose before was not needed): it is not required. */
 const notNeededFlag = (treatmentId: string, dose: number) => `notneeded_${treatmentId}_dose${dose}`;
+/** A further dose was required, but the patient then reached the end point without it: it stopped being needed. */
+const resolvedFlag = (treatmentId: string, dose: number) => `resolved_${treatmentId}_dose${dose}`;
+
+/** The ids of the record-only rules a plan adds, which the timeline does not show (the patient's state does not change). */
+const RECORD_ONLY_RULE = /^live_(available|required|indicated|notneeded|resolved)_/;
+export const isRecordOnlyRule = (ruleId: string) => RECORD_ONLY_RULE.test(ruleId);
 
 /** A treatment whose further doses depend on a condition on the patient, not just on the clock. */
 export const isStateGated = (t: LiveTreatment): t is LiveTreatment & { repeat_only_while: LiveCondition } =>
@@ -803,9 +810,13 @@ function stateRules(t: LiveTreatment): EventRule[] {
         for (let n = 2; n <= Math.max(1, t.doses_required ?? 1); n++) {
             const due: RuleCondition =
                 (t.min_interval_minutes ?? 0) > 0 ? { minutes_since_flag: { flag: doseFlag(t.id, n - 1), gte: t.min_interval_minutes as number } } : { flag: doseFlag(t.id, n - 1), is: true };
-            out.push(latch(`live_indicated_${t.id}_${n}`, { all: [due, gate, { flag: notNeededFlag(t.id, n), is: false }] }, indicatedFlag(t.id, n)));
+            // Indicated the first moment the dose is due and the condition holds: at the due point, or later if the
+            // patient worsens again after it was found not needed.
+            out.push(latch(`live_indicated_${t.id}_${n}`, { all: [due, gate] }, indicatedFlag(t.id, n)));
             const notNeeded: RuleCondition = { all: [due, { not: gate }, { flag: indicatedFlag(t.id, n), is: false }, { flag: doseFlag(t.id, n), is: false }] };
             out.push(latch(`live_notneeded_${t.id}_${n}`, n > 2 ? { any: [notNeeded, { flag: notNeededFlag(t.id, n - 1), is: true }] } : notNeeded, notNeededFlag(t.id, n)));
+            // Indicated, not given, and then the patient reached the end point anyway (another treatment did it).
+            out.push(latch(`live_resolved_${t.id}_${n}`, { all: [{ flag: indicatedFlag(t.id, n), is: true }, { not: gate }, { flag: doseFlag(t.id, n), is: false }] }, resolvedFlag(t.id, n)));
         }
     }
     return out;
@@ -933,7 +944,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         if (isRepeatable(t)) for (let n = 2; n <= (t.max_doses as number); n++) flags[doseFlag(t.id, n)] = false;
         if (t.available_when) flags[availableFlag(t.id)] = false;
         if (t.required_when) flags[requiredFlag(t.id)] = false;
-        if (isStateGated(t)) for (let n = 2; n <= Math.max(1, t.doses_required ?? 1); n++) Object.assign(flags, { [indicatedFlag(t.id, n)]: false, [notNeededFlag(t.id, n)]: false });
+        if (isStateGated(t)) for (let n = 2; n <= Math.max(1, t.doses_required ?? 1); n++) Object.assign(flags, { [indicatedFlag(t.id, n)]: false, [notNeededFlag(t.id, n)]: false, [resolvedFlag(t.id, n)]: false });
     }
     for (const f of plan.findings ?? []) flags[findingFlag(f.id)] = f.present;
     const referenced = stagesReferenced(planConditions(plan));
@@ -1143,7 +1154,13 @@ export const HARMFUL_TREATMENT_PENALTY = 15;
 /** How much of the final score is the bedside, in a live case; the rest is the ordinary scoring. */
 export const BEDSIDE_SHARE = 0.4;
 
-export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, events: readonly ClinicalEvent[]): BedsideScore {
+/**
+ * `endMinutes`: when the encounter ended. By default the last event in the log, which on the server is the student's
+ * submission; never later than the plan's time limit. Only a window still open at the end depends on it.
+ */
+export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, events: readonly ClinicalEvent[], endMinutes?: number): BedsideScore {
+    const lastEvent = events.reduce((m, e) => Math.max(m, e.timestamp), 0) / 60;
+    const end = Math.min(plan.time_limit_minutes, endMinutes ?? lastEvent);
     const firstGiven = new Map<string, number>();
     for (const e of events) {
         if (e.type === "INTERVENTION_GIVEN" && !firstGiven.has(e.action)) firstGiven.set(e.action, e.timestamp / 60);
@@ -1163,8 +1180,8 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
         .filter((t) => t.role === "essential")
         .map((t) => {
             const within = t.within_minutes ?? plan.critical_window_minutes;
-            if (t.required_when) return scoreWhenRequired(t, within, givenAt(t), final.flagSetAt, plan.time_limit_minutes, credit);
-            if (isRepeatable(t)) return scoreDoses(t, within, final, credit);
+            if (t.required_when) return scoreWhenRequired(t, within, givenAt(t), final.flagSetAt, end, credit);
+            if (isRepeatable(t)) return scoreDoses(t, within, final, end, credit);
             const at = givenAt(t);
             const item: BedsideItem = { id: t.id, label: t.label, status: at === null ? "missed" : at <= within ? "on_time" : "late", at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
             credit.set(t.id, item.status === "on_time" ? 1 : item.status === "late" ? 0.5 : 0);
@@ -1205,23 +1222,37 @@ const toMinutes = (seconds: number) => Math.round((seconds / 60) * 10) / 10;
  * window; a later required dose is on time within repeat_within_minutes of the dose before it. Each required dose is
  * worth an equal share: on time 1, late 0.5, missed 0.
  */
-function scoreDoses(t: LiveTreatment, within: number, final: PatientState, credit: Map<string, number>): BedsideItem {
+function scoreDoses(t: LiveTreatment, within: number, final: PatientState, end: number, credit: Map<string, number>): BedsideItem {
     const required = Math.max(1, t.doses_required ?? 1);
+    const gated = isStateGated(t);
+    const at = (flag: string) => (final.flagSetAt[flag] === undefined ? null : toMinutes(final.flagSetAt[flag]));
+    // After a state-gated dose becomes indicated, the student has as long as the plan allows after the interval.
+    const grace = t.repeat_within_minutes === undefined ? Infinity : t.repeat_within_minutes - (t.min_interval_minutes ?? 0);
     const doses: NonNullable<BedsideItem["doses"]> = [];
     let previous: number | null = null;
     for (let n = 1; n <= required; n++) {
-        const setAt = final.flagSetAt[doseFlag(t.id, n)];
-        const at = setAt === undefined ? null : toMinutes(setAt);
+        const given = at(doseFlag(t.id, n));
         let status: BedsideStatus;
-        // A state-gated dose that fell due while the patient did not need it is not required (a dose actually given
-        // was given while it was indicated, so it is scored like any other).
-        if (at === null) status = final.flags[notNeededFlag(t.id, n)] === true ? "not_needed" : "missed";
-        else if (n === 1) status = at <= within ? "on_time" : "late";
-        else status = t.repeat_within_minutes === undefined || previous === null || at - previous <= t.repeat_within_minutes ? "on_time" : "late";
-        doses.push({ dose: n, at_minutes: at, status });
-        previous = at;
+        if (n === 1) status = given === null ? "missed" : given <= within ? "on_time" : "late";
+        else if (!gated) {
+            status = given === null ? "missed" : t.repeat_within_minutes === undefined || previous === null || given - previous <= t.repeat_within_minutes ? "on_time" : "late";
+        } else {
+            // A state-gated further dose: required from the moment it was indicated, and only while the patient needed it.
+            const indicated = at(indicatedFlag(t.id, n));
+            const deadline = indicated === null ? null : indicated + grace;
+            if (given !== null) {
+                const inTime = (previous !== null && t.repeat_within_minutes !== undefined && given - previous <= t.repeat_within_minutes) || (deadline !== null && given <= deadline) || t.repeat_within_minutes === undefined;
+                status = inTime ? "on_time" : "late";
+            } else if (indicated === null) status = final.flags[notNeededFlag(t.id, n)] === true ? "not_needed" : "not_due";
+            else {
+                const resolved = at(resolvedFlag(t.id, n));
+                status = resolved !== null && resolved <= (deadline as number) ? "not_needed" : (deadline as number) > end ? "not_due" : "missed";
+            }
+        }
+        doses.push({ dose: n, at_minutes: given, status });
+        previous = given;
     }
-    const needed = doses.filter((d) => d.status !== "not_needed");
+    const needed = doses.filter((d) => d.status !== "not_needed" && d.status !== "not_due");
     credit.set(t.id, needed.reduce((sum, d) => sum + (d.status === "on_time" ? 1 : d.status === "late" ? 0.5 : 0), 0) / needed.length);
     const status = needed.every((d) => d.status === "on_time") ? "on_time" : needed.every((d) => d.status === "missed") ? "missed" : "late";
     return { id: t.id, label: t.label, status, at_minutes: doses[0].at_minutes, within_minutes: within, ...(t.why ? { why: t.why } : {}), ...(required > 1 ? { doses } : {}) };
@@ -1232,12 +1263,12 @@ function scoreDoses(t: LiveTreatment, within: number, final: PatientState, credi
  * time if given within its window of the moment it became required (or before, once it was available), late after;
  * not given with its window still open when the encounter ended: not_due.
  */
-function scoreWhenRequired(t: LiveTreatment, within: number, at: number | null, flagSetAt: Readonly<Record<string, number>>, limit: number, credit: Map<string, number>): BedsideItem {
+function scoreWhenRequired(t: LiveTreatment, within: number, at: number | null, flagSetAt: Readonly<Record<string, number>>, end: number, credit: Map<string, number>): BedsideItem {
     const setAt = flagSetAt[requiredFlag(t.id)];
     const base = { id: t.id, label: t.label, at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
     if (setAt === undefined) return { ...base, status: "not_needed" };
     const from = toMinutes(setAt);
-    if (at === null && from + within > limit) return { ...base, status: "not_due", required_at_minutes: from };
+    if (at === null && from + within > end) return { ...base, status: "not_due", required_at_minutes: from };
     const status: BedsideStatus = at === null ? "missed" : at <= from + within ? "on_time" : "late";
     credit.set(t.id, status === "on_time" ? 1 : status === "late" ? 0.5 : 0);
     return { ...base, status, required_at_minutes: from };

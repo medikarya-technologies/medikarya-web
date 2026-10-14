@@ -27,12 +27,13 @@ function run(id: string, steps: Array<[string, number]>) {
     const c = compileLivePlan(base, plan);
     const engine = new EncounterEngine(c);
     const results = steps.map(([a, m]) => engine.giveIntervention(a, m * MIN));
-    engine.advanceTo((plan.time_limit_minutes - 1) * MIN);
-    const score = scoreBedside(c, plan, engine.events);
+    const end = plan.time_limit_minutes - 1;
+    engine.advanceTo(end * MIN);
+    const score = scoreBedside(c, plan, engine.events, end);
     // The server's replay must score exactly the same.
     const replayed = replayStudentEvents(c, engine.events.filter((e) => e.type === "INTERVENTION_GIVEN"));
     replayed.advanceTo((plan.time_limit_minutes - 1) * MIN);
-    assert.deepEqual(scoreBedside(c, plan, replayed.events), score, "browser and server must agree");
+    assert.deepEqual(scoreBedside(c, plan, replayed.events, end), score, "browser and server must agree");
     return { engine, results, score, plan };
 }
 const item = (s: ReturnType<typeof scoreBedside>, id: string) => s.items.find((i) => i.id === id)!;

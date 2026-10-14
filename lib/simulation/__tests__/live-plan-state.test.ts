@@ -13,6 +13,7 @@ import { replayStudentEvents } from "../replay";
 import { validateSimulationCase } from "../validate-config";
 import {
     availableFlag,
+    isRecordOnlyRule,
     checkLivePlan,
     compileCondition,
     compileLivePlan,
@@ -107,7 +108,8 @@ function run(p: LivePlan, steps: Array<[string, number]>, until = p.time_limit_m
     const engine = new EncounterEngine(c);
     const results = steps.map(([action, m]) => engine.giveIntervention(action, m * MIN));
     engine.advanceTo(until * MIN);
-    return { c, engine, results, score: scoreBedside(c, p, engine.events) };
+    // The encounter ends at `until`, as a submission then would.
+    return { c, engine, results, score: scoreBedside(c, p, engine.events, until) };
 }
 const item = (s: ReturnType<typeof scoreBedside>, id: string) => s.items.find((i) => i.id === id)!;
 
@@ -359,7 +361,59 @@ describe("state: the server's replay scores exactly what the browser saw", () =>
             const { c, engine, score } = run(p, steps);
             const replayed = replayStudentEvents(c, engine.events.filter((e) => e.type === "INTERVENTION_GIVEN"));
             replayed.advanceTo((p.time_limit_minutes - 1) * MIN);
-            assert.deepEqual(scoreBedside(c, p, replayed.events), score);
+            assert.deepEqual(scoreBedside(c, p, replayed.events, p.time_limit_minutes - 1), score);
         });
     }
 });
+
+// ── Regressions from the Phase 2 review ─────────────────────────────────────
+
+describe("state: review regressions", () => {
+    it("a further dose that became required, then stopped being needed because the patient reached the end point another way, is not needed (not missed)", () => {
+        // Still fitting when dose 2 falls due at 7; the second-line drug stops the seizure at 8, inside dose 2's window (to 12).
+        const { score } = run(fit(), [["iv_access", 1], ["benzo_iv", 2], ["second_line_iv", 8]]);
+        assert.deepEqual(item(score, "benzo_iv").doses?.map((d) => d.status), ["on_time", "not_needed"]);
+        assert.equal(item(score, "benzo_iv").status, "on_time");
+    });
+
+    it("a further dose found not needed becomes required again if the patient worsens again", () => {
+        // The seizure stops at 3 (no IV access, so not stabilised and the stages go on); it comes back at the 16-minute step.
+        const recurs = () => fit({ stages: (fitRaw().stages as Array<Record<string, unknown>>).map((st) => (st.id === "tiring" ? { ...st, findings: { fitting: true } } : st)) });
+        const missed = run(recurs(), [["benzo_iv", 2], ["second_line_iv", 3]]);
+        assert.equal(missed.engine.state.flags.finding_fitting, true);
+        assert.deepEqual(item(missed.score, "benzo_iv").doses?.map((d) => d.status), ["on_time", "missed"]);
+        const given = run(recurs(), [["benzo_iv", 2], ["second_line_iv", 3], ["benzo_iv", 17]]);
+        assert.deepEqual(item(given.score, "benzo_iv").doses?.map((d) => d.status), ["on_time", "on_time"], "given within its window of when it was needed again");
+    });
+
+    it("an open window is judged against when the encounter actually ended (the submission), not the time limit", () => {
+        const steps: Array<[string, number]> = [["iv_access", 13], ["fluid_bolus_20ml_kg", 13]];
+        assert.equal(item(run(shock(), steps, 13).score, "rescue_bolus").status, "not_due", "needed at 12, window to 15, ended at 13");
+        assert.equal(item(run(shock(), steps, 19).score, "rescue_bolus").status, "missed");
+        // With no end given, the last event in the log is taken as the end (the server's log ends at the submission).
+        const c = compileLivePlan(base(), shock());
+        const e = new EncounterEngine(c);
+        for (const [a, m] of steps) e.giveIntervention(a, m * MIN);
+        e.dispatch({ type: "DIAGNOSIS_SUBMITTED", timestamp: 19 * MIN, primary: "Hypovolaemic shock", reasoning: "" });
+        assert.equal(item(scoreBedside(c, shock(), e.events), "rescue_bolus").status, "missed");
+    });
+
+    it("the playthroughs give an essential that is on the tray only in some states once it is there, instead of on a schedule that would be refused", () => {
+        const raw = shockRaw();
+        (raw.treatments as Array<Record<string, unknown>>).push({ id: "warm_fluids", label: "Warmed fluids", detail: "Fluid warmer on the line", group: "circulation", role: "essential", within_minutes: 8, available_when: { given: "iv_access" }, says: "The fluid warmer is on the line." });
+        const p = playthroughs(base(), normaliseLivePlan(raw, "ai"));
+        assert.deepEqual(p.correct.items.find(([id]) => id === "warm_fluids"), ["warm_fluids", "on_time"]);
+    });
+
+    it("required_when on a treatment that is not essential is refused by the check, not silently dropped", () => {
+        const raw = shockRaw();
+        (raw.treatments as Array<Record<string, unknown>>).push({ id: "extra_bolus", label: "Extra bolus", detail: "10 mL/kg", group: "circulation", role: "supportive", required_when: RESCUE_WHEN, available_when: RESCUE_WHEN, says: "Another bolus is running." });
+        assert.match(errorsOf(normaliseLivePlan(raw, "ai")), /required_when is for essential treatments/);
+    });
+
+    it("the timeline hides only a live plan's record-only rules, never an authored transition", () => {
+        for (const id of ["live_available_x", "live_required_x", "live_indicated_x_2", "live_notneeded_x_2", "live_resolved_x_2"]) assert.equal(isRecordOnlyRule(id), true, id);
+        for (const id of ["live_stabilised", "live_recovery", "live_stage_shock", "vt_recurrence"]) assert.equal(isRecordOnlyRule(id), false, id);
+    });
+});
+

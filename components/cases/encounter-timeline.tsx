@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { formatClock, type ClinicalEvent } from "@/lib/simulation/encounter-events"
 import { getIntervention } from "@/lib/simulation/intervention-catalog"
 import { ASSIST_LABELS } from "@/lib/simulation/assist-policy"
+import { isRecordOnlyRule } from "@/lib/simulation/live-plan"
 
 interface Row {
   icon: typeof Activity
@@ -78,8 +79,8 @@ interface EncounterTimelineProps {
 
 export function EncounterTimeline({ events, examLabels = {}, className }: EncounterTimelineProps) {
   const labels = new Map(Object.entries(examLabels))
-  // A rule that only records something (a treatment becoming needed) leaves the patient's state as it was: nothing to show.
-  events = events.filter((e) => !(e.type === "STATE_TRANSITION" && e.from === e.to))
+  // A live plan's record-only rules (a treatment becoming needed) leave the patient's state as it was: nothing to show.
+  events = events.filter((e) => !(e.type === "STATE_TRANSITION" && isRecordOnlyRule(e.trigger)))
   if (events.length === 0) {
     return <p className={cn("text-sm text-slate-400", className)}>No events were recorded.</p>
   }

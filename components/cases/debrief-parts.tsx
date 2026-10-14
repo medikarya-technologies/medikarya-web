@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { formatClock } from "@/lib/simulation/encounter-events"
 import { EncounterTimeline } from "./encounter-timeline"
+import type { BedsideScore, BedsideStatus } from "@/lib/simulation/live-plan"
 
 interface AssistanceLine {
   label: string
@@ -63,36 +64,16 @@ export function AssistanceAudit({
 }
 
 /** What a live case's bedside scored (lib/simulation/live-plan.ts, scoreBedside), as the server returned it. */
-interface Bedside {
-  score: number
-  share: number
-  consultationScore: number
-  items: Array<{
-    id: string
-    label: string
-    status: BedsideStatus
-    at_minutes: number | null
-    within_minutes: number
-    why?: string
-    doses?: Array<{ dose: number; at_minutes: number | null; status: BedsideStatus }>
-    /** Only sometimes required: when this patient came to need it. */
-    required_at_minutes?: number
-  }>
-  harmful: Array<{ id: string; label: string; at_minutes: number; why?: string }>
-  /** Further doses the engine refused: they had no effect and did not count. */
-  refused?: Array<{ id: string; label: string; at_minutes: number; reason?: string; said: string }>
-  outcome: { stabilised: boolean; recovered: boolean; worst_stage: string | null; path?: string }
-}
+type Bedside = BedsideScore & { share: number; consultationScore: number }
 
-type BedsideStatus = "on_time" | "late" | "missed" | "not_needed" | "not_due"
-
-const BEDSIDE_STATUS = {
+// Every status the engine can return has to be here: a missing one is a type error, not a crash in the debrief.
+const BEDSIDE_STATUS: Record<BedsideStatus, { text: string; tone: string }> = {
   on_time: { text: "In time", tone: "bg-enc-ok-soft text-enc-ok" },
   late: { text: "Late", tone: "bg-enc-warn-soft text-enc-warn" },
   missed: { text: "Not given", tone: "bg-enc-crit-soft text-enc-crit" },
   not_needed: { text: "Not needed", tone: "bg-enc-sheet text-enc-ink-3" },
   not_due: { text: "Still in time", tone: "bg-enc-sheet text-enc-ink-3" },
-} as const
+}
 
 /** The line under a bedside item: when it was needed and when it was given. */
 function bedsideTiming(i: Bedside["items"][number]): string {

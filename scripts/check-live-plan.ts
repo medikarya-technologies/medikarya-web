@@ -44,8 +44,8 @@ for (let m = 1; m <= limit; m++) { a.advanceTo(m * MIN); }
 console.log(`\nUNTREATED to ${limit} min -> ${snap(a)}\n${timeline(a)}`);
 
 // 2. every essential on time, in plan order, a minute apart from minute 1 (or by its within_minutes)
-// A treatment required only in some states (required_when) is left to the rescue playthrough at the end.
-const essentials = plan.treatments.filter((t: any) => t.role === "essential" && !t.required_when);
+// A treatment required or available only in some states is left to the shared playthroughs at the end.
+const essentials = plan.treatments.filter((t: any) => t.role === "essential" && !t.required_when && !t.available_when);
 const events: any[] = []; let t = 1;
 // A treatment that needs several doses gets each further dose as soon as its minimum interval allows.
 const doses = (tr: any, first: number) => Array.from({ length: tr.doses_required ?? 1 }, (_, n) => first + n * Math.max(1, tr.min_interval_minutes ?? 1));
