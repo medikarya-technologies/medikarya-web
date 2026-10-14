@@ -66,6 +66,9 @@ Treatment fields:
 - required_when: a condition; an essential treatment is required only once it has held, and within_minutes counts from
   then. Needs available_when. Never in stabilised_by; put it in an or_stabilised_by path.
 - infusion: { over_minutes, while? }: the effect arrives spread over over_minutes, only while the condition holds.
+  Its total and duration are fixed: the student cannot stop it, step it down or change its rate, and running it on
+  does no harm. Do not use it for fluid that has to be adjusted by response and stopped on reassessment (dengue,
+  DKA, septic shock fluids); say in basis that the case needs that and cannot be represented yet.
 - requires: [{ when, says }]: what must be true before it can be given, in order, for example IV access for an IV drug
   ({"given": "iv_access"}, says "there is no IV access yet.") or a required sequence of treatments.`;
 

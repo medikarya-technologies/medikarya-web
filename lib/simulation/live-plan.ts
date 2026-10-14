@@ -174,6 +174,11 @@ export interface LiveTreatment {
      * Given over minutes rather than all at once: `effect` is spread evenly, minute by minute, over `over_minutes`,
      * each minute's share acting only while `while` holds (an infusion titrated to an end point). It stops acting once
      * the patient is stabilised; the recovery takes over from there.
+     *
+     * LIMITATION: the total effect and the duration are fixed by the plan. The student cannot stop the infusion, step it
+     * down or change its rate, and continuing it does no harm in the engine (no fluid overload, no rebound when it
+     * ends). Cases whose teaching is fluid adjusted by response and stopped on reassessment (dengue, DKA, septic shock)
+     * are not adequately represented by this and must not be published on it.
      */
     infusion?: { over_minutes: number; while?: LiveCondition };
     /**
@@ -292,6 +297,15 @@ export interface ReleaseBlocker {
     resolution?: string;
 }
 
+/**
+ * Whether students get a plan's live version: switched on (approved) and nothing open blocking its release. Takes the
+ * two fields alone, so the library's list (which reads only these columns) uses the same rule as the case itself.
+ */
+export function liveForStudents(status: unknown, blockers: unknown): boolean {
+    const open = Array.isArray(blockers) && blockers.some((b) => !b || typeof b !== "object" || !(b as ReleaseBlocker).cleared_at);
+    return status === "approved" && !open;
+}
+
 /** The blockers still open on a plan. */
 export const openReleaseBlockers = (plan: unknown): ReleaseBlocker[] => (isLivePlan(plan) ? (plan.release_blockers ?? []).filter((b) => !b.cleared_at) : []);
 
@@ -312,7 +326,7 @@ export function isLivePlan(v: unknown): v is LivePlan {
  * as soon as it is proposed.
  */
 export function livePlanApplies(plan: unknown, viewerIsAdmin: boolean): plan is LivePlan {
-    return isLivePlan(plan) && (viewerIsAdmin || (plan.status === "approved" && openReleaseBlockers(plan).length === 0));
+    return isLivePlan(plan) && (viewerIsAdmin || liveForStudents(plan.status, plan.release_blockers));
 }
 
 // ── Reading a plan ──────────────────────────────────────────────────────────

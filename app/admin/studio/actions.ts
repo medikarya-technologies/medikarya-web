@@ -476,6 +476,8 @@ export async function publishCase(caseId: string, rewardEmail: string | null): P
         }
       }
       if (!signOff) return { ok: false, error: "The live plan has not been approved. Remove it (Admin → Live cases) to publish this as a static case." }
+      const blockers = openReleaseBlockers(plan)
+      if (blockers.length > 0) return { ok: false, error: "The live plan has open release blockers. Settle them before publishing.", details: blockers.map((b) => b.text) }
       caseJson = { ...caseJson, live_plan: { ...plan, sign_off: signOff, status: "approved" } }
     }
 

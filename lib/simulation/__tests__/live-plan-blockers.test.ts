@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 
 import type { SimulationCaseConfig } from "../case-schema";
 import { upgradeLegacyCase } from "../legacy-adapter";
-import { carryReleaseBlockers, isLivePlanCase, livePlanApplies, openReleaseBlockers, withLivePlan, type LivePlan } from "../live-plan";
+import fs from "fs";
+import path from "path";
+import { carryReleaseBlockers, isLivePlanCase, liveForStudents, livePlanApplies, openReleaseBlockers, withLivePlan, type LivePlan } from "../live-plan";
 import { goldenFixtureCase, goldenFixturePlan } from "./live-plan-golden-fixture";
 
 const plan = (over: Partial<LivePlan> = {}): LivePlan => ({ ...(JSON.parse(JSON.stringify(goldenFixturePlan)) as LivePlan), ...over });
@@ -38,5 +40,30 @@ describe("release blockers", () => {
         const next = carryReleaseBlockers(plan(), plan({ release_blockers: [open, cleared] }));
         assert.deepEqual(next.release_blockers, [open, cleared]);
         assert.equal("release_blockers" in carryReleaseBlockers(plan(), plan()), false);
+    });
+});
+
+describe("release blockers: the library's list uses the same rule as the case", () => {
+    it("a switched-on plan with an open blocker is not listed as live; cleared or none, it is", () => {
+        assert.equal(liveForStudents("approved", [open]), false);
+        assert.equal(liveForStudents("approved", [cleared]), true);
+        assert.equal(liveForStudents("approved", null), true);
+        assert.equal(liveForStudents("proposed", null), false);
+        assert.equal(liveForStudents("approved", [{ id: "x" }]), false, "a blocker that cannot be read counts as open");
+    });
+
+    it("every real plan on this machine: none reaches students while a blocker is open", () => {
+        const dir = path.join(process.cwd(), "data", "cases");
+        const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith(".json")) : [];
+        for (const f of files) {
+            const c = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+            if (!c.live_plan) continue;
+            if (openReleaseBlockers(c.live_plan).length === 0) continue;
+            for (const status of ["proposed", "approved"] as const) {
+                const asStored = { ...c.live_plan, status };
+                assert.equal(livePlanApplies(asStored, false), false, `${c.id} (${status}) must not reach students`);
+                assert.equal(liveForStudents(asStored.status, asStored.release_blockers), false);
+            }
+        }
     });
 });

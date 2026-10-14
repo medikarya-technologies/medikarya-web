@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkDraft } from '../lib/studio/validate';
 import { CATALOG_TEST_IDS } from '../lib/clinical-catalog';
 import { upgradeReport } from '../lib/simulation/upgrade-report';
+import { carryReleaseBlockers, isLivePlan, openReleaseBlockers } from '../lib/simulation/live-plan';
 
 // Adds one case the admin wrote (not from the Case Studio, so no reviewer queue) straight to the library.
 //
@@ -47,12 +48,18 @@ async function main() {
   if (!url || !key) throw new Error('Missing Supabase credentials in .env.local');
   const db = createClient(url, key);
 
-  const { data: existing, error: readError } = await db.from('cases').select('id, status, kind:case_json->source->>kind').eq('id', caseJson.id).maybeSingle();
+  const { data: existing, error: readError } = await db.from('cases').select('id, status, kind:case_json->source->>kind, live_plan:case_json->live_plan').eq('id', caseJson.id).maybeSingle();
   if (readError) throw readError;
   if (existing && existing.kind !== 'admin') throw new Error(`"${caseJson.id}" is already a different case (${existing.status}). Choose another id.`);
 
   const now = new Date().toISOString();
-  const full = { ...caseJson, status, source: { kind: 'admin', added_at: caseJson.source?.added_at ?? now, updated_at: now } };
+  // Release blockers belong to the case: a file with a plan keeps the stored plan's blockers, and a file without one
+  // cannot drop a plan that still has open blockers (the live plan is kept as it is).
+  const stored = existing?.live_plan;
+  let livePlan = caseJson.live_plan;
+  if (isLivePlan(livePlan)) livePlan = carryReleaseBlockers(livePlan, stored);
+  else if (openReleaseBlockers(stored).length > 0) livePlan = stored;
+  const full = { ...caseJson, ...(livePlan ? { live_plan: livePlan } : {}), status, source: { kind: 'admin', added_at: caseJson.source?.added_at ?? now, updated_at: now } };
   const { error } = await db.from('cases').upsert(
     {
       id: full.id,
