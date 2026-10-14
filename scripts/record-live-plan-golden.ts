@@ -8,14 +8,14 @@ import path from "path";
 const R = "../lib/simulation/";
 const { upgradeLegacyCase } = require(R + "legacy-adapter");
 const { compileLivePlan } = require(R + "live-plan");
-const { playthroughs, canonicalJson, sha256 } = require(R + "live-plan-playthrough");
+const { playthroughs, canonicalJson, sha256, planSha, compiledSha } = require(R + "live-plan-playthrough");
 const { goldenFixtureCase, goldenFixturePlan } = require(R + "__tests__/live-plan-golden-fixture");
 
 const OUT = path.resolve(__dirname, "../lib/simulation/__tests__/golden");
 const record = (caseJson: any, plan: any) => {
     const base = upgradeLegacyCase(caseJson);
     const compiled = compileLivePlan(base, plan);
-    return { plan_sha: sha256(canonicalJson(plan)), compiled_sha: sha256(canonicalJson(compiled)), playthroughs: playthroughs(base, plan), compiled };
+    return { plan_sha: planSha(plan), compiled_sha: compiledSha(compiled), playthroughs: playthroughs(base, plan), compiled };
 };
 
 const cases: Record<string, unknown> = {};

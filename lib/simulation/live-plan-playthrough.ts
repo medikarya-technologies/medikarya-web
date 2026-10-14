@@ -44,6 +44,24 @@ export function canonicalJson(v: unknown): string {
 export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 /**
+ * What identifies a plan for the golden tests: everything that changes how it runs. Release blockers are records
+ * about the case, not part of the physiology, so recording or clearing one does not make the golden test skip it.
+ */
+export function planSha(plan: unknown): string {
+    const { release_blockers: _blockers, ...rest } = plan as Record<string, unknown>;
+    return sha256(canonicalJson(rest));
+}
+
+/** The same for a compiled case, which carries its plan along. */
+export function compiledSha(compiled: unknown): string {
+    const c = compiled as Record<string, unknown>;
+    const plan = c.live_plan as Record<string, unknown> | undefined;
+    if (!plan || !("release_blockers" in plan)) return sha256(canonicalJson(c));
+    const { release_blockers: _blockers, ...rest } = plan;
+    return sha256(canonicalJson({ ...c, live_plan: rest }));
+}
+
+/**
  * The minutes at which a student who does everything right gives an essential treatment: from minute 1, a minute
  * apart, never after its window. A treatment that needs several doses gets each further dose as soon as its minimum
  * interval allows.
