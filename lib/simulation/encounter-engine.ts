@@ -187,6 +187,37 @@ export class EncounterEngine {
         return { appended, consequence, safetyPenalty };
     }
 
+    /**
+     * Wait: move the clock forward by up to `seconds` from `from`, firing whatever becomes due on the way, and stop
+     * early at the first nurse alert so a wait never sleeps through a deterioration. Logged as TIME_SKIPPED at the
+     * moment the wait ended, so the server's replay reaches the same place.
+     */
+    skipTime(from: number, seconds: number): { appended: ClinicalEvent[]; to: number } {
+        const start = Math.min(Math.max(from, this.lastTimestamp), this.limitSeconds);
+        const target = Math.min(start + Math.max(0, seconds), this.limitSeconds);
+        const appended: ClinicalEvent[] = [];
+        let to = target;
+        for (let guard = 0; guard < 256; guard++) {
+            const transition = this.patient.due(target, { inclusive: true });
+            if (!transition) break;
+            for (const event of transitionEvents(transition)) {
+                this.appendRaw(event);
+                appended.push(event);
+            }
+            if (transition.narrative) {
+                to = transition.at;
+                break;
+            }
+        }
+        // Anything else due at the same instant as the alert happens with it.
+        appended.push(...this.fireDue(to, true));
+        const event: ClinicalEvent = { type: "TIME_SKIPPED", timestamp: to, from: start, minutes: Math.round((seconds / 60) * 10) / 10 };
+        this.appendRaw(event);
+        appended.push(event);
+        this.commit();
+        return { appended, to };
+    }
+
     // ── Assists ─────────────────────────────────────────────────────────────
 
     /**

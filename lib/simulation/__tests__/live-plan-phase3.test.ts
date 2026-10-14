@@ -239,3 +239,52 @@ describe("reassessment: explicit findings, and a further dose only after a fresh
         assert.deepEqual(scoreBedside(c, p, replayed.events, 24), score);
     });
 });
+
+// ── Fast-forward (waiting) ──────────────────────────────────────────────────
+
+describe("fast-forward: waiting moves the clock, stops at a nurse alert, and replays the same on the server", () => {
+    const plan = () => goldenFixturePlan as unknown as LivePlan;
+    const fresh = () => {
+        const c = compileLivePlan(base(), plan());
+        return { c, e: new EncounterEngine(c) };
+    };
+
+    it("stops early at the first nurse alert, so a wait never sleeps through a deterioration", () => {
+        const { e } = fresh();
+        const { to } = e.skipTime(1 * MIN, 10 * MIN);
+        assert.equal(to, 6 * MIN, "compensated shock is announced at 6 min");
+        const last = e.events.at(-1)!;
+        assert.deepEqual(last, { type: "TIME_SKIPPED", timestamp: 6 * MIN, from: 1 * MIN, minutes: 10 });
+        assert.equal(e.state.state, "compensated_shock");
+    });
+
+    it("waits the whole time when nothing happens, and never past the time limit", () => {
+        const { e } = fresh();
+        e.giveIntervention("iv_access", 1 * MIN);
+        e.giveIntervention("fluid_bolus_20ml_kg", 2 * MIN);
+        // Stabilised at 2, recovery announced at 6 (an alert), then nothing: the next wait runs its full length.
+        assert.equal(e.skipTime(2 * MIN, 10 * MIN).to, 6 * MIN);
+        assert.equal(e.skipTime(6 * MIN, 5 * MIN).to, 11 * MIN);
+        assert.equal(e.skipTime(11 * MIN, 30 * MIN).to, 20 * MIN, "capped at the 20-minute limit");
+    });
+
+    it("the server's replay of a log with waits reaches the same patient and the same score", () => {
+        const { c, e } = fresh();
+        e.skipTime(0, 3 * MIN);
+        e.giveIntervention("iv_access", 3 * MIN);
+        e.skipTime(3 * MIN, 5 * MIN);
+        e.giveIntervention("fluid_bolus_20ml_kg", e.lastTimestamp);
+        e.skipTime(e.lastTimestamp, 5 * MIN);
+        const studentOnly = e.events.filter((x) => x.type === "INTERVENTION_GIVEN" || x.type === "TIME_SKIPPED");
+        const replayed = replayStudentEvents(c, studentOnly);
+        assert.deepEqual(replayed.state.snapshot(), e.state.snapshot());
+        assert.deepEqual(scoreBedside(c, plan(), replayed.events), scoreBedside(c, plan(), e.events));
+        assert.equal(scoreBedside(c, plan(), e.events).items.find((i) => i.id === "fluid_bolus_20ml_kg")!.at_minutes, 6, "the bolus went in when the wait ended, at 6 min");
+    });
+
+    it("a malformed wait from the browser is dropped, not trusted", () => {
+        const { c } = fresh();
+        const bad = [{ type: "TIME_SKIPPED", timestamp: 60, from: 120, minutes: 5 }, { type: "TIME_SKIPPED", timestamp: 60, from: 0, minutes: -1 }];
+        assert.equal(replayStudentEvents(c, bad).events.length, 0);
+    });
+});

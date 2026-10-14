@@ -9,7 +9,7 @@
 // happens (and why) is shown immediately, in the tray.
 
 import { useMemo, useState } from "react"
-import { AlertTriangle, CheckCircle2, Info, Siren, Syringe } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Clock, Info, Siren, Syringe } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -35,6 +35,16 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
   const { config, events, actions, isExpired, patient, now } = useClinicalEvents()
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [cooling, setCooling] = useState<ReadonlySet<string>>(new Set())
+  const [waited, setWaited] = useState<string | null>(null)
+
+  // Waiting moves the clock on; a nurse alert ends the wait early, so a deterioration is never skipped past.
+  const waitFor = (minutes: number) => {
+    const from = now
+    const to = actions.wait(minutes)
+    const early = to - from < minutes * 60 - 1
+    setWaited(`Waited until ${formatClock(to)}${early ? ": stopped early, the nurse is calling." : "."}`)
+    setOutcome(null)
+  }
 
   const tray = useMemo(() => interventionsForCase(config), [config])
   const recent = useMemo(
@@ -86,6 +96,18 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
             Actions take effect immediately. Read what happens — every drug has a context.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-enc-line-strong px-4 py-2 sm:px-6">
+          <span className="flex items-center gap-1 text-[12px] font-medium text-enc-ink-2">
+            <Clock className="h-3.5 w-3.5" /> Wait and watch
+          </span>
+          {[1, 5].map((m) => (
+            <Button key={m} type="button" size="sm" variant="outline" disabled={isExpired} onClick={() => waitFor(m)} className="h-7 px-2.5 text-[11px]">
+              {m} min
+            </Button>
+          ))}
+          {waited && <span className="text-[12px] text-enc-ink-2">{waited}</span>}
+        </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto" data-lenis-prevent style={{ scrollbarWidth: "thin" }}>
           {/* Consequence feedback */}
