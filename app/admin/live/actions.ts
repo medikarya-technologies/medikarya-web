@@ -15,7 +15,7 @@ import { isAdmin } from "@/lib/plans/access"
 import { createReviewLink } from "@/lib/review/links"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { checkLivePlan, isLivePlan, measuredOnArrival, type LivePlan } from "@/lib/simulation/live-plan"
+import { carryReleaseBlockers, checkLivePlan, isLivePlan, measuredOnArrival, openReleaseBlockers, type LivePlan } from "@/lib/simulation/live-plan"
 import { draftLivePlan } from "@/lib/studio/live-draft"
 
 export type LiveResult = { ok: true; message: string; link?: string } | { ok: false; error: string; details?: string[] }
@@ -44,8 +44,9 @@ async function load(caseId: string): Promise<Record<string, any> | null> {
 }
 
 async function savePlan(caseId: string, caseJson: Record<string, any>, plan: LivePlan | null): Promise<void> {
-  const { live_plan: _old, ...rest } = caseJson
-  const next = plan ? { ...rest, live_plan: plan } : rest
+  const { live_plan: old, ...rest } = caseJson
+  // Release blockers belong to the case: a changed plan keeps them.
+  const next = plan ? { ...rest, live_plan: carryReleaseBlockers(plan, old) } : rest
   const { error } = await supabaseServer.from("cases").update({ case_json: next, updated_at: new Date().toISOString() }).eq("id", caseId)
   if (error) throw error
 }
@@ -134,6 +135,8 @@ export async function setLiveAction(caseId: string, on: boolean): Promise<LiveRe
       if (!isSimulationCase(base)) return { ok: false, error: "This case cannot run at the bedside, so it cannot be made live." }
       const check = checkLivePlan(plan, measuredOnArrival(base))
       if (check.errors.length > 0) return { ok: false, error: "The plan does not pass the check. Fix it first.", details: check.errors }
+      const blockers = openReleaseBlockers(plan)
+      if (blockers.length > 0) return { ok: false, error: "Something still blocks this case's release. Settle it first.", details: blockers.map((b) => b.text) }
       if (plan.sign_off?.decision !== "approved") next = { ...next, team_checked_at: new Date().toISOString() }
     }
     await savePlan(caseId, caseJson, next)

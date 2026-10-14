@@ -233,15 +233,47 @@ export interface LivePlan {
     sign_off?: LiveSignOff;
     /** When the MediKarya team switched it on without a clinician's sign-off. A changed plan has to be switched on again. */
     team_checked_at?: string;
+    /**
+     * Things that must be settled before students may get this case live (a clinical question, a missing scenario).
+     * While any is open the plan cannot be switched on, and students never get it live even if it is marked approved.
+     * They belong to the case, not the draft: a changed plan keeps them (carryReleaseBlockers).
+     */
+    release_blockers?: ReleaseBlocker[];
+}
+
+export interface ReleaseBlocker {
+    id: string;
+    /** What has to be done, and who has to do it. */
+    text: string;
+    raised_at: string;
+    /** Set when it is settled; the blocker is kept as a record. */
+    cleared_at?: string;
+    cleared_by?: string;
+    /** How it was settled. */
+    resolution?: string;
+}
+
+/** The blockers still open on a plan. */
+export const openReleaseBlockers = (plan: Pick<LivePlan, "release_blockers"> | null | undefined): ReleaseBlocker[] => (plan?.release_blockers ?? []).filter((b) => !b.cleared_at);
+
+/** A new or changed plan keeps the case's release blockers: they are cleared on purpose, never by redrafting. */
+export function carryReleaseBlockers(next: LivePlan, previous: unknown): LivePlan {
+    const kept = isLivePlan(previous) ? (previous.release_blockers ?? []) : [];
+    const own = next.release_blockers ?? [];
+    const merged = [...kept, ...own.filter((b) => !kept.some((k) => k.id === b.id))];
+    return merged.length > 0 ? { ...next, release_blockers: merged } : next;
 }
 
 export function isLivePlan(v: unknown): v is LivePlan {
     return !!v && typeof v === "object" && (v as LivePlan).version === 1 && Array.isArray((v as LivePlan).stages) && Array.isArray((v as LivePlan).treatments);
 }
 
-/** Students get the live version once it is approved; an admin (play-testing) gets it as soon as it is proposed. */
+/**
+ * Students get the live version once it is approved and nothing blocks its release; an admin (play-testing) gets it
+ * as soon as it is proposed.
+ */
 export function livePlanApplies(plan: unknown, viewerIsAdmin: boolean): plan is LivePlan {
-    return isLivePlan(plan) && (plan.status === "approved" || viewerIsAdmin);
+    return isLivePlan(plan) && (viewerIsAdmin || (plan.status === "approved" && openReleaseBlockers(plan).length === 0));
 }
 
 // ── Reading a plan ──────────────────────────────────────────────────────────

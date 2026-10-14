@@ -30,6 +30,8 @@ export interface LiveCase {
     draftedAt: string | null
     teamCheckedAt: string | null
     signOff: { decision: "approved" | "changes_requested"; by: string | null; at: string; comments: string | null } | null
+    /** Open release blockers: while any is open the plan cannot be switched on. */
+    blockers: string[]
     errors: string[]
     warnings: string[]
   } | null
@@ -75,6 +77,7 @@ export function LiveRow({ c }: { c: LiveCase }) {
   const signedOff = p?.signOff?.decision === "approved"
   const changesAsked = p?.signOff?.decision === "changes_requested"
   const broken = !!p && p.errors.length > 0
+  const blocked = !!p && p.blockers.length > 0
 
   return (
     <li className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
@@ -128,6 +131,17 @@ export function LiveRow({ c }: { c: LiveCase }) {
               {p.limit} min
             </p>
 
+            {blocked && (
+              <div className="rounded-lg bg-red-50 p-3 text-[13.5px] text-red-900">
+                <p className="font-semibold">Not to be switched on until this is settled:</p>
+                <ul className="mt-1 list-disc pl-5">
+                  {p.blockers.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {broken && (
               <div className="rounded-lg bg-red-50 p-3 text-[13.5px] text-red-900">
                 <p className="font-semibold">This plan does not pass the check, so it is not running for anyone:</p>
@@ -164,7 +178,7 @@ export function LiveRow({ c }: { c: LiveCase }) {
               <Link href={`/dashboard/cases/${c.id}`} target="_blank" className={quiet} title="As an admin you get the live version even while it is only proposed">
                 <Play className="h-4 w-4" /> Play-test it
               </Link>
-              {p.status !== "approved" && !broken && (
+              {p.status !== "approved" && !broken && !blocked && (
                 <button type="button" className={primary} disabled={pending} onClick={() => run("on", () => setLiveAction(c.id, true), c.status === "published" ? "Switch the live version on? Students will get this case with the clock and the tray from now on, and it counts as a live case on their plan." : undefined)}>
                   {spin("on", <Zap className="h-4 w-4" />)} Switch it on
                 </button>
