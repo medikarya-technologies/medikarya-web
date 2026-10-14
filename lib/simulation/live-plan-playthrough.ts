@@ -7,7 +7,8 @@ import type { SimulationCaseConfig } from "./case-schema";
 import type { ClinicalEvent } from "./encounter-events";
 import { EncounterEngine } from "./encounter-engine";
 import { replayStudentEvents } from "./replay";
-import { availableFlag, compileLivePlan, REASSESS_ID, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { availableFlag, compileCondition, compileLivePlan, isRepeatable, REASSESS_ID, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { evaluateCondition } from "./conditions";
 
 const MIN = 60;
 
@@ -84,8 +85,11 @@ function play(config: SimulationCaseConfig, plan: LivePlan, events: ClinicalEven
     return result(config, plan, engine);
 }
 
-/** An essential treatment that cannot go on a fixed schedule: it is required, or on the tray, only in some states. */
-const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when);
+/**
+ * An essential treatment that cannot go on a fixed schedule: it is required, or on the tray, only in some states, or
+ * (given once) it has prerequisites, such as a second-line drug after two benzodiazepine doses.
+ */
+const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when || (t.requires?.length && !isRepeatable(t)));
 
 /**
  * The scheduled events, and each conditional essential a minute after it becomes required (or, if it is always
@@ -99,7 +103,10 @@ function playRescue(config: SimulationCaseConfig, plan: LivePlan, scheduled: Cli
     const done = new Set<string>();
     for (let m = 1; m <= limit; m++) {
         for (const t of conditional) {
-            const due = t.required_when ? engine.state.flags[requiredFlag(t.id)] === true : engine.state.flags[availableFlag(t.id)] === true;
+            const ready =
+                (!t.available_when || engine.state.flags[availableFlag(t.id)] === true) &&
+                (t.requires ?? []).every((r) => evaluateCondition(compileCondition(r.when), engine.state.context(m * MIN)));
+            const due = t.required_when ? engine.state.flags[requiredFlag(t.id)] === true && ready : ready;
             if (!done.has(t.id) && due) {
                 done.add(t.id);
                 pending.push(given(t.id, m));
@@ -134,9 +141,12 @@ function result(config: SimulationCaseConfig, plan: LivePlan, engine: EncounterE
 
 const given = (action: string, minutes: number): ClinicalEvent => ({ type: "INTERVENTION_GIVEN", timestamp: minutes * MIN, action, consequence: "x" });
 
-/** A treatment's doses at these minutes, each further dose preceded by a reassessment when the plan asks for one. */
+/**
+ * A treatment's doses at these minutes, each further dose preceded by a reassessment when the plan asks for one: a
+ * minute before it (a reassessment takes time), and never before the dose it follows.
+ */
 const dosesAt = (t: LiveTreatment, times: number[]): ClinicalEvent[] =>
-    times.flatMap((at, i) => (i > 0 && t.reassess_before_repeat ? [given(REASSESS_ID, at), given(t.id, at)] : [given(t.id, at)]));
+    times.flatMap((at, i) => (i > 0 && t.reassess_before_repeat ? [given(REASSESS_ID, Math.max(times[i - 1], at - 1)), given(t.id, at)] : [given(t.id, at)]));
 
 export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playthroughs {
     const config = compileLivePlan(base, plan);

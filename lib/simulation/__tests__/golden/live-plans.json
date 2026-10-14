@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
-    "plan_sha": "02c37989ee684c94526a76b1f61deab1fb3f248cee2b0a0ac0aa0285d9bdec89",
-    "compiled_sha": "10756a0ab8b120092c6ad20edc9602fb0e5bf3d15bdd7cbdf3790c38a371aed8",
+    "plan_sha": "d1e1d07eb3685d123b4ede091395a85edc74e2ac3f37911e6aa74ec0a2e99156",
+    "compiled_sha": "6654750fffb0e186b0ac3001658dd03e50e07e8f11f77b63ba7e749c95dc4db2",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -88,7 +88,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "91a8b2384550502b233d6ad7f1b7d87216f0d0e6b63bba3a74fed44bf31199a2"
+        "events_sha": "dbbd73c4b66f1e3f6f4e9cf0e43be27a9e669de1b72221d31e5fc712b2de528c"
       },
       "harmful": {
         "score": 55,
@@ -135,7 +135,7 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "a41e3fbac66969269c56a4a1ce779b8679a82c19714f850e48507b00b9646d6c"
+        "events_sha": "9bb2d1322242b6db8fb2bbd9310ae17aca3044ec67c2daec1a8e0090f44c1742"
       },
       "late": {
         "score": 61,
@@ -179,7 +179,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "4ab0d74eb5652a7ab0373dd6529c237f52e433bf5120856810f0cc62d675a27e"
+        "events_sha": "c8aa6f9fd95346626236bf5cdd4a77133ae90f2b9ebbe19794db5ae718f79a3d"
       },
       "rescue": {
         "score": 71,
@@ -223,7 +223,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "1daa63c91b51a78bbac6268d46532f983c192bc8aa4c0c2f018a77aeb070396a"
+        "events_sha": "33708de1a08cffad6b41c4de508ee5c2a7fe89bb5bdc309eb600c277f8aaef5f"
       }
     }
   },
@@ -726,8 +726,8 @@
     }
   },
   "32-year-old-man-brought-in-fitting": {
-    "plan_sha": "cb2fdf6cad36a8c806cbfe53477b75b0ba43c03c51995be6fa2890bd70aa95c8",
-    "compiled_sha": "d47026dabd87c0be937c3979d8317fce66eecaff4a8e232aa442ac63afc8acc6",
+    "plan_sha": "12dda86824d12952bcc7ef143a55978357f8a83889fe09ddc1bc71987f3a0d10",
+    "compiled_sha": "b1834b551d6ed0e078a22886d30d5c0f3e1fc6ccd72e5f50a9b27a438f0dad34",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -800,7 +800,7 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Ongoing fitting"
+          "worst_stage": "Worsening hypoxia and fever"
         },
         "final": {
           "hr": 108,
@@ -808,12 +808,12 @@
           "dbp": 82,
           "spo2": 96,
           "rr": 18,
-          "temp": 38.3,
+          "temp": 38.8,
           "consciousness": "drowsy",
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e9c83ad37dbf8726f9e136bba1be4ee59eb154eeee71dacdcfed39a9b5437b96"
+        "events_sha": "a1ff4d83b9bc85f861754020cc62bd4e0652052075f56251583e8db83c84200f"
       },
       "harmful": {
         "score": 55,
@@ -847,7 +847,7 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Ongoing fitting"
+          "worst_stage": "Worsening hypoxia and fever"
         },
         "final": {
           "hr": 108,
@@ -855,15 +855,15 @@
           "dbp": 82,
           "spo2": 96,
           "rr": 18,
-          "temp": 38.3,
+          "temp": 38.8,
           "consciousness": "drowsy",
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "33dea3f9c8cf53d7949dcebc9f7b49f1fcf2a4370354857ada42f482179260da"
+        "events_sha": "e6bdc96d22705bc973c68efa8bd3711cbad60a4e5d4b435a485199d70ccd519b"
       },
       "late": {
-        "score": 55,
+        "score": 45,
         "items": [
           [
             "high_flow_oxygen",
@@ -883,12 +883,12 @@
           ],
           [
             "second_line_antiseizure_iv",
-            "late"
+            "missed"
           ]
         ],
         "harmful": [],
         "outcome": {
-          "stabilised": true,
+          "stabilised": false,
           "recovered": false,
           "worst_stage": "Respiratory failure and falling BP"
         },
@@ -903,7 +903,50 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "9c5a0d662988e01a4713375611c8a1cf22947c378ff9b8bf427d0a92cbc83615"
+        "events_sha": "e14a83c3987e1100b2c70e767ced5fa3b9b0c0fe64a38f718b9b6bde2f5ba6fc"
+      },
+      "rescue": {
+        "score": 65,
+        "items": [
+          [
+            "high_flow_oxygen",
+            "late"
+          ],
+          [
+            "capillary_glucose_check",
+            "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "lorazepam_iv",
+            "late"
+          ],
+          [
+            "second_line_antiseizure_iv",
+            "on_time"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": true,
+          "recovered": true,
+          "worst_stage": "Worsening hypoxia and fever"
+        },
+        "final": {
+          "hr": 108,
+          "sbp": 138,
+          "dbp": 82,
+          "spo2": 96,
+          "rr": 18,
+          "temp": 38.8,
+          "consciousness": "drowsy",
+          "stability": "stable",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "6820f2582ca3495ea5b9e0f7f5bff8bd4792d57ab7989847133f050367e5660e"
       }
     }
   },
@@ -1059,8 +1102,8 @@
     }
   },
   "36-year-old-man-with-sudden-breathlessness": {
-    "plan_sha": "f8dd6e122bfe7abecda2420651a5dc5e1e23fcb88f725b786c06458eddd385e4",
-    "compiled_sha": "24e2b6fb2be5916d943c8015bc6701736d54c23ae2bdb8c9d6eeac002ddd2791",
+    "plan_sha": "d0ecc1cd5d7c74458ea20e892b21a4f74a94294811703b7ea19a1f82c36f83f7",
+    "compiled_sha": "9f85296d734dbd41baf4bf0f1483ed7f41df332b20d7c49e495dfe4688d1d7c7",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1230,10 +1273,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "1b65f45c0c8550167377a35d76d67cb2c40e66f3bc62b2d8dcb083e0b394403f"
+        "events_sha": "8c070d6dfe5a37ddee3886515cfb73149475c889dbcb533d073c6de0d6d589ad"
       },
       "late": {
-        "score": 46,
+        "score": 39,
         "items": [
           [
             "im_adrenaline_0_5mg",
@@ -1257,7 +1300,7 @@
           ],
           [
             "crystalloid_bolus_500_1000ml",
-            "late"
+            "missed"
           ],
           [
             "escalate_critical_care",
@@ -1275,9 +1318,9 @@
           "worst_stage": "Peri-arrest"
         },
         "final": {
-          "hr": 122,
-          "sbp": 88,
-          "dbp": 50,
+          "hr": 130,
+          "sbp": 78,
+          "dbp": 44,
           "spo2": 82,
           "rr": 8,
           "temp": 37.8,
@@ -1285,7 +1328,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "05c1f13aa0978e54856821815cd6f7d87f4f326f88434c0e2e4fcfd9cf260b71"
+        "events_sha": "947fd9c658828b50f896c85191d9c77ce11446b82c8ce062c526b05bc8dd6cd7"
       },
       "rescue": {
         "score": 66,
@@ -1325,23 +1368,22 @@
         ],
         "harmful": [],
         "outcome": {
-          "stabilised": true,
+          "stabilised": false,
           "recovered": false,
-          "worst_stage": "Peri-arrest",
-          "path": "Refractory pathway: adrenaline infusion, with fluids and lying flat"
+          "worst_stage": "Peri-arrest"
         },
         "final": {
-          "hr": 116,
-          "sbp": 106,
-          "dbp": 60,
-          "spo2": 86,
-          "rr": 4,
+          "hr": 120,
+          "sbp": 94,
+          "dbp": 54,
+          "spo2": 84,
+          "rr": 7,
           "temp": 37.8,
           "consciousness": "unresponsive",
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "c64aaa66839fdfb8511234da51a86e6edd8f77a16b15e7a0f28fd6162471083e"
+        "events_sha": "4f396310ed1ccf6b76925a2a1922dd00b7597cee54ed37c0a4217596bbfa98ad"
       }
     }
   },
