@@ -28,7 +28,8 @@ export interface Playthroughs {
     late: PlaythroughResult;
     /**
      * Only in a plan with treatments that are required only in some states: the late path, plus each such treatment
-     * given a minute after it becomes required (a late student who then rescues the patient).
+     * given a minute after it becomes required (a late student who then rescues the patient). In such a plan the
+     * correct and harmful paths also give each one a minute after it becomes required.
      */
     rescue?: PlaythroughResult;
 }
@@ -129,11 +130,13 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
         .flatMap((t) => doseTimes(t, Math.min(limit - 1, (t.within_minutes ?? 5) + 2)).map((at) => given(t.id, Math.min(limit - 1, at))))
         .sort((a, b) => a.timestamp - b.timestamp);
 
+    // With treatments required only in some states, correct care also gives each one as soon as it is required.
+    const conditional = plan.treatments.some((t) => t.required_when);
     return {
         untreated: play(config, plan, null),
-        correct: play(config, plan, correct),
-        harmful: play(config, plan, harmful),
+        correct: conditional ? playRescue(config, plan, correct) : play(config, plan, correct),
+        harmful: conditional ? playRescue(config, plan, harmful) : play(config, plan, harmful),
         late: play(config, plan, late),
-        ...(plan.treatments.some((t) => t.required_when) ? { rescue: playRescue(config, plan, late) } : {}),
+        ...(conditional ? { rescue: playRescue(config, plan, late) } : {}),
     };
 }

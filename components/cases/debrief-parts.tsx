@@ -84,18 +84,20 @@ interface Bedside {
   outcome: { stabilised: boolean; recovered: boolean; worst_stage: string | null; path?: string }
 }
 
-type BedsideStatus = "on_time" | "late" | "missed" | "not_needed"
+type BedsideStatus = "on_time" | "late" | "missed" | "not_needed" | "not_due"
 
 const BEDSIDE_STATUS = {
   on_time: { text: "In time", tone: "bg-enc-ok-soft text-enc-ok" },
   late: { text: "Late", tone: "bg-enc-warn-soft text-enc-warn" },
   missed: { text: "Not given", tone: "bg-enc-crit-soft text-enc-crit" },
   not_needed: { text: "Not needed", tone: "bg-enc-sheet text-enc-ink-3" },
+  not_due: { text: "Still in time", tone: "bg-enc-sheet text-enc-ink-3" },
 } as const
 
 /** The line under a bedside item: when it was needed and when it was given. */
 function bedsideTiming(i: Bedside["items"][number]): string {
   if (i.status === "not_needed") return "Your patient never came to need this, so it does not count either way"
+  if (i.status === "not_due") return `Needed from ${i.required_at_minutes} min, but the encounter ended while there was still time to give it, so it does not count either way`
   const from = i.required_at_minutes !== undefined ? `needed from ${i.required_at_minutes} min, within ${i.within_minutes} min` : `needed within ${i.within_minutes} min`
   return i.at_minutes === null ? from.charAt(0).toUpperCase() + from.slice(1) : `Given at ${i.at_minutes} min; ${from}`
 }

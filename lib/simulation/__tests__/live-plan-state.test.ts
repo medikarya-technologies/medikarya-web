@@ -254,6 +254,14 @@ describe("state: a rescue required only once the patient needs it, and the path 
         assert.equal(item(run(shock(), [["iv_access", 13], ["fluid_bolus_20ml_kg", 13]]).score, "rescue_bolus").status, "missed");
     });
 
+    it("needed so near the end that its window is still open: it does not count either way", () => {
+        // Window 10 min, needed at 12, encounter ends at 20: not given by the end is not yet a miss.
+        const wide = shock({ treatments: (shockRaw().treatments as Array<Record<string, unknown>>).map((t) => (t.id === "rescue_bolus" ? { ...t, within_minutes: 10 } : t)) });
+        const { score } = run(wide, [["iv_access", 13], ["fluid_bolus_20ml_kg", 13]]);
+        assert.equal(item(score, "rescue_bolus").status, "not_due");
+        assert.equal(score.score, 50, "only access and bolus count, both late");
+    });
+
     it("an attempt before it was available cannot stabilise the patient or earn credit", () => {
         const { score } = run(shock(), [["rescue_bolus", 2], ["iv_access", 13], ["fluid_bolus_20ml_kg", 13]]);
         assert.equal(score.outcome.stabilised, false);
@@ -311,6 +319,13 @@ describe("state: a further dose required only while the patient is still fitting
         assert.equal(stopped.score.outcome.stabilised, true, "stabilised as soon as the seizure stopped, without waiting for dose 2 to fall due");
         assert.equal(stopped.engine.state.flagSetAt.live_stabilised, 3 * MIN);
         assert.equal(stopped.score.score, 100, "nothing lost for a dose that was never needed, nothing gained for the refused one");
+    });
+
+    it("both doses on time but still fitting: not stabilised, because the dose count alone does not stop a seizure", () => {
+        const { engine, score } = run(fit(), [["iv_access", 1], ["benzo_iv", 2], ["benzo_iv", 7]]);
+        assert.equal(engine.state.flags.finding_fitting, true);
+        assert.deepEqual(item(score, "benzo_iv").doses?.map((d) => d.status), ["on_time", "on_time"]);
+        assert.equal(score.outcome.stabilised, false);
     });
 
     it("still fitting when the second dose falls due, and it is never given: missed", () => {

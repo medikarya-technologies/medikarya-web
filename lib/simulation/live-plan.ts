@@ -782,15 +782,12 @@ const findingSets = (f: Record<string, boolean> | undefined) => Object.fromEntri
 
 /**
  * What it takes for one treatment to have done its part in stopping the deterioration. For a state-gated one: the
- * first dose, and each further required dose given, found not needed when it fell due, or not needed now (the
- * patient no longer meets the condition for another dose, such as a seizure that has stopped).
+ * first dose, and the patient no longer meeting the condition for another dose (the seizure has stopped, the
+ * atropine end points are reached). Giving the required number of doses is not enough on its own.
  */
 function stabilisingConditions(t: LiveTreatment | undefined, id: string): RuleCondition[] {
     if (!t || !isStateGated(t)) return [{ flag: stabilisingFlag(t, id), is: true }];
-    const gate = compileCondition(t.repeat_only_while);
-    const out: RuleCondition[] = [{ flag: doseFlag(id, 1), is: true }];
-    for (let n = 2; n <= Math.max(1, t.doses_required ?? 1); n++) out.push({ any: [{ flag: doseFlag(id, n), is: true }, { flag: notNeededFlag(id, n), is: true }, { not: gate }] });
-    return out;
+    return [{ flag: doseFlag(id, 1), is: true }, { not: compileCondition(t.repeat_only_while) }];
 }
 
 /** A rule that only records something: it sets a flag the moment its condition first holds, and the patient's state is unchanged. */
@@ -1095,8 +1092,11 @@ export function hasProposedLivePlan(caseData: unknown): boolean {
 // The ordinary scoring (history, investigations, diagnosis, written plan) knows nothing about the tray or the clock.
 // This scores what a live case adds: were the essential treatments given, and in time; was anything harmful given.
 
-/** not_needed: only sometimes required, and this patient never needed it. It neither scores nor costs. */
-export type BedsideStatus = "on_time" | "late" | "missed" | "not_needed";
+/**
+ * not_needed: only sometimes required, and this patient never needed it. not_due: it became required so near the end
+ * that its window was still open when the encounter ended. Neither scores nor costs.
+ */
+export type BedsideStatus = "on_time" | "late" | "missed" | "not_needed" | "not_due";
 
 export interface BedsideItem {
     id: string;
@@ -1163,7 +1163,7 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
         .filter((t) => t.role === "essential")
         .map((t) => {
             const within = t.within_minutes ?? plan.critical_window_minutes;
-            if (t.required_when) return scoreWhenRequired(t, within, givenAt(t), final.flagSetAt, credit);
+            if (t.required_when) return scoreWhenRequired(t, within, givenAt(t), final.flagSetAt, plan.time_limit_minutes, credit);
             if (isRepeatable(t)) return scoreDoses(t, within, final, credit);
             const at = givenAt(t);
             const item: BedsideItem = { id: t.id, label: t.label, status: at === null ? "missed" : at <= within ? "on_time" : "late", at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
@@ -1229,13 +1229,15 @@ function scoreDoses(t: LiveTreatment, within: number, final: PatientState, credi
 
 /**
  * A treatment that is only sometimes required. Never required: not_needed, whether or not it was given. Required: on
- * time if given within its window of the moment it became required (or before, once it was available), late after.
+ * time if given within its window of the moment it became required (or before, once it was available), late after;
+ * not given with its window still open when the encounter ended: not_due.
  */
-function scoreWhenRequired(t: LiveTreatment, within: number, at: number | null, flagSetAt: Readonly<Record<string, number>>, credit: Map<string, number>): BedsideItem {
+function scoreWhenRequired(t: LiveTreatment, within: number, at: number | null, flagSetAt: Readonly<Record<string, number>>, limit: number, credit: Map<string, number>): BedsideItem {
     const setAt = flagSetAt[requiredFlag(t.id)];
     const base = { id: t.id, label: t.label, at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
     if (setAt === undefined) return { ...base, status: "not_needed" };
     const from = toMinutes(setAt);
+    if (at === null && from + within > limit) return { ...base, status: "not_due", required_at_minutes: from };
     const status: BedsideStatus = at === null ? "missed" : at <= from + within ? "on_time" : "late";
     credit.set(t.id, status === "on_time" ? 1 : status === "late" ? 0.5 : 0);
     return { ...base, status, required_at_minutes: from };

@@ -44,7 +44,8 @@ for (let m = 1; m <= limit; m++) { a.advanceTo(m * MIN); }
 console.log(`\nUNTREATED to ${limit} min -> ${snap(a)}\n${timeline(a)}`);
 
 // 2. every essential on time, in plan order, a minute apart from minute 1 (or by its within_minutes)
-const essentials = plan.treatments.filter((t: any) => t.role === "essential");
+// A treatment required only in some states (required_when) is left to the rescue playthrough at the end.
+const essentials = plan.treatments.filter((t: any) => t.role === "essential" && !t.required_when);
 const events: any[] = []; let t = 1;
 // A treatment that needs several doses gets each further dose as soon as its minimum interval allows.
 const doses = (tr: any, first: number) => Array.from({ length: tr.doses_required ?? 1 }, (_, n) => first + n * Math.max(1, tr.min_interval_minutes ?? 1));
@@ -69,3 +70,9 @@ const l = replayStudentEvents(c, late);
 for (let m = 1; m <= limit; m++) l.advanceTo(m * MIN);
 const sl = scoreBedside(c, plan, l.events);
 console.log(`\nLATE (each essential 2 min past its window): bedside ${sl.score}, outcome ${JSON.stringify(sl.outcome)} -> ${snap(l)}`);
+
+// 5. the shared playthroughs, as the golden tests run them (with a rescue path when the plan has conditional treatments)
+const { playthroughs } = require(R + "live-plan-playthrough");
+const shared = playthroughs(base, plan);
+console.log("\nSHARED PLAYTHROUGHS:");
+for (const [name, r] of Object.entries(shared) as Array<[string, any]>) console.log(`  ${name.padEnd(9)} bedside ${r.score}, ${JSON.stringify(r.outcome)}; ${r.items.map(([i, st]: string[]) => `${i}:${st}`).join(" ")}`);
