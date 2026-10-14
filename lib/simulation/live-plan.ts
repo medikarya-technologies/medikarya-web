@@ -176,6 +176,17 @@ export interface LiveTreatment {
      * the patient is stabilised; the recovery takes over from there.
      */
     infusion?: { over_minutes: number; while?: LiveCondition };
+    /**
+     * What has to be true before it can be given, in order (IV access for an IV drug; two benzodiazepine doses before a
+     * second-line drug). An attempt before then is refused with that requirement's words, and has no effect.
+     */
+    requires?: LiveRequirement[];
+}
+
+export interface LiveRequirement {
+    when: LiveCondition;
+    /** Why it cannot be given yet, as the student is told: "there is no IV access yet." */
+    says: string;
 }
 
 export interface LiveRecovery {
@@ -382,6 +393,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         if (t?.required_when !== undefined) out.required_when = condition(t.required_when);
         if (t?.repeat_only_while && typeof t.repeat_only_while === "object") out.repeat_only_while = condition(t.repeat_only_while);
         if (text(t?.not_indicated_says)) out.not_indicated_says = text(t.not_indicated_says);
+        if (Array.isArray(t?.requires) && t.requires.length > 0) out.requires = t.requires.map((r: any) => ({ when: condition(r?.when), says: text(r?.says) }));
         if (t?.infusion && typeof t.infusion === "object") {
             out.infusion = { over_minutes: num(t.infusion.over_minutes) ?? NaN, ...(t.infusion.while !== undefined ? { while: condition(t.infusion.while) } : {}) };
         }
@@ -613,6 +625,11 @@ function checkState(t: LiveTreatment, where: string, plan: LivePlan, scope: Cond
     if (gate && gate !== "not_stabilised") checkCondition(gate, `${where}: repeat_only_while`, scope, errors);
     if (t.not_indicated_says !== undefined && (!gate || gate === "not_stabilised")) errors.push(`${where}: not_indicated_says only goes with a repeat_only_while condition.`);
     if (t.available_when) checkCondition(t.available_when, `${where}: available_when`, scope, errors);
+    (t.requires ?? []).forEach((r, i) => {
+        checkCondition(r.when, `${where}: requires[${i}].when`, scope, errors);
+        if (r.says.length < 10) errors.push(`${where}: requires[${i}].says is what the student is told; write a sentence.`);
+        if (JSON.stringify(r.when).includes(`"${t.id}"`)) errors.push(`${where}: requires[${i}] depends on the treatment itself, so it could never be met.`);
+    });
     if (t.infusion) {
         const n = t.infusion.over_minutes;
         if (!Number.isInteger(n) || n < 1 || n >= plan.time_limit_minutes) errors.push(`${where}: infusion.over_minutes must be a whole number of minutes, from 1 to less than the encounter (${plan.time_limit_minutes} min).`);
@@ -798,7 +815,7 @@ export const isRecordOnlyRule = (ruleId: string) => RECORD_ONLY_RULE.test(ruleId
 export const isStateGated = (t: LiveTreatment): t is LiveTreatment & { repeat_only_while: LiveCondition } =>
     !!t.repeat_only_while && typeof t.repeat_only_while === "object";
 /** A treatment that uses any state field; every other treatment compiles exactly as before. */
-const usesState = (t: LiveTreatment) => !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t) || t.infusion);
+const usesState = (t: LiveTreatment) => !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t) || t.infusion || t.requires?.length);
 
 /** A plan condition as the engine's own condition. Only call on a plan that passed the check. */
 export function compileCondition(c: LiveCondition): RuleCondition {
@@ -960,10 +977,18 @@ function stateConsequences(t: LiveTreatment): ActionConsequence[] {
     const base = isRepeatable(t)
         ? repeatConsequences(t)
         : [...doseVariants(t, 1, [{ flag: given(t.id), is: false }], usual), { action: t.id, when: { flag: given(t.id), is: true }, trajectory_note: "Already given. No further change." }];
-    if (!t.available_when) return base;
+    const guard = (open: RuleCondition, cs: ActionConsequence[]) => cs.map((c) => ({ ...c, when: c.when ? { all: [open, c.when] } : open }));
+    // Requirements in order: the first one not met is the reason given; once all are met, everything as usual.
+    let guarded = base;
+    const reqs = (t.requires ?? []).map((r) => ({ cond: compileCondition(r.when), says: r.says }));
+    if (reqs.length > 0) {
+        const refusals: ActionConsequence[] = reqs.map((r, i) => ({ action: t.id, when: { all: [...reqs.slice(0, i).map((x) => x.cond), { not: r.cond }] }, trajectory_note: REFUSED.needs_first(r.says) }));
+        guarded = [...refusals, ...guard({ all: reqs.map((r) => r.cond) }, base)];
+    }
+    if (!t.available_when) return guarded;
     // Not yet available: refused, with no effect. Once available, everything as usual.
     const open: RuleCondition = { flag: availableFlag(t.id), is: true };
-    return [{ action: t.id, when: { flag: availableFlag(t.id), is: false }, trajectory_note: REFUSED.unavailable() }, ...base.map((c) => ({ ...c, when: c.when ? { all: [open, c.when] } : open }))];
+    return [{ action: t.id, when: { flag: availableFlag(t.id), is: false }, trajectory_note: REFUSED.unavailable() }, ...guard(open, guarded)];
 }
 
 /** Every refusal starts with this, so the tray can tell a refused dose from a given one. */
@@ -974,6 +999,7 @@ export const REFUSED = {
     not_indicated: () => "Not given: another dose is not indicated now, because the patient has stopped deteriorating.",
     limit: (t: LiveTreatment) => `Not given: all ${t.max_doses} doses have already been given.`,
     unavailable: () => "Not given: not indicated at the moment.",
+    needs_first: (says: string) => (says.startsWith(REFUSED_PREFIX) ? says : `${REFUSED_PREFIX} ${says}`),
 } as const;
 export type RefusalReason = keyof typeof REFUSED;
 
@@ -1396,7 +1422,7 @@ function stabilisingPath(config: SimulationCaseConfig, plan: LivePlan, events: r
 
 /** Every attempt the engine refused (a further dose too soon, not indicated or over the limit; a treatment not yet available), with the reason, in order. */
 function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: readonly ClinicalEvent[]): RefusedDose[] {
-    const byId = new Map(plan.treatments.filter((t) => isRepeatable(t) || t.available_when).map((t) => [t.id, t]));
+    const byId = new Map(plan.treatments.filter((t) => isRepeatable(t) || t.available_when || t.requires?.length).map((t) => [t.id, t]));
     if (byId.size === 0) return [];
     const count = (state: PatientState, t: LiveTreatment) => {
         let n = 0;
@@ -1415,10 +1441,13 @@ function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: read
         const had = count(before, t);
         if (count(after, t) > had) return;
         const sinceLast = had > 0 ? e.timestamp - (before.flagSetAt[doseFlag(t.id, had)] ?? e.timestamp) : Infinity;
+        const unmet = (t.requires ?? []).some((r) => !evaluateCondition(compileCondition(r.when), before.context(e.timestamp)));
         const reason: RefusalReason =
             t.available_when && before.flags[availableFlag(t.id)] !== true
                 ? "unavailable"
-                : had >= (t.max_doses ?? 1)
+                : unmet
+                  ? "needs_first"
+                  : had >= (t.max_doses ?? 1)
                   ? "limit"
                   : sinceLast < (t.min_interval_minutes ?? 0) * 60
                     ? "too_soon"

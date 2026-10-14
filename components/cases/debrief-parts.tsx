@@ -134,7 +134,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
             <li key={`${r.id}-${n}`} className="rounded-lg bg-enc-warn-soft p-2.5">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-sm font-medium text-enc-ink">{r.label}</span>
-                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-warn">{r.reason === "unavailable" ? "Not given" : "Dose refused"}</span>
+                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-warn">{r.reason === "unavailable" || r.reason === "needs_first" ? "Not given" : "Dose refused"}</span>
               </div>
               <p className="mt-0.5 text-xs text-enc-ink-2">
                 At {r.at_minutes} min. {r.said}

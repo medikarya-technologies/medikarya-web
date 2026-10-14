@@ -87,3 +87,56 @@ describe("timed infusions", () => {
         }
     });
 });
+
+// ── Prerequisites (IV access, a required sequence) ───────────────────────────
+
+describe("prerequisites: what has to be true before a treatment can be given", () => {
+    const IV = { when: { given: "iv_access" }, says: "there is no IV access yet." };
+    const withReqs = (reqs: unknown[]) => normaliseLivePlan({ ...JSON.parse(JSON.stringify(goldenFixturePlan)), treatments: (JSON.parse(JSON.stringify(goldenFixturePlan)).treatments as Array<Record<string, unknown>>).map((t) => (t.id === "fluid_bolus_20ml_kg" ? { ...t, requires: reqs } : t)) }, "ai");
+
+    it("an IV fluid without IV access is refused: no effect, no credit, no stabilisation, and the student is told why", () => {
+        const p = withReqs([IV]);
+        assert.equal(errorsOf(p), "");
+        const c = compileLivePlan(base(), p);
+        const engine = new EncounterEngine(c);
+        const r = engine.giveIntervention("fluid_bolus_20ml_kg", 2 * MIN);
+        assert.equal(r.consequence, "Not given: there is no IV access yet.");
+        assert.equal(engine.state.systolic, 86);
+        engine.advanceTo(19 * MIN);
+        const s = scoreBedside(c, p, engine.events, 19);
+        assert.equal(s.outcome.stabilised, false);
+        assert.equal(s.items.find((i) => i.id === "fluid_bolus_20ml_kg")!.status, "missed");
+        assert.deepEqual(s.refused?.map((x) => [x.id, x.reason]), [["fluid_bolus_20ml_kg", "needs_first"]]);
+    });
+
+    it("once access is in, it works, and it is scored from when it was actually given", () => {
+        const p = withReqs([IV]);
+        const { score, engine } = run(p, [["fluid_bolus_20ml_kg", 2], ["iv_access", 3], ["fluid_bolus_20ml_kg", 4]], 19);
+        assert.equal(engine.state.flagSetAt.given_fluid_bolus_20ml_kg, 4 * MIN);
+        assert.equal(score.items.find((i) => i.id === "fluid_bolus_20ml_kg")!.at_minutes, 4);
+        assert.equal(score.outcome.stabilised, true);
+    });
+
+    it("gives the first unmet requirement's reason, in order", () => {
+        const p = withReqs([IV, { when: { stage_reached: "compensated_shock" }, says: "a bolus is not indicated before he is shocked." }]);
+        const c = compileLivePlan(base(), p);
+        const e = new EncounterEngine(c);
+        assert.equal(e.giveIntervention("fluid_bolus_20ml_kg", 1 * MIN).consequence, "Not given: there is no IV access yet.");
+        e.giveIntervention("iv_access", 2 * MIN);
+        assert.equal(e.giveIntervention("fluid_bolus_20ml_kg", 3 * MIN).consequence, "Not given: a bolus is not indicated before he is shocked.");
+    });
+
+    it("refuses a requirement that can never be met or says nothing", () => {
+        assert.match(errorsOf(withReqs([{ when: { given: "fluid_bolus_20ml_kg" }, says: "it has to be given first." }])), /depends on the treatment itself/);
+        assert.match(errorsOf(withReqs([{ when: { given: "iv_access" }, says: "no." }])), /write a sentence/);
+        assert.match(errorsOf(withReqs([{ when: { given: "nothing_here" }, says: "there is nothing here yet." }])), /not one of the treatments/);
+    });
+
+    it("the server's replay agrees with the browser, refusals included", () => {
+        const p = withReqs([IV]);
+        const { c, engine, score } = run(p, [["fluid_bolus_20ml_kg", 2], ["iv_access", 3], ["fluid_bolus_20ml_kg", 4]], 19);
+        const replayed = replayStudentEvents(c, engine.events.filter((e) => e.type === "INTERVENTION_GIVEN"));
+        replayed.advanceTo(19 * MIN);
+        assert.deepEqual(scoreBedside(c, p, replayed.events, 19), score);
+    });
+});
