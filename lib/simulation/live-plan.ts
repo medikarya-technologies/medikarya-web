@@ -168,6 +168,14 @@ export interface LiveTreatment {
     available_when?: LiveCondition;
     /** For an essential treatment: required only once this has held, and `within_minutes` counts from that moment. */
     required_when?: LiveCondition;
+
+    // ── Phase 3. All optional.
+    /**
+     * Given over minutes rather than all at once: `effect` is spread evenly, minute by minute, over `over_minutes`,
+     * each minute's share acting only while `while` holds (an infusion titrated to an end point). It stops acting once
+     * the patient is stabilised; the recovery takes over from there.
+     */
+    infusion?: { over_minutes: number; while?: LiveCondition };
 }
 
 export interface LiveRecovery {
@@ -224,6 +232,11 @@ export interface LivePlan {
     stabilised_by_while?: LiveCondition;
     /** Other complete sets of treatments that also stop the deterioration. */
     or_stabilised_by?: LiveStabilisationPath[];
+    /**
+     * Clinical end points that must also hold before the patient counts as stabilised, whichever path was taken (for
+     * example oxygenation and blood pressure). Absent: a complete path is enough.
+     */
+    end_points?: LiveCondition;
     /** Findings the plan tracks, so treatments, doses and paths can depend on them. */
     findings?: LiveFinding[];
     recovery: LiveRecovery;
@@ -369,6 +382,9 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         if (t?.required_when !== undefined) out.required_when = condition(t.required_when);
         if (t?.repeat_only_while && typeof t.repeat_only_while === "object") out.repeat_only_while = condition(t.repeat_only_while);
         if (text(t?.not_indicated_says)) out.not_indicated_says = text(t.not_indicated_says);
+        if (t?.infusion && typeof t.infusion === "object") {
+            out.infusion = { over_minutes: num(t.infusion.over_minutes) ?? NaN, ...(t.infusion.while !== undefined ? { while: condition(t.infusion.while) } : {}) };
+        }
         return out;
     };
 
@@ -439,6 +455,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         treatments,
         stabilised_by: (Array.isArray(p.stabilised_by) ? p.stabilised_by : []).map(slug).filter(Boolean),
         ...(p.stabilised_by_while !== undefined ? { stabilised_by_while: condition(p.stabilised_by_while) } : {}),
+        ...(p.end_points !== undefined ? { end_points: condition(p.end_points) } : {}),
         ...(Array.isArray(p.or_stabilised_by) && p.or_stabilised_by.length > 0
             ? {
                   or_stabilised_by: p.or_stabilised_by.map((path: any) => ({
@@ -596,6 +613,14 @@ function checkState(t: LiveTreatment, where: string, plan: LivePlan, scope: Cond
     if (gate && gate !== "not_stabilised") checkCondition(gate, `${where}: repeat_only_while`, scope, errors);
     if (t.not_indicated_says !== undefined && (!gate || gate === "not_stabilised")) errors.push(`${where}: not_indicated_says only goes with a repeat_only_while condition.`);
     if (t.available_when) checkCondition(t.available_when, `${where}: available_when`, scope, errors);
+    if (t.infusion) {
+        const n = t.infusion.over_minutes;
+        if (!Number.isInteger(n) || n < 1 || n >= plan.time_limit_minutes) errors.push(`${where}: infusion.over_minutes must be a whole number of minutes, from 1 to less than the encounter (${plan.time_limit_minutes} min).`);
+        if (t.infusion.while) checkCondition(t.infusion.while, `${where}: infusion.while`, scope, errors);
+        if (!t.effect) errors.push(`${where}: an infusion needs an effect to spread over its minutes.`);
+        if (isRepeatable(t)) errors.push(`${where}: an infusion is started once; it cannot also have repeat doses.`);
+        if ((t.responses ?? []).some((r) => r.effect)) errors.push(`${where}: an infusion's effect is spread over its minutes, so its responses can change what is said and found, not the effect.`);
+    }
     if (t.required_when) {
         checkCondition(t.required_when, `${where}: required_when`, scope, errors);
         if (t.role !== "essential") errors.push(`${where}: required_when is for essential treatments.`);
@@ -705,6 +730,13 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
         else if (t.role !== "essential") errors.push(`stabilised_by: "${id}" stops the deterioration, so it has to be essential.`);
         if (MONITORING_ONLY.has(id)) errors.push(`stabilised_by: "${id}" watches the patient but does not treat; keep it essential if it must be done, but it cannot be what stops the deterioration.`);
     }
+    if (plan.end_points) checkCondition(plan.end_points, "end_points", scope, errors);
+    // An infusion stops acting once the patient is stabilised. On a path without end points it would stabilise him the
+    // moment it started, before any of its effect arrived.
+    const onAPath = new Set([...plan.stabilised_by, ...(plan.or_stabilised_by ?? []).flatMap((p) => p.treatments)]);
+    for (const t of plan.treatments) {
+        if (t.infusion && onAPath.has(t.id) && !plan.end_points) errors.push(`${t.id}: an infusion that stops the deterioration needs end_points, so the patient is stabilised when it has worked, not the moment it starts.`);
+    }
     if (plan.stabilised_by_while) {
         checkCondition(plan.stabilised_by_while, "stabilised_by_while", scope, errors);
         if (!plan.or_stabilised_by?.length) errors.push("stabilised_by_while: the usual path can stop working, so give another path (or_stabilised_by), or the patient could never be stabilised.");
@@ -759,14 +791,14 @@ const notNeededFlag = (treatmentId: string, dose: number) => `notneeded_${treatm
 const resolvedFlag = (treatmentId: string, dose: number) => `resolved_${treatmentId}_dose${dose}`;
 
 /** The ids of the record-only rules a plan adds, which the timeline does not show (the patient's state does not change). */
-const RECORD_ONLY_RULE = /^live_(available|required|indicated|notneeded|resolved)_/;
+const RECORD_ONLY_RULE = /^live_(available|required|indicated|notneeded|resolved|infusion)_/;
 export const isRecordOnlyRule = (ruleId: string) => RECORD_ONLY_RULE.test(ruleId);
 
 /** A treatment whose further doses depend on a condition on the patient, not just on the clock. */
 export const isStateGated = (t: LiveTreatment): t is LiveTreatment & { repeat_only_while: LiveCondition } =>
     !!t.repeat_only_while && typeof t.repeat_only_while === "object";
 /** A treatment that uses any state field; every other treatment compiles exactly as before. */
-const usesState = (t: LiveTreatment) => !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t));
+const usesState = (t: LiveTreatment) => !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t) || t.infusion);
 
 /** A plan condition as the engine's own condition. Only call on a plan that passed the check. */
 export function compileCondition(c: LiveCondition): RuleCondition {
@@ -799,8 +831,10 @@ function planConditions(plan: LivePlan): LiveCondition[] {
         if (t.available_when) out.push(t.available_when);
         if (t.required_when) out.push(t.required_when);
         if (isStateGated(t)) out.push(t.repeat_only_while);
+        if (t.infusion?.while) out.push(t.infusion.while);
     }
     if (plan.stabilised_by_while) out.push(plan.stabilised_by_while);
+    if (plan.end_points) out.push(plan.end_points);
     for (const path of plan.or_stabilised_by ?? []) if (path.when) out.push(path.when);
     return out;
 }
@@ -833,8 +867,45 @@ function stabilisingConditions(t: LiveTreatment | undefined, id: string): RuleCo
 const latch = (id: string, when: RuleCondition, flag: string): EventRule => ({ id, when, transition: "unchanged", keeps_state: true, sets: { [flag]: true }, narrative: null });
 
 /** The record-only rules a treatment's state fields need. */
-function stateRules(t: LiveTreatment): EventRule[] {
+/**
+ * An infusion's effect, one share per minute after it was started. Each share acts in its own minute only, only while
+ * the infusion's condition holds and the patient is not yet stabilised. Shares are whole numbers that add up exactly.
+ */
+function infusionRules(t: LiveTreatment): EventRule[] {
+    if (!t.infusion || !t.effect) return [];
+    const n = t.infusion.over_minutes;
+    const total = t.effect;
+    const share = (k: keyof LiveVitals, m: number): number => {
+        const tenths = k === "temp" ? 10 : 1;
+        const v = (total[k] ?? 0) * tenths;
+        return (Math.round((v * m) / n) - Math.round((v * (m - 1)) / n)) / tenths;
+    };
+    const keys = ["hr", "sbp", "dbp", "spo2", "rr", "temp"] as const;
     const out: EventRule[] = [];
+    for (let m = 1; m <= n; m++) {
+        const minute = Object.fromEntries(keys.filter((k) => total[k] !== undefined).map((k) => [k, share(k, m)])) as LiveVitals;
+        if (keys.every((k) => !minute[k])) continue;
+        out.push({
+            id: `live_infusion_${t.id}_${m}`,
+            when: {
+                all: [
+                    { minutes_since_flag: { flag: given(t.id), gte: m } },
+                    { not: { minutes_since_flag: { flag: given(t.id), gte: m + 1 } } },
+                    { flag: STABILISED, is: false },
+                    ...(t.infusion.while ? [compileCondition(t.infusion.while)] : []),
+                ],
+            },
+            transition: "unchanged",
+            keeps_state: true,
+            physiological_changes: effectOf(minute),
+            narrative: null,
+        });
+    }
+    return out;
+}
+
+function stateRules(t: LiveTreatment): EventRule[] {
+    const out: EventRule[] = [...infusionRules(t)];
     if (t.available_when) out.push(latch(`live_available_${t.id}`, compileCondition(t.available_when), availableFlag(t.id)));
     if (t.required_when) out.push(latch(`live_required_${t.id}`, compileCondition(t.required_when), requiredFlag(t.id)));
     if (isStateGated(t)) {
@@ -884,7 +955,8 @@ function doseVariants(t: LiveTreatment, n: number, valid: RuleCondition[], usual
 
 /** Everything a treatment that uses state fields does on the tray. */
 function stateConsequences(t: LiveTreatment): ActionConsequence[] {
-    const usual = { changes: { ...effectOf(t.effect), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) }, says: t.says };
+    // An infusion's effect arrives minute by minute (infusionRules); starting it changes only rhythm or consciousness.
+    const usual = { changes: { ...(t.infusion ? {} : effectOf(t.effect)), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) }, says: t.says };
     const base = isRepeatable(t)
         ? repeatConsequences(t)
         : [...doseVariants(t, 1, [{ flag: given(t.id), is: false }], usual), { action: t.id, when: { flag: given(t.id), is: true }, trajectory_note: "Already given. No further change." }];
@@ -1010,12 +1082,14 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
     const usual = plan.stabilised_by.flatMap((id) => stabilisingConditions(find(id), id));
     const alternatives = plan.or_stabilised_by ?? [];
     // Only a plan with another path, or a usual path that can stop working, needs the longer form.
+    const endPoints: RuleCondition[] = plan.end_points ? [compileCondition(plan.end_points)] : [];
     const stops: RuleCondition =
         alternatives.length === 0 && !plan.stabilised_by_while
-            ? { all: [{ flag: STABILISED, is: false }, ...usual] }
+            ? { all: [{ flag: STABILISED, is: false }, ...usual, ...endPoints] }
             : {
                   all: [
                       { flag: STABILISED, is: false },
+                      ...endPoints,
                       {
                           any: [
                               { all: [...usual, ...(plan.stabilised_by_while ? [compileCondition(plan.stabilised_by_while)] : [])] },
