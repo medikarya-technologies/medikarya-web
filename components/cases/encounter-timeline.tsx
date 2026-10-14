@@ -78,6 +78,8 @@ interface EncounterTimelineProps {
 
 export function EncounterTimeline({ events, examLabels = {}, className }: EncounterTimelineProps) {
   const labels = new Map(Object.entries(examLabels))
+  // A rule that only records something (a treatment becoming needed) leaves the patient's state as it was: nothing to show.
+  events = events.filter((e) => !(e.type === "STATE_TRANSITION" && e.from === e.to))
   if (events.length === 0) {
     return <p className={cn("text-sm text-slate-400", className)}>No events were recorded.</p>
   }

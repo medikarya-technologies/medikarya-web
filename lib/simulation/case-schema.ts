@@ -194,6 +194,8 @@ export interface EventRule {
     sets?: Record<string, boolean>;
     /** System actions emitted when the rule fires (routed through `action_consequences`). */
     emits?: string | string[];
+    /** The rule only records something (sets flags): the patient stays in whatever state they are in, and `transition` is ignored. */
+    keeps_state?: boolean;
 }
 
 export interface StateThreshold {

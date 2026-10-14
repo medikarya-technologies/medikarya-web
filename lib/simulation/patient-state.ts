@@ -499,7 +499,7 @@ export class PatientState {
         return {
             ruleId: rule.id,
             from: this.state,
-            to: rule.transition,
+            to: rule.keeps_state ? this.state : rule.transition,
             at,
             physiologicalChanges: rule.physiological_changes ?? null,
             narrative: rule.narrative ? interpolateVitals(rule.narrative, after) : null,
