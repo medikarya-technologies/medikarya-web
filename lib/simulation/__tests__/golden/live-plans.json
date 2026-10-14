@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
-    "plan_sha": "ab5cb145c8776b7620bbce6e73f3ee2acc931916be04bfc6ea4d54cca6af7469",
-    "compiled_sha": "52470f007156895ee1ff9dde781dfc84c973d0abe8b972c41e821d3c86b1fb09",
+    "plan_sha": "02c37989ee684c94526a76b1f61deab1fb3f248cee2b0a0ac0aa0285d9bdec89",
+    "compiled_sha": "1539946ad01b7cc25c5160d195702691d7bd648348cd2fad8497bd31e90c53c0",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -20,6 +20,10 @@
           ],
           [
             "atropine_infusion",
+            "not_needed"
+          ],
+          [
+            "intubation_rsi",
             "missed"
           ]
         ],
@@ -40,7 +44,7 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "0cec2db48692865ae9b595bec7037392239012cb134405b353698721dfa5bd80"
+        "events_sha": "3ec69b3a68c747d1f706460cff30d580560346ac14fa7829e9b1619594201641"
       },
       "correct": {
         "score": 100,
@@ -60,13 +64,18 @@
           [
             "atropine_infusion",
             "on_time"
+          ],
+          [
+            "intubation_rsi",
+            "not_needed"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": null
+          "worst_stage": "Bronchorrhoea with worsening bradycardia",
+          "path": "usual"
         },
         "final": {
           "hr": 92,
@@ -79,10 +88,10 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "eb78bb8661dc9c434496518d07f5170589046e071ec7729ec00e7afac9d2ff70"
+        "events_sha": "91a8b2384550502b233d6ad7f1b7d87216f0d0e6b63bba3a74fed44bf31199a2"
       },
       "harmful": {
-        "score": 40,
+        "score": 55,
         "items": [
           [
             "iv_access",
@@ -98,35 +107,38 @@
           ],
           [
             "atropine_infusion",
+            "not_needed"
+          ],
+          [
+            "intubation_rsi",
             "on_time"
           ]
         ],
         "harmful": [
           "atropine_fixed_small",
           "gastric_lavage_unprotected",
-          "suxamethonium_intubation",
           "furosemide_iv"
         ],
         "outcome": {
-          "stabilised": true,
-          "recovered": true,
-          "worst_stage": null
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Respiratory failure"
         },
         "final": {
-          "hr": 92,
-          "sbp": 112,
-          "dbp": 70,
-          "spo2": 95,
-          "rr": 20,
+          "hr": 72,
+          "sbp": 88,
+          "dbp": 53,
+          "spo2": 78,
+          "rr": 16,
           "temp": 36.8,
-          "consciousness": "drowsy",
-          "stability": "stable",
-          "rhythm": "sinus_normal"
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "f7f3d9776c260f65b78e571d236fbad20606285426cf0abbeb73444e0cd51d25"
+        "events_sha": "a41e3fbac66969269c56a4a1ce779b8679a82c19714f850e48507b00b9646d6c"
       },
       "late": {
-        "score": 50,
+        "score": 61,
         "items": [
           [
             "iv_access",
@@ -142,14 +154,19 @@
           ],
           [
             "atropine_infusion",
-            "late"
+            "not_due"
+          ],
+          [
+            "intubation_rsi",
+            "not_needed"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Rising secretions"
+          "worst_stage": "Respiratory muscle fatigue",
+          "path": "usual"
         },
         "final": {
           "hr": 92,
@@ -162,7 +179,51 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "29b085149674ed1b55a0f266487fad812790c371582e1d6ca0b749f2e38d7168"
+        "events_sha": "4ab0d74eb5652a7ab0373dd6529c237f52e433bf5120856810f0cc62d675a27e"
+      },
+      "rescue": {
+        "score": 71,
+        "items": [
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "high_flow_oxygen",
+            "late"
+          ],
+          [
+            "atropine_iv_titrated",
+            "late"
+          ],
+          [
+            "atropine_infusion",
+            "on_time"
+          ],
+          [
+            "intubation_rsi",
+            "not_needed"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": true,
+          "recovered": true,
+          "worst_stage": "Respiratory muscle fatigue",
+          "path": "usual"
+        },
+        "final": {
+          "hr": 92,
+          "sbp": 112,
+          "dbp": 70,
+          "spo2": 95,
+          "rr": 20,
+          "temp": 36.8,
+          "consciousness": "drowsy",
+          "stability": "stable",
+          "rhythm": "sinus_normal"
+        },
+        "events_sha": "1daa63c91b51a78bbac6268d46532f983c192bc8aa4c0c2f018a77aeb070396a"
       }
     }
   },
@@ -665,8 +726,8 @@
     }
   },
   "32-year-old-man-brought-in-fitting": {
-    "plan_sha": "52800d34b1e4e7cf26d6356d63cf01e9542c0dd6d430d94e753763d49138f9bc",
-    "compiled_sha": "04c45198ba5ded6469061338f171728ce87fd375f66b7354fc56cc60cb28f85b",
+    "plan_sha": "cb2fdf6cad36a8c806cbfe53477b75b0ba43c03c51995be6fa2890bd70aa95c8",
+    "compiled_sha": "c6519492890edba71fcd49d56abbceda1a63834e838f9f63b4f261e16dd72b1b",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -752,7 +813,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "60b508379167558e4b3fbb463bb6c3c19e9266cfe01797187c2b9aaac7a43ede"
+        "events_sha": "e9c83ad37dbf8726f9e136bba1be4ee59eb154eeee71dacdcfed39a9b5437b96"
       },
       "harmful": {
         "score": 55,
@@ -799,7 +860,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "baf32f5a3328a7299c340c16cccf6408fb23c87a81fe2f07b9a02aac2da8af25"
+        "events_sha": "33dea3f9c8cf53d7949dcebc9f7b49f1fcf2a4370354857ada42f482179260da"
       },
       "late": {
         "score": 55,
@@ -842,7 +903,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "36cb43ab08a8188087db87597422e231a7fce77375860927614e0efe9190f8d3"
+        "events_sha": "9c5a0d662988e01a4713375611c8a1cf22947c378ff9b8bf427d0a92cbc83615"
       }
     }
   },
@@ -998,8 +1059,8 @@
     }
   },
   "36-year-old-man-with-sudden-breathlessness": {
-    "plan_sha": "301ca329d31baf609a8ae3ae56e6ebfabbf5cc5da68ed7e36222f6eab9973b0a",
-    "compiled_sha": "baed9cbed79c099af218de5d3121ee1b9f62901da856580cbd017ac9ad22ab4f",
+    "plan_sha": "f8dd6e122bfe7abecda2420651a5dc5e1e23fcb88f725b786c06458eddd385e4",
+    "compiled_sha": "7ca5b3bdf2346bf010b8c385dea52d758239e77ce694431978d982e05abec421",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1029,8 +1090,12 @@
             "missed"
           ],
           [
-            "im_adrenaline_repeat",
-            "missed"
+            "escalate_critical_care",
+            "not_needed"
+          ],
+          [
+            "adrenaline_infusion_low_dose",
+            "not_needed"
           ]
         ],
         "harmful": [],
@@ -1080,15 +1145,20 @@
             "on_time"
           ],
           [
-            "im_adrenaline_repeat",
-            "on_time"
+            "escalate_critical_care",
+            "not_needed"
+          ],
+          [
+            "adrenaline_infusion_low_dose",
+            "not_needed"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Worsening airway swelling"
+          "worst_stage": "Worsening airway swelling",
+          "path": "usual"
         },
         "final": {
           "hr": 106,
@@ -1101,7 +1171,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "a710dbf606348fe0ef8f9be37848dce477fd000170867565704b0d2a4dba9ec0"
+        "events_sha": "0c120cb33ec335aff0826c7e55087fdde9a83d27af46fa0b7eb02660d7d4d063"
       },
       "harmful": {
         "score": 70,
@@ -1131,8 +1201,12 @@
             "on_time"
           ],
           [
-            "im_adrenaline_repeat",
-            "on_time"
+            "escalate_critical_care",
+            "not_needed"
+          ],
+          [
+            "adrenaline_infusion_low_dose",
+            "not_needed"
           ]
         ],
         "harmful": [
@@ -1142,7 +1216,8 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Worsening airway swelling"
+          "worst_stage": "Worsening airway swelling",
+          "path": "usual"
         },
         "final": {
           "hr": 106,
@@ -1155,10 +1230,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "450e939f0e281769a830cbe1624cfe715b828f140bbc783c14eb6fdf3d1cd47f"
+        "events_sha": "1b65f45c0c8550167377a35d76d67cb2c40e66f3bc62b2d8dcb083e0b394403f"
       },
       "late": {
-        "score": 50,
+        "score": 46,
         "items": [
           [
             "im_adrenaline_0_5mg",
@@ -1185,28 +1260,88 @@
             "late"
           ],
           [
-            "im_adrenaline_repeat",
+            "escalate_critical_care",
+            "missed"
+          ],
+          [
+            "adrenaline_infusion_low_dose",
+            "not_due"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Peri-arrest"
+        },
+        "final": {
+          "hr": 122,
+          "sbp": 88,
+          "dbp": 50,
+          "spo2": 82,
+          "rr": 8,
+          "temp": 37.8,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "05c1f13aa0978e54856821815cd6f7d87f4f326f88434c0e2e4fcfd9cf260b71"
+      },
+      "rescue": {
+        "score": 66,
+        "items": [
+          [
+            "im_adrenaline_0_5mg",
             "late"
+          ],
+          [
+            "lie_flat_legs_raised",
+            "late"
+          ],
+          [
+            "high_flow_oxygen",
+            "late"
+          ],
+          [
+            "call_for_help_airway",
+            "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "crystalloid_bolus_500_1000ml",
+            "late"
+          ],
+          [
+            "escalate_critical_care",
+            "on_time"
+          ],
+          [
+            "adrenaline_infusion_low_dose",
+            "on_time"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
-          "recovered": true,
-          "worst_stage": "Decompensated shock with hypoxia"
+          "recovered": false,
+          "worst_stage": "Peri-arrest",
+          "path": "Refractory pathway: adrenaline infusion, with fluids and lying flat"
         },
         "final": {
-          "hr": 106,
-          "sbp": 104,
-          "dbp": 64,
-          "spo2": 96,
-          "rr": 20,
+          "hr": 116,
+          "sbp": 106,
+          "dbp": 60,
+          "spo2": 86,
+          "rr": 4,
           "temp": 37.8,
-          "consciousness": "alert",
-          "stability": "stable",
+          "consciousness": "unresponsive",
+          "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "42b57797a2a8c2f985d4793368d939e84f237106f3c06768d2ac1f1ebe0b233a"
+        "events_sha": "c64aaa66839fdfb8511234da51a86e6edd8f77a16b15e7a0f28fd6162471083e"
       }
     }
   },
