@@ -49,7 +49,9 @@ const essentials = plan.treatments.filter((t: any) => t.role === "essential" && 
 const events: any[] = []; let t = 1;
 // A treatment that needs several doses gets each further dose as soon as its minimum interval allows.
 const doses = (tr: any, first: number) => Array.from({ length: tr.doses_required ?? 1 }, (_, n) => first + n * Math.max(1, tr.min_interval_minutes ?? 1));
-for (const tr of essentials) { const at = Math.min(t, tr.within_minutes ?? limit); for (const d of doses(tr, at)) events.push({ type: "INTERVENTION_GIVEN", timestamp: d * MIN, action: tr.id, consequence: "x" }); t = at + 1; }
+// A further dose that needs a reassessment first gets one at the same minute, just before it.
+const give = (action: string, m: number) => ({ type: "INTERVENTION_GIVEN", timestamp: m * MIN, action, consequence: "x" });
+for (const tr of essentials) { const at = Math.min(t, tr.within_minutes ?? limit); doses(tr, at).forEach((d, i) => { if (i > 0 && tr.reassess_before_repeat) events.push(give("reassess_patient", d)); events.push(give(tr.id, d)); }); t = at + 1; }
 events.sort((x, y) => x.timestamp - y.timestamp);
 const b = replayStudentEvents(c, events);
 for (let m = 1; m <= limit; m++) b.advanceTo(m * MIN);
@@ -65,7 +67,7 @@ const sd = scoreBedside(c, plan, d.events);
 console.log(`\nWITH HARMFUL (${harmful.map((x: any) => x.id).join(", ")}): bedside ${sd.score}, harmful flagged ${JSON.stringify(sd.harmful.map((h: any) => h.id))} -> ${snap(d)}`);
 
 // 4. late: essentials given just after their window
-const late = essentials.flatMap((tr: any) => doses(tr, Math.min(limit - 1, (tr.within_minutes ?? 5) + 2)).map((d) => ({ type: "INTERVENTION_GIVEN", timestamp: Math.min(limit - 1, d) * MIN, action: tr.id, consequence: "x" }))).sort((x: any, y: any) => x.timestamp - y.timestamp);
+const late = essentials.flatMap((tr: any) => doses(tr, Math.min(limit - 1, (tr.within_minutes ?? 5) + 2)).flatMap((d, i) => [...(i > 0 && tr.reassess_before_repeat ? [give("reassess_patient", Math.min(limit - 1, d))] : []), give(tr.id, Math.min(limit - 1, d))])).sort((x: any, y: any) => x.timestamp - y.timestamp);
 const l = replayStudentEvents(c, late);
 for (let m = 1; m <= limit; m++) l.advanceTo(m * MIN);
 const sl = scoreBedside(c, plan, l.events);

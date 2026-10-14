@@ -9,7 +9,8 @@ import { EncounterEngine } from "../encounter-engine";
 import { upgradeLegacyCase } from "../legacy-adapter";
 import { replayStudentEvents } from "../replay";
 import { validateSimulationCase } from "../validate-config";
-import { checkLivePlan, compileLivePlan, measuredOnArrival, normaliseLivePlan, scoreBedside, type LivePlan } from "../live-plan";
+import { checkLivePlan, compileLivePlan, measuredOnArrival, normaliseLivePlan, REASSESS_ID, REFUSED, scoreBedside, type LivePlan } from "../live-plan";
+import { playthroughs } from "../live-plan-playthrough";
 import { goldenFixtureCase, goldenFixturePlan } from "./live-plan-golden-fixture";
 
 const MIN = 60;
@@ -138,5 +139,103 @@ describe("prerequisites: what has to be true before a treatment can be given", (
         const replayed = replayStudentEvents(c, engine.events.filter((e) => e.type === "INTERVENTION_GIVEN"));
         replayed.advanceTo(19 * MIN);
         assert.deepEqual(scoreBedside(c, p, replayed.events, 19), score);
+    });
+});
+
+// ── Explicit reassessment ───────────────────────────────────────────────────
+
+describe("reassessment: explicit findings, and a further dose only after a fresh one", () => {
+    // The fitting child from Phase 2's tests, cut down: a benzodiazepine twice, the second only after a reassessment.
+    const fitRaw = (benzo: Record<string, unknown> = {}, over: Record<string, unknown> = {}) => ({
+        summary: "Untreated, the seizure goes on, oxygen falls and the child tires towards respiratory failure.",
+        critical_window_minutes: 5,
+        time_limit_minutes: 25,
+        findings: [{ id: "fitting", label: "Still fitting", present: true }],
+        reassessment: {
+            label: "Reassess: seizure, breathing, saturation",
+            detail: "Look, listen and check the monitor",
+            checks: [
+                { when: { finding: "fitting", is: true }, says: "He is still fitting.", otherwise: "The jerking has stopped." },
+                { when: { vital: "spo2", below: 92 }, says: "Saturation is low." },
+            ],
+        },
+        stages: [
+            { id: "fitting", name: "Still fitting", at_minutes: 6, vitals: { hr: 170, spo2: 90 }, nurse_says: "Still fitting, doctor. Saturation {spo2}." },
+            { id: "tiring", name: "Tiring", at_minutes: 16, vitals: { hr: 180, spo2: 84, rr: 16 }, stability: "critical", nurse_says: "His breathing is getting shallow, {rr} a minute." },
+        ],
+        treatments: [
+            { id: "iv_access", role: "essential", within_minutes: 4, says: "A cannula is in." },
+            {
+                id: "benzo_iv", label: "IV benzodiazepine", detail: "0.1 mg/kg IV", group: "medications", role: "essential", within_minutes: 5, effect: { hr: -4 },
+                says: "The dose goes in. The jerking slows, then starts again.", max_doses: 2, min_interval_minutes: 5, doses_required: 2, repeat_within_minutes: 10,
+                repeat_only_while: { finding: "fitting", is: true }, reassess_before_repeat: true,
+                responses: [{ dose: 2, says: "The second dose goes in and the jerking stops.", findings: { fitting: false } }],
+                ...benzo,
+            },
+            { id: "continuous_monitoring", role: "supportive", says: "On the monitor." },
+            { id: "mouth_gag", label: "Mouth gag", detail: "Spoon between the teeth", group: "airway", role: "harmful", effect: { spo2: -3 }, says: "A tooth chips.", why: "Objects in the mouth injure and obstruct." },
+        ],
+        stabilised_by: ["iv_access", "benzo_iv"],
+        recovery: { after_minutes: 4, vitals: { hr: 130, sbp: 96, dbp: 60, spo2: 97, rr: 26 }, consciousness: "drowsy", nurse_says: "The jerking has stopped. Pulse {hr}." },
+        ...over,
+    });
+    const fit = (benzo: Record<string, unknown> = {}, over: Record<string, unknown> = {}) => normaliseLivePlan(fitRaw(benzo, over), "ai");
+    const give = (p: LivePlan, steps: Array<[string, number]>) => {
+        const c = compileLivePlan(base(), p);
+        const e = new EncounterEngine(c);
+        const results = steps.map(([a, m]) => e.giveIntervention(a, m * MIN));
+        e.advanceTo(24 * MIN);
+        return { c, e, results, score: scoreBedside(c, p, e.events, 24) };
+    };
+
+    it("passes the check and puts the reassessment on the tray", () => {
+        assert.equal(errorsOf(fit()), "");
+        const c = compileLivePlan(base(), fit());
+        assert.ok(c.custom_interventions?.some((i) => i.id === REASSESS_ID));
+        assert.deepEqual(validateSimulationCase(c).errors ?? [], []);
+    });
+
+    it("reports what each check finds right now", () => {
+        const { results } = give(fit(), [["iv_access", 1], ["benzo_iv", 2], [REASSESS_ID, 7], ["benzo_iv", 7], [REASSESS_ID, 8]]);
+        assert.equal(results[2].consequence, "Reassessment: He is still fitting. Saturation is low.");
+        assert.equal(results[4].consequence, "Reassessment: The jerking has stopped. Saturation is low.", "saturation recovers only at the recovery, 4 min after stabilising");
+    });
+
+    it("refuses a further dose without a reassessment since the last one: no effect, no credit, and the student is told to reassess", () => {
+        const { e, results, score } = give(fit(), [["iv_access", 1], ["benzo_iv", 2], ["benzo_iv", 7]]);
+        assert.equal(results[2].consequence, REFUSED.not_reassessed("Reassess: seizure, breathing, saturation"));
+        assert.equal(e.state.flags.given_benzo_iv_dose2, false);
+        assert.deepEqual(score.items.find((i) => i.id === "benzo_iv")!.doses?.map((d) => d.status), ["on_time", "missed"]);
+        assert.deepEqual(score.refused?.map((r) => r.reason), ["not_reassessed"]);
+    });
+
+    it("a reassessment before the previous dose does not count: it has to come after it", () => {
+        const { e } = give(fit(), [["iv_access", 1], [REASSESS_ID, 1], ["benzo_iv", 2], ["benzo_iv", 7]]);
+        assert.equal(e.state.flags.given_benzo_iv_dose2, false);
+    });
+
+    it("too soon is still too soon, whatever the reassessment says", () => {
+        const { results } = give(fit(), [["iv_access", 1], ["benzo_iv", 2], [REASSESS_ID, 3], ["benzo_iv", 3]]);
+        assert.match(results[3].consequence, /too soon/);
+    });
+
+    it("correct care reassesses, then gives the dose, and scores full", () => {
+        const { score } = give(fit(), [["iv_access", 1], ["benzo_iv", 2], [REASSESS_ID, 7], ["benzo_iv", 7]]);
+        assert.equal(score.score, 100);
+        assert.equal(score.outcome.stabilised, true);
+        assert.equal(playthroughs(base(), fit()).correct.score, 100, "the playthroughs reassess before each further dose");
+    });
+
+    it("refuses reassess_before_repeat without a reassessment, or on a single-dose treatment", () => {
+        assert.match(errorsOf(fit({}, { reassessment: undefined })), /needs the plan's reassessment/);
+        assert.match(errorsOf(fit({ max_doses: undefined, min_interval_minutes: undefined, doses_required: undefined, repeat_within_minutes: undefined, repeat_only_while: undefined, responses: undefined })), /only makes sense when max_doses is 2 or more/);
+    });
+
+    it("the server's replay agrees with the browser", () => {
+        const p = fit();
+        const { c, e, score } = give(p, [["iv_access", 1], ["benzo_iv", 2], ["benzo_iv", 7], [REASSESS_ID, 8], ["benzo_iv", 8]]);
+        const replayed = replayStudentEvents(c, e.events.filter((x) => x.type === "INTERVENTION_GIVEN"));
+        replayed.advanceTo(24 * MIN);
+        assert.deepEqual(scoreBedside(c, p, replayed.events, 24), score);
     });
 });

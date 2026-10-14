@@ -7,7 +7,7 @@ import type { SimulationCaseConfig } from "./case-schema";
 import type { ClinicalEvent } from "./encounter-events";
 import { EncounterEngine } from "./encounter-engine";
 import { replayStudentEvents } from "./replay";
-import { availableFlag, compileLivePlan, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { availableFlag, compileLivePlan, REASSESS_ID, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
 
 const MIN = 60;
 
@@ -134,6 +134,10 @@ function result(config: SimulationCaseConfig, plan: LivePlan, engine: EncounterE
 
 const given = (action: string, minutes: number): ClinicalEvent => ({ type: "INTERVENTION_GIVEN", timestamp: minutes * MIN, action, consequence: "x" });
 
+/** A treatment's doses at these minutes, each further dose preceded by a reassessment when the plan asks for one. */
+const dosesAt = (t: LiveTreatment, times: number[]): ClinicalEvent[] =>
+    times.flatMap((at, i) => (i > 0 && t.reassess_before_repeat ? [given(REASSESS_ID, at), given(t.id, at)] : [given(t.id, at)]));
+
 export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playthroughs {
     const config = compileLivePlan(base, plan);
     const limit = plan.time_limit_minutes;
@@ -144,7 +148,7 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
     // A treatment required or available only in some states is given only once it is; on a fixed schedule it would be refused.
     for (const t of essentials.filter((x) => !isConditional(x))) {
         const times = correctTimes(t, next, limit);
-        for (const at of times) correct.push(given(t.id, at));
+        correct.push(...dosesAt(t, times));
         next = times[0] + 1;
     }
     correct.sort((a, b) => a.timestamp - b.timestamp);
@@ -153,7 +157,7 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
 
     const late: ClinicalEvent[] = essentials
         .filter((t) => !isConditional(t))
-        .flatMap((t) => doseTimes(t, Math.min(limit - 1, (t.within_minutes ?? 5) + 2)).map((at) => given(t.id, Math.min(limit - 1, at))))
+        .flatMap((t) => dosesAt(t, doseTimes(t, Math.min(limit - 1, (t.within_minutes ?? 5) + 2)).map((at) => Math.min(limit - 1, at))))
         .sort((a, b) => a.timestamp - b.timestamp);
 
     // With treatments required only in some states, correct care also gives each one as soon as it is required.
