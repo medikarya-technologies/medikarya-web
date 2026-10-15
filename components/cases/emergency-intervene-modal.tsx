@@ -31,6 +31,9 @@ interface Outcome {
   at: number
 }
 
+/** The engine refused it (not yet available, a prerequisite missing, too soon, not indicated): it was not given. */
+const refused = (consequence: string) => consequence.startsWith(REFUSED_PREFIX)
+
 export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
   const { config, events, actions, isExpired, patient, now } = useClinicalEvents()
   const [outcome, setOutcome] = useState<Outcome | null>(null)
@@ -114,10 +117,20 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
               role="status"
               className={cn(
                 "sticky top-0 z-10 flex items-start gap-2.5 border-b px-4 py-3 text-sm sm:px-6",
-                outcome.unsafe ? "border-enc-crit/25 bg-enc-crit-soft text-enc-crit" : "border-enc-ok/25 bg-enc-ok-soft text-enc-ok"
+                outcome.unsafe
+                  ? "border-enc-crit/25 bg-enc-crit-soft text-enc-crit"
+                  : refused(outcome.consequence)
+                    ? "border-enc-warn/25 bg-enc-warn-soft text-enc-warn"
+                    : "border-enc-ok/25 bg-enc-ok-soft text-enc-ok"
               )}
             >
-              {outcome.unsafe ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-enc-crit" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-enc-ok" />}
+              {outcome.unsafe ? (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-enc-crit" />
+              ) : refused(outcome.consequence) ? (
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-enc-warn" />
+              ) : (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-enc-ok" />
+              )}
               <div className="min-w-0">
                 <p className="font-semibold">
                   {outcome.label} <span className="ml-1 font-mono text-[11px] font-normal opacity-60">{formatClock(outcome.at)}</span>
@@ -173,7 +186,8 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
               {recent.map((e, i) => (
                 <li key={`${e.timestamp}-${i}`} className="flex gap-2 text-[11px] text-enc-ink-2">
                   <span className="font-mono tabular-nums">{formatClock(e.timestamp)}</span>
-                  <span className="font-medium text-enc-ink">{interventionLabel(config, e.action)}</span>
+                  <span className={cn("font-medium", refused(e.consequence) ? "text-enc-ink-3 line-through" : "text-enc-ink")}>{interventionLabel(config, e.action)}</span>
+                  {refused(e.consequence) && <span className="text-enc-warn">not given</span>}
                 </li>
               ))}
             </ul>

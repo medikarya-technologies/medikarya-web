@@ -210,7 +210,8 @@ export class EncounterEngine {
             }
             if (transition.narrative) {
                 to = transition.at;
-                stopped = to < asked ? "alert" : stopped;
+                // An alert in the wait's last second is where it would have ended anyway: not an early stop.
+                stopped = to < asked - 1 ? "alert" : stopped;
                 break;
             }
         }
