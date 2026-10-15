@@ -2011,8 +2011,8 @@
     }
   },
   "48-year-old-man-who-suddenly-could-not-breathe-and-fainted": {
-    "plan_sha": "5259d26de7310cfea663b08f8af3abd58b74136083e2f24c27b1f1b57a1dd30d",
-    "compiled_sha": "801fe1f47911b4e9db7de596611e94f98114e1f5ac2e5ab7909ed197e9398524",
+    "plan_sha": "0d5b48ff937f286bdf7ce287a5504592879ece39b4c7250ea378a5927040859e",
+    "compiled_sha": "3908d33d68a1788a0591ae3c163917142df7808e08d9e56cedf44eea9ef3cc5f",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2090,7 +2090,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "ae4b9face26f3c374073a7a2906f63b532053d12042234cf10e39a726e13f7b0"
+        "events_sha": "c93e894decb3000852cb2fa0b5b296cf45116e9d57c69bcd1259fe9104f600fb"
       },
       "harmful": {
         "score": 55,
@@ -2133,10 +2133,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "01d8f0ef5f7bf36348429c1c001a953dc2dcbfe701d09a2898f44debe77ba637"
+        "events_sha": "c75f5bfa10b63609a5ab3d59c6dd310fec88da46f0352e9214f349bb1603d28d"
       },
       "late": {
-        "score": 50,
+        "score": 25,
         "items": [
           [
             "high_flow_oxygen",
@@ -2148,18 +2148,57 @@
           ],
           [
             "heparin_ufh_bolus",
-            "late"
+            "missed"
           ],
           [
             "systemic_thrombolysis_pe",
+            "missed"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Peri-arrest"
+        },
+        "final": {
+          "hr": 50,
+          "sbp": 48,
+          "dbp": 28,
+          "spo2": 69,
+          "rr": 10,
+          "temp": 37.2,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_bradycardia"
+        },
+        "events_sha": "613bb3fdf2ef8fb88864cb36354c697f75862448969656b230a02a2b210701c3"
+      },
+      "rescue": {
+        "score": 75,
+        "items": [
+          [
+            "high_flow_oxygen",
             "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "heparin_ufh_bolus",
+            "on_time"
+          ],
+          [
+            "systemic_thrombolysis_pe",
+            "on_time"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Decompensated obstructive shock"
+          "worst_stage": "Worsening shock"
         },
         "final": {
           "hr": 104,
@@ -2172,7 +2211,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "84230b697bce4cd95cf2db039770574fb5e7f5a82769ad81e78aa4f967c05718"
+        "events_sha": "4d8b37336991d5e76cd973ec4b94d118436b6d2596706e7d56ca3c0a431c16f5"
       }
     }
   },
