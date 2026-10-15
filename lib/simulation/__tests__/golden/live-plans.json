@@ -227,8 +227,8 @@
     }
   },
   "24-year-old-man-struggling-to-breathe-after-a-bike-accident": {
-    "plan_sha": "733adfc9bea497fff6dfa1c8726cbceaa198de615431ad2abe4f68128302e461",
-    "compiled_sha": "7ef746446aaf3adf0f1ee29be24106001cab7664fe5e831288817a8dcd411f60",
+    "plan_sha": "f73c35feb9fa87517a3372d58f15145332c5e09f065e90b13b4f9ddcf882ba13",
+    "compiled_sha": "490db6b070d42b26c3462c64527a26ea34d00232a27826c4fcaa4d854f4507ea",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1767,8 +1767,8 @@
     }
   },
   "46-year-old-man-whose-legs-are-too-weak-to-stand": {
-    "plan_sha": "8b22186fbaf4590ebc7d658183ae2b75827bb709c05f6a9e38e405880be1f97e",
-    "compiled_sha": "1f46a34b50710689e6b946f08b5dab2b694f9abc62a97df2d567864fe31862d2",
+    "plan_sha": "4b082563d16035a37e4f226f1cdfe925bb5de709f6beb14cb3e10442f3466783",
+    "compiled_sha": "2775be2b388cc449ea4443c0cc342b7e5a94fae858c71d13d595b8eb991ef099",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1862,7 +1862,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "cbc923373ed2ddd28dbd39f3c3cb3170ff527770170aacc684ef7288740dc30b"
+        "events_sha": "307d4d66597508f92aeebf1297b9a0432811943a0b01ea25db98a71579befea6"
       },
       "harmful": {
         "score": 70,
@@ -1912,10 +1912,57 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "8d8a9738904ab2271cf598abfce1b783d93262038a152a99bcbbda46d7005c18"
+        "events_sha": "b0cfdd78768a9eb34e3a69a0c641f5e077df164e09fc73388f6111d953abe369"
       },
       "late": {
-        "score": 50,
+        "score": 25,
+        "items": [
+          [
+            "continuous_monitoring",
+            "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "calcium_gluconate_iv",
+            "missed"
+          ],
+          [
+            "insulin_glucose_iv",
+            "missed"
+          ],
+          [
+            "glucose_infusion_after_insulin",
+            "missed"
+          ],
+          [
+            "urgent_haemodialysis",
+            "late"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Peri-arrest"
+        },
+        "final": {
+          "hr": 22,
+          "sbp": 64,
+          "dbp": 36,
+          "spo2": 88,
+          "rr": 10,
+          "temp": 36.8,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "complete_heart_block"
+        },
+        "events_sha": "8d83d3d640f39a8098c4ed02165b7289f2f5b9a0e3a5a971f6d5607e0fc35ede"
+      },
+      "rescue": {
+        "score": 67,
         "items": [
           [
             "continuous_monitoring",
@@ -1931,11 +1978,11 @@
           ],
           [
             "insulin_glucose_iv",
-            "late"
+            "on_time"
           ],
           [
             "glucose_infusion_after_insulin",
-            "late"
+            "on_time"
           ],
           [
             "urgent_haemodialysis",
@@ -1946,7 +1993,7 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Broad, slow rhythm with low BP"
+          "worst_stage": "Slowing pulse"
         },
         "final": {
           "hr": 66,
@@ -1959,7 +2006,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "c535faafec18b95cf40d682553e0adaeadc5530fb51f9f3696e0bd8e99a73e10"
+        "events_sha": "04991cfbfe694c24db21c2e589d628db194a1ef2777d090ef276214db38ce229"
       }
     }
   },
@@ -2689,8 +2736,8 @@
     }
   },
   "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
-    "plan_sha": "35950f2630a1e00b9a5af8ec9af272f6016e4fcfced23c8036d6b4d18997caff",
-    "compiled_sha": "c266551b544e352cdc1404f18852c4acd1a7d258a8783e28c268a55e9876cb20",
+    "plan_sha": "8f5dd205b2d217397aa88b2f822967a09e0c3731248faa5b7851e91df183f3f3",
+    "compiled_sha": "f79c77ff785c19c437cd05a287ee1a9ef24bca673163dfc076939e4574ca7a28",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2776,7 +2823,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "e749b6fc0310ebdf8eef0b39dc58449a57801366556051d910056b63acd6787d"
+        "events_sha": "3517a1701465c70d1772d8ebd4039d9899a94c7601adfb84de089e59f0c274e9"
       },
       "harmful": {
         "score": 70,
@@ -2822,10 +2869,10 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "2d308a7e98511cfbf16df94adefa3f8ad843dc15dd825bbb22aaaac98ed4acae"
+        "events_sha": "ef4c08df5130be0ac7c815ead5c8daf9400330eb098b7571689cd11c6ef4e9ac"
       },
       "late": {
-        "score": 60,
+        "score": 40,
         "items": [
           [
             "capillary_glucose_check",
@@ -2837,11 +2884,54 @@
           ],
           [
             "iv_glucose_10_percent",
-            "late"
+            "missed"
           ],
           [
             "glucose_infusion_and_admission",
+            "missed"
+          ],
+          [
+            "stop_sulfonylurea",
+            "on_time"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Deep coma after the fit"
+        },
+        "final": {
+          "hr": 118,
+          "sbp": 142,
+          "dbp": 84,
+          "spo2": 88,
+          "rr": 10,
+          "temp": 36.1,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "0a8e3e9e444d380e016abd40a00c992c1447c4f43232142692d0408363e7fd1c"
+      },
+      "rescue": {
+        "score": 80,
+        "items": [
+          [
+            "capillary_glucose_check",
             "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "iv_glucose_10_percent",
+            "on_time"
+          ],
+          [
+            "glucose_infusion_and_admission",
+            "on_time"
           ],
           [
             "stop_sulfonylurea",
@@ -2852,7 +2942,7 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Unrousable"
+          "worst_stage": "Deepening drowsiness"
         },
         "final": {
           "hr": 94,
@@ -2865,13 +2955,13 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "8ba60af7bba6142eb6d3e47f3d095c7fc4eda67a39d60759b32d7bd078981bcf"
+        "events_sha": "83a33c11dfd99589979473ce7867f43199adfe623e0bf4cf8c5ab1300ab1bbc9"
       }
     }
   },
   "58-year-old-woman-who-woke-up-gasping-for-breath": {
-    "plan_sha": "bda839d6decac2afa51c2dea3a685536361c88493193e566c4da474ae6ec007d",
-    "compiled_sha": "25b0dbb037316e6bf51b37ebd1a9eecb034ba09f9c871585ab5275ca3deed3a4",
+    "plan_sha": "efe80d7129e3a5be5db1c26d2e0eba01e05384ab2119384dd1ef95a732b0dc65",
+    "compiled_sha": "c20754c681c3e7ee6110e1905d5d79766825ab294e447289e756cb3e09f5a606",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2965,7 +3055,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "4d1530068345bf66efa518aec8c50b7b84bc48c5147844c9340ea0226f361eac"
+        "events_sha": "aec33e5ee8e0ff45cac6ddfc9bd5c6b166fec04a7a767ce98c514612c4722021"
       },
       "harmful": {
         "score": 55,
@@ -3016,10 +3106,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e14b55f5dd05b043dbd658f292ebf1e2c622e37a83bf906621165c35c3df04e9"
+        "events_sha": "961f3791e95ca50bc79c8faf0dc701691f284f3fd33c9c144443ce3ffbac4380"
       },
       "late": {
-        "score": 50,
+        "score": 42,
         "items": [
           [
             "sit_upright",
@@ -3043,14 +3133,61 @@
           ],
           [
             "furosemide_iv",
+            "missed"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Respiratory failure"
+        },
+        "final": {
+          "hr": 134,
+          "sbp": 120,
+          "dbp": 72,
+          "spo2": 78,
+          "rr": 4,
+          "temp": 36.9,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "e87104c6b3643ab34418c086a0fdfbc02cd6c06d1590513546d934a54d18c4c9"
+      },
+      "rescue": {
+        "score": 58,
+        "items": [
+          [
+            "sit_upright",
             "late"
+          ],
+          [
+            "high_flow_oxygen",
+            "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "niv_cpap",
+            "late"
+          ],
+          [
+            "gtn_sublingual",
+            "late"
+          ],
+          [
+            "furosemide_iv",
+            "on_time"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Exhaustion with rising CO2"
+          "worst_stage": "Confused and tiring"
         },
         "final": {
           "hr": 102,
@@ -3063,7 +3200,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "4ae02742fe13e082d2cf3a8982fd37361fecf30bab3631cb92bcd36ef23453a3"
+        "events_sha": "f1077b7b6e9ed6a7953725403490d2c604fad1d3f626d95273a3a9d083eeb29a"
       }
     }
   }
