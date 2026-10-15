@@ -24,7 +24,7 @@ import { AlertTriangle, Check, ChevronDown, ChevronUp, Eye, Lightbulb, ListOrder
 import { cn, formatPatientAge } from "@/lib/utils"
 import { formatClock, countBudgetedActions, type EventOf } from "@/lib/simulation/encounter-events"
 import { alarmLabel, assessVitals, type VitalKey, type VitalSeverity } from "@/lib/simulation/vitals-assess"
-import { liveReading, nextMeasurementTime, nibpReading } from "@/lib/simulation/live-vitals"
+import { isExactAt, liveReading, monitorBoundaries, nextMeasurementTime, nibpReading } from "@/lib/simulation/live-vitals"
 import { useClinicalEvents } from "./clinical-event-manager"
 import { TelemetryMonitor } from "./telemetry-monitor"
 import { monitorSound, SoundToggle } from "./monitor-sound"
@@ -66,17 +66,22 @@ interface Shown {
 }
 
 export function useLiveVitals(): Shown {
-  const { patient, now, config, caseData } = useClinicalEvents()
+  const { patient, now, config, caseData, events } = useClinicalEvents()
   const seed: string = String(caseData.id ?? caseData.patient?.name ?? "case")
   const age: number | undefined = caseData.patient?.age
-  const opts = { seed, age, thresholds: config.state_thresholds }
+  // The monitor's natural variation may never put a number on the wrong side of a threshold the case decides by (an alarm,
+  // a plan's "systolic under 90", "pulse pressure 20 or less"), and a reassessment is an exact reading: for a few seconds
+  // after it the monitor shows the same numbers the reassessment reported, taken at the same second.
+  const boundaries = useMemo(() => monitorBoundaries(config), [config])
+  const exactAt = useMemo(() => events.filter((e) => e.type === "REASSESSED").map((e) => e.timestamp), [events])
+  const opts = { seed, age, thresholds: boundaries.thresholds, derived: boundaries.derived, exactAt }
 
   const target = liveReading(patient, now, opts)
 
   // The cuff: cycles on the clock, and straight away when the patient's pressure changes.
   const cuff = useRef<{ measuredAt: number; base: { systolic: number; diastolic: number } } | null>(null)
   const truePressure = { systolic: patient.systolic, diastolic: patient.diastolic }
-  const measuredAt = nextMeasurementTime(cuff.current, now, truePressure)
+  const measuredAt = nextMeasurementTime(cuff.current, now, truePressure, exactAt)
   if (cuff.current === null || cuff.current.measuredAt !== measuredAt) cuff.current = { measuredAt, base: truePressure }
   const reading = nibpReading(truePressure, measuredAt, opts)
 
@@ -84,7 +89,7 @@ export function useLiveVitals(): Shown {
   // instead of jumping, like a monitor averaging; the small wander passes straight through.
   const shown = useRef<{ at: number; v: Record<keyof typeof GLIDE_PER_SECOND, number> } | null>(null)
   const goal = { hr: target.hr, spo2: target.spo2, rr: target.rr, sbp: reading.systolic, dbp: reading.diastolic }
-  if (shown.current === null || now < shown.current.at) {
+  if (shown.current === null || now < shown.current.at || isExactAt(now, exactAt)) {
     shown.current = { at: now, v: { ...goal } }
   } else if (now > shown.current.at) {
     const dt = now - shown.current.at

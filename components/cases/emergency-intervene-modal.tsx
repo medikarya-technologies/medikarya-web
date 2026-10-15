@@ -17,6 +17,7 @@ import { formatClock, type EventOf } from "@/lib/simulation/encounter-events"
 import { INTERVENTION_GROUPS, interventionLabel, interventionsForCase } from "@/lib/simulation/intervention-catalog"
 import { REFUSED_PREFIX, availableFlag } from "@/lib/simulation/live-plan"
 import { describeFindings } from "@/lib/simulation/reassessment"
+import { EXACT_HOLD_SECONDS } from "@/lib/simulation/live-vitals"
 import { useClinicalEvents } from "./clinical-event-manager"
 
 interface Props {
@@ -155,6 +156,11 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
                       </li>
                     ))}
                   </ul>
+                )}
+                {outcome.findings && outcome.findings.length > 0 && (
+                  <p className="mt-1 text-[11px] opacity-75">
+                    Exact readings at {formatClock(outcome.at)}. The monitor shows the same numbers for {EXACT_HOLD_SECONDS} seconds, then its natural variation of a beat or a point resumes; decide on these.
+                  </p>
                 )}
               </div>
             </div>
