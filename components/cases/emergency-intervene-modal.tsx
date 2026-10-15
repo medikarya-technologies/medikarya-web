@@ -31,7 +31,11 @@ interface Outcome {
   at: number
 }
 
-/** The engine refused it (not yet available, a prerequisite missing, too soon, not indicated): it was not given. */
+/**
+ * The engine refused it (not yet available, a prerequisite missing, too soon, not indicated): it was not given. A live
+ * plan runs only on a case with no rules of its own (withLivePlan), so a tray action's note is the plan's alone: a
+ * refusal is the whole note, never mixed with another consequence.
+ */
 const refused = (consequence: string) => consequence.startsWith(REFUSED_PREFIX)
 
 export function EmergencyInterveneModal({ open, onOpenChange }: Props) {

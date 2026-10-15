@@ -210,8 +210,8 @@ export class EncounterEngine {
             }
             if (transition.narrative) {
                 to = transition.at;
-                // An alert in the wait's last second is where it would have ended anyway: not an early stop.
-                stopped = to < asked - 1 ? "alert" : stopped;
+                // A nurse alert that ends the wait before its end says so, and takes precedence over the time limit.
+                stopped = to < target ? "alert" : stopped;
                 break;
             }
         }

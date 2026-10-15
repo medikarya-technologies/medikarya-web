@@ -50,6 +50,8 @@ describe("release blockers: the library's list uses the same rule as the case", 
         assert.equal(liveForStudents("approved", null), true);
         assert.equal(liveForStudents("proposed", null), false);
         assert.equal(liveForStudents("approved", [{ id: "x" }]), false, "a blocker that cannot be read counts as open");
+        assert.equal(liveForStudents("approved", [null]), false);
+        assert.equal(openReleaseBlockers(plan({ release_blockers: [null as unknown as typeof open] })).length, 1, "and it is listed, not thrown on");
     });
 
     it("every real plan on this machine: none reaches students while a blocker is open", () => {

@@ -59,6 +59,11 @@ async function main() {
   let livePlan = caseJson.live_plan;
   if (isLivePlan(livePlan)) livePlan = carryReleaseBlockers(livePlan, stored);
   else if (openReleaseBlockers(stored).length > 0) livePlan = stored;
+  // A file cannot switch on a plan that a blocker holds back: it is saved switched off (proposed).
+  if (isLivePlan(livePlan) && livePlan.status === 'approved' && openReleaseBlockers(livePlan).length > 0) {
+    console.warn(`  ⚠ the live plan has open release blockers, so it is saved switched off (proposed), not approved.`);
+    livePlan = { ...livePlan, status: 'proposed' };
+  }
   const full = { ...caseJson, ...(livePlan ? { live_plan: livePlan } : {}), status, source: { kind: 'admin', added_at: caseJson.source?.added_at ?? now, updated_at: now } };
   const { error } = await db.from('cases').upsert(
     {

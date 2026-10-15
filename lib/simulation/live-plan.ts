@@ -302,12 +302,19 @@ export interface ReleaseBlocker {
  * two fields alone, so the library's list (which reads only these columns) uses the same rule as the case itself.
  */
 export function liveForStudents(status: unknown, blockers: unknown): boolean {
-    const open = Array.isArray(blockers) && blockers.some((b) => !b || typeof b !== "object" || !(b as ReleaseBlocker).cleared_at);
-    return status === "approved" && !open;
+    return status === "approved" && !(Array.isArray(blockers) && blockers.some(isOpenBlocker));
 }
 
-/** The blockers still open on a plan. */
-export const openReleaseBlockers = (plan: unknown): ReleaseBlocker[] => (isLivePlan(plan) ? (plan.release_blockers ?? []).filter((b) => !b.cleared_at) : []);
+/** Open unless marked cleared. Anything that cannot be read as a blocker counts as open: it blocks, it never lets through. */
+const isOpenBlocker = (b: unknown): boolean => !b || typeof b !== "object" || !(b as ReleaseBlocker).cleared_at;
+
+/** The blockers still open on a plan (one that cannot be read is listed as such, so it can be seen and fixed). */
+export const openReleaseBlockers = (plan: unknown): ReleaseBlocker[] =>
+    isLivePlan(plan)
+        ? (plan.release_blockers ?? [])
+              .filter(isOpenBlocker)
+              .map((b) => (b && typeof b === "object" ? b : { id: "unreadable", text: "A release blocker on this plan could not be read; fix it in the case's data.", raised_at: "" }))
+        : [];
 
 /** A new or changed plan keeps the case's release blockers: they are cleared on purpose, never by redrafting. */
 export function carryReleaseBlockers(next: LivePlan, previous: unknown): LivePlan {
