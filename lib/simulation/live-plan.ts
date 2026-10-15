@@ -20,6 +20,7 @@ import type {
     ActionConsequence,
     Consciousness,
     CustomInterventionDef,
+    ReassessmentReport,
     EventRule,
     PhysiologicalChanges,
     RhythmType,
@@ -27,7 +28,7 @@ import type {
     SimulationCaseConfig,
     StabilityLevel,
 } from "./case-schema";
-import { CONSCIOUSNESS_LEVELS, RHYTHM_TYPES, STABILITY_LEVELS } from "./case-schema";
+import { CONSCIOUSNESS_LEVELS, REPORT_VITALS, RHYTHM_TYPES, STABILITY_LEVELS } from "./case-schema";
 import type { ClinicalEvent } from "./encounter-events";
 import { INTERVENTIONS, type InterventionGroup } from "./intervention-catalog";
 import { evaluateCondition } from "./conditions";
@@ -67,7 +68,8 @@ export interface LiveStage {
 // What a plan can ask about the patient, in a clinician's terms. Compiled to the engine's own conditions
 // (compileCondition), so a plan never writes engine rules itself.
 
-export type LiveVitalName = keyof LiveVitals | "map";
+/** `pp` is the pulse pressure: systolic minus diastolic, worked out wherever it is asked about. */
+export type LiveVitalName = keyof LiveVitals | "map" | "pp";
 
 export type LiveCondition =
     /** A vital sign against a threshold: below (<), above (>), at_most (≤), at_least (≥). Every comparator given must hold. */
@@ -196,6 +198,12 @@ export interface LiveReassessment {
     label: string;
     detail: string;
     checks: Array<{ when: LiveCondition; says: string; otherwise?: string }>;
+    /**
+     * Optional. The readings recorded in a REASSESSED event each time it is done: named vitals, consciousness, and the
+     * plan's own findings (by id). The engine reads them from the patient; the student only asks. Absent: the
+     * reassessment is the fixed sentences in `checks` alone, exactly as before.
+     */
+    report?: { vitals?: LiveVitalName[]; consciousness?: boolean; findings?: string[] };
 }
 
 /** The tray id of the plan's reassessment. */
@@ -376,7 +384,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         }
         if ("not" in o) return only("not") ? { not: condition(o.not, depth + 1) } : bad;
         if ("vital" in o) {
-            if (!only("vital", "below", "above", "at_most", "at_least") || !["hr", "sbp", "dbp", "map", "spo2", "rr", "temp"].includes(o.vital)) return bad;
+            if (!only("vital", "below", "above", "at_most", "at_least") || !["hr", "sbp", "dbp", "map", "pp", "spo2", "rr", "temp"].includes(o.vital)) return bad;
             const out: Record<string, unknown> = { vital: o.vital };
             for (const k of ["below", "above", "at_most", "at_least"]) {
                 if (k in o) {
@@ -398,6 +406,16 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         }
         if ("stabilised" in o) return only("stabilised") && typeof o.stabilised === "boolean" ? { stabilised: o.stabilised } : bad;
         return bad;
+    };
+    // The readings a reassessment records. Read strictly: a name that is not a reading is dropped here, and the check reports a report with nothing in it.
+    const readReport = (r: any): NonNullable<LiveReassessment["report"]> => {
+        const vitalsOut = (Array.isArray(r?.vitals) ? r.vitals : []).filter((v: unknown): v is LiveVitalName => typeof v === "string" && (REPORT_VITALS as readonly string[]).includes(v));
+        const findingsOut = (Array.isArray(r?.findings) ? r.findings : []).map(slug).filter(Boolean);
+        return {
+            ...(vitalsOut.length > 0 ? { vitals: [...new Set<LiveVitalName>(vitalsOut)] } : {}),
+            ...(r?.consciousness === true ? { consciousness: true } : {}),
+            ...(findingsOut.length > 0 ? { findings: [...new Set<string>(findingsOut)] } : {}),
+        };
     };
     const findingSets = (v: unknown): Record<string, boolean> | undefined => {
         if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
@@ -515,6 +533,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
                           says: text(c?.says),
                           ...(text(c?.otherwise) ? { otherwise: text(c.otherwise) } : {}),
                       })),
+                      ...(p.reassessment.report && typeof p.reassessment.report === "object" ? { report: readReport(p.reassessment.report) } : {}),
                   },
               }
             : {}),
@@ -552,6 +571,8 @@ export interface LivePlanCheck {
 }
 
 /** What a monitor can show: anything outside is a typing mistake, not physiology. */
+/** Pulse pressure the monitor can show: the diastolic is held at least 10 below the systolic, and the systolic reaches 260. */
+const PULSE_PRESSURE_RANGE: [number, number] = [10, 245];
 const RANGE: Record<keyof LiveVitals, [number, number]> = { hr: [20, 240], sbp: [40, 260], dbp: [20, 160], spo2: [50, 100], rr: [4, 70], temp: [32, 42] };
 /** The most one treatment may move a vital in one go. */
 const MAX_EFFECT: Record<keyof LiveVitals, number> = { hr: 80, sbp: 80, dbp: 60, spo2: 30, rr: 30, temp: 3 };
@@ -625,8 +646,7 @@ function checkCondition(c: LiveCondition, where: string, scope: ConditionScope, 
     if ("any" in c) return c.any.forEach((x, i) => checkCondition(x, `${where}.any[${i}]`, scope, errors));
     if ("not" in c) return checkCondition(c.not, `${where}.not`, scope, errors);
     if ("vital" in c) {
-        const key = c.vital === "map" ? "sbp" : c.vital;
-        const [lo, hi] = RANGE[key];
+        const [lo, hi] = c.vital === "pp" ? PULSE_PRESSURE_RANGE : RANGE[c.vital === "map" ? "sbp" : c.vital];
         for (const k of ["below", "above", "at_most", "at_least"] as const) {
             const n = c[k];
             if (n !== undefined && (n < lo || n > hi)) errors.push(`${where}: ${c.vital} ${k} ${n} is outside what a monitor can show (${lo}–${hi}).`);
@@ -811,6 +831,11 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
             if (c.says.length < 5) errors.push(`reassessment.checks[${i}]: says is what the student finds; write it.`);
         });
         if (plan.treatments.some((t) => t.id === REASSESS_ID)) errors.push(`treatments: "${REASSESS_ID}" is the reassessment's own id.`);
+        if (r.report) {
+            const { vitals = [], consciousness = false, findings = [] } = r.report;
+            if (vitals.length === 0 && !consciousness && findings.length === 0) errors.push("reassessment.report: name at least one vital, consciousness or finding to record, or leave the report out.");
+            for (const f of findings) if (!scope.findings.has(f)) errors.push(`reassessment.report: "${f}" is not one of the plan's findings.`);
+        }
     }
     // An infusion stops acting once the patient is stabilised. On a path without end points it would stabilise him the
     // moment it started, before any of its effect arrived.
@@ -1123,6 +1148,15 @@ function reassessmentConsequences(plan: LivePlan): ActionConsequence[] {
         }),
     ];
 }
+/** The engine's form of a plan's reassessment report: findings carry the flag the engine reads and the label to show. */
+function compileReport(plan: LivePlan): ReassessmentReport {
+    const r = plan.reassessment?.report ?? {};
+    return {
+        ...(r.vitals?.length ? { vitals: r.vitals } : {}),
+        ...(r.consciousness ? { consciousness: true } : {}),
+        ...(r.findings?.length ? { findings: r.findings.map((id) => ({ id, flag: findingFlag(id), label: plan.findings?.find((f) => f.id === id)?.label ?? id })) } : {}),
+    };
+}
 const signed = (n: number) => (n >= 0 ? `+${n}` : String(n));
 
 function deltas(from: LiveVitals, to: LiveVitals): PhysiologicalChanges {
@@ -1271,7 +1305,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
 
     const own: CustomInterventionDef[] = [
         ...plan.treatments.filter((t) => !isSharedTreatment(t.id)).map((t) => ({ id: t.id, label: t.label, detail: t.detail, group: t.group })),
-        ...(plan.reassessment ? [{ id: REASSESS_ID, label: plan.reassessment.label, detail: plan.reassessment.detail, group: "other" as const }] : []),
+        ...(plan.reassessment ? [{ id: REASSESS_ID, label: plan.reassessment.label, detail: plan.reassessment.detail, group: "other" as const, ...(plan.reassessment.report ? { report: compileReport(plan) } : {}) }] : []),
     ];
     const stillUnmeasured = (base.initial_state.unmeasured ?? []).filter((u) => {
         const key = u === "bp" ? "sbp" : u === "temperature" ? "temp" : u;

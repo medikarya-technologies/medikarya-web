@@ -57,6 +57,23 @@ export function resolveParameter(name: string): keyof PhysiologySnapshot | null 
     return PARAMETER_KEYS[name] ?? null;
 }
 
+/**
+ * Parameters worked out from the others, so no snapshot has to carry them: pulse pressure is the systolic minus the
+ * diastolic pressure at the instant asked about.
+ */
+const DERIVED_PARAMETERS: Record<string, (p: PhysiologySnapshot) => number> = {
+    pulse_pressure: (p) => p.sbp - p.dbp,
+    pp: (p) => p.sbp - p.dbp,
+};
+
+/** The value of a parameter, derived ones included. `undefined` when the name is not a parameter. */
+export function parameterValue(name: string, physiology: PhysiologySnapshot): number | string | undefined {
+    const derived = DERIVED_PARAMETERS[name];
+    if (derived) return derived(physiology);
+    const key = resolveParameter(name);
+    return key ? physiology[key] : undefined;
+}
+
 /** MAP from systolic/diastolic, rounded to a whole mmHg. */
 export function meanArterialPressure(systolic: number, diastolic: number): number {
     return Math.round((systolic + 2 * diastolic) / 3);
@@ -70,9 +87,8 @@ export function testParameter(
     test: ParameterTest,
     physiology: PhysiologySnapshot
 ): boolean {
-    const key = resolveParameter(parameter);
-    if (!key) throw new Error(`Unknown physiological parameter "${parameter}"`);
-    const value = physiology[key];
+    const value = parameterValue(parameter, physiology);
+    if (value === undefined) throw new Error(`Unknown physiological parameter "${parameter}"`);
 
     if (test.lt !== undefined && !(typeof value === "number" && value < test.lt)) return false;
     if (test.lte !== undefined && !(typeof value === "number" && value <= test.lte)) return false;

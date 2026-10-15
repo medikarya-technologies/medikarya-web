@@ -25,6 +25,7 @@ import { formatClock, type ClinicalEvent } from "@/lib/simulation/encounter-even
 import { getIntervention } from "@/lib/simulation/intervention-catalog"
 import { ASSIST_LABELS } from "@/lib/simulation/assist-policy"
 import { isRecordOnlyRule } from "@/lib/simulation/live-plan"
+import { describeFindings } from "@/lib/simulation/reassessment"
 
 interface Row {
   icon: typeof Activity
@@ -68,6 +69,8 @@ function describe(e: ClinicalEvent, examLabels: ReadonlyMap<string, string>): Ro
       return { icon: Stethoscope, tone: "good", title: `Diagnosis: ${e.primary}`, detail: e.reasoning }
     case "TIME_SKIPPED":
       return { icon: Clock, tone: "muted", title: `Waited ${formatClock(e.timestamp - e.from)}${e.stopped === "alert" ? " (stopped early: the nurse called)" : e.stopped === "limit" ? " (until the encounter ended)" : ""}` }
+    case "REASSESSED":
+      return { icon: Activity, tone: "neutral", title: "Reassessed", detail: describeFindings(e.findings).join("  ·  ") }
     case "MANAGEMENT_SUBMITTED":
       return { icon: ClipboardList, tone: "good", title: `Management plan (${e.steps.length} ${e.steps.length === 1 ? "step" : "steps"})`, detail: e.steps.join("  ·  ") }
   }

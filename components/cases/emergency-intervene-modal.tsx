@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { formatClock, type EventOf } from "@/lib/simulation/encounter-events"
 import { INTERVENTION_GROUPS, interventionLabel, interventionsForCase } from "@/lib/simulation/intervention-catalog"
 import { REFUSED_PREFIX, availableFlag } from "@/lib/simulation/live-plan"
+import { describeFindings } from "@/lib/simulation/reassessment"
 import { useClinicalEvents } from "./clinical-event-manager"
 
 interface Props {
@@ -29,6 +30,8 @@ interface Outcome {
   consequence: string
   unsafe: boolean
   at: number
+  /** What a reassessment found, read by the engine from the patient (never typed by the student). */
+  findings?: string[]
 }
 
 /**
@@ -75,6 +78,10 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
       consequence: result.consequence,
       unsafe: result.safetyPenalty,
       at: given?.timestamp ?? now,
+      findings: (() => {
+        const found = result.appended.find((e) => e.type === "REASSESSED")
+        return found && found.type === "REASSESSED" ? describeFindings(found.findings) : undefined
+      })(),
     })
     // Guard against a double-click giving the same drug twice.
     setCooling((prev) => new Set(prev).add(id))
@@ -140,6 +147,15 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
                   {outcome.label} <span className="ml-1 font-mono text-[11px] font-normal opacity-60">{formatClock(outcome.at)}</span>
                 </p>
                 <p className="mt-0.5 text-[13px] leading-relaxed">{outcome.consequence}</p>
+                {outcome.findings && outcome.findings.length > 0 && (
+                  <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Readings at this reassessment">
+                    {outcome.findings.map((f) => (
+                      <li key={f} className="rounded-md border border-current/20 bg-white/60 px-1.5 py-0.5 font-mono text-[11px] text-enc-ink">
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           )}

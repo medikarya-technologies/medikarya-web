@@ -33,8 +33,9 @@ A clinician checks every threshold. Never invent a threshold, a dose or an inter
 the field out and say so in basis.
 
 Conditions (used by several fields below) are JSON, in these forms only:
-  {"vital": "sbp", "below": 90}       vital is one of hr, sbp, dbp, map, spo2, rr, temp; comparators below (<),
-                                      above (>), at_most (<=), at_least (>=)
+  {"vital": "sbp", "below": 90}       vital is one of hr, sbp, dbp, map, pp, spo2, rr, temp (pp is the
+                                      pulse pressure: sbp minus dbp); comparators below (<), above (>),
+                                      at_most (<=), at_least (>=)
   {"finding": "<finding id>", "is": true}
   {"stage_reached": "<stage id>"}
   {"given": "<treatment id>", "doses": 2}             doses is optional (at least that many valid doses)
@@ -51,7 +52,9 @@ Plan fields:
 - or_stabilised_by: [{ name, treatments, when? }]: other complete sets of essential treatments that also stop the
   deterioration, such as a rescue path for a patient who has become refractory.
 - reassessment: { label, detail, checks: [{ when, says, otherwise? }] }: a bedside reassessment on the tray that
-  reports explicit findings (each check's says when its condition holds, else otherwise).
+  reports explicit findings (each check's says when its condition holds, else otherwise). Optional report:
+  { vitals: [..], consciousness: true, findings: [<finding ids>] } also records those readings each time it is done;
+  the engine reads them from the patient, so never write a reading into the plan.
 
 Treatment fields:
 - max_doses (2 to 10), min_interval_minutes, doses_required (essential only), repeat_within_minutes: a treatment given
@@ -115,6 +118,7 @@ export const ADVANCED_EXAMPLE = {
             { when: { vital: "sbp", below: 90 }, says: "BP is still low.", otherwise: "BP is above 90." },
             { when: { finding: "cold_peripheries", is: true }, says: "Hands and feet are cold." },
         ],
+        report: { vitals: ["sbp", "dbp", "pp"], findings: ["cold_peripheries"] },
     },
     recovery: { after_minutes: 4, vitals: { hr: 126, sbp: 94, dbp: 58, spo2: 99, rr: 30 }, consciousness: "alert", nurse_says: "He is settling. Pulse {hr}, BP {bp}.", findings: { cold_peripheries: false } },
     basis: ["Format example only: not clinical advice."],

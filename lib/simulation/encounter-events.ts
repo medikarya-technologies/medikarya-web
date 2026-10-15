@@ -68,7 +68,21 @@ export type ClinicalEvent =
      * The student waited: the clock jumped from `from` to `timestamp` (asked for `minutes`). `stopped` says why it ended
      * early: a nurse alert, or the end of the encounter.
      */
-    | { type: "TIME_SKIPPED"; timestamp: number; from: number; minutes: number; stopped?: "alert" | "limit" };
+    | { type: "TIME_SKIPPED"; timestamp: number; from: number; minutes: number; stopped?: "alert" | "limit" }
+    /**
+     * What a reassessment found. Written by the engine, never by the student: the student's request is the
+     * INTERVENTION_GIVEN that precedes it, and the server's replay throws away every REASSESSED in an untrusted log and
+     * works them out again from the replayed patient.
+     */
+    | { type: "REASSESSED"; timestamp: number; action: string; findings: ReassessmentFindings };
+
+/** The readings a reassessment reported, each read from the patient at that instant. */
+export interface ReassessmentFindings {
+    vitals?: Partial<Record<"hr" | "sbp" | "dbp" | "pp" | "map" | "spo2" | "rr" | "temp", number>>;
+    consciousness?: string;
+    /** Tracked findings: id to whether it is present, with the label to show. */
+    findings?: Array<{ id: string; label: string; present: boolean }>;
+}
 
 /** The plan calls the log `EncounterEvent[]` and the union `ClinicalEvent`; they are one type. */
 export type EncounterEvent = ClinicalEvent;
@@ -89,6 +103,7 @@ export const ENCOUNTER_EVENT_TYPES: readonly EncounterEventType[] = [
     "DIAGNOSIS_SUBMITTED",
     "MANAGEMENT_SUBMITTED",
     "TIME_SKIPPED",
+    "REASSESSED",
 ];
 
 // ── Time helpers ────────────────────────────────────────────────────────────
@@ -175,9 +190,33 @@ export function isClinicalEvent(value: unknown): value is ClinicalEvent {
             return (
                 isNum(e.from) && e.from >= 0 && e.from <= e.timestamp && isNum(e.minutes) && e.minutes > 0 && (e.stopped === undefined || e.stopped === "alert" || e.stopped === "limit")
             );
+        case "REASSESSED":
+            return isStr(e.action) && isReassessmentFindings(e.findings);
         default:
             return false;
     }
+}
+
+const REASSESSED_VITALS = ["hr", "sbp", "dbp", "pp", "map", "spo2", "rr", "temp"];
+
+/** Structural check only: it keeps a malformed log from crashing a reader. Nothing here makes the values trustworthy. */
+function isReassessmentFindings(v: unknown): v is ReassessmentFindings {
+    if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+    const f = v as Record<string, unknown>;
+    if (f.vitals !== undefined) {
+        if (!f.vitals || typeof f.vitals !== "object" || Array.isArray(f.vitals)) return false;
+        for (const [k, n] of Object.entries(f.vitals as Record<string, unknown>)) if (!REASSESSED_VITALS.includes(k) || !isNum(n)) return false;
+    }
+    if (f.consciousness !== undefined && !isStr(f.consciousness)) return false;
+    if (f.findings !== undefined) {
+        if (!Array.isArray(f.findings)) return false;
+        for (const x of f.findings) {
+            if (!x || typeof x !== "object") return false;
+            const o = x as Record<string, unknown>;
+            if (!isStr(o.id) || !isStr(o.label) || typeof o.present !== "boolean") return false;
+        }
+    }
+    return true;
 }
 
 /**

@@ -26,6 +26,7 @@ import type { AssistType, ClinicalEvent } from "./encounter-events";
 import { hardLimitSeconds, type SimulationCaseConfig } from "./case-schema";
 import { PatientState, type PatientSnapshot, type StateTransition } from "./patient-state";
 import { AssistPolicy, resolveAssistPolicy, type AssistDenialReason } from "./assist-policy";
+import { deriveFindings, reportFor } from "./reassessment";
 
 export interface EncounterSnapshot {
     /** Bumps on every change; use as the external-store version. */
@@ -113,6 +114,8 @@ export class EncounterEngine {
 
     /** Append any event, firing whatever is due before it and because of it. Returns everything appended, in log order. */
     dispatch(event: ClinicalEvent): ClinicalEvent[] {
+        // What a reassessment found is written by giveIntervention from the patient, never taken from a caller.
+        if (event.type === "REASSESSED") return [];
         const t = Math.max(event.timestamp, this.lastTimestamp);
         const stamped = { ...event, timestamp: t } as ClinicalEvent;
 
@@ -178,9 +181,19 @@ export class EncounterEngine {
         const consequence = notes.length > 0 ? notes.join(" ") : "Administered.";
         const safetyPenalty = matched.some((m) => m.safety_penalty === true);
 
+        // A reassessment: what it finds is read from the patient now (after everything due strictly before this instant,
+        // before this action's own effects and anything else due at it), exactly as the consequence text was resolved.
+        const report = reportFor(this.config, action);
+        const findings = report ? deriveFindings(report, this.patient) : null;
+
         const event: ClinicalEvent = { type: "INTERVENTION_GIVEN", timestamp: t, action, consequence };
         this.appendRaw(event);
         appended.push(event);
+        if (findings) {
+            const found: ClinicalEvent = { type: "REASSESSED", timestamp: t, action, findings };
+            this.appendRaw(found);
+            appended.push(found);
+        }
         appended.push(...this.fireDue(t, true));
 
         this.commit();

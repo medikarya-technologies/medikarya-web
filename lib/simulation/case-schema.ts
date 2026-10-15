@@ -52,6 +52,8 @@ export const PHYSIOLOGICAL_PARAMETERS = [
     "dbp",
     "diastolic",
     "map",
+    "pulse_pressure",
+    "pp",
     "spo2",
     "rr",
     "temperature",
@@ -222,7 +224,23 @@ export interface CustomInterventionDef {
     /** Dose / route / setting shown under the label. */
     detail: string;
     group: "airway" | "circulation" | "medications" | "cardiac_procedures" | "other";
+    /**
+     * Giving this treatment is a reassessment: the engine reads the patient at that instant and records the readings
+     * it was asked for in a REASSESSED event. The student only asks; what is found is never taken from the client.
+     */
+    report?: ReassessmentReport;
 }
+
+/** What a reassessment reports. Each entry is read from the patient the engine holds, never from the client. */
+export interface ReassessmentReport {
+    vitals?: ReportVital[];
+    consciousness?: boolean;
+    /** Findings the case tracks as flags: the id shown, the flag read, a label for the debrief. */
+    findings?: Array<{ id: string; flag: string; label: string }>;
+}
+
+export const REPORT_VITALS = ["hr", "sbp", "dbp", "pp", "map", "spo2", "rr", "temp"] as const;
+export type ReportVital = (typeof REPORT_VITALS)[number];
 
 // ── Recognition (scorer-side flags) ─────────────────────────────────────────
 // "The patient IS having a STEMI" (physiology) is not the same fact as "the
