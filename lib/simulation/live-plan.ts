@@ -168,6 +168,43 @@ export interface LiveTreatment {
     available_when?: LiveCondition;
     /** For an essential treatment: required only once this has held, and `within_minutes` counts from that moment. */
     required_when?: LiveCondition;
+
+    // ── Phase 3. All optional.
+    /**
+     * Given over minutes rather than all at once: `effect` is spread evenly, minute by minute, over `over_minutes`,
+     * each minute's share acting only while `while` holds (an infusion titrated to an end point). It stops acting once
+     * the patient is stabilised; the recovery takes over from there.
+     *
+     * LIMITATION: the total effect and the duration are fixed by the plan. The student cannot stop the infusion, step it
+     * down or change its rate, and continuing it does no harm in the engine (no fluid overload, no rebound when it
+     * ends). Cases whose teaching is fluid adjusted by response and stopped on reassessment (dengue, DKA, septic shock)
+     * are not adequately represented by this and must not be published on it.
+     */
+    infusion?: { over_minutes: number; while?: LiveCondition };
+    /**
+     * What has to be true before it can be given, in order (IV access for an IV drug; two benzodiazepine doses before a
+     * second-line drug). An attempt before then is refused with that requirement's words, and has no effect.
+     */
+    requires?: LiveRequirement[];
+    /** A further dose needs a reassessment (the plan's `reassessment`) since the dose before it. */
+    reassess_before_repeat?: boolean;
+}
+
+/** A bedside reassessment the student can do at any time: each check reports what it finds right now. */
+export interface LiveReassessment {
+    /** On the tray: "Reassess: chest, pulse and BP". */
+    label: string;
+    detail: string;
+    checks: Array<{ when: LiveCondition; says: string; otherwise?: string }>;
+}
+
+/** The tray id of the plan's reassessment. */
+export const REASSESS_ID = "reassess_patient";
+
+export interface LiveRequirement {
+    when: LiveCondition;
+    /** Why it cannot be given yet, as the student is told: "there is no IV access yet." */
+    says: string;
 }
 
 export interface LiveRecovery {
@@ -224,6 +261,13 @@ export interface LivePlan {
     stabilised_by_while?: LiveCondition;
     /** Other complete sets of treatments that also stop the deterioration. */
     or_stabilised_by?: LiveStabilisationPath[];
+    /**
+     * Clinical end points that must also hold before the patient counts as stabilised, whichever path was taken (for
+     * example oxygenation and blood pressure). Absent: a complete path is enough.
+     */
+    end_points?: LiveCondition;
+    /** A bedside reassessment on the tray, reporting explicit findings (Phase 3). */
+    reassessment?: LiveReassessment;
     /** Findings the plan tracks, so treatments, doses and paths can depend on them. */
     findings?: LiveFinding[];
     recovery: LiveRecovery;
@@ -233,15 +277,63 @@ export interface LivePlan {
     sign_off?: LiveSignOff;
     /** When the MediKarya team switched it on without a clinician's sign-off. A changed plan has to be switched on again. */
     team_checked_at?: string;
+    /**
+     * Things that must be settled before students may get this case live (a clinical question, a missing scenario).
+     * While any is open the plan cannot be switched on, and students never get it live even if it is marked approved.
+     * They belong to the case, not the draft: a changed plan keeps them (carryReleaseBlockers).
+     */
+    release_blockers?: ReleaseBlocker[];
+}
+
+export interface ReleaseBlocker {
+    id: string;
+    /** What has to be done, and who has to do it. */
+    text: string;
+    raised_at: string;
+    /** Set when it is settled; the blocker is kept as a record. */
+    cleared_at?: string;
+    cleared_by?: string;
+    /** How it was settled. */
+    resolution?: string;
+}
+
+/**
+ * Whether students get a plan's live version: switched on (approved) and nothing open blocking its release. Takes the
+ * two fields alone, so the library's list (which reads only these columns) uses the same rule as the case itself.
+ */
+export function liveForStudents(status: unknown, blockers: unknown): boolean {
+    return status === "approved" && !(Array.isArray(blockers) && blockers.some(isOpenBlocker));
+}
+
+/** Open unless marked cleared. Anything that cannot be read as a blocker counts as open: it blocks, it never lets through. */
+const isOpenBlocker = (b: unknown): boolean => !b || typeof b !== "object" || !(b as ReleaseBlocker).cleared_at;
+
+/** The blockers still open on a plan (one that cannot be read is listed as such, so it can be seen and fixed). */
+export const openReleaseBlockers = (plan: unknown): ReleaseBlocker[] =>
+    isLivePlan(plan)
+        ? (plan.release_blockers ?? [])
+              .filter(isOpenBlocker)
+              .map((b) => (b && typeof b === "object" ? b : { id: "unreadable", text: "A release blocker on this plan could not be read; fix it in the case's data.", raised_at: "" }))
+        : [];
+
+/** A new or changed plan keeps the case's release blockers: they are cleared on purpose, never by redrafting. */
+export function carryReleaseBlockers(next: LivePlan, previous: unknown): LivePlan {
+    const kept = isLivePlan(previous) ? (previous.release_blockers ?? []) : [];
+    const own = next.release_blockers ?? [];
+    const merged = [...kept, ...own.filter((b) => !kept.some((k) => k.id === b.id))];
+    return merged.length > 0 ? { ...next, release_blockers: merged } : next;
 }
 
 export function isLivePlan(v: unknown): v is LivePlan {
     return !!v && typeof v === "object" && (v as LivePlan).version === 1 && Array.isArray((v as LivePlan).stages) && Array.isArray((v as LivePlan).treatments);
 }
 
-/** Students get the live version once it is approved; an admin (play-testing) gets it as soon as it is proposed. */
+/**
+ * Students get the live version once it is approved and nothing blocks its release; an admin (play-testing) gets it
+ * as soon as it is proposed.
+ */
 export function livePlanApplies(plan: unknown, viewerIsAdmin: boolean): plan is LivePlan {
-    return isLivePlan(plan) && (plan.status === "approved" || viewerIsAdmin);
+    return isLivePlan(plan) && (viewerIsAdmin || liveForStudents(plan.status, plan.release_blockers));
 }
 
 // ── Reading a plan ──────────────────────────────────────────────────────────
@@ -337,6 +429,11 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         if (t?.required_when !== undefined) out.required_when = condition(t.required_when);
         if (t?.repeat_only_while && typeof t.repeat_only_while === "object") out.repeat_only_while = condition(t.repeat_only_while);
         if (text(t?.not_indicated_says)) out.not_indicated_says = text(t.not_indicated_says);
+        if (t?.reassess_before_repeat === true) out.reassess_before_repeat = true;
+        if (Array.isArray(t?.requires) && t.requires.length > 0) out.requires = t.requires.map((r: any) => ({ when: condition(r?.when), says: text(r?.says) }));
+        if (t?.infusion && typeof t.infusion === "object") {
+            out.infusion = { over_minutes: num(t.infusion.over_minutes) ?? NaN, ...(t.infusion.while !== undefined ? { while: condition(t.infusion.while) } : {}) };
+        }
         return out;
     };
 
@@ -407,6 +504,20 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         treatments,
         stabilised_by: (Array.isArray(p.stabilised_by) ? p.stabilised_by : []).map(slug).filter(Boolean),
         ...(p.stabilised_by_while !== undefined ? { stabilised_by_while: condition(p.stabilised_by_while) } : {}),
+        ...(p.end_points !== undefined ? { end_points: condition(p.end_points) } : {}),
+        ...(p.reassessment && typeof p.reassessment === "object"
+            ? {
+                  reassessment: {
+                      label: text(p.reassessment.label, 80),
+                      detail: text(p.reassessment.detail, 140),
+                      checks: (Array.isArray(p.reassessment.checks) ? p.reassessment.checks : []).map((c: any) => ({
+                          when: condition(c?.when),
+                          says: text(c?.says),
+                          ...(text(c?.otherwise) ? { otherwise: text(c.otherwise) } : {}),
+                      })),
+                  },
+              }
+            : {}),
         ...(Array.isArray(p.or_stabilised_by) && p.or_stabilised_by.length > 0
             ? {
                   or_stabilised_by: p.or_stabilised_by.map((path: any) => ({
@@ -564,6 +675,23 @@ function checkState(t: LiveTreatment, where: string, plan: LivePlan, scope: Cond
     if (gate && gate !== "not_stabilised") checkCondition(gate, `${where}: repeat_only_while`, scope, errors);
     if (t.not_indicated_says !== undefined && (!gate || gate === "not_stabilised")) errors.push(`${where}: not_indicated_says only goes with a repeat_only_while condition.`);
     if (t.available_when) checkCondition(t.available_when, `${where}: available_when`, scope, errors);
+    (t.requires ?? []).forEach((r, i) => {
+        checkCondition(r.when, `${where}: requires[${i}].when`, scope, errors);
+        if (r.says.length < 10) errors.push(`${where}: requires[${i}].says is what the student is told; write a sentence.`);
+        if (JSON.stringify(r.when).includes(`"${t.id}"`)) errors.push(`${where}: requires[${i}] depends on the treatment itself, so it could never be met.`);
+    });
+    if (t.reassess_before_repeat) {
+        if (!plan.reassessment) errors.push(`${where}: reassess_before_repeat needs the plan's reassessment.`);
+        if (!isRepeatable(t)) errors.push(`${where}: reassess_before_repeat only makes sense when max_doses is 2 or more.`);
+    }
+    if (t.infusion) {
+        const n = t.infusion.over_minutes;
+        if (!Number.isInteger(n) || n < 1 || n >= plan.time_limit_minutes) errors.push(`${where}: infusion.over_minutes must be a whole number of minutes, from 1 to less than the encounter (${plan.time_limit_minutes} min).`);
+        if (t.infusion.while) checkCondition(t.infusion.while, `${where}: infusion.while`, scope, errors);
+        if (!t.effect) errors.push(`${where}: an infusion needs an effect to spread over its minutes.`);
+        if (isRepeatable(t)) errors.push(`${where}: an infusion is started once; it cannot also have repeat doses.`);
+        if ((t.responses ?? []).some((r) => r.effect)) errors.push(`${where}: an infusion's effect is spread over its minutes, so its responses can change what is said and found, not the effect.`);
+    }
     if (t.required_when) {
         checkCondition(t.required_when, `${where}: required_when`, scope, errors);
         if (t.role !== "essential") errors.push(`${where}: required_when is for essential treatments.`);
@@ -673,6 +801,23 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
         else if (t.role !== "essential") errors.push(`stabilised_by: "${id}" stops the deterioration, so it has to be essential.`);
         if (MONITORING_ONLY.has(id)) errors.push(`stabilised_by: "${id}" watches the patient but does not treat; keep it essential if it must be done, but it cannot be what stops the deterioration.`);
     }
+    if (plan.end_points) checkCondition(plan.end_points, "end_points", scope, errors);
+    if (plan.reassessment) {
+        const r = plan.reassessment;
+        if (!r.label) errors.push("reassessment: needs a label for the tray.");
+        if (r.checks.length === 0) errors.push("reassessment: list what it checks.");
+        r.checks.forEach((c, i) => {
+            checkCondition(c.when, `reassessment.checks[${i}].when`, scope, errors);
+            if (c.says.length < 5) errors.push(`reassessment.checks[${i}]: says is what the student finds; write it.`);
+        });
+        if (plan.treatments.some((t) => t.id === REASSESS_ID)) errors.push(`treatments: "${REASSESS_ID}" is the reassessment's own id.`);
+    }
+    // An infusion stops acting once the patient is stabilised. On a path without end points it would stabilise him the
+    // moment it started, before any of its effect arrived.
+    const onAPath = new Set([...plan.stabilised_by, ...(plan.or_stabilised_by ?? []).flatMap((p) => p.treatments)]);
+    for (const t of plan.treatments) {
+        if (t.infusion && onAPath.has(t.id) && !plan.end_points) errors.push(`${t.id}: an infusion that stops the deterioration needs end_points, so the patient is stabilised when it has worked, not the moment it starts.`);
+    }
     if (plan.stabilised_by_while) {
         checkCondition(plan.stabilised_by_while, "stabilised_by_while", scope, errors);
         if (!plan.or_stabilised_by?.length) errors.push("stabilised_by_while: the usual path can stop working, so give another path (or_stabilised_by), or the patient could never be stabilised.");
@@ -727,14 +872,17 @@ const notNeededFlag = (treatmentId: string, dose: number) => `notneeded_${treatm
 const resolvedFlag = (treatmentId: string, dose: number) => `resolved_${treatmentId}_dose${dose}`;
 
 /** The ids of the record-only rules a plan adds, which the timeline does not show (the patient's state does not change). */
-const RECORD_ONLY_RULE = /^live_(available|required|indicated|notneeded|resolved)_/;
+const RECORD_ONLY_RULE = /^live_(available|required|indicated|notneeded|resolved|infusion)_/;
 export const isRecordOnlyRule = (ruleId: string) => RECORD_ONLY_RULE.test(ruleId);
 
 /** A treatment whose further doses depend on a condition on the patient, not just on the clock. */
 export const isStateGated = (t: LiveTreatment): t is LiveTreatment & { repeat_only_while: LiveCondition } =>
     !!t.repeat_only_while && typeof t.repeat_only_while === "object";
 /** A treatment that uses any state field; every other treatment compiles exactly as before. */
-const usesState = (t: LiveTreatment) => !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t));
+const usesState = (t: LiveTreatment) =>
+    !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t) || t.infusion || t.requires?.length || t.reassess_before_repeat);
+/** Set by a reassessment, cleared by each valid dose of a treatment that needs one before its next dose. */
+const reassessedFlag = (treatmentId: string) => `reassessed_${treatmentId}`;
 
 /** A plan condition as the engine's own condition. Only call on a plan that passed the check. */
 export function compileCondition(c: LiveCondition): RuleCondition {
@@ -767,8 +915,10 @@ function planConditions(plan: LivePlan): LiveCondition[] {
         if (t.available_when) out.push(t.available_when);
         if (t.required_when) out.push(t.required_when);
         if (isStateGated(t)) out.push(t.repeat_only_while);
+        if (t.infusion?.while) out.push(t.infusion.while);
     }
     if (plan.stabilised_by_while) out.push(plan.stabilised_by_while);
+    if (plan.end_points) out.push(plan.end_points);
     for (const path of plan.or_stabilised_by ?? []) if (path.when) out.push(path.when);
     return out;
 }
@@ -800,9 +950,46 @@ function stabilisingConditions(t: LiveTreatment | undefined, id: string): RuleCo
 /** A rule that only records something: it sets a flag the moment its condition first holds, and the patient's state is unchanged. */
 const latch = (id: string, when: RuleCondition, flag: string): EventRule => ({ id, when, transition: "unchanged", keeps_state: true, sets: { [flag]: true }, narrative: null });
 
-/** The record-only rules a treatment's state fields need. */
-function stateRules(t: LiveTreatment): EventRule[] {
+/**
+ * An infusion's effect, one share per minute after it was started. Each share acts in its own minute only, only while
+ * the infusion's condition holds and the patient is not yet stabilised. Shares are whole numbers that add up exactly.
+ */
+function infusionRules(t: LiveTreatment): EventRule[] {
+    if (!t.infusion || !t.effect) return [];
+    const n = t.infusion.over_minutes;
+    const total = t.effect;
+    const share = (k: keyof LiveVitals, m: number): number => {
+        const tenths = k === "temp" ? 10 : 1;
+        const v = (total[k] ?? 0) * tenths;
+        return (Math.round((v * m) / n) - Math.round((v * (m - 1)) / n)) / tenths;
+    };
+    const keys = ["hr", "sbp", "dbp", "spo2", "rr", "temp"] as const;
     const out: EventRule[] = [];
+    for (let m = 1; m <= n; m++) {
+        const minute = Object.fromEntries(keys.filter((k) => total[k] !== undefined).map((k) => [k, share(k, m)])) as LiveVitals;
+        if (keys.every((k) => !minute[k])) continue;
+        out.push({
+            id: `live_infusion_${t.id}_${m}`,
+            when: {
+                all: [
+                    { minutes_since_flag: { flag: given(t.id), gte: m } },
+                    { not: { minutes_since_flag: { flag: given(t.id), gte: m + 1 } } },
+                    { flag: STABILISED, is: false },
+                    ...(t.infusion.while ? [compileCondition(t.infusion.while)] : []),
+                ],
+            },
+            transition: "unchanged",
+            keeps_state: true,
+            physiological_changes: effectOf(minute),
+            narrative: null,
+        });
+    }
+    return out;
+}
+
+/** The rules a treatment's state fields need: its infusion's shares, and the record-only rules (available, required, doses falling due). */
+function stateRules(t: LiveTreatment): EventRule[] {
+    const out: EventRule[] = [...infusionRules(t)];
     if (t.available_when) out.push(latch(`live_available_${t.id}`, compileCondition(t.available_when), availableFlag(t.id)));
     if (t.required_when) out.push(latch(`live_required_${t.id}`, compileCondition(t.required_when), requiredFlag(t.id)));
     if (isStateGated(t)) {
@@ -851,30 +1038,45 @@ function doseVariants(t: LiveTreatment, n: number, valid: RuleCondition[], usual
 }
 
 /** Everything a treatment that uses state fields does on the tray. */
-function stateConsequences(t: LiveTreatment): ActionConsequence[] {
-    const usual = { changes: { ...effectOf(t.effect), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) }, says: t.says };
+function stateConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[] {
+    // An infusion's effect arrives minute by minute (infusionRules); starting it changes only rhythm or consciousness.
+    const usual = { changes: { ...(t.infusion ? {} : effectOf(t.effect)), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) }, says: t.says };
     const base = isRepeatable(t)
-        ? repeatConsequences(t)
+        ? repeatConsequences(t, plan.reassessment?.label)
         : [...doseVariants(t, 1, [{ flag: given(t.id), is: false }], usual), { action: t.id, when: { flag: given(t.id), is: true }, trajectory_note: "Already given. No further change." }];
-    if (!t.available_when) return base;
+    const guard = (open: RuleCondition, cs: ActionConsequence[]) => cs.map((c) => ({ ...c, when: c.when ? { all: [open, c.when] } : open }));
+    // Requirements in order: the first one not met is the reason given; once all are met, everything as usual.
+    let guarded = base;
+    const reqs = (t.requires ?? []).map((r) => ({ cond: compileCondition(r.when), says: r.says }));
+    if (reqs.length > 0) {
+        // Once every dose is in, the student hears "already given" or "all doses given", never a missing prerequisite.
+        const done: RuleCondition = { flag: doseFlag(t.id, t.max_doses ?? 1), is: true };
+        const refusals: ActionConsequence[] = reqs.map((r, i) => ({ action: t.id, when: { all: [{ not: done }, ...reqs.slice(0, i).map((x) => x.cond), { not: r.cond }] }, trajectory_note: REFUSED.needs_first(r.says) }));
+        guarded = [...refusals, ...guard({ any: [done, { all: reqs.map((r) => r.cond) }] }, base)];
+    }
+    if (!t.available_when) return guarded;
     // Not yet available: refused, with no effect. Once available, everything as usual.
     const open: RuleCondition = { flag: availableFlag(t.id), is: true };
-    return [{ action: t.id, when: { flag: availableFlag(t.id), is: false }, trajectory_note: REFUSED.unavailable() }, ...base.map((c) => ({ ...c, when: c.when ? { all: [open, c.when] } : open }))];
+    return [{ action: t.id, when: { flag: availableFlag(t.id), is: false }, trajectory_note: REFUSED.unavailable() }, ...guard(open, guarded)];
 }
 
 /** Every refusal starts with this, so the tray can tell a refused dose from a given one. */
 export const REFUSED_PREFIX = "Not given:";
+/** A plan's own words for a refusal, with the prefix the tray relies on. */
+const refusal = (says: string) => (says.startsWith(REFUSED_PREFIX) ? says : `${REFUSED_PREFIX} ${says}`);
 /** Why a further dose was refused, in the words the student sees. */
 export const REFUSED = {
     too_soon: (t: LiveTreatment) => `Not given: too soon for another dose. Wait at least ${t.min_interval_minutes} minutes after the last dose, reassess, then give it if it is still needed.`,
     not_indicated: () => "Not given: another dose is not indicated now, because the patient has stopped deteriorating.",
     limit: (t: LiveTreatment) => `Not given: all ${t.max_doses} doses have already been given.`,
     unavailable: () => "Not given: not indicated at the moment.",
+    not_reassessed: (label: string) => `Not given: reassess first (${label}) to see whether another dose is needed.`,
+    needs_first: (says: string) => refusal(says),
 } as const;
 export type RefusalReason = keyof typeof REFUSED;
 
 /** The engine's consequences for one dose-by-dose treatment: a valid dose, a refused one, and the limit. */
-function repeatConsequences(t: LiveTreatment): ActionConsequence[] {
+function repeatConsequences(t: LiveTreatment, reassessLabel = ""): ActionConsequence[] {
     const max = t.max_doses ?? 1;
     const effectFor = (n: number) => (t.effect_per_dose ? t.effect_per_dose[Math.min(n, t.effect_per_dose.length) - 1] : t.effect);
     const saysFor = (n: number) => (t.says_per_dose ? t.says_per_dose[Math.min(n, t.says_per_dose.length) - 1] : t.says);
@@ -885,19 +1087,41 @@ function repeatConsequences(t: LiveTreatment): ActionConsequence[] {
         const intervalOk: RuleCondition | null = n > 1 && (t.min_interval_minutes ?? 0) > 0 ? { minutes_since_flag: { flag: doseFlag(t.id, n - 1), gte: t.min_interval_minutes as number } } : null;
         const gate = isStateGated(t) ? compileCondition(t.repeat_only_while) : null;
         const indicated: RuleCondition | null = n === 1 ? null : gate ?? (t.repeat_only_while === "not_stabilised" ? { flag: STABILISED, is: false } : null);
-        const valid = [...due, ...(intervalOk ? [intervalOk] : []), ...(indicated ? [indicated] : [])];
+        // A further dose that needs a reassessment since the dose before it.
+        const reassessed: RuleCondition | null = n > 1 && t.reassess_before_repeat ? { flag: reassessedFlag(t.id), is: true } : null;
+        const valid = [...due, ...(intervalOk ? [intervalOk] : []), ...(reassessed ? [reassessed] : []), ...(indicated ? [indicated] : [])];
         const usual = { changes: { ...effectOf(effectFor(n)), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) }, says: saysFor(n) };
         out.push(...doseVariants(t, n, valid, usual));
         // Refusals, most basic reason first; each is exclusive of the valid dose and of the others.
         if (intervalOk) out.push({ action: t.id, when: { all: [...due, { not: intervalOk }] }, trajectory_note: REFUSED.too_soon(t) });
+        if (reassessed) out.push({ action: t.id, when: { all: [...due, ...(intervalOk ? [intervalOk] : []), { flag: reassessedFlag(t.id), is: false }] }, trajectory_note: REFUSED.not_reassessed(reassessLabel) });
         if (indicated) {
             const notNow = gate ? { not: gate } : { flag: STABILISED, is: true };
-            const said = gate && t.not_indicated_says ? (t.not_indicated_says.startsWith(REFUSED_PREFIX) ? t.not_indicated_says : `${REFUSED_PREFIX} ${t.not_indicated_says}`) : REFUSED.not_indicated();
-            out.push({ action: t.id, when: { all: [...due, ...(intervalOk ? [intervalOk] : []), notNow] }, trajectory_note: said });
+            const said = gate && t.not_indicated_says ? refusal(t.not_indicated_says) : REFUSED.not_indicated();
+            out.push({ action: t.id, when: { all: [...due, ...(intervalOk ? [intervalOk] : []), ...(reassessed ? [reassessed] : []), notNow] }, trajectory_note: said });
         }
     }
     out.push({ action: t.id, when: { flag: doseFlag(t.id, max), is: true }, trajectory_note: REFUSED.limit(t) });
-    return out;
+    // Each valid dose uses up the reassessment: the next one needs a fresh one.
+    if (!t.reassess_before_repeat) return out;
+    return out.map((c) => (c.sets && Object.entries(c.sets).some(([f, v]) => v && f.startsWith(given(t.id))) ? { ...c, sets: { ...c.sets, [reassessedFlag(t.id)]: false } } : c));
+}
+
+/** The reassessment on the tray: what each check finds right now, in order; it changes nothing but what it records. */
+function reassessmentConsequences(plan: LivePlan): ActionConsequence[] {
+    const r = plan.reassessment;
+    if (!r) return [];
+    const needing = plan.treatments.filter((t) => t.reassess_before_repeat);
+    return [
+        { action: REASSESS_ID, sets: Object.fromEntries(needing.map((t) => [reassessedFlag(t.id), true])), trajectory_note: "Reassessment:" },
+        ...r.checks.flatMap((c) => {
+            const cond = compileCondition(c.when);
+            return [
+                { action: REASSESS_ID, when: cond, trajectory_note: c.says },
+                ...(c.otherwise ? [{ action: REASSESS_ID, when: { not: cond }, trajectory_note: c.otherwise }] : []),
+            ];
+        }),
+    ];
 }
 const signed = (n: number) => (n >= 0 ? `+${n}` : String(n));
 
@@ -944,6 +1168,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         if (isRepeatable(t)) for (let n = 2; n <= (t.max_doses as number); n++) flags[doseFlag(t.id, n)] = false;
         if (t.available_when) flags[availableFlag(t.id)] = false;
         if (t.required_when) flags[requiredFlag(t.id)] = false;
+        if (t.reassess_before_repeat) flags[reassessedFlag(t.id)] = false;
         if (isStateGated(t)) for (let n = 2; n <= Math.max(1, t.doses_required ?? 1); n++) Object.assign(flags, { [indicatedFlag(t.id, n)]: false, [notNeededFlag(t.id, n)]: false, [resolvedFlag(t.id, n)]: false });
     }
     for (const f of plan.findings ?? []) flags[findingFlag(f.id)] = f.present;
@@ -978,12 +1203,14 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
     const usual = plan.stabilised_by.flatMap((id) => stabilisingConditions(find(id), id));
     const alternatives = plan.or_stabilised_by ?? [];
     // Only a plan with another path, or a usual path that can stop working, needs the longer form.
+    const endPoints: RuleCondition[] = plan.end_points ? [compileCondition(plan.end_points)] : [];
     const stops: RuleCondition =
         alternatives.length === 0 && !plan.stabilised_by_while
-            ? { all: [{ flag: STABILISED, is: false }, ...usual] }
+            ? { all: [{ flag: STABILISED, is: false }, ...usual, ...endPoints] }
             : {
                   all: [
                       { flag: STABILISED, is: false },
+                      ...endPoints,
                       {
                           any: [
                               { all: [...usual, ...(plan.stabilised_by_while ? [compileCondition(plan.stabilised_by_while)] : [])] },
@@ -1026,7 +1253,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
 
     // ── the tray: a treatment acts once; giving it again changes nothing. A treatment with repeat doses acts once per
     //    valid dose instead (repeatConsequences).
-    const consequences: ActionConsequence[] = plan.treatments.flatMap((t) => usesState(t) ? stateConsequences(t) : isRepeatable(t) ? repeatConsequences(t) : [
+    const consequences: ActionConsequence[] = [...reassessmentConsequences(plan), ...plan.treatments.flatMap((t) => usesState(t) ? stateConsequences(t, plan) : isRepeatable(t) ? repeatConsequences(t) : [
         {
             action: t.id,
             when: { flag: given(t.id), is: false },
@@ -1040,9 +1267,12 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
             ...(t.role === "harmful" ? { safety_penalty: true } : {}),
         },
         { action: t.id, when: { flag: given(t.id), is: true }, trajectory_note: "Already given. No further change." },
-    ]);
+    ])];
 
-    const own: CustomInterventionDef[] = plan.treatments.filter((t) => !isSharedTreatment(t.id)).map((t) => ({ id: t.id, label: t.label, detail: t.detail, group: t.group }));
+    const own: CustomInterventionDef[] = [
+        ...plan.treatments.filter((t) => !isSharedTreatment(t.id)).map((t) => ({ id: t.id, label: t.label, detail: t.detail, group: t.group })),
+        ...(plan.reassessment ? [{ id: REASSESS_ID, label: plan.reassessment.label, detail: plan.reassessment.detail, group: "other" as const }] : []),
+    ];
     const stillUnmeasured = (base.initial_state.unmeasured ?? []).filter((u) => {
         const key = u === "bp" ? "sbp" : u === "temperature" ? "temp" : u;
         return arrival[key as keyof LiveVitals] === undefined;
@@ -1093,10 +1323,10 @@ export function withLivePlan<T extends SimulationCaseConfig>(base: T, viewerIsAd
     return compileLivePlan(base, plan);
 }
 
-/** Does this case have a plan that only an admin would currently see run? */
+/** Does this case have a plan that only an admin would currently see run: one still proposed, or one an open release blocker keeps from students? */
 export function hasProposedLivePlan(caseData: unknown): boolean {
     const plan = (caseData as { live_plan?: unknown } | null)?.live_plan;
-    return isLivePlan(plan) && plan.status === "proposed";
+    return isLivePlan(plan) && (plan.status === "proposed" || openReleaseBlockers(plan).length > 0);
 }
 
 // ── Scoring what was done at the bedside ────────────────────────────────────
@@ -1290,7 +1520,7 @@ function stabilisingPath(config: SimulationCaseConfig, plan: LivePlan, events: r
 
 /** Every attempt the engine refused (a further dose too soon, not indicated or over the limit; a treatment not yet available), with the reason, in order. */
 function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: readonly ClinicalEvent[]): RefusedDose[] {
-    const byId = new Map(plan.treatments.filter((t) => isRepeatable(t) || t.available_when).map((t) => [t.id, t]));
+    const byId = new Map(plan.treatments.filter((t) => isRepeatable(t) || t.available_when || t.requires?.length).map((t) => [t.id, t]));
     if (byId.size === 0) return [];
     const count = (state: PatientState, t: LiveTreatment) => {
         let n = 0;
@@ -1309,14 +1539,19 @@ function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: read
         const had = count(before, t);
         if (count(after, t) > had) return;
         const sinceLast = had > 0 ? e.timestamp - (before.flagSetAt[doseFlag(t.id, had)] ?? e.timestamp) : Infinity;
+        const unmet = (t.requires ?? []).some((r) => !evaluateCondition(compileCondition(r.when), before.context(e.timestamp)));
         const reason: RefusalReason =
             t.available_when && before.flags[availableFlag(t.id)] !== true
                 ? "unavailable"
-                : had >= (t.max_doses ?? 1)
-                  ? "limit"
-                  : sinceLast < (t.min_interval_minutes ?? 0) * 60
-                    ? "too_soon"
-                    : "not_indicated";
+                : unmet
+                  ? "needs_first"
+                  : had >= (t.max_doses ?? 1)
+                    ? "limit"
+                    : sinceLast < (t.min_interval_minutes ?? 0) * 60
+                      ? "too_soon"
+                      : t.reassess_before_repeat && before.flags[reassessedFlag(t.id)] !== true
+                        ? "not_reassessed"
+                        : "not_indicated";
         out.push({ id: t.id, label: t.label, at_minutes: toMinutes(e.timestamp), reason, said: e.consequence });
     });
     return out;

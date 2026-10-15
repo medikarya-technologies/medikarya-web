@@ -44,17 +44,19 @@ for (let m = 1; m <= limit; m++) { a.advanceTo(m * MIN); }
 console.log(`\nUNTREATED to ${limit} min -> ${snap(a)}\n${timeline(a)}`);
 
 // 2. every essential on time, in plan order, a minute apart from minute 1 (or by its within_minutes)
-// A treatment required or available only in some states is left to the shared playthroughs at the end.
-const essentials = plan.treatments.filter((t: any) => t.role === "essential" && !t.required_when && !t.available_when);
+// A treatment required or available only in some states, or with prerequisites, is left to the shared playthroughs at the end.
+const essentials = plan.treatments.filter((t: any) => t.role === "essential" && !t.required_when && !t.available_when && !t.requires?.length);
 const events: any[] = []; let t = 1;
 // A treatment that needs several doses gets each further dose as soon as its minimum interval allows.
 const doses = (tr: any, first: number) => Array.from({ length: tr.doses_required ?? 1 }, (_, n) => first + n * Math.max(1, tr.min_interval_minutes ?? 1));
-for (const tr of essentials) { const at = Math.min(t, tr.within_minutes ?? limit); for (const d of doses(tr, at)) events.push({ type: "INTERVENTION_GIVEN", timestamp: d * MIN, action: tr.id, consequence: "x" }); t = at + 1; }
+// The playthroughs' own rule for doses (a reassessment before each further dose that needs one).
+const { dosesAt, playthroughs } = require(R + "live-plan-playthrough");
+for (const tr of essentials) { const at = Math.min(t, tr.within_minutes ?? limit); events.push(...dosesAt(tr, doses(tr, at))); t = at + 1; }
 events.sort((x, y) => x.timestamp - y.timestamp);
 const b = replayStudentEvents(c, events);
 for (let m = 1; m <= limit; m++) b.advanceTo(m * MIN);
 const sb = scoreBedside(c, plan, b.events);
-console.log(`\nCORRECT CARE (server replay): ${essentials.map((x: any) => (x.doses_required ?? 1) > 1 ? `${x.id} x${x.doses_required}` : x.id).join(", ")} -> ${snap(b)}\n  bedside score ${sb.score}, outcome ${JSON.stringify(sb.outcome)}; final if consultation were 80: ${blendLiveScore(80, sb.score)}\n${timeline(b)}`);
+console.log(`\nCORRECT CARE, FIXED-SCHEDULE TREATMENTS ONLY (server replay; the full correct care is under SHARED PLAYTHROUGHS): ${essentials.map((x: any) => (x.doses_required ?? 1) > 1 ? `${x.id} x${x.doses_required}` : x.id).join(", ")} -> ${snap(b)}\n  bedside score ${sb.score}, outcome ${JSON.stringify(sb.outcome)}; final if consultation were 80: ${blendLiveScore(80, sb.score)}\n${timeline(b)}`);
 
 // 3. correct care plus every harmful treatment
 const harmful = plan.treatments.filter((t: any) => t.role === "harmful");
@@ -65,14 +67,13 @@ const sd = scoreBedside(c, plan, d.events);
 console.log(`\nWITH HARMFUL (${harmful.map((x: any) => x.id).join(", ")}): bedside ${sd.score}, harmful flagged ${JSON.stringify(sd.harmful.map((h: any) => h.id))} -> ${snap(d)}`);
 
 // 4. late: essentials given just after their window
-const late = essentials.flatMap((tr: any) => doses(tr, Math.min(limit - 1, (tr.within_minutes ?? 5) + 2)).map((d) => ({ type: "INTERVENTION_GIVEN", timestamp: Math.min(limit - 1, d) * MIN, action: tr.id, consequence: "x" }))).sort((x: any, y: any) => x.timestamp - y.timestamp);
+const late = essentials.flatMap((tr: any) => dosesAt(tr, doses(tr, Math.min(limit - 1, (tr.within_minutes ?? 5) + 2)).map((d) => Math.min(limit - 1, d)))).sort((x: any, y: any) => x.timestamp - y.timestamp);
 const l = replayStudentEvents(c, late);
 for (let m = 1; m <= limit; m++) l.advanceTo(m * MIN);
 const sl = scoreBedside(c, plan, l.events);
 console.log(`\nLATE (each essential 2 min past its window): bedside ${sl.score}, outcome ${JSON.stringify(sl.outcome)} -> ${snap(l)}`);
 
 // 5. the shared playthroughs, as the golden tests run them (with a rescue path when the plan has conditional treatments)
-const { playthroughs } = require(R + "live-plan-playthrough");
 const shared = playthroughs(base, plan);
 console.log("\nSHARED PLAYTHROUGHS:");
 for (const [name, r] of Object.entries(shared) as Array<[string, any]>) console.log(`  ${name.padEnd(9)} bedside ${r.score}, ${JSON.stringify(r.outcome)}; ${r.items.map(([i, st]: string[]) => `${i}:${st}`).join(" ")}`);

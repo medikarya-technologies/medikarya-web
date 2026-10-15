@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 const R = "../lib/simulation/";
 const { upgradeLegacyCase } = require(R + "legacy-adapter");
 const { isSimulationCase } = require(R + "case-schema");
-const { normaliseLivePlan, checkLivePlan, measuredOnArrival, isLivePlan } = require(R + "live-plan");
+const { normaliseLivePlan, checkLivePlan, measuredOnArrival, isLivePlan, carryReleaseBlockers } = require(R + "live-plan");
 const S = require("os").tmpdir();
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
 (async () => {
@@ -23,7 +23,8 @@ const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_K
   if (old && old.status === "approved") throw new Error(`${id}: its live plan is switched on for students; switch it off in Admin > Live first`);
   const raw = JSON.parse(fs.readFileSync(planFile, "utf8"));
   // version is the plan format, not a revision count: the site only runs a plan whose version it knows (isLivePlan).
-  const plan = { ...normaliseLivePlan(raw.plan ?? raw, "ai"), drafted_at: new Date().toISOString() };
+  // Release blockers belong to the case: the new plan keeps the old one's (scripts/release-blocker.ts clears them).
+  const plan = carryReleaseBlockers({ ...normaliseLivePlan(raw.plan ?? raw, "ai"), drafted_at: new Date().toISOString() }, old);
   if (!isLivePlan(plan)) throw new Error("the plan would not be recognised by the site (isLivePlan); nothing saved");
   const base = upgradeLegacyCase(caseJson);
   if (!isSimulationCase(base)) throw new Error("not playable");

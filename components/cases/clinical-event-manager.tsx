@@ -83,6 +83,8 @@ export interface ClinicalEventContextValue {
     requestAssist: (type: AssistType, target?: string) => AssistResult
     requestHint: () => { ok: true; hint: string; cost: number } | { ok: false; reason: string }
     giveIntervention: (action: string) => InterventionResult | null
+    /** Wait up to `minutes`; stops early at the first nurse alert or the end of the encounter. */
+    wait: (minutes: number) => { to: number; stopped: "alert" | "limit" | null }
     submitDifferential: (ranked: string[]) => void
     submitAssessment: (args: { ranked: string[]; primary: string; reasoning: string; steps: string[] }) => void
   }
@@ -326,6 +328,16 @@ export function ClinicalEventProvider({
       },
 
       giveIntervention: (action) => engine.giveIntervention(action, at()),
+
+      wait: (minutes) => {
+        const { to, stopped } = engine.skipTime(at(), minutes * 60)
+        // The clock carries on from where the wait ended.
+        accumulatedRef.current = to
+        if (segmentStartRef.current !== null) segmentStartRef.current = performance.now()
+        setNow(to)
+        if (to >= limitSeconds) setExpired(true)
+        return { to, stopped }
+      },
 
       submitDifferential: (ranked) => {
         engine.submitDifferential(ranked, at())

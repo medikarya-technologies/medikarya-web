@@ -7,7 +7,8 @@ import type { SimulationCaseConfig } from "./case-schema";
 import type { ClinicalEvent } from "./encounter-events";
 import { EncounterEngine } from "./encounter-engine";
 import { replayStudentEvents } from "./replay";
-import { availableFlag, compileLivePlan, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { availableFlag, compileCondition, compileLivePlan, isRepeatable, REASSESS_ID, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { evaluateCondition } from "./conditions";
 
 const MIN = 60;
 
@@ -44,6 +45,24 @@ export function canonicalJson(v: unknown): string {
 export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 /**
+ * What identifies a plan for the golden tests: everything that changes how it runs. Release blockers are records
+ * about the case, not part of the physiology, so recording or clearing one does not make the golden test skip it.
+ */
+export function planSha(plan: unknown): string {
+    const { release_blockers: _blockers, ...rest } = plan as Record<string, unknown>;
+    return sha256(canonicalJson(rest));
+}
+
+/** The same for a compiled case, which carries its plan along. */
+export function compiledSha(compiled: unknown): string {
+    const c = compiled as Record<string, unknown>;
+    const plan = c.live_plan as Record<string, unknown> | undefined;
+    if (!plan || !("release_blockers" in plan)) return sha256(canonicalJson(c));
+    const { release_blockers: _blockers, ...rest } = plan;
+    return sha256(canonicalJson({ ...c, live_plan: rest }));
+}
+
+/**
  * The minutes at which a student who does everything right gives an essential treatment: from minute 1, a minute
  * apart, never after its window. A treatment that needs several doses gets each further dose as soon as its minimum
  * interval allows.
@@ -66,8 +85,11 @@ function play(config: SimulationCaseConfig, plan: LivePlan, events: ClinicalEven
     return result(config, plan, engine);
 }
 
-/** An essential treatment that cannot go on a fixed schedule: it is required, or on the tray, only in some states. */
-const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when);
+/**
+ * An essential treatment that cannot go on a fixed schedule: it is required, or on the tray, only in some states, or
+ * (given once) it has prerequisites, such as a second-line drug after two benzodiazepine doses.
+ */
+const isConditional = (t: LiveTreatment) => t.role === "essential" && !!(t.required_when || t.available_when || t.requires?.length);
 
 /**
  * The scheduled events, and each conditional essential a minute after it becomes required (or, if it is always
@@ -81,10 +103,14 @@ function playRescue(config: SimulationCaseConfig, plan: LivePlan, scheduled: Cli
     const done = new Set<string>();
     for (let m = 1; m <= limit; m++) {
         for (const t of conditional) {
-            const due = t.required_when ? engine.state.flags[requiredFlag(t.id)] === true : engine.state.flags[availableFlag(t.id)] === true;
+            const ready =
+                (!t.available_when || engine.state.flags[availableFlag(t.id)] === true) &&
+                (t.requires ?? []).every((r) => evaluateCondition(compileCondition(r.when), engine.state.context(m * MIN)));
+            const due = t.required_when ? engine.state.flags[requiredFlag(t.id)] === true && ready : ready;
             if (!done.has(t.id) && due) {
                 done.add(t.id);
-                pending.push(given(t.id, m));
+                // Every dose it needs, the first now and each further one as its interval allows.
+                pending.push(...dosesAt(t, isRepeatable(t) ? doseTimes(t, m) : [m]));
             }
         }
         pending.sort((a, b) => a.timestamp - b.timestamp);
@@ -116,6 +142,13 @@ function result(config: SimulationCaseConfig, plan: LivePlan, engine: EncounterE
 
 const given = (action: string, minutes: number): ClinicalEvent => ({ type: "INTERVENTION_GIVEN", timestamp: minutes * MIN, action, consequence: "x" });
 
+/**
+ * A treatment's doses at these minutes, each further dose preceded by a reassessment when the plan asks for one: a
+ * minute before it (a reassessment takes time), and never before the dose it follows. Shared with check-live-plan.
+ */
+export const dosesAt = (t: LiveTreatment, times: number[]): ClinicalEvent[] =>
+    times.flatMap((at, i) => (i > 0 && t.reassess_before_repeat ? [given(REASSESS_ID, Math.max(times[i - 1], at - 1)), given(t.id, at)] : [given(t.id, at)]));
+
 export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playthroughs {
     const config = compileLivePlan(base, plan);
     const limit = plan.time_limit_minutes;
@@ -126,7 +159,7 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
     // A treatment required or available only in some states is given only once it is; on a fixed schedule it would be refused.
     for (const t of essentials.filter((x) => !isConditional(x))) {
         const times = correctTimes(t, next, limit);
-        for (const at of times) correct.push(given(t.id, at));
+        correct.push(...dosesAt(t, times));
         next = times[0] + 1;
     }
     correct.sort((a, b) => a.timestamp - b.timestamp);
@@ -135,7 +168,7 @@ export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playth
 
     const late: ClinicalEvent[] = essentials
         .filter((t) => !isConditional(t))
-        .flatMap((t) => doseTimes(t, Math.min(limit - 1, (t.within_minutes ?? 5) + 2)).map((at) => given(t.id, Math.min(limit - 1, at))))
+        .flatMap((t) => dosesAt(t, doseTimes(t, Math.min(limit - 1, (t.within_minutes ?? 5) + 2)).map((at) => Math.min(limit - 1, at))))
         .sort((a, b) => a.timestamp - b.timestamp);
 
     // With treatments required only in some states, correct care also gives each one as soon as it is required.

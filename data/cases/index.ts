@@ -3,7 +3,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 import { bundledSimulationCases, getBundledSimulationCase } from './simulation';
 import { upgradeLegacyCase } from '@/lib/simulation/legacy-adapter';
 import { isSimulationCase } from '@/lib/simulation/case-schema';
-import { withLivePlan } from '@/lib/simulation/live-plan';
+import { liveForStudents, withLivePlan } from '@/lib/simulation/live-plan';
 import { appearanceOverlays } from './simulation/appearance';
 import { currentCaseId, formerCaseId } from '@/lib/cases/renamed-ids';
 
@@ -112,6 +112,8 @@ const CASE_LIST_COLUMNS = [
   'actionConsequences:case_json->action_consequences',
   // an ordinary case with an approved live plan also runs live (lib/simulation/live-plan.ts)
   'livePlanStatus:case_json->live_plan->>status',
+  // an open release blocker keeps it from students all the same
+  'livePlanBlockers:case_json->live_plan->release_blockers',
 ].join(', ');
 
 interface CaseListRow {
@@ -136,6 +138,7 @@ interface CaseListRow {
   eventRules: unknown;
   actionConsequences: unknown;
   livePlanStatus: string | null;
+  livePlanBlockers: unknown;
 }
 
 function toMetadata(row: CaseListRow): CaseMetadata {
@@ -164,7 +167,7 @@ function toMetadata(row: CaseListRow): CaseMetadata {
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
     patient: age === undefined && gender === undefined ? undefined : { age, gender },
-    live: isSimulationCase({ initial_state: row.initialState, event_rules: row.eventRules, action_consequences: row.actionConsequences }) || row.livePlanStatus === 'approved',
+    live: isSimulationCase({ initial_state: row.initialState, event_rules: row.eventRules, action_consequences: row.actionConsequences }) || liveForStudents(row.livePlanStatus, row.livePlanBlockers),
   };
 }
 

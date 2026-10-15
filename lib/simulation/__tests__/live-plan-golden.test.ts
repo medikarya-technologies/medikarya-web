@@ -12,7 +12,7 @@ import path from "path";
 
 import { upgradeLegacyCase } from "../legacy-adapter";
 import { compileLivePlan, isLivePlan, type LivePlan } from "../live-plan";
-import { canonicalJson, playthroughs, sha256 } from "../live-plan-playthrough";
+import { canonicalJson, compiledSha, planSha, playthroughs } from "../live-plan-playthrough";
 import type { SimulationCaseConfig } from "../case-schema";
 import { goldenFixtureCase, goldenFixturePlan } from "./live-plan-golden-fixture";
 
@@ -48,10 +48,10 @@ describe("live plan golden: every real plan present on this machine", () => {
 
         it(`${c.id}: the site recognises its plan`, () => assert.equal(isLivePlan(c.live_plan), true, "isLivePlan must accept every stored plan"));
 
-        if (!g || g.plan_sha !== sha256(canonicalJson(c.live_plan))) continue; // a new or edited plan: nothing to compare
+        if (!g || g.plan_sha !== planSha(c.live_plan)) continue; // a new or edited plan: nothing to compare
 
         it(`${c.id}: compiles and plays exactly as recorded`, () => {
-            assert.equal(sha256(canonicalJson(compileLivePlan(base(c), c.live_plan))), g.compiled_sha, "compiled engine rules changed");
+            assert.equal(compiledSha(compileLivePlan(base(c), c.live_plan)), g.compiled_sha, "compiled engine rules changed");
             assert.deepEqual(JSON.parse(JSON.stringify(playthroughs(base(c), c.live_plan))), g.playthroughs);
         });
     }

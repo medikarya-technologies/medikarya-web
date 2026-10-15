@@ -6,7 +6,7 @@ import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { checkLivePlan, isLivePlan, measuredOnArrival } from "@/lib/simulation/live-plan"
+import { checkLivePlan, isLivePlan, measuredOnArrival, openReleaseBlockers } from "@/lib/simulation/live-plan"
 import { LiveRow, type LiveCase } from "./live-row"
 
 // Admin → Live cases. Every case in the library, and where each stands on becoming a live one: no plan, a proposed
@@ -48,6 +48,7 @@ async function load(): Promise<LiveCase[]> {
             signOff: plan.sign_off
               ? { decision: plan.sign_off.decision, by: plan.sign_off.reviewer_name ?? null, at: plan.sign_off.decided_at, comments: plan.sign_off.comments ?? null }
               : null,
+            blockers: openReleaseBlockers(plan).map((b) => b.text),
             errors: check?.errors ?? [],
             warnings: check?.warnings ?? [],
           }
@@ -60,7 +61,9 @@ export default async function LiveCasesPage() {
   const { userId } = await auth()
   if (!(await isAdmin(userId))) redirect("/")
   const cases = await load()
-  const live = cases.filter((c) => c.plan?.status === "approved" && c.status === "published").length
+  // A switched-on plan with an open release blocker does not reach students, so it is not counted as live.
+  // plan.blockers lists the open ones only: a switched-on plan with any of them does not reach students.
+  const live = cases.filter((c) => c.plan?.status === "approved" && c.plan.blockers.length === 0 && c.status === "published").length
   const waiting = cases.filter((c) => c.plan && c.plan.status !== "approved").length
 
   return (

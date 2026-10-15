@@ -63,7 +63,12 @@ export type ClinicalEvent =
     | { type: "PATIENT_DETERIORATED"; timestamp: number; narrative: string; ruleId: string }
     | { type: "DIFFERENTIAL_SUBMITTED"; timestamp: number; ranked: string[] }
     | { type: "DIAGNOSIS_SUBMITTED"; timestamp: number; primary: string; reasoning: string }
-    | { type: "MANAGEMENT_SUBMITTED"; timestamp: number; steps: string[] };
+    | { type: "MANAGEMENT_SUBMITTED"; timestamp: number; steps: string[] }
+    /**
+     * The student waited: the clock jumped from `from` to `timestamp` (asked for `minutes`). `stopped` says why it ended
+     * early: a nurse alert, or the end of the encounter.
+     */
+    | { type: "TIME_SKIPPED"; timestamp: number; from: number; minutes: number; stopped?: "alert" | "limit" };
 
 /** The plan calls the log `EncounterEvent[]` and the union `ClinicalEvent`; they are one type. */
 export type EncounterEvent = ClinicalEvent;
@@ -83,6 +88,7 @@ export const ENCOUNTER_EVENT_TYPES: readonly EncounterEventType[] = [
     "DIFFERENTIAL_SUBMITTED",
     "DIAGNOSIS_SUBMITTED",
     "MANAGEMENT_SUBMITTED",
+    "TIME_SKIPPED",
 ];
 
 // ── Time helpers ────────────────────────────────────────────────────────────
@@ -165,6 +171,10 @@ export function isClinicalEvent(value: unknown): value is ClinicalEvent {
             return isStr(e.primary) && isStr(e.reasoning);
         case "MANAGEMENT_SUBMITTED":
             return isStrArr(e.steps);
+        case "TIME_SKIPPED":
+            return (
+                isNum(e.from) && e.from >= 0 && e.from <= e.timestamp && isNum(e.minutes) && e.minutes > 0 && (e.stopped === undefined || e.stopped === "alert" || e.stopped === "limit")
+            );
         default:
             return false;
     }

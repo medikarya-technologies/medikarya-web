@@ -3,6 +3,7 @@ import "server-only";
 import { caseModelJson } from "@/lib/ai/case-model";
 import { INTERVENTIONS } from "@/lib/simulation/intervention-catalog";
 import { checkLivePlan, normaliseLivePlan, type LivePlan, type LivePlanCheck, type LiveVitals } from "@/lib/simulation/live-plan";
+import { ADVANCED_FIELDS_GUIDE } from "@/lib/simulation/live-plan-guide";
 
 // Drafts a LIVE PLAN for an ordinary case (lib/simulation/live-plan.ts): what happens to this patient, minute by
 // minute, if nothing is done; what is on the tray and what each thing does; what stops the deterioration; where the
@@ -80,6 +81,8 @@ Rules
 - Use treatments and doses that are standard in India. If you are not sure of a dose, say so in basis.
 - No drug or procedure that needs a setting the case does not have.
 
+${ADVANCED_FIELDS_GUIDE}
+
 SHARED TRAY (id = label (detail)):
 ${TRAY_LIST}`;
 
@@ -124,7 +127,8 @@ export async function draftLivePlan(
   revise?: { previous: LivePlan; comments: string }
 ): Promise<LiveDraft> {
   const theCase = caseFor(caseJson, measured);
-  const { sign_off: _s, status: _st, origin: _o, drafted_at: _d, version: _v, ...previous } = revise?.previous ?? ({} as LivePlan);
+  // Release blockers and the team's check belong to the case and the admin, not to the model (savePlan keeps the blockers).
+  const { sign_off: _s, status: _st, origin: _o, drafted_at: _d, version: _v, release_blockers: _rb, team_checked_at: _tc, ...previous } = revise?.previous ?? ({} as LivePlan);
 
   let out = await generate(
     revise
