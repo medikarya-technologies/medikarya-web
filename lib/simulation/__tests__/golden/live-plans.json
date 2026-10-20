@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
     "plan_sha": "d1e1d07eb3685d123b4ede091395a85edc74e2ac3f37911e6aa74ec0a2e99156",
-    "compiled_sha": "43962ba0e8595666aad01de0321a4ff4b49207f63a4def2d0769fbbe49e0a36b",
+    "compiled_sha": "b4802a986bfd69176c0c57837ea910da3608fc34ec43bc91cb7cba8b6363b317",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -227,8 +227,8 @@
     }
   },
   "24-year-old-man-struggling-to-breathe-after-a-bike-accident": {
-    "plan_sha": "733adfc9bea497fff6dfa1c8726cbceaa198de615431ad2abe4f68128302e461",
-    "compiled_sha": "7ef746446aaf3adf0f1ee29be24106001cab7664fe5e831288817a8dcd411f60",
+    "plan_sha": "696251ae48820c44a1b2df9e1c0a7d36b39522fb63b7f7b19316d58448a7c260",
+    "compiled_sha": "fab29ce0f12d9dcb10487a4d4775d69c734129d162d87cadc8402ba2c4b44224",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -394,7 +394,7 @@
   },
   "26-year-old-woman-who-cannot-catch-her-breath": {
     "plan_sha": "5c5943d9cf2e5223b55f72721f22b844cebbc85825d2567171570cea89960812",
-    "compiled_sha": "957d22cdc34f99253cd8e1717b8e03d3eb5206dc6e2a5ecbad108757e9ec6ed1",
+    "compiled_sha": "006f6ab96301c31569398d0328067759d21335ce41604f69da0f622f9d8eb251",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -574,8 +574,8 @@
     }
   },
   "29-year-old-man-with-belly-pain-as-his-fever-settles": {
-    "plan_sha": "8401ff4b3e2cb6e6977d76a2c4cb0b5975118c207c7767016ae1e2176ddc3d3f",
-    "compiled_sha": "308fc76cb2e90dd1e324ea821ac5f028572db488bebf4d526dddaba564171154",
+    "plan_sha": "7fa1c41ad2580c0a48d5110c291284304311ea83002332c028bf43519d959475",
+    "compiled_sha": "80a0b6a2f635cad4cac3d66be25eb172d0d02c3c8e86d54ab38e8d807f425cd3",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -586,6 +586,10 @@
           ],
           [
             "crystalloid_resuscitation_dengue",
+            "missed"
+          ],
+          [
+            "crystalloid_bolus_hypotensive",
             "missed"
           ],
           [
@@ -610,7 +614,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "4b986c2923b5677d6793a2f290bba760c04f7cb13953fb6f478014ecbd4e5838"
+        "events_sha": "78fc712d089120e42db1a68300899381d42f8965b838bcee133016d29babb9ef"
       },
       "correct": {
         "score": 100,
@@ -624,6 +628,10 @@
             "on_time"
           ],
           [
+            "crystalloid_bolus_hypotensive",
+            "not_needed"
+          ],
+          [
             "serial_monitoring_dengue",
             "on_time"
           ]
@@ -632,7 +640,8 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": null
+          "worst_stage": null,
+          "path": "usual"
         },
         "final": {
           "hr": 112,
@@ -645,7 +654,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "05bfda7d99a5d812c8a09222ad04411962155023aa3d36aa5d1f14594193d6fa"
+        "events_sha": "2fc8fea86468bcb3d8e37bf47c33166dc31d00c6794d3b3b5ebf449fb58b4308"
       },
       "harmful": {
         "score": 40,
@@ -657,6 +666,10 @@
           [
             "crystalloid_resuscitation_dengue",
             "on_time"
+          ],
+          [
+            "crystalloid_bolus_hypotensive",
+            "not_needed"
           ],
           [
             "serial_monitoring_dengue",
@@ -672,7 +685,8 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": null
+          "worst_stage": null,
+          "path": "usual"
         },
         "final": {
           "hr": 112,
@@ -685,10 +699,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "fddd500d1c476ffc14b454c4b482f65fcbd5b7108a6fa8e8b9c094e954b2f5d8"
+        "events_sha": "5dcc6a38547c48dbcedf34ffe02c2b8d07b30e89abcb749a7703e191adec6b17"
       },
       "late": {
-        "score": 50,
+        "score": 25,
         "items": [
           [
             "iv_access",
@@ -696,7 +710,50 @@
           ],
           [
             "crystalloid_resuscitation_dengue",
+            "missed"
+          ],
+          [
+            "crystalloid_bolus_hypotensive",
+            "missed"
+          ],
+          [
+            "serial_monitoring_dengue",
             "late"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Profound shock"
+        },
+        "final": {
+          "hr": 146,
+          "sbp": 62,
+          "dbp": 50,
+          "spo2": 92,
+          "rr": 32,
+          "temp": 36.8,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "71906b28359c8b0fe3ca38bc8c60926c0ba56dfb535fc1692771234f748948e7"
+      },
+      "rescue": {
+        "score": 67,
+        "items": [
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "crystalloid_resuscitation_dengue",
+            "on_time"
+          ],
+          [
+            "crystalloid_bolus_hypotensive",
+            "not_needed"
           ],
           [
             "serial_monitoring_dengue",
@@ -707,7 +764,8 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Hypotensive shock"
+          "worst_stage": "Pulse pressure narrowing",
+          "path": "usual"
         },
         "final": {
           "hr": 112,
@@ -720,13 +778,13 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "c37e1f1f059e365947a6b1a0e06cda9cb381d1e5a96d7810028ebba6703d555b"
+        "events_sha": "842704dfe8ebd7cfa230f5d0bbafd1c4d68a8627de2391b84f32244dcf7ca6c3"
       }
     }
   },
   "32-year-old-man-brought-in-fitting": {
     "plan_sha": "12dda86824d12952bcc7ef143a55978357f8a83889fe09ddc1bc71987f3a0d10",
-    "compiled_sha": "31c69cda8b89d30fccbd47abd82b8c392f509778d4f2072e5b8b0b5dceebe1eb",
+    "compiled_sha": "eb1e309e4f9646a95c931792a5c1ca6dd9ebae5ae63c33361205d5361e0e6f28",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -951,7 +1009,7 @@
   },
   "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing": {
     "plan_sha": "1037584b25ed590aca191d1dc283fd48eea303e7ee8de878d6f338576030fe69",
-    "compiled_sha": "52af3db6ee700bd21a551920a551e9f7f9eb8988f16a6c4e23e647c9fd001d5f",
+    "compiled_sha": "955d64708ecea68c2d2b6afc27aa1b1f39ead2421b6504527d3c85ebbc42f81e",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1102,7 +1160,7 @@
   },
   "36-year-old-man-with-sudden-breathlessness": {
     "plan_sha": "d0ecc1cd5d7c74458ea20e892b21a4f74a94294811703b7ea19a1f82c36f83f7",
-    "compiled_sha": "c335f941af13f24129bcf5c67731b86bf305a53f1312b8f1434701ae1d98d0b0",
+    "compiled_sha": "0b7bd668b6bcd4c78345bcf8968446cc938d03ba811875e97de806f5dac8a477",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1388,7 +1446,7 @@
   },
   "40-year-old-man-found-unconscious-at-home": {
     "plan_sha": "8eb9dce45f9c6d413f7507eedb0dcbb9d1828dce26a0edac772cad6cd260632e",
-    "compiled_sha": "46a3454f337a2e4656be2400676082fcd88c342adc00a2b189ab505eb2cf030c",
+    "compiled_sha": "a8ba2e3233ddee67d5200c4e7cd98abffa74964f2decb3d5cc19e008fb9b537d",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1570,7 +1628,7 @@
   },
   "45-year-old-woman-with-fever-who-has-become-confused": {
     "plan_sha": "86c2a9d68d5aa3232889884d20616e0ea3e395c1dde700f6dbc2369b97789123",
-    "compiled_sha": "2331221a08d38e9364e9cbe35b257ec42e026a47d13a69f96079ddaa36b5370a",
+    "compiled_sha": "d456bd8c3ecbc118ae618bf9481f3cf77da1904587fa7e4c68c6bf24424a2c62",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1767,8 +1825,8 @@
     }
   },
   "46-year-old-man-whose-legs-are-too-weak-to-stand": {
-    "plan_sha": "8b22186fbaf4590ebc7d658183ae2b75827bb709c05f6a9e38e405880be1f97e",
-    "compiled_sha": "1f46a34b50710689e6b946f08b5dab2b694f9abc62a97df2d567864fe31862d2",
+    "plan_sha": "5a715fc25d2128498d085a7570227f9a6a8cee638ee5786337cec1d436b6ca6e",
+    "compiled_sha": "9483b5bebdb7ac6cd035c2643d3935df68d23220e913b0734f785048b00c82e6",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1862,7 +1920,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "cbc923373ed2ddd28dbd39f3c3cb3170ff527770170aacc684ef7288740dc30b"
+        "events_sha": "307d4d66597508f92aeebf1297b9a0432811943a0b01ea25db98a71579befea6"
       },
       "harmful": {
         "score": 70,
@@ -1912,10 +1970,57 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "8d8a9738904ab2271cf598abfce1b783d93262038a152a99bcbbda46d7005c18"
+        "events_sha": "b0cfdd78768a9eb34e3a69a0c641f5e077df164e09fc73388f6111d953abe369"
       },
       "late": {
-        "score": 50,
+        "score": 25,
+        "items": [
+          [
+            "continuous_monitoring",
+            "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "calcium_gluconate_iv",
+            "missed"
+          ],
+          [
+            "insulin_glucose_iv",
+            "missed"
+          ],
+          [
+            "glucose_infusion_after_insulin",
+            "missed"
+          ],
+          [
+            "urgent_haemodialysis",
+            "late"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Peri-arrest"
+        },
+        "final": {
+          "hr": 22,
+          "sbp": 64,
+          "dbp": 36,
+          "spo2": 88,
+          "rr": 10,
+          "temp": 36.8,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "complete_heart_block"
+        },
+        "events_sha": "8d83d3d640f39a8098c4ed02165b7289f2f5b9a0e3a5a971f6d5607e0fc35ede"
+      },
+      "rescue": {
+        "score": 67,
         "items": [
           [
             "continuous_monitoring",
@@ -1931,11 +2036,11 @@
           ],
           [
             "insulin_glucose_iv",
-            "late"
+            "on_time"
           ],
           [
             "glucose_infusion_after_insulin",
-            "late"
+            "on_time"
           ],
           [
             "urgent_haemodialysis",
@@ -1946,7 +2051,7 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Broad, slow rhythm with low BP"
+          "worst_stage": "Slowing pulse"
         },
         "final": {
           "hr": 66,
@@ -1959,13 +2064,13 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "c535faafec18b95cf40d682553e0adaeadc5530fb51f9f3696e0bd8e99a73e10"
+        "events_sha": "04991cfbfe694c24db21c2e589d628db194a1ef2777d090ef276214db38ce229"
       }
     }
   },
   "48-year-old-man-who-suddenly-could-not-breathe-and-fainted": {
-    "plan_sha": "5259d26de7310cfea663b08f8af3abd58b74136083e2f24c27b1f1b57a1dd30d",
-    "compiled_sha": "801fe1f47911b4e9db7de596611e94f98114e1f5ac2e5ab7909ed197e9398524",
+    "plan_sha": "0d5b48ff937f286bdf7ce287a5504592879ece39b4c7250ea378a5927040859e",
+    "compiled_sha": "f70488d0d16ab8c561e47ed931dfd7bafab3066f99fd1915f7137509fc4b5f8c",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2043,7 +2148,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "ae4b9face26f3c374073a7a2906f63b532053d12042234cf10e39a726e13f7b0"
+        "events_sha": "c93e894decb3000852cb2fa0b5b296cf45116e9d57c69bcd1259fe9104f600fb"
       },
       "harmful": {
         "score": 55,
@@ -2086,10 +2191,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "01d8f0ef5f7bf36348429c1c001a953dc2dcbfe701d09a2898f44debe77ba637"
+        "events_sha": "c75f5bfa10b63609a5ab3d59c6dd310fec88da46f0352e9214f349bb1603d28d"
       },
       "late": {
-        "score": 50,
+        "score": 25,
         "items": [
           [
             "high_flow_oxygen",
@@ -2101,18 +2206,57 @@
           ],
           [
             "heparin_ufh_bolus",
-            "late"
+            "missed"
           ],
           [
             "systemic_thrombolysis_pe",
+            "missed"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Peri-arrest"
+        },
+        "final": {
+          "hr": 50,
+          "sbp": 48,
+          "dbp": 28,
+          "spo2": 69,
+          "rr": 10,
+          "temp": 37.2,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_bradycardia"
+        },
+        "events_sha": "613bb3fdf2ef8fb88864cb36354c697f75862448969656b230a02a2b210701c3"
+      },
+      "rescue": {
+        "score": 75,
+        "items": [
+          [
+            "high_flow_oxygen",
             "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "heparin_ufh_bolus",
+            "on_time"
+          ],
+          [
+            "systemic_thrombolysis_pe",
+            "on_time"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Decompensated obstructive shock"
+          "worst_stage": "Worsening shock"
         },
         "final": {
           "hr": 104,
@@ -2125,13 +2269,13 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "84230b697bce4cd95cf2db039770574fb5e7f5a82769ad81e78aa4f967c05718"
+        "events_sha": "4d8b37336991d5e76cd973ec4b94d118436b6d2596706e7d56ca3c0a431c16f5"
       }
     }
   },
   "52-year-old-man-vomiting-blood-at-2-am": {
     "plan_sha": "6dfc4a63ac5be7e573d4782ce6f36359cd8ecb374b97e189adddd579659b9e21",
-    "compiled_sha": "d1359c599c9b776f82f66702a3f1eb3aa4fd5e57f5396580d6af7d7d5bd31d1d",
+    "compiled_sha": "c1d5d53fb7263f0aacc981b70bd06bd4f8356b9c5b052dfd63eae3e62e65cfd4",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2311,7 +2455,7 @@
   },
   "54-year-old-man-with-black-stools-who-vomited-blood": {
     "plan_sha": "83ec12e9e895d5b9f5dc6b32b28f2fc161bff0036a8b0856423572f8cf8a1be3",
-    "compiled_sha": "6ac9d7d09ca208400217ad0b27b38a7f0b2e9c7c2da6291b0d31e1a3e23020d0",
+    "compiled_sha": "344e47397d5dcda0c0e50eab7ebb9e4632814742da886fca32337ce42a665867",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2477,7 +2621,7 @@
   },
   "56-year-old-man-with-chest-pain-and-a-slow-pulse": {
     "plan_sha": "f00fe309459302090ef5728c82189d5cab20b298a8be054cc09e5f39e677f984",
-    "compiled_sha": "61bc4afa53d2e73bae55548400dffd9478d29cbf0c575ddc27a61fbf8a91e98a",
+    "compiled_sha": "172e0bbb3775350bfa7d848052cdf8fb0b5e0a371310bcf8043dde61d63684cb",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2689,8 +2833,8 @@
     }
   },
   "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
-    "plan_sha": "35950f2630a1e00b9a5af8ec9af272f6016e4fcfced23c8036d6b4d18997caff",
-    "compiled_sha": "c266551b544e352cdc1404f18852c4acd1a7d258a8783e28c268a55e9876cb20",
+    "plan_sha": "8f5dd205b2d217397aa88b2f822967a09e0c3731248faa5b7851e91df183f3f3",
+    "compiled_sha": "6c3b60a4dec291f85ad6dba246a6bb5c37831afe3bebfd86b8a0cb02453de9e9",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2776,7 +2920,7 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "e749b6fc0310ebdf8eef0b39dc58449a57801366556051d910056b63acd6787d"
+        "events_sha": "3517a1701465c70d1772d8ebd4039d9899a94c7601adfb84de089e59f0c274e9"
       },
       "harmful": {
         "score": 70,
@@ -2822,10 +2966,10 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "2d308a7e98511cfbf16df94adefa3f8ad843dc15dd825bbb22aaaac98ed4acae"
+        "events_sha": "ef4c08df5130be0ac7c815ead5c8daf9400330eb098b7571689cd11c6ef4e9ac"
       },
       "late": {
-        "score": 60,
+        "score": 40,
         "items": [
           [
             "capillary_glucose_check",
@@ -2837,11 +2981,54 @@
           ],
           [
             "iv_glucose_10_percent",
-            "late"
+            "missed"
           ],
           [
             "glucose_infusion_and_admission",
+            "missed"
+          ],
+          [
+            "stop_sulfonylurea",
+            "on_time"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Deep coma after the fit"
+        },
+        "final": {
+          "hr": 118,
+          "sbp": 142,
+          "dbp": 84,
+          "spo2": 88,
+          "rr": 10,
+          "temp": 36.1,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "0a8e3e9e444d380e016abd40a00c992c1447c4f43232142692d0408363e7fd1c"
+      },
+      "rescue": {
+        "score": 80,
+        "items": [
+          [
+            "capillary_glucose_check",
             "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "iv_glucose_10_percent",
+            "on_time"
+          ],
+          [
+            "glucose_infusion_and_admission",
+            "on_time"
           ],
           [
             "stop_sulfonylurea",
@@ -2852,7 +3039,7 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Unrousable"
+          "worst_stage": "Deepening drowsiness"
         },
         "final": {
           "hr": 94,
@@ -2865,13 +3052,13 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "8ba60af7bba6142eb6d3e47f3d095c7fc4eda67a39d60759b32d7bd078981bcf"
+        "events_sha": "83a33c11dfd99589979473ce7867f43199adfe623e0bf4cf8c5ab1300ab1bbc9"
       }
     }
   },
   "58-year-old-woman-who-woke-up-gasping-for-breath": {
-    "plan_sha": "bda839d6decac2afa51c2dea3a685536361c88493193e566c4da474ae6ec007d",
-    "compiled_sha": "25b0dbb037316e6bf51b37ebd1a9eecb034ba09f9c871585ab5275ca3deed3a4",
+    "plan_sha": "91289ee222a52fec5c09d7730430a59c6715aae335e28b9964a150cbd414baaf",
+    "compiled_sha": "d0d7898bc265e12e13bfdc6db2b4a410ba43614e63f8f6098fc8831df1340f1d",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2965,7 +3152,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "4d1530068345bf66efa518aec8c50b7b84bc48c5147844c9340ea0226f361eac"
+        "events_sha": "aec33e5ee8e0ff45cac6ddfc9bd5c6b166fec04a7a767ce98c514612c4722021"
       },
       "harmful": {
         "score": 55,
@@ -3016,10 +3203,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e14b55f5dd05b043dbd658f292ebf1e2c622e37a83bf906621165c35c3df04e9"
+        "events_sha": "961f3791e95ca50bc79c8faf0dc701691f284f3fd33c9c144443ce3ffbac4380"
       },
       "late": {
-        "score": 50,
+        "score": 42,
         "items": [
           [
             "sit_upright",
@@ -3043,14 +3230,61 @@
           ],
           [
             "furosemide_iv",
+            "missed"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Respiratory failure"
+        },
+        "final": {
+          "hr": 134,
+          "sbp": 120,
+          "dbp": 72,
+          "spo2": 78,
+          "rr": 4,
+          "temp": 36.9,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "e87104c6b3643ab34418c086a0fdfbc02cd6c06d1590513546d934a54d18c4c9"
+      },
+      "rescue": {
+        "score": 58,
+        "items": [
+          [
+            "sit_upright",
             "late"
+          ],
+          [
+            "high_flow_oxygen",
+            "late"
+          ],
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "niv_cpap",
+            "late"
+          ],
+          [
+            "gtn_sublingual",
+            "late"
+          ],
+          [
+            "furosemide_iv",
+            "on_time"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Exhaustion with rising CO2"
+          "worst_stage": "Confused and tiring"
         },
         "final": {
           "hr": 102,
@@ -3063,7 +3297,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "4ae02742fe13e082d2cf3a8982fd37361fecf30bab3631cb92bcd36ef23453a3"
+        "events_sha": "f1077b7b6e9ed6a7953725403490d2c604fad1d3f626d95273a3a9d083eeb29a"
       }
     }
   }
