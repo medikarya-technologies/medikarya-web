@@ -57,6 +57,8 @@ export interface EvaluationConfigHistory {
 export interface EvaluationConfigTesting {
     testing_required: boolean;
     core_tests: string[];
+    /** Interchangeable core tests (e.g. a blood gas or a random glucose): ordering any one of a group earns the core marks once, and none costs the missed-core penalty once. List the members here only, not in core_tests or optional_tests. */
+    core_test_groups?: string[][];
     optional_tests: string[];
     distractor_tests: string[];
     dangerous_tests: string[];

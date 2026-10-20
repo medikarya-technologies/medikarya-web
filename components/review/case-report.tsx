@@ -218,7 +218,7 @@ export function CaseReport({ caseJson: c, reviewNotes }: { caseJson: Json; revie
           <span className="text-slate-500">Red flags (missing these costs most):</span> {(ev.history?.red_flag_questions ?? []).join(" · ")}
         </p>
         <div className="space-y-2">
-          <p><span className="text-slate-500">Tests the student must order (to diagnose or to judge severity):</span> <Pills ids={ev.testing?.core_tests} tests={tests} tone="bg-emerald-100 text-emerald-900" /></p>
+          <p><span className="text-slate-500">Tests the student must order (to diagnose or to judge severity):</span> <Pills ids={ev.testing?.core_tests} tests={tests} tone="bg-emerald-100 text-emerald-900" />{(ev.testing?.core_test_groups ?? []).map((g: string[], i: number) => <span key={i}> (any one of: <Pills ids={g} tests={tests} tone="bg-emerald-100 text-emerald-900" />)</span>)}</p>
           <p><span className="text-slate-500">Reasonable extras:</span> <Pills ids={ev.testing?.optional_tests} tests={tests} tone="bg-slate-100 text-slate-800" /></p>
           <p><span className="text-slate-500">Low-value here (lose marks):</span> <Pills ids={ev.testing?.distractor_tests} tests={tests} tone="bg-amber-100 text-amber-900" /></p>
           <p><span className="text-slate-500">Unsafe here (lose most):</span> <Pills ids={ev.testing?.dangerous_tests} tests={tests} tone="bg-red-100 text-red-900" /></p>

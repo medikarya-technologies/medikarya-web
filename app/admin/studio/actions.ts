@@ -60,7 +60,7 @@ const fail = (error: unknown, fallback: string): ActionResult => {
 /** Names for every test id the case mentions, for the studio's copy of the report (the catalog lives here). */
 function testNamesOf(c: Record<string, any>): Record<string, string> {
   const t = c.evaluation_config?.testing ?? {}
-  const ids = [...(t.core_tests ?? []), ...(t.optional_tests ?? []), ...(t.distractor_tests ?? []), ...(t.dangerous_tests ?? [])]
+  const ids = [...(t.core_tests ?? []), ...(t.core_test_groups ?? []).flat(), ...(t.optional_tests ?? []), ...(t.distractor_tests ?? []), ...(t.dangerous_tests ?? [])]
   const names: Record<string, string> = {}
   for (const id of ids) {
     const name = (c.tests ?? []).find((x: any) => x.id === id)?.name ?? getCatalogTest(id)?.name

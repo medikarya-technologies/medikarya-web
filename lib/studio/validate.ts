@@ -144,7 +144,12 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
         }
       }
       if (strArr(t.core_tests)) {
-        if (t.core_tests.length === 0) warnings.push("No core tests: ordering nothing would not cost marks.");
+        const groups = Array.isArray(t.core_test_groups) ? t.core_test_groups : [];
+        if (t.core_tests.length === 0 && groups.length === 0) warnings.push("No core tests: ordering nothing would not cost marks.");
+        for (const g of groups) {
+          if (!strArr(g) || g.length < 2) errors.push("evaluation_config.testing.core_test_groups: each group is a list of at least two test ids.");
+          else for (const id of g) if (!testIds.has(id)) errors.push(`Core test "${id}" (in a group) has no result in tests[].`);
+        }
         for (const id of t.core_tests) if (!testIds.has(id)) errors.push(`Core test "${id}" has no result in tests[].`);
       }
       if (strArr(t.distractor_tests) && t.distractor_tests.length < 3) warnings.push("Fewer than 3 distractor tests: over-ordering will barely cost anything.");

@@ -159,6 +159,17 @@ export class DeterministicScorer {
             }
         }
 
+        // ── Core groups: any one member does the job ────────────────────────────
+        for (const group of cfg.core_test_groups ?? []) {
+            if (group.some((id) => orderedIds.has(id))) {
+                score += 8;
+                coreMatched++;
+            } else {
+                score -= 5;
+                missedCore.push(group.join(" or "));
+            }
+        }
+
         // ── Optional tests ───────────────────────────────────────────────────────
         for (const id of optional) {
             if (orderedIds.has(id)) {
