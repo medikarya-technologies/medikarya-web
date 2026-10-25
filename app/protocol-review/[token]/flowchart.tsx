@@ -103,7 +103,7 @@ export function Flowchart() {
                           <span className="mt-1 block text-[13.5px] text-emerald-800">Improved: taper as in the Yes path.</span>
                         </Box>
                         <Arrow label="Not improved" />
-                        <Box tone="danger">Colloid (massive plasma leakage, or no response to crystalloid) and ICU referral. Refractory hypotension: consider inotropes.<Q n="11" /></Box>
+                        <Box tone="danger">Colloid (massive plasma leakage, or no response to crystalloid) and ICU referral. Refractory hypotension: consider inotropes.<Q n="10" /></Box>
                       </>
                     ),
                   }}
@@ -152,7 +152,7 @@ export function Flowchart() {
               <>
                 <Box>Haematocrit above 45%: repeat crystalloid bolus. Below 45%: blood transfusion, as in chart A. Maximum 3 boluses.</Box>
                 <Arrow label="Shock persists" />
-                <Box tone="danger">Refractory shock: consider inotropes<Q n="11" />, manage in ICU. Look for cardiogenic or septic shock, a metabolic cause, persistent acidosis and occult bleeding.</Box>
+                <Box tone="danger">Refractory shock: consider inotropes<Q n="10" />, manage in ICU. Look for cardiogenic or septic shock, a metabolic cause, persistent acidosis and occult bleeding.</Box>
               </>
             ),
           }}

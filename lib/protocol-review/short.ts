@@ -117,7 +117,7 @@ export const SHORT_CARDS: ShortCard[] = [
   {
     id: "S7",
     question: "Paracetamol for him (AST 214, ALT 146, about 65 kg):",
-    hint: "The guideline gives 10 mg/kg a dose, no more than 6-hourly, at most 4 g a day for adults (page 34). It makes no adjustment for raised liver enzymes. The case now follows the guideline.",
+    hint: "Settled by your message: 500 mg to 1 g every 4 to 6 hours as needed, at most 4 g in 24 hours. The case now uses this; no need to answer again.",
     options: [
       { id: "A", label: "As the guideline: 650 mg (10 mg/kg) at least 6-hourly, at most 4 g a day" },
       { id: "B", label: "Same dose, but a lower daily maximum because of his liver (not in the guideline)" },
@@ -142,16 +142,6 @@ export const SHORT_CARDS: ShortCard[] = [
       { id: "A", label: "Less than 20 mmHg" },
       { id: "B", label: "20 mmHg or less" },
       DISCUSS,
-    ],
-  },
-  {
-    id: "S10",
-    question: "Paracetamol: if you want a lower daily maximum for his liver (AST 214, ALT 146), which?",
-    hint: "The guideline's adult maximum is 4 g a day with no liver adjustment (page 34). The dose stays 650 mg (10 mg/kg), at least 6-hourly.",
-    options: [
-      { id: "A", label: "Keep the guideline maximum: 4 g a day" },
-      { id: "B", label: "3 g a day" },
-      { id: "C", label: "2 g a day" },
     ],
   },
   {
