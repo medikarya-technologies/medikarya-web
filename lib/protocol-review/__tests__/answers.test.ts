@@ -1,8 +1,9 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { cleanAnswers } from "../answers";
-import { PROTOCOL_CARDS } from "../decisions";
+import { cardsFor, cleanAnswers } from "../answers";
+import { PROTOCOL_CARDS, PROTOCOL_PACKAGE } from "../decisions";
+import { DISCUSS, SHORT_CARDS, SHORT_PACKAGE } from "../short";
 
 describe("what a professor's saved answers can contain", () => {
   const withOptions = PROTOCOL_CARDS.find((c) => c.options)!;
@@ -35,5 +36,35 @@ describe("what a professor's saved answers can contain", () => {
     assert.equal(PROTOCOL_CARDS.length, 22);
     assert.equal(new Set(PROTOCOL_CARDS.map((c) => c.id)).size, 22);
     for (const c of PROTOCOL_CARDS) assert.ok(c.options?.length || c.prompt, c.id);
+  });
+});
+
+describe("the short follow-up package", () => {
+  const short = cardsFor(SHORT_PACKAGE);
+  const multi = SHORT_CARDS.find((c) => c.multi)!;
+  const single = SHORT_CARDS.find((c) => !c.multi && c.options.some((o) => o.id === DISCUSS.id))!;
+
+  it("keeps ticked boxes as known ids, each once, in the card's order", () => {
+    assert.deepEqual(cleanAnswers({ [multi.id]: { choice: "C, A,A,Q" } }, short), { [multi.id]: { choice: "A,C" } });
+    assert.deepEqual(cleanAnswers({ [multi.id]: { choice: "Q,R" } }, short), {}, "nothing known ticked, nothing kept");
+  });
+
+  it("lets a single question be answered 'discuss when we meet', and keeps the closing comment", () => {
+    assert.deepEqual(cleanAnswers({ [single.id]: { choice: DISCUSS.id } }, short), { [single.id]: { choice: DISCUSS.id } });
+    assert.deepEqual(cleanAnswers({ S0: { choice: "B", note: "add oxygen" } }, short), { S0: { choice: "B", note: "add oxygen" } });
+  });
+
+  it("keeps each package to its own questions", () => {
+    assert.deepEqual(cleanAnswers({ C1: { choice: "A" } }, short), {}, "a long-package card is not stored on a short link");
+    assert.deepEqual(cleanAnswers({ S0: { choice: "A" } }), {}, "and a short card is not stored on a long link");
+    assert.deepEqual(cardsFor("unknown-package"), []);
+    assert.equal(cardsFor(PROTOCOL_PACKAGE), PROTOCOL_CARDS);
+  });
+
+  it("has only whole answers: every single question offers 'discuss', every card has options", () => {
+    for (const c of SHORT_CARDS) {
+      assert.ok(c.options.length >= 2, c.id);
+      assert.ok(!c.options.some((o) => /\(state|other:/i.test(o.label)), `${c.id} asks the reviewer to write an answer`);
+    }
   });
 });

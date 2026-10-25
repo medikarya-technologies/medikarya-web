@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes } from "crypto";
 import { supabaseServer } from "@/lib/supabase/server";
-import { cleanAnswers, type Answers } from "./answers";
+import { cardsFor, cleanAnswers, type Answers } from "./answers";
 
 // Private links to the fluid protocol decision package (table protocol_reviews, scripts/create_protocol_reviews.sql).
 // A professor opens /protocol-review/<token> without an account, ticks their answers, and sends them. Only a hash of
@@ -69,7 +69,7 @@ export async function saveProtocolAnswers(token: string, answers: unknown, who: 
       reviewer_name: name || null,
       reviewer_designation: designation || null,
       reviewer_institution: institution || null,
-      answers: cleanAnswers(answers),
+      answers: cleanAnswers(answers, cardsFor(review.package)),
       updated_at: now,
       ...(submit ? { submitted_at: now } : {}),
     })

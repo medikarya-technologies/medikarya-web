@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { isProtocolLinkOpen, protocolReviewForToken } from "@/lib/protocol-review/links"
+import { SHORT_PACKAGE } from "@/lib/protocol-review/short"
 import { ProtocolForm } from "./protocol-form"
+import { ShortForm } from "./short-form"
 
 // A professor's private page for the fluid protocol decisions. No account needed: the link is the permission
 // (lib/protocol-review/links.ts). Never indexed.
@@ -40,18 +42,13 @@ export default async function ProtocolReviewPage({ params }: { params: Promise<{
   const review = await protocolReviewForToken(token)
   if (!review) return <Shell><Notice title="This link is not valid" text="Please check you opened the full link you were sent, or ask the MediKarya team for a new one." /></Shell>
   if (!isProtocolLinkOpen(review)) return <Shell><Notice title="This link has expired" text="Please ask the MediKarya team for a new one." /></Shell>
-  return (
-    <Shell>
-      <ProtocolForm
-        token={token}
-        initial={{
-          answers: review.answers ?? {},
-          name: review.reviewer_name ?? "",
-          designation: review.reviewer_designation ?? "",
-          institution: review.reviewer_institution ?? "",
-          submittedAt: review.submitted_at,
-        }}
-      />
-    </Shell>
-  )
+  const initial = {
+    answers: review.answers ?? {},
+    name: review.reviewer_name ?? "",
+    designation: review.reviewer_designation ?? "",
+    institution: review.reviewer_institution ?? "",
+    submittedAt: review.submitted_at,
+  }
+  // The short follow-up has its own page; every other link is the full decision package.
+  return <Shell>{review.package === SHORT_PACKAGE ? <ShortForm token={token} initial={initial} /> : <ProtocolForm token={token} initial={initial} />}</Shell>
 }
