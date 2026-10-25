@@ -117,10 +117,10 @@ export const SHORT_CARDS: ShortCard[] = [
   {
     id: "S7",
     question: "Paracetamol for him (AST 214, ALT 146, about 65 kg):",
-    hint: "The guideline gives 10 mg/kg a dose, no more than 6-hourly, at most 4 g a day (page 34), for mild dengue.",
+    hint: "The guideline gives 10 mg/kg a dose, no more than 6-hourly, at most 4 g a day for adults (page 34). It makes no adjustment for raised liver enzymes. The case now follows the guideline.",
     options: [
-      { id: "A", label: "650 mg up to 6-hourly, at most 4 g a day, as usual" },
-      { id: "B", label: "Same dose, but a lower daily maximum because of his liver" },
+      { id: "A", label: "As the guideline: 650 mg (10 mg/kg) at least 6-hourly, at most 4 g a day" },
+      { id: "B", label: "Same dose, but a lower daily maximum because of his liver (not in the guideline)" },
       DISCUSS,
     ],
   },
