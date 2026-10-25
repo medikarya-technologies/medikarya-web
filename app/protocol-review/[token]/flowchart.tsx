@@ -103,7 +103,7 @@ export function Flowchart() {
                           <span className="mt-1 block text-[13.5px] text-emerald-800">Improved: taper as in the Yes path.</span>
                         </Box>
                         <Arrow label="Not improved" />
-                        <Box tone="danger">Colloid (massive plasma leakage, or no response to crystalloid) and ICU referral. Refractory hypotension: consider inotropes.<Q n="10" /></Box>
+                        <Box tone="danger">Colloid (massive plasma leakage, or no response to crystalloid) and ICU referral. Refractory hypotension: noradrenaline.</Box>
                       </>
                     ),
                   }}
@@ -138,8 +138,9 @@ export function Flowchart() {
             body: (
               <>
                 <Box tone="open">
-                  <p className="font-bold">First taper step: still to decide</p>
-                  <p className="text-[13.5px]">After the first bolus<Q n="1" /> and after a second or third bolus<Q n="2" /></p>
+                  <p className="font-bold">First taper step (to confirm)</p>
+                  <p className="text-[13.5px]">After the first bolus: 10 mL/kg/h for 1 hour (guideline text, page 40)<Q n="1" /></p>
+                  <p className="text-[13.5px]">After a second or third bolus: 7 to 10 mL/kg/h for 1 to 2 hours<Q n="2" /></p>
                 </Box>
                 <Arrow />
                 <Box tone="good">Then the same taper as chart A</Box>
@@ -152,7 +153,7 @@ export function Flowchart() {
               <>
                 <Box>Haematocrit above 45%: repeat crystalloid bolus. Below 45%: blood transfusion, as in chart A. Maximum 3 boluses.</Box>
                 <Arrow label="Shock persists" />
-                <Box tone="danger">Refractory shock: consider inotropes<Q n="10" />, manage in ICU. Look for cardiogenic or septic shock, a metabolic cause, persistent acidosis and occult bleeding.</Box>
+                <Box tone="danger">Refractory shock: noradrenaline, manage in ICU. Look for cardiogenic or septic shock, a metabolic cause, persistent acidosis and occult bleeding.</Box>
               </>
             ),
           }}
@@ -162,7 +163,7 @@ export function Flowchart() {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-200 pt-4 text-[13px] text-slate-600">
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-emerald-500 bg-emerald-50" /> settled</span>
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-red-400 bg-red-50" /> escalate</span>
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-dashed border-amber-400 bg-amber-50" /> still to decide (the questions below)</span>
+        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-dashed border-amber-400 bg-amber-50" /> to confirm (the questions below)</span>
       </div>
     </div>
   )

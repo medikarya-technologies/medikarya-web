@@ -103,7 +103,7 @@ export function ShortForm({ token, initial, caseView }: { token: string; initial
                 </li>
               ))}
             </ul>
-            <p className="mt-1.5 text-[14px] text-amber-900">Tick these and press Send at the bottom. Everything else is already saved.</p>
+            <p className="mt-1.5 text-[14px] text-amber-900">{open.length === 1 ? "Tick it" : "Tick these"} and press Send at the bottom. Everything else is already saved.</p>
           </div>
         ) : submittedAt ? (
           <p className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-[15px] font-semibold text-emerald-900">
@@ -130,7 +130,7 @@ export function ShortForm({ token, initial, caseView }: { token: string; initial
 
       <section id="flowchart" className="scroll-mt-4 mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-[20px] font-bold text-slate-900">2. Treatment flowchart</h2>
-        <p className="mt-1 text-[14px] text-slate-600">From the NCVBDC 2023 dengue guideline (Figures 12 and 13), with your first answers built in. Amber boxes are the only steps still open; the questions below ask about them.</p>
+        <p className="mt-1 text-[14px] text-slate-600">From the NCVBDC 2023 dengue guideline (Figures 12 and 13), with your first answers built in. Amber boxes follow the guideline for now and are waiting for your confirmation in the questions below.</p>
         <div className="mt-5">
           <Flowchart />
         </div>

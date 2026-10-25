@@ -50,7 +50,7 @@ export const SHORT_CARDS: ShortCard[] = [
   {
     id: "S1",
     question: "Hypotensive shock: after improvement with the FIRST bolus, what next?",
-    hint: "The guideline's text and its Figure 13 say different things (pages 40 and 41).",
+    hint: "The guideline's text and its Figure 13 say different things (pages 40 and 41). For now the case follows the text, as you chose for the other bolus questions. Please confirm or change.",
     options: [
       { id: "A", label: "10 mL/kg/h for 1 hour, then the taper (text, page 40)" },
       { id: "B", label: "Straight into the taper (Figure 13, page 41)" },
@@ -147,7 +147,7 @@ export const SHORT_CARDS: ShortCard[] = [
   {
     id: "S11",
     question: "Refractory shock: the guideline says 'consider inotropes' (pages 39 and 40) without naming one. What should the case say?",
-    hint: "The children's chapter names dopamine, adrenaline and dobutamine, and noradrenaline for cardiogenic or septic shock (pages 26 and 28).",
+    hint: "The adult chapter names no drug. The children's chapter names dopamine, adrenaline and dobutamine, and noradrenaline for cardiogenic or septic shock (pages 26 and 28). You chose noradrenaline, and the case now names it.",
     options: [
       { id: "A", label: "Just 'consider inotropes in ICU', no drug named" },
       { id: "B", label: "Noradrenaline" },
