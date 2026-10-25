@@ -57,15 +57,15 @@ const Q = ({ n }: { n: string }) => <span className="ml-1 rounded bg-amber-200 p
 function Ladder() {
   return (
     <Box tone="good">
-      <p className="font-bold">Step the fluid down</p>
+      <p className="font-bold">Taper the fluid rate</p>
       <ol className="mt-1.5 space-y-0.5 text-left text-[14px]">
         <li>1. 7 to 10 mL/kg/hour for 1 to 2 hours</li>
         <li>2. 5 to 7 mL/kg/hour for 1 to 2 hours</li>
         <li>3. 3 to 5 mL/kg/hour for 2 to 4 hours</li>
         <li>4. 2 to 3 mL/kg/hour for 2 to 3 hours</li>
-        <li>5. Then as his circulation allows</li>
+        <li>5. Then titrate to haemodynamic status</li>
       </ol>
-      <p className="mt-1.5 text-[13.5px]">Stop IV fluid within 24 to 48 hours. Watch for too much fluid.<Q n="4, 5" /></p>
+      <p className="mt-1.5 text-[13.5px]">Stop IV fluids within 24 to 48 hours. Watch for fluid overload.<Q n="4, 5" /></p>
     </Box>
   )
 }
@@ -77,7 +77,7 @@ export function Flowchart() {
         <h3 className="mb-3 text-[16px] font-bold text-slate-900">A. Compensated shock: where this patient is now</h3>
         <Box tone="start">
           <p className="font-bold">Compensated shock</p>
-          <p className="text-[13.5px] opacity-90">Systolic 90 or above, but narrow pulse pressure, fast pulse, cold hands, slow capillary refill</p>
+          <p className="text-[13.5px] opacity-90">Systolic BP 90 mmHg or above, but narrow pulse pressure, tachycardia, cold peripheries, prolonged capillary refill time</p>
         </Box>
         <Arrow />
         <Box>
@@ -85,7 +85,7 @@ export function Flowchart() {
           <p className="text-[13.5px] text-slate-600">This case: 10 mL/kg = 650 mL. Haematocrit before and after.</p>
         </Box>
         <Arrow />
-        <Decision>Is he better?<Q n="3" /></Decision>
+        <Decision>Improved?<Q n="3" /></Decision>
         <Branches
           left={{ label: "Yes", body: <Ladder /> }}
           right={{
@@ -99,31 +99,31 @@ export function Flowchart() {
                     body: (
                       <>
                         <Box>
-                          Still leaking: second bolus 10 mL/kg over 1 hour
-                          <span className="mt-1 block text-[13.5px] text-emerald-800">Better: step down as in the Yes path.</span>
+                          Ongoing plasma leakage: second bolus 10 mL/kg over 1 hour
+                          <span className="mt-1 block text-[13.5px] text-emerald-800">Improved: taper as in the Yes path.</span>
                         </Box>
-                        <Arrow label="Still not better" />
-                        <Box tone="danger">Colloid (massive leak, or no response to crystalloid) and ICU</Box>
+                        <Arrow label="Not improved" />
+                        <Box tone="danger">Colloid (massive plasma leakage, or no response to crystalloid) and ICU referral</Box>
                       </>
                     ),
                   }}
                   right={{
                     label: "Below 45%",
-                    body: <Box tone="danger">Think of bleeding: whole blood 10 mL/kg or packed red cells 5 mL/kg</Box>,
+                    body: <Box tone="danger">Suspect occult bleeding: whole blood 10 mL/kg or packed red cells 5 mL/kg</Box>,
                   }}
                 />
               </>
             ),
           }}
         />
-        <p className="mt-3 text-center text-[13.5px] text-slate-600">If the systolic falls below 90 at any point, go to chart B.</p>
+        <p className="mt-3 text-center text-[13.5px] text-slate-600">If systolic BP falls below 90 mmHg at any point, go to chart B.</p>
       </div>
 
       <div className="border-t border-slate-200 pt-6">
-        <h3 className="mb-3 text-[16px] font-bold text-slate-900">B. Hypotensive shock (systolic below 90)</h3>
+        <h3 className="mb-3 text-[16px] font-bold text-slate-900">B. Hypotensive shock (systolic BP below 90 mmHg)</h3>
         <Box tone="start">
           <p className="font-bold">Hypotensive shock</p>
-          <p className="text-[13.5px] opacity-90">Systolic below 90</p>
+          <p className="text-[13.5px] opacity-90">Systolic BP below 90 mmHg</p>
         </Box>
         <Arrow />
         <Box>
@@ -131,18 +131,18 @@ export function Flowchart() {
           <p className="text-[13.5px] text-slate-600">No 500 mL cap. Haematocrit before each bolus.</p>
         </Box>
         <Arrow />
-        <Decision>Is he better?<Q n="3" /></Decision>
+        <Decision>Improved?<Q n="3" /></Decision>
         <Branches
           left={{
             label: "Yes",
             body: (
               <>
                 <Box tone="open">
-                  <p className="font-bold">First step down: still to decide</p>
+                  <p className="font-bold">First taper step: still to decide</p>
                   <p className="text-[13.5px]">After the first bolus<Q n="1" /> and after a second or third bolus<Q n="2" /></p>
                 </Box>
                 <Arrow />
-                <Box tone="good">Then the same step-down as chart A</Box>
+                <Box tone="good">Then the same taper as chart A</Box>
               </>
             ),
           }}
@@ -150,9 +150,9 @@ export function Flowchart() {
             label: "No",
             body: (
               <>
-                <Box>Haematocrit above 45%: repeat the bolus. Below 45%: blood, as in chart A. Up to 3 boluses in total.</Box>
-                <Arrow label="Still in shock" />
-                <Box tone="danger">ICU and look for another cause (for example bleeding or myocarditis). No drug is offered in the case.</Box>
+                <Box>Haematocrit above 45%: repeat crystalloid bolus. Below 45%: blood transfusion, as in chart A. Maximum 3 boluses.</Box>
+                <Arrow label="Shock persists" />
+                <Box tone="danger">ICU referral; look for another cause (occult bleeding, myocarditis). No inotrope is offered in the case.</Box>
               </>
             ),
           }}

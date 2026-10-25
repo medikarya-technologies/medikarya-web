@@ -51,7 +51,7 @@ export async function loadCaseView(caseId: string): Promise<CaseView | null> {
       title: "History",
       rows: [
         ...rows(Object.fromEntries(Object.entries(s).filter(([k]) => k !== "positive" && k !== "negative"))),
-        ...rows(s.negative, "He does not have"),
+        ...rows(s.negative, "Negative history"),
         ...rows(f.drug_history, "Medicines"),
         ...rows(f.past_history, "Past history"),
         ...rows(f.family_history, "Family and contacts"),
