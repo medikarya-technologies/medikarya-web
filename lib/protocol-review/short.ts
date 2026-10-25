@@ -144,4 +144,25 @@ export const SHORT_CARDS: ShortCard[] = [
       DISCUSS,
     ],
   },
+  {
+    id: "S10",
+    question: "Paracetamol: if you want a lower daily maximum for his liver (AST 214, ALT 146), which?",
+    hint: "The guideline's adult maximum is 4 g a day with no liver adjustment (page 34). The dose stays 650 mg (10 mg/kg), at least 6-hourly.",
+    options: [
+      { id: "A", label: "Keep the guideline maximum: 4 g a day" },
+      { id: "B", label: "3 g a day" },
+      { id: "C", label: "2 g a day" },
+    ],
+  },
+  {
+    id: "S11",
+    question: "Refractory shock: the guideline says 'consider inotropes' (pages 39 and 40) without naming one. What should the case say?",
+    hint: "The children's chapter names dopamine, adrenaline and dobutamine, and noradrenaline for cardiogenic or septic shock (pages 26 and 28).",
+    options: [
+      { id: "A", label: "Just 'consider inotropes in ICU', no drug named" },
+      { id: "B", label: "Noradrenaline" },
+      { id: "C", label: "Dopamine" },
+      { id: "D", label: "Adrenaline" },
+    ],
+  },
 ]

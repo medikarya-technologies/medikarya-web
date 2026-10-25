@@ -34,6 +34,8 @@ export function ShortForm({ token, initial, caseView }: { token: string; initial
   const dirty = useRef(false)
 
   const done = SHORT_CARDS.filter((c) => !!answers[c.id]?.choice).length
+  // Worked out from what was saved when the page opened, so the list does not jump while he ticks.
+  const [open] = useState(() => SHORT_CARDS.filter((c) => !initial.answers[c.id]?.choice))
 
   const save = useCallback(
     async (submit: boolean) => {
@@ -90,11 +92,24 @@ export function ShortForm({ token, initial, caseView }: { token: string; initial
             </a>
           ))}
         </nav>
-        {submittedAt && (
+        {open.length > 0 && submittedAt ? (
+          // He has sent once: show only what is still unanswered, each a link to its question.
+          <div className="mt-4 rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3">
+            <p className="text-[15.5px] font-bold text-amber-950">Thank you for your answers. {open.length === 1 ? "One question is" : `${open.length} questions are`} still open:</p>
+            <ul className="mt-1.5 space-y-1">
+              {open.map((c) => (
+                <li key={c.id}>
+                  <a href={`#${c.id}`} className="text-[15px] font-medium text-sky-800 underline">{SHORT_CARDS.indexOf(c)}. {c.question}</a>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-[14px] text-amber-900">Tick these and press Send at the bottom. Everything else is already saved.</p>
+          </div>
+        ) : submittedAt ? (
           <p className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-[15px] font-semibold text-emerald-900">
             <CheckCircle2 className="h-5 w-5 shrink-0" /> Thank you. Sent on {new Date(submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}. You can still change anything and send again.
           </p>
-        )}
+        ) : null}
       </div>
 
       <section id="case" className="scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -181,7 +196,7 @@ function Question({ n, card, answer, onChange }: { n: number; card: ShortCard; a
     onChange({ choice: card.options.map((o) => o.id).filter((x) => next.has(x)).join(",") })
   }
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <article id={card.id} className={`scroll-mt-16 rounded-xl border bg-white p-5 shadow-sm ${on.size === 0 ? "border-amber-300" : "border-slate-200"}`}>
       <p className="text-[16px] leading-snug font-semibold text-slate-900">
         <span className="mr-2 text-slate-400">{n === 0 ? "★" : n}</span>
         {card.question}
