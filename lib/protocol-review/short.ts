@@ -23,7 +23,7 @@ export interface ShortCard {
 export const DISCUSS = { id: "Z", label: "Not sure, let's discuss when we meet" }
 
 export const SHORT_CASE = {
-  title: "The patient",
+  title: "In short",
   lines: [
     "Man, 29, about 65 kg. Day 5 of dengue: the fever is settling, but he now has belly pain and feels faint.",
     "Pulse 122, BP 100/86 (pulse pressure 14), hands cold and mottled, capillary refill 4 seconds, passing little urine.",
@@ -32,32 +32,10 @@ export const SHORT_CASE = {
   ],
 }
 
-/** The flowchart the case will follow, with his first answers built in. "see question" marks what this page asks. */
-export const SHORT_FLOW: Array<{ title: string; steps: string[] }> = [
-  {
-    title: "Compensated shock (this patient)",
-    steps: [
-      "Crystalloid 10 to 20 mL/kg over 1 hour. Haematocrit before and after.",
-      "Better? Step down: 7 to 10 mL/kg/h for 1 to 2 h, then 5 to 7 for 1 to 2 h, then 3 to 5 for 2 to 4 h, then 2 to 3 for 2 to 3 h, then as his circulation allows, up to 24 to 48 h.",
-      "Not better, haematocrit still above 45%: second bolus 10 mL/kg over 1 hour. Still not better: colloid (massive leak or no response to crystalloid) and ICU.",
-      "Not better, haematocrit below 45%: think of bleeding. Whole blood 10 mL/kg or packed cells 5 mL/kg.",
-    ],
-  },
-  {
-    title: "If he becomes hypotensive (systolic below 90)",
-    steps: [
-      "20 mL/kg over 15 minutes, no 500 mL cap. Up to three rapid boluses in total.",
-      "Better? Step down (see questions 1 and 2), then the same ladder as above.",
-      "Still in shock after three: ICU and look for another cause. No drug is offered in the case.",
-    ],
-  },
-  {
-    title: "Throughout",
-    steps: [
-      "Stop IV fluids within 24 to 48 hours of the start of shock, and watch for too much fluid (see questions 4 and 5).",
-    ],
-  },
-]
+/** The case this review is about (its full text is shown on the page, read live from the case). */
+export const SHORT_CASE_ID = "29-year-old-man-with-belly-pain-as-his-fever-settles"
+
+// The flowchart itself is drawn in app/protocol-review/[token]/flowchart.tsx.
 
 export const SHORT_CARDS: ShortCard[] = [
   {

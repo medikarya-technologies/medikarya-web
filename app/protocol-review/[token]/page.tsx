@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { isProtocolLinkOpen, protocolReviewForToken } from "@/lib/protocol-review/links"
-import { SHORT_PACKAGE } from "@/lib/protocol-review/short"
+import { loadCaseView } from "@/lib/protocol-review/case-view"
+import { SHORT_CASE_ID, SHORT_PACKAGE } from "@/lib/protocol-review/short"
 import { ProtocolForm } from "./protocol-form"
 import { ShortForm } from "./short-form"
 
@@ -50,5 +51,8 @@ export default async function ProtocolReviewPage({ params }: { params: Promise<{
     submittedAt: review.submitted_at,
   }
   // The short follow-up has its own page; every other link is the full decision package.
-  return <Shell>{review.package === SHORT_PACKAGE ? <ShortForm token={token} initial={initial} /> : <ProtocolForm token={token} initial={initial} />}</Shell>
+  if (review.package !== SHORT_PACKAGE) return <Shell><ProtocolForm token={token} initial={initial} /></Shell>
+  // The short page shows the whole case; if it cannot be read, the page still works without it.
+  const caseView = await loadCaseView(SHORT_CASE_ID).catch((e) => (console.error("Could not load the case for the review page:", e), null))
+  return <Shell><ShortForm token={token} initial={initial} caseView={caseView} /></Shell>
 }

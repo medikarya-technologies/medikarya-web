@@ -5,7 +5,10 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react"
 import { CheckCircle2, Loader2, Send } from "lucide-react"
-import { SHORT_CARDS, SHORT_CASE, SHORT_FLOW, type ShortCard } from "@/lib/protocol-review/short"
+import { SHORT_CARDS, SHORT_CASE, type ShortCard } from "@/lib/protocol-review/short"
+import type { CaseView } from "@/lib/protocol-review/case-view"
+import { CasePanel } from "./case-panel"
+import { Flowchart } from "./flowchart"
 import type { Answer, Answers } from "@/lib/protocol-review/answers"
 import { saveAnswers } from "./actions"
 
@@ -21,7 +24,7 @@ interface Initial {
 
 const ticked = (a: Answer | undefined) => new Set((a?.choice ?? "").split(",").filter(Boolean))
 
-export function ShortForm({ token, initial }: { token: string; initial: Initial }) {
+export function ShortForm({ token, initial, caseView }: { token: string; initial: Initial; caseView: CaseView | null }) {
   const [answers, setAnswers] = useState<Answers>(initial.answers)
   const [who, setWho] = useState({ name: initial.name, designation: initial.designation, institution: initial.institution })
   const [submittedAt, setSubmittedAt] = useState<string | null>(initial.submittedAt)
@@ -69,12 +72,24 @@ export function ShortForm({ token, initial }: { token: string; initial: Initial 
     })
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-24">
+    <div className="mx-auto max-w-4xl px-4 pb-24">
       <div className="py-8">
         <h1 className="text-[26px] leading-tight font-bold text-slate-900">Dengue shock case: a few last questions</h1>
         <p className="mt-2 text-[16px] leading-relaxed text-slate-700">
-          Thank you for your first answers. They are built into the flowchart below. {SHORT_CARDS.length} quick questions are left, each just a tick. About five minutes.
+          Thank you for your first answers. This page has three parts. Your answers are already built into the case and the flowchart; only the last part needs you, and it is just ticks.
         </p>
+        <nav className="mt-4 grid gap-2 sm:grid-cols-3">
+          {[
+            ["#case", "1. The case", "as students see it"],
+            ["#flowchart", "2. Treatment flowchart", "with your answers in"],
+            ["#questions", `3. ${SHORT_CARDS.length} quick questions`, "about five minutes"],
+          ].map(([href, t, sub]) => (
+            <a key={href} href={href} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm hover:border-sky-400">
+              <span className="block text-[15px] font-bold text-sky-700">{t}</span>
+              <span className="block text-[13px] text-slate-500">{sub}</span>
+            </a>
+          ))}
+        </nav>
         {submittedAt && (
           <p className="mt-4 flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-[15px] font-semibold text-emerald-900">
             <CheckCircle2 className="h-5 w-5 shrink-0" /> Thank you. Sent on {new Date(submittedAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}. You can still change anything and send again.
@@ -82,33 +97,34 @@ export function ShortForm({ token, initial }: { token: string; initial: Initial 
         )}
       </div>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-[17px] font-bold text-slate-900">{SHORT_CASE.title}</h2>
-        <ul className="mt-2 space-y-1.5">
-          {SHORT_CASE.lines.map((l, i) => (
-            <li key={i} className={`text-[15px] leading-relaxed ${i === SHORT_CASE.lines.length - 1 ? "font-semibold text-slate-900" : "text-slate-700"}`}>{l}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mt-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-[17px] font-bold text-slate-900">The treatment the case will follow</h2>
-        <p className="mt-1 text-[14px] text-slate-500">From the NCVBDC 2023 dengue guideline and your answers. Where it says "see question", that step is still open.</p>
-        <div className="mt-4 space-y-5">
-          {SHORT_FLOW.map((b) => (
-            <div key={b.title}>
-              <h3 className="text-[15px] font-bold text-slate-900">{b.title}</h3>
-              <ol className="mt-2 space-y-2 border-l-2 border-sky-200 pl-4">
-                {b.steps.map((s, i) => (
-                  <li key={i} className="text-[15px] leading-relaxed text-slate-800">{s}</li>
-                ))}
-              </ol>
-            </div>
-          ))}
+      <section id="case" className="scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-[20px] font-bold text-slate-900">1. The case</h2>
+        {caseView && <p className="mt-0.5 text-[14px] text-slate-500">{caseView.title}</p>}
+        <div className="mt-3 rounded-lg bg-sky-50 p-4">
+          <h3 className="text-[15px] font-bold text-slate-900">{SHORT_CASE.title}</h3>
+          <ul className="mt-1.5 space-y-1">
+            {SHORT_CASE.lines.map((l, i) => (
+              <li key={i} className={`text-[15px] leading-relaxed ${i === SHORT_CASE.lines.length - 1 ? "font-semibold text-slate-900" : "text-slate-700"}`}>{l}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="mt-4">
+          {caseView ? <CasePanel view={caseView} /> : <p className="text-[14px] text-slate-600">The full case could not be loaded just now. Please refresh the page.</p>}
         </div>
       </section>
 
-      <div className="sticky top-0 z-10 -mx-4 mt-6 border-b border-slate-200 bg-slate-50/95 px-4 py-2.5 backdrop-blur">
+      <section id="flowchart" className="scroll-mt-4 mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-[20px] font-bold text-slate-900">2. Treatment flowchart</h2>
+        <p className="mt-1 text-[14px] text-slate-600">From the NCVBDC 2023 dengue guideline (Figures 12 and 13), with your first answers built in. Amber boxes are the only steps still open; the questions below ask about them.</p>
+        <div className="mt-5">
+          <Flowchart />
+        </div>
+      </section>
+
+      <h2 id="questions" className="scroll-mt-4 mt-8 text-[20px] font-bold text-slate-900">3. Quick questions</h2>
+      <p className="mt-1 text-[14px] text-slate-600">Tick one answer each (or all that apply where it says so). Anything you are unsure of, tick "discuss when we meet".</p>
+
+      <div className="sticky top-0 z-10 -mx-4 mt-3 border-b border-slate-200 bg-slate-50/95 px-4 py-2.5 backdrop-blur">
         <div className="flex items-center justify-between text-[13.5px] text-slate-600">
           <span className="font-semibold text-slate-800">{done} of {SHORT_CARDS.length} answered</span>
           <span aria-live="polite">{status === "saving" ? "Saving…" : status === "saved" ? "Saved" : status === "error" ? "Not saved" : ""}</span>
