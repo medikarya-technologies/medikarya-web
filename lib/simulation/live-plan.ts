@@ -823,7 +823,13 @@ function checkFluid(t: LiveTreatment, f: LiveFluid, where: string, plan: LivePla
     const w = `${where}: fluid`;
     const limit = plan.time_limit_minutes;
     const minutes = (n: number) => Number.isInteger(n) && n >= 1 && (!Number.isFinite(limit) || n < limit);
-    const badWindow = (x: { at_least: number; at_most: number }) => !minutes(x.at_least) || !minutes(x.at_most) || x.at_most < x.at_least;
+    // A window may run past the end of the encounter (stop 24 to 48 hours after starting, in a 48-hour encounter): a step
+    // still open when it ends does not count. One that can never be on time is worth a look.
+    const badWindow = (x: { at_least: number; at_most: number }) =>
+        ![x.at_least, x.at_most].every((n) => Number.isInteger(n) && n >= 1 && n <= WARD_LIMIT_MINUTES) || x.at_most < x.at_least;
+    const lateWindow = (x: { at_least: number }, wx: string) => {
+        if (Number.isFinite(limit) && x.at_least >= limit) warnings.push(`${wx}: it can never be on time, because the encounter ends at ${limit} min.`);
+    };
     if (f.levels.length < 1 || f.levels.length > 8) errors.push(`${w}: give from 1 to 8 rates.`);
     const ids = new Set<string>();
     f.levels.forEach((l, i) => {
@@ -835,7 +841,8 @@ function checkFluid(t: LiveTreatment, f: LiveFluid, where: string, plan: LivePla
         if (!Number.isInteger(l.ml_per_h) || l.ml_per_h < 1 || l.ml_per_h > 10000) errors.push(`${lw}: ml_per_h must be a whole number of mL per hour, from 1 to 10000.`);
         else if (i > 0 && !(l.ml_per_h < f.levels[i - 1].ml_per_h)) errors.push(`${lw}: the rates go from the highest down, so this one must be lower than the one before it.`);
         if (l.hold_minutes) {
-            if (badWindow(l.hold_minutes)) errors.push(`${lw}: hold_minutes needs whole minutes from 1, at_most no less than at_least, both within the encounter (${limit} min).`);
+            if (badWindow(l.hold_minutes)) errors.push(`${lw}: hold_minutes needs whole minutes from 1 to ${WARD_LIMIT_MINUTES}, at_most no less than at_least.`);
+            else lateWindow(l.hold_minutes, `${lw}.hold_minutes`);
         } else if (i < f.levels.length - 1) warnings.push(`${lw}: no hold_minutes, so when it is stepped down is not scored.`);
         checkEffect(l.effect, `${lw}.effect`, errors);
         if (l.over_minutes !== undefined) {
@@ -863,7 +870,8 @@ function checkFluid(t: LiveTreatment, f: LiveFluid, where: string, plan: LivePla
         if (r.when) checkCondition(r.when, `${w}.start[${i}].when`, scope, errors);
         else if (i < (f.start as unknown[]).length - 1) warnings.push(`${w}.start[${i}] has no condition, so the ones after it never apply.`);
     });
-    if (f.stop && badWindow(f.stop)) errors.push(`${w}: stop needs whole minutes from 1, at_most no less than at_least, both within the encounter (${limit} min).`);
+    if (f.stop && badWindow(f.stop)) errors.push(`${w}: stop needs whole minutes from 1 to ${WARD_LIMIT_MINUTES}, at_most no less than at_least.`);
+    else if (f.stop) lateWindow(f.stop, `${w}.stop`);
     if (f.stop_says !== undefined && f.stop_says.length < 10) errors.push(`${w}: stop_says is what the student sees when they stop it; write a sentence.`);
     if (f.completed_says !== undefined) {
         if (f.volume_ml === undefined) errors.push(`${w}: completed_says only goes with volume_ml (a fluid without one never finishes by itself).`);

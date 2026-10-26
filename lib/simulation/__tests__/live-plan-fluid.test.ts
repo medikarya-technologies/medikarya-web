@@ -105,6 +105,10 @@ describe("rate-controlled fluid: the plan", () => {
         const hold = fluidRaw();
         (hold.treatments as any[]).find((t) => t.id === F).fluid.levels[0].hold_minutes = { at_least: 90, at_most: 60 };
         assert.match(errorsOf(normaliseLivePlan(hold, "ai")), /hold_minutes needs whole minutes/);
+        // A window may run past the end (a stop 24 to 48 hours after starting), but one that can never be on time is flagged.
+        const late = checkLivePlan(fluidPlan({ stop: { at_least: 1440, at_most: 2880 } }), measuredOnArrival(base()));
+        assert.deepEqual(late.errors, []);
+        assert.match(late.warnings.join(" | "), /stop: it can never be on time, because the encounter ends at 720 min/);
         assert.match(errorsOf(fluidPlan({ completed_says: "The bag has run through." })), /completed_says only goes with volume_ml/);
         assert.match(errorsOf(fluidPlan({ start: [{ level: "r99" }] })), /"r99" is not one of its rates/);
         const doses = fluidRaw();
@@ -254,10 +258,11 @@ describe("rate-controlled fluid: scoring", () => {
         }
     });
 
-    it("the playthroughs start it at the plan's usual rate", () => {
+    it("the playthroughs give it as planned: the usual rate, each step as soon as its time is up, the stop in its window", () => {
         const p = playthroughs(base(), fluidPlan());
         assert.equal(p.correct.outcome.stabilised, true);
-        assert.ok(p.correct.items.some(([id]) => id === `${F}:rate`));
+        assert.deepEqual(p.correct.items.find(([id]) => id === `${F}:rate`), [`${F}:rate`, "on_time"]);
+        assert.deepEqual(p.correct.harmful, []);
     });
 });
 
