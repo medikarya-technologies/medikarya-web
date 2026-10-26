@@ -15,7 +15,7 @@ import { isAdmin } from "@/lib/plans/access"
 import { createReviewLink } from "@/lib/review/links"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { carryReleaseBlockers, checkLivePlan, isLivePlan, measuredOnArrival, openReleaseBlockers, type LivePlan } from "@/lib/simulation/live-plan"
+import { carryReleaseBlockers, checkLivePlan, isLivePlan, lostFluids, measuredOnArrival, openReleaseBlockers, type LivePlan } from "@/lib/simulation/live-plan"
 import { draftLivePlan } from "@/lib/studio/live-draft"
 
 export type LiveResult = { ok: true; message: string; link?: string } | { ok: false; error: string; details?: string[] }
@@ -45,6 +45,9 @@ async function load(caseId: string): Promise<Record<string, any> | null> {
 
 async function savePlan(caseId: string, caseJson: Record<string, any>, plan: LivePlan | null): Promise<void> {
   const { live_plan: old, ...rest } = caseJson
+  // A fluid ladder is never dropped by a rewrite (removing the whole plan is a separate, deliberate action).
+  const lost = plan ? lostFluids(plan, old) : []
+  if (lost.length > 0) throw new Error(`The new plan would drop the fluid ladder of ${lost.join(", ")}; nothing was saved.`)
   // Release blockers belong to the case: a changed plan keeps them.
   const next = plan ? { ...rest, live_plan: carryReleaseBlockers(plan, old) } : rest
   const { error } = await supabaseServer.from("cases").update({ case_json: next, updated_at: new Date().toISOString() }).eq("id", caseId)

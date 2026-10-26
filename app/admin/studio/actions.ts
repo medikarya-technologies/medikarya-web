@@ -21,7 +21,7 @@ import { createReviewLink, latestReviews } from "@/lib/review/links"
 import { caseRewardsDue, nextCaseReward, type GrantRow } from "@/lib/plans/grants"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { carryReleaseBlockers, checkLivePlan, isLivePlan, measuredOnArrival, normaliseLivePlan, openReleaseBlockers, type LivePlan, type LiveSignOff } from "@/lib/simulation/live-plan"
+import { carryReleaseBlockers, checkLivePlan, isLivePlan, lostFluids, measuredOnArrival, normaliseLivePlan, openReleaseBlockers, type LivePlan, type LiveSignOff } from "@/lib/simulation/live-plan"
 import { draftLivePlan } from "@/lib/studio/live-draft"
 
 export type ActionResult =
@@ -110,6 +110,7 @@ async function saveDraft(
   if (kind === "static" && openReleaseBlockers(previousPlan).length > 0) {
     throw new Error(`This case has open release blockers on its live plan (${openReleaseBlockers(previousPlan).map((b) => b.id).join(", ")}). Settle them before converting it as a static case.`)
   }
+  if (plan && lostFluids(plan, previousPlan).length > 0) throw new Error(`The new plan would drop the fluid ladder of ${lostFluids(plan, previousPlan).join(", ")}; nothing was saved.`)
   if (plan) plan = carryReleaseBlockers(plan, previousPlan)
   else if (needsPlan && previousPlan?.release_blockers?.length) plan = { ...previousPlan, status: "proposed" }
   if (!id) {
@@ -269,6 +270,7 @@ export async function makeLive(caseId: string, comments?: string): Promise<Actio
     }
 
     const plan = draft.plan
+    if (lostFluids(plan, caseJson.live_plan).length > 0) return { ok: false, error: `The new plan would drop the fluid ladder of ${lostFluids(plan, caseJson.live_plan).join(", ")}; nothing was saved.` }
     const notes = [
       ...(caseJson.source?.review_notes ?? []),
       previous

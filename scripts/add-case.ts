@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkDraft } from '../lib/studio/validate';
 import { CATALOG_TEST_IDS } from '../lib/clinical-catalog';
 import { upgradeReport } from '../lib/simulation/upgrade-report';
-import { carryReleaseBlockers, isLivePlan, openReleaseBlockers } from '../lib/simulation/live-plan';
+import { carryReleaseBlockers, isLivePlan, lostFluids, openReleaseBlockers } from '../lib/simulation/live-plan';
 
 // Adds one case the admin wrote (not from the Case Studio, so no reviewer queue) straight to the library.
 //
@@ -57,8 +57,10 @@ async function main() {
   // cannot drop a plan that still has open blockers (the live plan is kept as it is).
   const stored = existing?.live_plan;
   let livePlan = caseJson.live_plan;
+  if (isLivePlan(livePlan) && lostFluids(livePlan, stored).length > 0) throw new Error(`The file's live plan would drop the fluid ladder of ${lostFluids(livePlan, stored).join(', ')}; nothing saved.`);
   if (isLivePlan(livePlan)) livePlan = carryReleaseBlockers(livePlan, stored);
-  else if (openReleaseBlockers(stored).length > 0) livePlan = stored;
+  // A file without a plan keeps a stored plan that has open blockers or a fluid ladder (the ladder is never dropped by a rewrite).
+  else if (openReleaseBlockers(stored).length > 0 || lostFluids(null, stored).length > 0) livePlan = stored;
   // A file cannot switch on a plan that a blocker holds back: it is saved switched off (proposed).
   if (isLivePlan(livePlan) && livePlan.status === 'approved' && openReleaseBlockers(livePlan).length > 0) {
     console.warn(`  ⚠ the live plan has open release blockers, so it is saved switched off (proposed), not approved.`);

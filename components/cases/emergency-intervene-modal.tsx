@@ -105,6 +105,12 @@ function FluidCard({ item, fluid, flags, flagSetAt, now, disabled, cooling, onGi
         )}
         {status.state === "running" && next && button(fluidAction(item.id, next.id), `Step down to ${next.label}`, true)}
         {status.state === "running" && button(fluidStopAction(item.id), "Stop")}
+        {status.canRestart && (
+          <>
+            <span className="text-[11px] text-enc-ink-3">Restart at</span>
+            {fluid.levels.map((l) => button(fluidAction(item.id, l.id), l.label))}
+          </>
+        )}
       </div>
     </div>
   )

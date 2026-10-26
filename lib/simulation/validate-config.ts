@@ -256,13 +256,17 @@ export function validateSimulationCase(input: unknown, options: ValidationOption
         }
         if ("fluid_delivered" in cond) {
             const f = cond.fluid_delivered;
-            const levels = isObj(f) && Array.isArray(f.levels) ? f.levels : null;
-            if (!isObj(f) || !levels || levels.length === 0 || !isNum(f.gte_ml) || f.gte_ml <= 0 || !Array.isArray(f.ends)) {
-                error(`${path}.fluid_delivered`, "Needs { levels: [{ flag, ml_per_h }], ends: [flags], gte_ml }.");
+            const runs = isObj(f) && Array.isArray(f.runs) && f.runs.length > 0 ? (f.runs as unknown[]) : null;
+            if (!isObj(f) || !runs || !isNum(f.gte_ml) || f.gte_ml <= 0 || !runs.every((r) => isObj(r) && Array.isArray(r.levels) && r.levels.length > 0 && Array.isArray(r.ends))) {
+                error(`${path}.fluid_delivered`, "Needs { runs: [{ levels: [{ flag, ml_per_h }], ends: [flags] }], gte_ml }.");
             } else {
-                const flagsUsed = [...levels.map((l) => (isObj(l) ? l.flag : undefined)), ...f.ends];
-                for (const flag of flagsUsed) if (!isStr(flag) || !declaredFlags.has(flag)) error(`${path}.fluid_delivered`, `Flag "${String(flag)}" is not declared in initial_state.flags.`);
-                if (levels.some((l) => !isObj(l) || !isNum(l.ml_per_h) || l.ml_per_h <= 0)) error(`${path}.fluid_delivered.levels`, "Each rate needs ml_per_h above 0.");
+                for (const r of runs as Obj[]) {
+                    const levels = r.levels as unknown[];
+                    for (const flag of [...levels.map((l) => (isObj(l) ? l.flag : undefined)), ...(r.ends as unknown[])]) {
+                        if (!isStr(flag) || !declaredFlags.has(flag)) error(`${path}.fluid_delivered`, `Flag "${String(flag)}" is not declared in initial_state.flags.`);
+                    }
+                    if (levels.some((l) => !isObj(l) || !isNum(l.ml_per_h) || l.ml_per_h <= 0)) error(`${path}.fluid_delivered.runs`, "Each rate needs ml_per_h above 0.");
+                }
             }
         }
         if ("parameter" in cond) {

@@ -11,7 +11,7 @@ import type { ClinicalEvent } from "../encounter-events";
 import { deliveredBoundary, deliveredRateSeconds, fluidAction, fluidActionLabels, fluidStatus, fluidStopAction, parseFluidAction } from "../fluid-infusion";
 import { interventionLabel, interventionsForCase } from "../intervention-catalog";
 import { upgradeLegacyCase } from "../legacy-adapter";
-import { checkLivePlan, compileLivePlan, measuredOnArrival, normaliseLivePlan, REFUSED_PREFIX, scoreBedside, type LivePlan } from "../live-plan";
+import { checkLivePlan, compileLivePlan, keepFluidConfig, lostFluids, measuredOnArrival, normaliseLivePlan, REFUSED_PREFIX, scoreBedside, type LivePlan } from "../live-plan";
 import { playthroughs } from "../live-plan-playthrough";
 import { replayStudentEvents } from "../replay";
 import { validateSimulationCase } from "../validate-config";
@@ -136,10 +136,13 @@ describe("rate-controlled fluid: the tray", () => {
         assert.ok(engine.state.flagSetAt.live_stabilised !== undefined, "iv access and the fluid stabilise him");
     });
 
-    it("steps down one rate at a time and never up; stops; nothing changes once stopped", () => {
+    it("steps down one rate at a time and never up; stops; restarts as a new run, twice at most", () => {
         const { said, engine } = run(
             fluidPlan(),
-            [["iv_access", 1], [at("r20"), 2], [at("r5"), 3], [at("r20"), 4], [at("r10"), 62], [at("r20"), 63], [at("r10"), 64], [STOP, 70], [at("r5"), 71], [STOP, 72]],
+            [
+                ["iv_access", 1], [at("r20"), 2], [at("r5"), 3], [at("r20"), 4], [at("r10"), 62], [at("r20"), 63], [at("r10"), 64], [STOP, 70],
+                [STOP, 70.5], [at("r5"), 71], [STOP, 72], [at("r10"), 73], [at("r5"), 73.5], [STOP, 74], [at("r5"), 75], [STOP, 76],
+            ],
             80
         );
         assert.match(said[2], /^Not given: the rate comes down one step at a time: it is running at 20 mL\/kg\/h, so the next step is 10 mL\/kg\/h/);
@@ -148,15 +151,32 @@ describe("rate-controlled fluid: the tray", () => {
         assert.match(said[5], /^Not given: it is running at 10 mL\/kg\/h, below this rate/);
         assert.match(said[6], /^Not given: it is already running at 10/);
         assert.equal(said[7], "The infusion is stopped.");
-        assert.match(said[8], /^Not given: the infusion has been stopped/);
-        assert.match(said[9], /^Not given: the infusion has been stopped/);
+        assert.match(said[8], /^Not given: it has already been stopped/);
+        assert.equal(said[9], "Restarted at 5 mL/kg/h. The infusion is running again.");
+        assert.equal(said[10], "The infusion is stopped.");
+        assert.equal(said[11], "Restarted at 10 mL/kg/h. The infusion is running again.");
+        assert.equal(said[12], "The rate is reduced to 5 mL/kg/h.", "a restarted run steps down like the first");
+        assert.equal(said[13], "The infusion is stopped.");
+        assert.match(said[14], /^Not given: the infusion has been stopped and restarted 2 times; it cannot be restarted again here/);
+        assert.match(said[15], /^Not given: it has already been stopped/);
+        // Each run keeps its own record: run 1 never reached 5 mL/kg/h; run 2 did, at 71 minutes.
         assert.equal(engine.state.flagSetAt.fluid_fluid_bolus_20ml_kg_at_r5, undefined);
+        assert.equal(engine.state.flagSetAt.fluid_fluid_bolus_20ml_kg_run2_at_r5, 71 * MIN);
+    });
+
+    it("a restart does not change the monitor, and the volume counts every run", () => {
+        const stopped = run(fluidPlan(), [["iv_access", 1], [at("r20"), 2], [STOP, 32]], 40);
+        const restarted = run(fluidPlan(), [["iv_access", 1], [at("r20"), 2], [STOP, 32], [at("r10"), 42]], 102);
+        assert.deepEqual([restarted.engine.state.systolic, restarted.engine.state.rate], [stopped.engine.state.systolic, stopped.engine.state.rate]);
+        // 30 min at 240 mL/h, then 60 min at 120 mL/h.
+        assert.deepEqual(statusOf(restarted, 102), { state: "running", level: "r10", since: 42 * MIN, startedAt: 2 * MIN, endedAt: null, deliveredMl: 240, remainingMl: null, run: 2, canRestart: false });
+        assert.equal(statusOf(stopped, 40).canRestart, true);
     });
 
     it("counts what has run in from the rate history, and the tray's status agrees", () => {
         const r = run(fluidPlan(), [["iv_access", 1], [at("r20"), 2], [at("r10"), 62], [STOP, 92]], 100);
         // 60 min at 240 mL/h, then 30 min at 120 mL/h, then nothing.
-        assert.deepEqual(statusOf(r, 100), { state: "stopped", level: "r10", since: 62 * MIN, startedAt: 2 * MIN, endedAt: 92 * MIN, deliveredMl: 300, remainingMl: null });
+        assert.deepEqual(statusOf(r, 100), { state: "stopped", level: "r10", since: 62 * MIN, startedAt: 2 * MIN, endedAt: 92 * MIN, deliveredMl: 300, remainingMl: null, run: 1, canRestart: true });
         assert.equal(statusOf(r, 32).deliveredMl, 120, "by the time asked about");
     });
 
@@ -174,7 +194,7 @@ describe("rate-controlled fluid: the tray", () => {
         assert.equal(done?.timestamp, 42 * MIN);
         assert.ok(e.events.some((x) => x.type === "PATIENT_DETERIORATED" && x.narrative === "The bag has run through."));
         const def = c.custom_interventions!.find((i) => i.id === F)!.fluid!;
-        assert.deepEqual(fluidStatus(F, def, e.state.flags, e.state.flagSetAt, 50 * MIN), { state: "completed", level: "r10", since: 12 * MIN, startedAt: 2 * MIN, endedAt: 42 * MIN, deliveredMl: 100, remainingMl: 0 });
+        assert.deepEqual(fluidStatus(F, def, e.state.flags, e.state.flagSetAt, 50 * MIN), { state: "completed", level: "r10", since: 12 * MIN, startedAt: 2 * MIN, endedAt: 42 * MIN, deliveredMl: 100, remainingMl: 0, run: 1, canRestart: false });
         assert.match(e.giveIntervention(STOP, 51 * MIN).consequence, /^Not given: the infusion has finished/);
         // The finish is the engine's to say: a forged one is thrown away and the real one regenerated.
         const forged: ClinicalEvent[] = [
@@ -194,7 +214,7 @@ describe("rate-controlled fluid: the tray", () => {
         const before = { rr: e.state.rr, spo2: e.state.spo2 };
         const w = e.skipTime(30 * MIN, 240 * MIN);
         assert.equal(w.stopped, "alert");
-        assert.equal(w.to, 122 * MIN, "120 minutes at the full rate");
+        assert.equal(w.to, 122 * MIN + 1, "just past 120 minutes at the full rate");
         assert.deepEqual({ rr: e.state.rr, spo2: e.state.spo2 }, { rr: before.rr + 6, spo2: before.spo2 - 4 });
         assert.ok(e.events.some((x) => x.type === "PATIENT_DETERIORATED" && /breathing is faster/.test(x.narrative)));
     });
@@ -231,10 +251,42 @@ describe("rate-controlled fluid: scoring", () => {
 
     it("the starting rate is judged on the patient as he was when it was started", () => {
         const wrong = run(fluidPlan(), [["iv_access", 1], [at("r10"), 2]], 30).score;
-        assert.deepEqual(rate(wrong)!.fluid_steps![0], { label: "Started at 10 mL/kg/h", at_minutes: 2, status: "wrong", expected: "20 mL/kg/h" });
+        assert.deepEqual(rate(wrong)!.fluid_steps![0], { label: "Started at 10 mL/kg/h", at_minutes: 2, status: "wrong", expected: "20 mL/kg/h", note: "In his state at that moment the right starting rate was 20 mL/kg/h." });
         // Once he has reached decompensated shock the plan asks for the lower rate (the test plan's own rule).
         const late = run(fluidPlan(), [["iv_access", 13], [at("r10"), 14]], 30).score;
         assert.equal(rate(late)!.fluid_steps![0].status, "on_time");
+    });
+
+    it("a restart after an early stop keeps the early stop and credits the correction; each step says what was wrong", () => {
+        const { score } = run(fluidPlan(), [["iv_access", 1], [at("r20"), 2], [STOP, 30], [at("r20"), 40]], 60);
+        const s = rate(score)!.fluid_steps!;
+        assert.deepEqual(s.map((x) => [x.label, x.status]), [
+            ["Started at 20 mL/kg/h", "on_time"],
+            ["20 mL/kg/h for 60 to 90 min", "early"],
+            ["Stopped 3 to 10 h after it was started", "early"],
+            ["Restarted at 20 mL/kg/h", "on_time"],
+            ["After the restart: 20 mL/kg/h for 60 to 90 min", "not_due"],
+            ["Stopped 3 to 10 h after it was started", "not_due"],
+        ]);
+        assert.match(s[1].note!, /^Stopped after 28 min\. This rate runs for 60 to 90 min, and comes down only once a reassessment shows him improving; cut early, the shock can come back \(this version does not show that relapse, but it is still an error\)/);
+        assert.match(s[2].note!, /Fluids continue, at the lowest rate, until 3 to 10 h after the start/);
+        assert.match(s[3].note!, /the stop itself still counts/);
+        // Start 1, the hold and the stop 0.5 each, the restart 1: three quarters.
+        assert.equal(score.items.find((i) => i.id === `${F}:rate`)!.status, "late");
+    });
+
+    it("a step down while he is still in shock is too soon, whatever the clock says", () => {
+        // Started in decompensated shock without enough fluid to stabilise him (the test plan's own numbers).
+        const { score } = run(fluidPlan({}, { stabilised_by: ["iv_access", F], end_points: { vital: "sbp", at_least: 120 } }), [["iv_access", 1], [at("r20"), 2], [at("r10"), 70]], 80);
+        const step = rate(score)!.fluid_steps![1];
+        assert.equal(step.status, "early");
+        assert.match(step.note!, /^Reduced while he was still in shock/);
+    });
+
+    it("overload happens once, however long the rate is kept on", () => {
+        const { engine, score } = run(fluidPlan(), [["iv_access", 1], [at("r20"), 2]], 700);
+        assert.equal(engine.events.filter((x) => x.type === "STATE_TRANSITION" && x.trigger.includes("overload")).length, 1);
+        assert.equal(score.harmful.length, 1);
     });
 
     it("a fluid never started has no rate item, and its refusals are listed as not changed", () => {
@@ -267,7 +319,8 @@ describe("rate-controlled fluid: scoring", () => {
 });
 
 describe("rate-controlled fluid: the pure parts", () => {
-    const s = { levels: [{ flag: "a", ml_per_h: 240 }, { flag: "b", ml_per_h: 120 }], ends: ["stop"] };
+    const s = [{ levels: [{ flag: "a", ml_per_h: 240 }, { flag: "b", ml_per_h: 120 }], ends: ["stop"] }];
+    const two = [...s, { levels: [{ flag: "a2", ml_per_h: 240 }, { flag: "b2", ml_per_h: 120 }], ends: ["stop2"] }];
 
     it("adds the volume in whole mL x seconds per hour, from each rate's start to the next, and stops at the end flag", () => {
         const flags = { a: true, b: true, stop: true };
@@ -283,6 +336,13 @@ describe("rate-controlled fluid: the pure parts", () => {
         assert.equal(deliveredBoundary(s, 100, { a: true, stop: true }, { a: 0, stop: 60 }), null);
     });
 
+    it("adds the runs of a restarted infusion, and finds the boundary in the run that is running", () => {
+        const flags = { a: true, stop: true, b2: true };
+        const at = { a: 0, stop: 600, b2: 1200 };
+        assert.equal(deliveredRateSeconds(two, flags, at, 1800), 240 * 600 + 120 * 600);
+        assert.equal(deliveredBoundary(two, 100, flags, at), 1200 + 1800, "40 mL in, 60 mL more at 120 mL/h");
+    });
+
     it("reads and labels a fluid's actions", () => {
         assert.deepEqual(parseFluidAction("iv_fluid@r10"), { id: "iv_fluid", level: "r10" });
         assert.equal(parseFluidAction("iv_fluid"), null);
@@ -294,5 +354,30 @@ describe("rate-controlled fluid: the pure parts", () => {
     it("a refused rate change is marked as one, so the tray shows it as not given", () => {
         const { said } = run(fluidPlan(), [["iv_access", 1], [STOP, 2]], 3);
         assert.ok(said[1].startsWith(REFUSED_PREFIX));
+    });
+});
+
+describe("rate-controlled fluid: a rewrite never drops the ladder", () => {
+    const withFluid = () => fluidPlan({}, { limitations: "This test plan does not model relapse after an early stop." });
+    const without = () => normaliseLivePlan(JSON.parse(JSON.stringify(goldenFixturePlan)), "ai");
+
+    it("lostFluids names a fluid the new plan would drop, and nothing else", () => {
+        assert.deepEqual(lostFluids(without(), withFluid()), [F]);
+        assert.deepEqual(lostFluids(null, withFluid()), [F], "removing the plan by a rewrite counts too");
+        assert.deepEqual(lostFluids(withFluid(), withFluid()), []);
+        assert.deepEqual(lostFluids(withFluid(), without()), [], "adding one is not losing one");
+    });
+
+    it("keepFluidConfig puts the ladder, the encounter's length and the limitations back on a model's revision", () => {
+        const revised = { ...without(), time_limit_minutes: 25 };
+        const kept = keepFluidConfig(revised, withFluid());
+        const t = kept.treatments.find((x) => x.id === F)!;
+        assert.deepEqual(t.fluid, withFluid().treatments.find((x) => x.id === F)!.fluid);
+        assert.equal(t.effect, undefined, "the effect a fluid cannot carry is dropped");
+        assert.equal(kept.time_limit_minutes, 720);
+        assert.match(kept.limitations!, /does not model relapse/);
+        assert.equal(errorsOf(kept), "");
+        assert.deepEqual(lostFluids(kept, withFluid()), []);
+        assert.equal(keepFluidConfig(revised, without()), revised, "a plan without a fluid is left alone");
     });
 });

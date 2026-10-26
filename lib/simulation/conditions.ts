@@ -127,11 +127,12 @@ export function evaluateLeaf(cond: ConditionLeaf, ctx: ConditionContext): boolea
     if ("minutes_since_flag" in cond) {
         const { flag, gte } = cond.minutes_since_flag;
         const setAt = ctx.flagSetAt[flag];
-        return ctx.flags[flag] === true && setAt !== undefined && ctx.time - setAt >= gte * 60;
+        // A hair of tolerance: the engine checks exactly at setAt + gte * 60, and (a + b) - a is not always b in floating point.
+        return ctx.flags[flag] === true && setAt !== undefined && ctx.time - setAt >= gte * 60 - 1e-6;
     }
     if ("fluid_delivered" in cond) {
-        const { gte_ml, ...schedule } = cond.fluid_delivered;
-        return deliveredRateSeconds(schedule, ctx.flags, ctx.flagSetAt, ctx.time) >= gte_ml * 3600;
+        const { runs, gte_ml } = cond.fluid_delivered;
+        return deliveredRateSeconds(runs, ctx.flags, ctx.flagSetAt, ctx.time) >= gte_ml * 3600;
     }
     if ("parameter" in cond) {
         const { parameter, ...test } = cond;
@@ -167,8 +168,8 @@ export function collectTimeBoundaries(cond: RuleCondition, ctx: Pick<ConditionCo
         return ctx.flags[flag] === true && setAt !== undefined ? [setAt + gte * 60] : [];
     }
     if ("fluid_delivered" in cond) {
-        const { gte_ml, ...schedule } = cond.fluid_delivered;
-        const at = deliveredBoundary(schedule, gte_ml, ctx.flags, ctx.flagSetAt);
+        const { runs, gte_ml } = cond.fluid_delivered;
+        const at = deliveredBoundary(runs, gte_ml, ctx.flags, ctx.flagSetAt);
         return at === null ? [] : [at];
     }
     return [];

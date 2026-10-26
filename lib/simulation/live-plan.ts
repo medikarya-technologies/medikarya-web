@@ -34,7 +34,7 @@ import type { ClinicalEvent } from "./encounter-events";
 import { INTERVENTIONS, type InterventionGroup } from "./intervention-catalog";
 import { evaluateCondition } from "./conditions";
 import { PatientState } from "./patient-state";
-import { FLUID_STOP, fluidAction, fluidCompletedFlag, fluidLevelFlag, fluidSchedule, fluidStopAction, fluidStoppedFlag, parseFluidAction } from "./fluid-infusion";
+import { FLUID_RUNS, FLUID_STOP, fluidAction, fluidCompletedFlag, fluidLevelFlag, fluidSchedules, fluidStopAction, fluidStoppedFlag, parseFluidAction } from "./fluid-infusion";
 
 // ── The plan ────────────────────────────────────────────────────────────────
 
@@ -217,8 +217,12 @@ export interface LiveFluidLevel {
     while?: LiveCondition;
     /** What the student sees when it is stepped down to this rate. */
     says?: string;
-    /** Still running at this rate `after_minutes` after it began, while `when` holds: too much fluid. It changes the monitor, the nurse says so, and it counts as harm. */
-    overload?: { after_minutes: number; when?: LiveCondition; effect: LiveVitals; nurse_says: string; why?: string };
+    /**
+     * Still running at this rate beyond `after_minutes` after it began (and, with `from_stabilisation`, beyond that long
+     * after the patient was stabilised: the later of the two), while `when` holds: too much fluid. It happens once per
+     * run: the monitor changes, the nurse says so, and it counts as harm. At exactly `after_minutes` it has not happened.
+     */
+    overload?: { after_minutes: number; from_stabilisation?: boolean; when?: LiveCondition; effect: LiveVitals; nurse_says: string; why?: string };
 }
 
 export interface LiveFluid {
@@ -235,6 +239,7 @@ export interface LiveFluid {
     /** What the nurse says when the volume has run in. */
     completed_says?: string;
 }
+// A stopped fluid can be restarted (FLUID_RUNS runs in all); what a stop or restart does to the patient is not modelled.
 
 /** A bedside reassessment the student can do at any time: each check reports what it finds right now. */
 export interface LiveReassessment {
@@ -335,6 +340,8 @@ export interface LivePlan {
      * They belong to the case, not the draft: a changed plan keeps them (carryReleaseBlockers).
      */
     release_blockers?: ReleaseBlocker[];
+    /** What this version of the case does not model, in a sentence or two for the student. Shown with the bedside score. */
+    limitations?: string;
 }
 
 export interface ReleaseBlocker {
@@ -374,6 +381,38 @@ export function carryReleaseBlockers(next: LivePlan, previous: unknown): LivePla
     const own = next.release_blockers ?? [];
     const merged = [...kept, ...own.filter((b) => !kept.some((k) => k.id === b.id))];
     return merged.length > 0 ? { ...next, release_blockers: merged } : next;
+}
+
+/**
+ * The treatments whose fluid ladder a new plan would lose: present in the previous plan, missing (or without its
+ * `fluid`) in the next. A rewrite must never drop one silently: every save path refuses such a plan.
+ */
+export function lostFluids(next: unknown, previous: unknown): string[] {
+    if (!isLivePlan(previous)) return [];
+    const kept = isLivePlan(next) ? next.treatments : [];
+    return previous.treatments.filter((t) => t.fluid && !kept.some((k) => k.id === t.id && k.fluid)).map((t) => t.id);
+}
+
+/**
+ * A revised plan with the previous plan's fluid configuration put back as it was: each fluid ladder (on the treatment of
+ * the same id), the encounter's length and the plan's stated limitations. Used on a model's revision, which is asked to
+ * keep them but must not be trusted to.
+ */
+export function keepFluidConfig(next: LivePlan, previous: unknown): LivePlan {
+    if (!isLivePlan(previous) || !previous.treatments.some((t) => t.fluid)) return next;
+    const fluids = new Map(previous.treatments.filter((t) => t.fluid).map((t) => [t.id, t.fluid as LiveFluid]));
+    return {
+        ...next,
+        time_limit_minutes: previous.time_limit_minutes,
+        ...(previous.limitations ? { limitations: previous.limitations } : {}),
+        treatments: next.treatments.map((t) => {
+            const fluid = fluids.get(t.id);
+            if (!fluid) return t;
+            // What a fluid cannot carry alongside its ladder goes (the check would refuse it).
+            const { effect: _e, infusion: _i, max_doses: _m, min_interval_minutes: _mi, effect_per_dose: _ep, says_per_dose: _sp, doses_required: _dr, repeat_within_minutes: _rw, repeat_only_while: _ro, not_indicated_says: _ni, reassess_before_repeat: _rb, ...rest } = t;
+            return { ...rest, fluid };
+        }),
+    };
 }
 
 export function isLivePlan(v: unknown): v is LivePlan {
@@ -519,6 +558,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
                     ? {
                           overload: {
                               after_minutes: num(o.after_minutes) ?? NaN,
+                              ...(o.from_stabilisation === true ? { from_stabilisation: true } : {}),
                               ...(o.when !== undefined ? { when: condition(o.when) } : {}),
                               effect: vitals(o.effect),
                               nurse_says: text(o.nurse_says),
@@ -639,6 +679,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
             nurse_says: text(p.recovery?.nurse_says),
             ...withFindings(p.recovery?.findings),
         },
+        ...(text(p.limitations, 600) ? { limitations: text(p.limitations, 600) } : {}),
         ...(Array.isArray(p.basis) ? { basis: p.basis.map((b: unknown) => text(b, 400)).filter(Boolean).slice(0, 20) } : {}),
     };
 }
@@ -891,6 +932,7 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
     const warnings: string[] = [];
     const whole = (n: number) => Number.isFinite(n);
 
+    if (plan.limitations !== undefined && plan.limitations.length < 20) errors.push("limitations: say in a sentence what this version does not model, or leave it out.");
     if (plan.summary.length < 20) errors.push("summary: say in a sentence or two what happens to this patient if nothing is done.");
 
     // ── time
@@ -1190,21 +1232,30 @@ function infusionRules(t: LiveTreatment): EventRule[] {
 
 // ── Rate-controlled fluid ───────────────────────────────────────────────────
 
-/** Set when a rate was kept running long enough to overload the patient. */
-const overloadFlag = (treatmentId: string, level: string) => `fluid_${treatmentId}_overload_${level}`;
+/** Set when a rate was kept running long enough to overload the patient (per run, so a restart can overload again). */
+const overloadFlag = (treatmentId: string, level: string, n = 1) => `fluid_${treatmentId}_${n === 1 ? "" : `run${n}_`}overload_${level}`;
+const RUNS = Array.from({ length: FLUID_RUNS }, (_, i) => i + 1);
 /** The engine's description of a fluid: for the tray, and for the condition that knows when its volume is in. */
 const fluidDef = (f: LiveFluid): FluidInfusionDef => ({
     levels: f.levels.map((l) => ({ id: l.id, label: l.label, ml_per_h: l.ml_per_h })),
     ...(f.volume_ml !== undefined ? { volume_ml: f.volume_ml } : {}),
 });
-/** Stopped, or finished by itself. */
-const fluidEnded = (t: LiveTreatment): RuleCondition => ({
-    any: [{ flag: fluidStoppedFlag(t.id), is: true }, ...(t.fluid?.volume_ml !== undefined ? [{ flag: fluidCompletedFlag(t.id), is: true }] : [])],
+const completedCond = (t: LiveTreatment): RuleCondition | null => (t.fluid?.volume_ml !== undefined ? { flag: fluidCompletedFlag(t.id), is: true } : null);
+/** Run n has begun: it has run at some rate. */
+const runBegun = (t: LiveTreatment, n: number): RuleCondition => ({ any: (t.fluid as LiveFluid).levels.map((l) => ({ flag: fluidLevelFlag(t.id, l.id, n), is: true })) });
+/** Run n is running: begun, not stopped, and the infusion has not finished. */
+const runRunning = (t: LiveTreatment, n: number): RuleCondition => {
+    const done = completedCond(t);
+    return { all: [runBegun(t, n), { flag: fluidStoppedFlag(t.id, n), is: false }, ...(done ? [{ not: done }] : [])] };
+};
+/** Run n was stopped and has not been restarted (run n + 1 has not begun). */
+const runStoppedLast = (t: LiveTreatment, n: number): RuleCondition => ({
+    all: [{ flag: fluidStoppedFlag(t.id, n), is: true }, ...(n < FLUID_RUNS ? [{ not: runBegun(t, n + 1) }] : [])],
 });
-/** Running at the ladder's rate i: it reached that rate, has gone no lower, and has not ended. */
-function runningAt(t: LiveTreatment, i: number): RuleCondition {
+/** Running at the ladder's rate i in run n: it reached that rate, has gone no lower, and has not ended. */
+function runningAt(t: LiveTreatment, i: number, n = 1): RuleCondition {
     const levels = (t.fluid as LiveFluid).levels;
-    return { all: [{ flag: fluidLevelFlag(t.id, levels[i].id), is: true }, ...levels.slice(i + 1).map((l) => ({ flag: fluidLevelFlag(t.id, l.id), is: false })), { not: fluidEnded(t) }] };
+    return { all: [{ flag: fluidLevelFlag(t.id, levels[i].id, n), is: true }, ...levels.slice(i + 1).map((l) => ({ flag: fluidLevelFlag(t.id, l.id, n), is: false })), runRunning(t, n)] };
 }
 
 /** How a student who gives a fluid as planned starts it: at the rate its unconditional start names, else the first. */
@@ -1214,8 +1265,9 @@ export function fluidStartAction(t: LiveTreatment): string {
 }
 
 /**
- * What a fluid does over time: each rate's effect spread minute by minute while it runs at that rate (and only before
- * stabilisation, as an infusion), the overload of a rate kept on too long, and finishing once its volume is in.
+ * What a fluid does over time: each rate's effect spread minute by minute while it runs at that rate (first run only,
+ * and only before stabilisation, as an infusion), the overload of a rate kept on too long (in any run), and finishing
+ * once its volume is in.
  */
 function fluidRules(t: LiveTreatment): EventRule[] {
     const f = t.fluid;
@@ -1245,22 +1297,34 @@ function fluidRules(t: LiveTreatment): EventRule[] {
                 });
             }
         }
-        if (l.overload) {
+        const o = l.overload;
+        if (!o) return;
+        // Strictly past after_minutes (one second on): at the boundary itself a step down is still on time, so the two
+        // can never disagree. Counted from the rate's start, and from stabilisation too when the plan says so.
+        const beyond = (o.after_minutes * 60 + 1) / 60;
+        for (const n of RUNS) {
             out.push({
-                id: `live_fluid_${t.id}_overload_${l.id}`,
-                when: { all: [{ minutes_since_flag: { flag, gte: l.overload.after_minutes } }, runningAt(t, i), ...(l.overload.when ? [compileCondition(l.overload.when)] : [])] },
+                id: `live_fluid_${t.id}_${n === 1 ? "" : `run${n}_`}overload_${l.id}`,
+                when: {
+                    all: [
+                        { minutes_since_flag: { flag: fluidLevelFlag(t.id, l.id, n), gte: beyond } },
+                        ...(o.from_stabilisation ? [{ minutes_since_flag: { flag: STABILISED, gte: beyond } }] : []),
+                        runningAt(t, i, n),
+                        ...(o.when ? [compileCondition(o.when)] : []),
+                    ],
+                },
                 transition: "unchanged",
                 keeps_state: true,
-                physiological_changes: effectOf(l.overload.effect),
-                narrative: l.overload.nurse_says,
-                sets: { [overloadFlag(t.id, l.id)]: true },
+                physiological_changes: effectOf(o.effect),
+                narrative: o.nurse_says,
+                sets: { [overloadFlag(t.id, l.id, n)]: true },
             });
         }
     });
     if (f.volume_ml !== undefined) {
         out.push({
             id: `live_fluid_${t.id}_completed`,
-            when: { all: [{ flag: given(t.id), is: true }, { not: fluidEnded(t) }, { fluid_delivered: { ...fluidSchedule(t.id, fluidDef(f)), gte_ml: f.volume_ml } }] },
+            when: { all: [{ flag: given(t.id), is: true }, { flag: fluidCompletedFlag(t.id), is: false }, { fluid_delivered: { runs: fluidSchedules(t.id, fluidDef(f)), gte_ml: f.volume_ml } }] },
             transition: "unchanged",
             keeps_state: true,
             sets: { [fluidCompletedFlag(t.id)]: true },
@@ -1272,18 +1336,14 @@ function fluidRules(t: LiveTreatment): EventRule[] {
 
 /**
  * A fluid on the tray. "<id>@<rate>" starts it at that rate (behind the treatment's own prerequisites and availability,
- * with its responses), or once it runs steps it down to that rate, one rate at a time; "<id>@stop" stops it. Anything
- * else is refused and changes nothing.
+ * with its responses); while it runs, steps it down to that rate, one rate at a time; once stopped, restarts it at that
+ * rate as a new run (up to FLUID_RUNS runs). "<id>@stop" stops it. Anything else is refused and changes nothing.
  */
 function fluidConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[] {
     const f = t.fluid as LiveFluid;
     const started: RuleCondition = { flag: given(t.id), is: true };
-    const stopped: RuleCondition = { flag: fluidStoppedFlag(t.id), is: true };
-    const completed: RuleCondition | null = f.volume_ml !== undefined ? { flag: fluidCompletedFlag(t.id), is: true } : null;
-    const ended = (action: string): ActionConsequence[] => [
-        { action, when: { all: [started, stopped] }, trajectory_note: REFUSED.fluid("the infusion has been stopped.") },
-        ...(completed ? [{ action, when: { all: [started, completed] }, trajectory_note: REFUSED.fluid("the infusion has finished.") }] : []),
-    ];
+    const completed = completedCond(t);
+    const finished = (action: string): ActionConsequence[] => (completed ? [{ action, when: { all: [started, completed] }, trajectory_note: REFUSED.fluid("the infusion has finished.") }] : []);
     const effectAtOnce = (l: LiveFluidLevel) => (l.over_minutes === undefined && l.effect ? { physiological_changes: effectOf(l.effect) } : {});
     // The treatment itself has no plain "Give": a fluid is started at a rate.
     const out: ActionConsequence[] = [{ action: t.id, trajectory_note: REFUSED.fluid("choose the rate to start it at.") }];
@@ -1298,24 +1358,36 @@ function fluidConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[
             sets: { ...c.sets, [fluidLevelFlag(t.id, l.id)]: true },
             trajectory_note: `Started at ${l.label}. ${c.trajectory_note}`,
         }));
-        const running: ActionConsequence[] = f.levels.map((cur, j) => {
-            const when: RuleCondition = { all: [started, runningAt(t, j)] };
-            if (j === i - 1) return { action, when, sets: { [fluidLevelFlag(t.id, l.id)]: true }, ...effectAtOnce(l), trajectory_note: l.says ?? `The rate is reduced to ${l.label}.` };
-            const says =
-                j === i
-                    ? `it is already running at ${cur.label}.`
-                    : j > i
-                      ? `it is running at ${cur.label}, below this rate: the rate only comes down, one step at a time.`
-                      : `the rate comes down one step at a time: it is running at ${cur.label}, so the next step is ${f.levels[j + 1].label}.`;
-            return { action, when, trajectory_note: REFUSED.fluid(says) };
-        });
-        out.push(...stateConsequences(t, plan, [...start, ...running, ...ended(action)]).map((c) => ({ ...c, action })));
+        const running: ActionConsequence[] = RUNS.flatMap((n) =>
+            f.levels.map((cur, j) => {
+                const when: RuleCondition = { all: [started, runningAt(t, j, n)] };
+                if (j === i - 1) return { action, when, sets: { [fluidLevelFlag(t.id, l.id, n)]: true }, ...effectAtOnce(l), trajectory_note: l.says ?? `The rate is reduced to ${l.label}.` };
+                const says =
+                    j === i
+                        ? `it is already running at ${cur.label}.`
+                        : j > i
+                          ? `it is running at ${cur.label}, below this rate: the rate only comes down, one step at a time.`
+                          : `the rate comes down one step at a time: it is running at ${cur.label}, so the next step is ${f.levels[j + 1].label}.`;
+                return { action, when, trajectory_note: REFUSED.fluid(says) };
+            })
+        );
+        // A stopped infusion restarts at the rate chosen, as a new run: the run before it, and its stop, stay on the record.
+        // What restarting does to the patient is not modelled (S2): the monitor does not change.
+        const restarts: ActionConsequence[] = RUNS.map((n) =>
+            n < FLUID_RUNS
+                ? { action, when: { all: [started, runStoppedLast(t, n)] }, sets: { [fluidLevelFlag(t.id, l.id, n + 1)]: true }, trajectory_note: `Restarted at ${l.label}. The infusion is running again.` }
+                : { action, when: { all: [started, runStoppedLast(t, n)] }, trajectory_note: REFUSED.fluid(`the infusion has been stopped and restarted ${FLUID_RUNS - 1} times; it cannot be restarted again here.`) }
+        );
+        out.push(...stateConsequences(t, plan, [...start, ...running, ...restarts, ...finished(action)]).map((c) => ({ ...c, action })));
     });
     const stop = fluidStopAction(t.id);
     out.push(
         { action: stop, when: { flag: given(t.id), is: false }, trajectory_note: REFUSED.fluid("it is not running.") },
-        { action: stop, when: { all: [started, { not: fluidEnded(t) }] }, sets: { [fluidStoppedFlag(t.id)]: true }, trajectory_note: f.stop_says ?? "The infusion is stopped." },
-        ...ended(stop),
+        ...RUNS.flatMap((n): ActionConsequence[] => [
+            { action: stop, when: { all: [started, runRunning(t, n)] }, sets: { [fluidStoppedFlag(t.id, n)]: true }, trajectory_note: f.stop_says ?? "The infusion is stopped." },
+            { action: stop, when: { all: [started, runStoppedLast(t, n)] }, trajectory_note: REFUSED.fluid("it has already been stopped.") },
+        ]),
+        ...finished(stop),
     );
     return out;
 }
@@ -1518,11 +1590,13 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         if (t.reassess_before_repeat) flags[reassessedFlag(t.id)] = false;
         if (isStateGated(t)) for (let n = 2; n <= Math.max(1, t.doses_required ?? 1); n++) Object.assign(flags, { [indicatedFlag(t.id, n)]: false, [notNeededFlag(t.id, n)]: false, [resolvedFlag(t.id, n)]: false });
         if (t.fluid) {
-            for (const l of t.fluid.levels) {
-                flags[fluidLevelFlag(t.id, l.id)] = false;
-                if (l.overload) flags[overloadFlag(t.id, l.id)] = false;
+            for (const n of RUNS) {
+                for (const l of t.fluid.levels) {
+                    flags[fluidLevelFlag(t.id, l.id, n)] = false;
+                    if (l.overload) flags[overloadFlag(t.id, l.id, n)] = false;
+                }
+                flags[fluidStoppedFlag(t.id, n)] = false;
             }
-            flags[fluidStoppedFlag(t.id)] = false;
             if (t.fluid.volume_ml !== undefined) flags[fluidCompletedFlag(t.id)] = false;
         }
     }
@@ -1721,6 +1795,8 @@ export interface FluidStep {
     status: FluidStepStatus;
     /** For a wrong starting rate: the right one. */
     expected?: string;
+    /** For a step that was not on time: what was wrong, and what was right. */
+    note?: string;
 }
 
 /** A further dose the engine refused (too soon, not indicated, or over the limit). It had no effect and did not count. */
@@ -1739,6 +1815,8 @@ export interface BedsideScore {
     harmful: Array<{ id: string; label: string; at_minutes: number; why?: string }>;
     /** Further doses the engine refused. Present only when there were any. */
     refused?: RefusedDose[];
+    /** What this version of the case does not model (the plan's limitations). Present only when the plan has them. */
+    limitations?: string;
     outcome: {
         stabilised: boolean;
         recovered: boolean;
@@ -1799,9 +1877,16 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
             .map((t) => ({ id: t.id, label: t.label, at_minutes: givenAt(t) as number, ...(t.why ? { why: t.why } : {}) })),
         // A rate kept on until it overloaded the patient is harm, whoever's treatment it was.
         ...plan.treatments.flatMap((t) =>
-            (t.fluid?.levels ?? [])
-                .filter((l) => l.overload && final.flagSetAt[overloadFlag(t.id, l.id)] !== undefined)
-                .map((l) => ({ id: `${t.id}:overload_${l.id}`, label: `Fluid overload: ${t.label} kept at ${l.label}`, at_minutes: toMinutes(final.flagSetAt[overloadFlag(t.id, l.id)]), ...(l.overload?.why ? { why: l.overload.why } : {}) }))
+            RUNS.flatMap((n) =>
+                (t.fluid?.levels ?? [])
+                    .filter((l) => l.overload && final.flagSetAt[overloadFlag(t.id, l.id, n)] !== undefined)
+                    .map((l) => ({
+                        id: `${t.id}:overload_${l.id}${n === 1 ? "" : `_run${n}`}`,
+                        label: `Fluid overload: ${t.label} kept at ${l.label}`,
+                        at_minutes: toMinutes(final.flagSetAt[overloadFlag(t.id, l.id, n)]),
+                        ...(l.overload?.why ? { why: l.overload.why } : {}),
+                    }))
+            )
         ),
     ];
 
@@ -1825,6 +1910,7 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
         },
         // Only when there is something to report, so a plan without repeat doses scores to exactly the same shape.
         ...(refused.length > 0 ? { refused } : {}),
+        ...(plan.limitations ? { limitations: plan.limitations } : {}),
     };
 }
 
@@ -1907,40 +1993,106 @@ function expectedStartLevel(config: SimulationCaseConfig, t: LiveTreatment, even
 }
 
 /**
- * How a fluid's rate was adjusted, once it was started: the starting rate against the plan's start rules, how long each
- * rate ran before the next step against its hold time, and the stop against the plan's stop window. On time 1, early or
- * late 0.5, the wrong starting rate or a rate kept past its time to the end 0; a step whose time was still open when the
- * encounter ended does not count. A fluid that never started has nothing to adjust (its own item is missed).
+ * How a fluid's rate was adjusted, once it was started: the starting rate against the plan's start rules; how long each
+ * rate ran before it came down, against its hold time and against the patient (a cut while he is still in shock is too
+ * soon); and the stop against the plan's stop window. On time 1, too soon or too late 0.5, the wrong starting rate or a
+ * rate kept past its time to the end 0; a step still open when the encounter ended does not count. A restart after a
+ * stop that was too soon earns its own step, and the stop still counts. Every step says what was wrong and what was
+ * right. A fluid that never started has nothing to adjust (its own item is missed).
  */
 function scoreFluidRate(config: SimulationCaseConfig, plan: LivePlan, t: LiveTreatment, events: readonly ClinicalEvent[], final: PatientState, end: number, credit: Map<string, number>): BedsideItem | null {
     const f = t.fluid as LiveFluid;
     const setAt = (flag: string): number | undefined => final.flagSetAt[flag];
     const startedAt = setAt(given(t.id));
     if (startedAt === undefined || !(f.start?.length || f.stop || f.levels.some((l) => l.hold_minutes))) return null;
-    const runs = f.levels.flatMap((l) => (setAt(fluidLevelFlag(t.id, l.id)) === undefined ? [] : [{ l, at: setAt(fluidLevelFlag(t.id, l.id)) as number }]));
-    const stoppedAt = setAt(fluidStoppedFlag(t.id));
+    const stabilisedAt = setAt(STABILISED);
+    const inShock = (at: number) => stabilisedAt === undefined || stabilisedAt > at;
     const finishedAt = f.volume_ml !== undefined ? setAt(fluidCompletedFlag(t.id)) : undefined;
-    const endedAt = stoppedAt ?? finishedAt;
-    const timed = (from: number, to: number | undefined, w: { at_least: number; at_most: number }): FluidStepStatus => {
-        if (to === undefined) return end - from / 60 > w.at_most ? "missed" : "not_due";
-        const ran = (to - from) / 60;
-        return ran < w.at_least ? "early" : ran > w.at_most ? "late" : "on_time";
-    };
+    const runs = RUNS.map((n) => ({
+        n,
+        rates: f.levels.flatMap((l) => {
+            const at = setAt(fluidLevelFlag(t.id, l.id, n));
+            return at === undefined ? [] : [{ l, at }];
+        }).sort((a, b) => a.at - b.at),
+        stoppedAt: setAt(fluidStoppedFlag(t.id, n)),
+    })).filter((r) => r.rates.length > 0);
+    const mins = (from: number, to: number) => Math.round((to - from) / 6) / 10;
+    const hours = (from: number, to: number) => Math.round((to - from) / 360) / 10;
+    const notShown = "the shock can come back (this version does not show that relapse, but it is still an error)";
     const steps: FluidStep[] = [];
-    if (f.start?.length && runs[0]) {
+
+    if (f.start?.length) {
         const expected = expectedStartLevel(config, t, events, startedAt);
-        const first = runs[0].l;
-        steps.push({ label: `Started at ${first.label}`, at_minutes: toMinutes(startedAt), status: expected.id === first.id ? "on_time" : "wrong", ...(expected.id !== first.id ? { expected: expected.label } : {}) });
+        const first = runs[0].rates[0].l;
+        const right = expected.id === first.id;
+        steps.push({
+            label: `Started at ${first.label}`,
+            at_minutes: toMinutes(startedAt),
+            status: right ? "on_time" : "wrong",
+            ...(right ? {} : { expected: expected.label, note: `In his state at that moment the right starting rate was ${expected.label}.` }),
+        });
     }
-    runs.forEach((r, k) => {
-        if (!r.l.hold_minutes) return;
-        const exit = runs[k + 1]?.at ?? endedAt;
-        steps.push({ label: `${r.l.label} for ${span(r.l.hold_minutes)}`, at_minutes: exit === undefined ? null : toMinutes(exit), status: timed(r.at, exit, r.l.hold_minutes) });
+
+    runs.forEach((run, ri) => {
+        const ended = run.stoppedAt ?? finishedAt;
+        const restarted = runs[ri + 1];
+        run.rates.forEach((r, k) => {
+            const hold = r.l.hold_minutes;
+            if (!hold) return;
+            const exit = run.rates[k + 1]?.at ?? ended;
+            const how = run.rates[k + 1] ? "Reduced" : run.stoppedAt !== undefined ? "Stopped" : "Finished";
+            const label = `${run.n > 1 ? "After the restart: " : ""}${r.l.label} for ${span(hold)}`;
+            if (exit === undefined) {
+                const missed = end - r.at / 60 > hold.at_most;
+                steps.push({
+                    label,
+                    at_minutes: null,
+                    status: missed ? "missed" : "not_due",
+                    ...(missed ? { note: `Still at this rate when the encounter ended, ${Math.round(end - r.at / 60)} min after it began; it should have come down after ${span(hold)}, once he was improving.` } : {}),
+                });
+                return;
+            }
+            const ran = mins(r.at, exit);
+            const step = (status: FluidStepStatus, note?: string) => steps.push({ label, at_minutes: toMinutes(exit), status, ...(note ? { note } : {}) });
+            if (how !== "Finished" && inShock(exit)) step("early", `${how} while he was still in shock. The rate comes down only once a reassessment shows him improving; cut early, ${notShown}.`);
+            else if (ran < hold.at_least) step("early", `${how} after ${ran} min. This rate runs for ${span(hold)}, and comes down only once a reassessment shows him improving; cut early, ${notShown}.`);
+            else if (ran > hold.at_most) step("late", `Kept at this rate for ${ran} min. It comes down after ${span(hold)} once he is improving; kept on, he gets more fluid than he needs and risks overload.`);
+            else step("on_time");
+        });
+        // A fluid that finished by itself needed no stopping.
+        if (!f.stop || finishedAt !== undefined) return;
+        const stop = f.stop;
+        const label = `Stopped ${span(stop)} after it was started`;
+        if (run.stoppedAt !== undefined) {
+            const h = hours(startedAt, run.stoppedAt);
+            const ran = (run.stoppedAt - startedAt) / 60;
+            const status: FluidStepStatus = inShock(run.stoppedAt) || ran < stop.at_least ? "early" : ran > stop.at_most ? "late" : "on_time";
+            const note =
+                status === "early"
+                    ? `Stopped ${h} h after it was started${inShock(run.stoppedAt) ? ", while he was still in shock" : ""}. Fluids continue, at the lowest rate, until ${span(stop)} after the start, as long as he stays well; stopped early, ${notShown}.`
+                    : status === "late"
+                      ? `Stopped ${h} h after it was started; fluids stop by ${stop.at_most / 60} h, or he risks overload.`
+                      : undefined;
+            steps.push({ label, at_minutes: toMinutes(run.stoppedAt), status, ...(note ? { note } : {}) });
+            if (restarted) {
+                const at = restarted.rates[0].at;
+                steps.push(
+                    status === "on_time"
+                        ? { label: `Restarted at ${restarted.rates[0].l.label}`, at_minutes: toMinutes(at), status: "wrong", note: "It had been stopped at the right time, so restarting it gave fluid he no longer needed." }
+                        : { label: `Restarted at ${restarted.rates[0].l.label}`, at_minutes: toMinutes(at), status: "on_time", note: "Restarting it corrected the stop; the stop itself still counts above." }
+                );
+            }
+        } else if (!restarted) {
+            const missed = end - startedAt / 60 > stop.at_most;
+            steps.push({
+                label,
+                at_minutes: null,
+                status: missed ? "missed" : "not_due",
+                ...(missed ? { note: `Still running when the encounter ended; fluids stop ${span(stop)} after the start.` } : {}),
+            });
+        }
     });
-    // A fluid that finished by itself needed no stopping.
-    if (f.stop && finishedAt === undefined) {
-        steps.push({ label: `Stopped ${span(f.stop)} after it was started`, at_minutes: stoppedAt === undefined ? null : toMinutes(stoppedAt), status: timed(startedAt, stoppedAt, f.stop) });
-    }
+
     const counted = steps.filter((x) => FLUID_CREDIT[x.status] !== null);
     const item = { id: `${t.id}:rate`, label: `${t.label}: rate adjusted to the response`, at_minutes: toMinutes(startedAt), within_minutes: t.within_minutes ?? plan.critical_window_minutes, fluid_steps: steps };
     if (counted.length === 0) return { ...item, status: "not_due" };

@@ -1,6 +1,7 @@
 // Severe dengue with shock on the real plan (data/cases, not in git), once the converted plan is saved: the compensated
 // pathway, the hypotensive-shock transition and its repeat boluses, reassessment, harm, browser/server parity, and the
-// rate-controlled infusion that is tapered over the ward hours (S2). Skips until the plan with the taper is on this machine.
+// rate-controlled infusion that is tapered over the ward hours (S2): the timing boundaries, overload, restart, the
+// haematocrit trend, escalation and the stated limits of this version. Skips until the plan with the taper is on this machine.
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
@@ -51,11 +52,13 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
     const item = (s: ReturnType<typeof scoreBedside>, id: string) => s.items.find((i) => i.id === id)!.status;
     const steps = (s: ReturnType<typeof scoreBedside>) => s.items.find((i) => i.id === `${COMP}:rate`)?.fluid_steps?.map((x) => [x.label, x.status]);
 
-    it("is still proposed, passes the check, and keeps the infusion release blocker open", () => {
-        assert.equal(plan.status, "proposed");
+    it("passes the check, states its limits, and has no open blocker but the infusion one (cleared for the S2 release)", () => {
         assert.deepEqual(checkLivePlan(plan, measuredOnArrival(base)), { errors: [], warnings: [] });
         const open = (plan.release_blockers ?? []).filter((b) => !b.cleared_at).map((b) => b.id);
-        assert.deepEqual(open, ["infusion_model_limitation"]);
+        assert.ok(open.every((id) => id === "infusion_model_limitation"), `unexpected open blockers: ${open.join(", ")}`);
+        assert.equal(plan.status === "approved", open.length === 0, "switched on exactly when nothing blocks it");
+        assert.match(plan.limitations ?? "", /does not show the shock coming back/);
+        assert.match(run([]).score.limitations ?? "", /noradrenaline/);
     });
 
     it("untreated he slides into profound shock and is never stabilised", () => {
@@ -117,10 +120,13 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
         assert.match(out[3], /^Not given: his systolic BP is no longer under 90/);
     });
 
-    it("profound shock is not stabilised by three boluses: that needs inotropes and ICU, which are not modelled", () => {
-        const { stabilised, e } = run([["iv_access", 19], [BOLUS, 19.5], [R, 20], [BOLUS, 21.5], [R, 22], [BOLUS, 23.5]]);
+    it("profound shock is not stabilised by three boluses, and the case says escalation is needed", () => {
+        const { stabilised, e, out } = run([["iv_access", 19], [BOLUS, 19.5], [R, 20], [BOLUS, 21.5], [R, 22], [BOLUS, 23.5], [R, 24]]);
         assert.ok(!stabilised);
         assert.ok(e.state.systolic < 90);
+        assert.ok(e.events.some((x) => x.type === "PATIENT_DETERIORATED" && /ICU team and noradrenaline now: escalate/.test(x.narrative)));
+        assert.match(out[6], /refractory shock\. Escalate now to ICU for noradrenaline/);
+        assert.doesNotMatch(out[2], /refractory/, "not before the third bolus");
     });
 
     it("the reassessment reports BP, perfusion, urine and the haematocrit, and they change once he recovers", () => {
@@ -132,7 +138,18 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
         const after = run([["iv_access", 2], [rate("r10"), 3], [R, 12]]).out[2];
         assert.match(after, /Peripheries warmer/);
         assert.match(after, /Urine is draining/);
-        assert.match(after, /haematocrit has come down below 45%/);
+        assert.match(after, /Haematocrit trend: falling on the repeat sample/);
+        assert.match(after, /falls while he is still in shock would suggest bleeding/);
+        assert.doesNotMatch(after.slice(after.indexOf("Haematocrit trend")), /\d/, "a trend, never a number");
+    });
+
+    it("the haematocrit trend appears only once he has recovered, never a fixed time after a fluid", () => {
+        // Six minutes after the fluid but in hypotensive shock (the slow rate alone does nothing): still raised.
+        const shocked = run([["iv_access", 9], [rate("r10"), 10], [R, 16.5]]).out[2];
+        assert.match(shocked, /still above 45%/);
+        // Recovered on the bolus path, the next reassessment reports the fall.
+        const recovered = run([["iv_access", 9], [BOLUS, 10], [R, 17]]).out[2];
+        assert.match(recovered, /Haematocrit trend: falling/);
     });
 
     it("the harmful actions cost marks but do not undo correct care; platelets cost nothing (the reviewer's choice)", () => {
@@ -183,7 +200,7 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
         const before = { rr: e.state.rr, spo2: e.state.spo2 };
         const w = e.skipTime(30 * 60, 4 * H * 60);
         assert.equal(w.stopped, "alert");
-        assert.equal(w.to, 93 * 60);
+        assert.equal(w.to, 93 * 60 + 1, "a 4-hour wait stops just past 90 minutes at 10 mL/kg/h");
         assert.deepEqual({ rr: e.state.rr, spo2: e.state.spo2 }, { rr: before.rr + 4, spo2: before.spo2 - 4 });
         assert.ok(e.events.some((x) => x.type === "PATIENT_DETERIORATED" && /crackles at both lung bases/.test(x.narrative)));
         const score = scoreBedside(cfg, plan, e.events, 100);
@@ -201,6 +218,68 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
         const wrong = run([["iv_access", 14], [BOLUS, 14.5], [R, 15], [BOLUS, 16.5], [rate("r10"), 17]]).score;
         const first = wrong.items.find((i) => i.id === `${COMP}:rate`)!.fluid_steps![0];
         assert.deepEqual([first.status, first.expected], ["wrong", "7 to 10 mL/kg/h"]);
+        assert.match(first.note!, /right starting rate was 7 to 10 mL\/kg\/h/);
+    });
+
+    it("the first hour: a step at 59 minutes is too soon, at 60 and at 90 on time, at 91 late; overload only beyond 90", () => {
+        const at = (m: number) => run([["iv_access", 2], [rate("r10"), 3], [rate("r7"), 3 + m]], 3 + m + 1);
+        const [s59, s60, s90, s91] = [59, 60, 90, 91].map((m) => at(m).score);
+        assert.deepEqual([s59, s60, s90, s91].map((s) => steps(s)?.[1]), [
+            ["10 mL/kg/h for 60 to 90 min", "early"],
+            ["10 mL/kg/h for 60 to 90 min", "on_time"],
+            ["10 mL/kg/h for 60 to 90 min", "on_time"],
+            ["10 mL/kg/h for 60 to 90 min", "late"],
+        ]);
+        assert.deepEqual([s59, s60, s90].map((s) => s.harmful.length), [0, 0, 0]);
+        assert.deepEqual(s91.harmful.map((h) => [h.id, h.at_minutes]), [[`${COMP}:overload_r10`, 93]]);
+        assert.match(s59.items.find((i) => i.id === `${COMP}:rate`)!.fluid_steps![1].note!, /^Reduced after 59 min\. This rate runs for 60 to 90 min.*the shock can come back \(this version does not show that relapse, but it is still an error\)/);
+        // Waiting to exactly 90 minutes and then stepping down: on time, and no overload (the step wins the tie).
+        const e = new EncounterEngine(cfg);
+        e.giveIntervention("iv_access", 2 * 60);
+        e.giveIntervention(rate("r10"), 3 * 60);
+        assert.equal(e.skipTime(3 * 60, 90 * 60).to, 9 * 60, "the recovery alert ends the first wait");
+        assert.deepEqual(e.skipTime(9 * 60, 84 * 60), { appended: e.events.slice(-1), to: 93 * 60, stopped: null }, "and nothing calls at exactly 90 minutes");
+        e.giveIntervention(rate("r7"), 93 * 60);
+        e.advanceTo(200 * 60);
+        assert.deepEqual(scoreBedside(cfg, plan, e.events, 200).harmful, []);
+    });
+
+    it("overload happens once, however long 10 mL/kg/h runs on", () => {
+        const { e, score } = run([["iv_access", 2], [rate("r10"), 3]], 30 * H);
+        assert.equal(e.events.filter((x) => x.type === "STATE_TRANSITION" && x.trigger.includes("overload")).length, 1);
+        assert.equal(score.harmful.length, 1);
+    });
+
+    it("overload counts from stabilisation when he is stabilised after the infusion starts", () => {
+        // 10 mL/kg/h started in hypotensive shock at 10 (it does not treat it), stabilised by the bolus at 12.
+        const { e } = run([["iv_access", 9], [rate("r10"), 10], [BOLUS, 12]], 200);
+        assert.equal(e.state.flagSetAt.live_stabilised, 12 * 60);
+        const fired = e.events.find((x) => x.type === "STATE_TRANSITION" && x.trigger.includes("overload"));
+        assert.equal(fired?.timestamp, 102 * 60 + 1, "90 minutes after stabilisation, not after the start at 10");
+    });
+
+    it("the stop: on time from 24 to 48 hours after the start; earlier is too soon, with the reason", () => {
+        const course = (stopAt: number): Array<[string, number]> => [
+            ["iv_access", 2], [rate("r10"), 3], [rate("r7"), 63], [rate("r5"), 63 + H], [rate("r3"), 63 + 2 * H], [rate("r2"), 63 + 4 * H], [STOP, stopAt],
+        ];
+        const last = (m: number) => run(course(m), m + 1).score.items.find((i) => i.id === `${COMP}:rate`)!.fluid_steps!.at(-1)!;
+        assert.equal(last(3 + 24 * H - 6).status, "early");
+        assert.match(last(3 + 24 * H - 6).note!, /^Stopped 23\.9 h after it was started\. Fluids continue, at the lowest rate, until 24 to 48 h after the start/);
+        assert.equal(last(3 + 24 * H).status, "on_time");
+        assert.equal(last(3 + 47 * H).status, "on_time");
+    });
+
+    it("a stopped infusion can be restarted: the early stop still counts, the restart is credited, and the volume adds up", () => {
+        const { score, out, e } = run([["iv_access", 2], [rate("r10"), 3], [rate("r7"), 63], [STOP, 100], [rate("r7"), 110]], 120);
+        assert.equal(out[4], "Restarted at 7 to 10 mL/kg/h. The infusion is running again.");
+        assert.deepEqual(steps(score)?.slice(2, 5), [
+            ["7 to 10 mL/kg/h for 1 to 2 h", "early"],
+            ["Stopped 24 to 48 h after it was started", "early"],
+            ["Restarted at 7 to 10 mL/kg/h", "on_time"],
+        ]);
+        const def = cfg.custom_interventions!.find((i) => i.id === COMP)!.fluid!;
+        const s = fluidStatus(COMP, def, e.state.flags, e.state.flagSetAt, 120 * 60);
+        assert.deepEqual([s.state, s.run, s.deliveredMl], ["running", 2, 650 + Math.floor((455 * 37) / 60 + (455 * 10) / 60)]);
     });
 
     it("stepping down before the hour is up, or stopping before 24 hours, is too soon and earns half", () => {
@@ -262,7 +341,7 @@ describe("dengue shock: what the engine does with fluids (variants of the conver
         assert.equal(stopped[10], stopped[11], "no more effect after it is stopped");
     });
 
-    it("what it still cannot do: the response is the plan's per-rate table, not a volume model, so cutting the rate early causes no relapse", () => {
+    it("what it still cannot do (stated in its limitations): the response is the plan's per-rate table, so cutting the rate early causes no relapse", () => {
         const plan = c.live_plan as LivePlan;
         const early = sbpSeries(plan, [["iv_access", 2], [rate("r10"), 3], [rate("r7"), 10], [rate("r5"), 11], [rate("r3"), 12], [rate("r2"), 13], [STOP, 14]], 40).e.state;
         assert.equal(early.systolic, 104, "he recovers to the plan's recovery BP whatever the rate");

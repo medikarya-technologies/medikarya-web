@@ -95,8 +95,8 @@ export type ConditionLeaf =
     | { state: string }
     | { alarm: string }
     | { minutes_since_flag: { flag: string; gte: number } }
-    /** At least this many mL of a rate-controlled infusion have run in (fluid-infusion.ts). */
-    | { fluid_delivered: FluidSchedule & { gte_ml: number } }
+    /** At least this many mL of a rate-controlled infusion have run in, over all its runs (fluid-infusion.ts). */
+    | { fluid_delivered: { runs: FluidSchedule[]; gte_ml: number } }
     | ParameterCondition;
 
 /**

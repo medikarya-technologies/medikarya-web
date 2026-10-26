@@ -135,7 +135,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
                     <li key={n} className="text-xs text-enc-ink-2">
                       {s.label}: {s.at_minutes === null ? "" : `at ${s.at_minutes} min, `}
                       {FLUID_STEP_STATUS[s.status]}
-                      {s.expected ? ` (the right rate here was ${s.expected})` : ""}
+                      {s.note ? `. ${s.note}` : ""}
                     </li>
                   ))}
                 </ul>
@@ -174,6 +174,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
             </li>
           ))}
         </ul>
+        {bedside.limitations && <p className="rounded-lg bg-enc-sheet p-2.5 text-xs text-enc-ink-2">{bedside.limitations}</p>}
         <p className="text-xs text-enc-ink-3">
           Total {total} = {consultationShare}% of the consultation ({bedside.consultationScore}) + {100 - consultationShare}% of the bedside ({bedside.score}).
         </p>

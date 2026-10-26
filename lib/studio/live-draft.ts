@@ -2,7 +2,7 @@ import "server-only";
 
 import { caseModelJson } from "@/lib/ai/case-model";
 import { INTERVENTIONS } from "@/lib/simulation/intervention-catalog";
-import { checkLivePlan, normaliseLivePlan, type LivePlan, type LivePlanCheck, type LiveVitals } from "@/lib/simulation/live-plan";
+import { checkLivePlan, keepFluidConfig, normaliseLivePlan, type LivePlan, type LivePlanCheck, type LiveVitals } from "@/lib/simulation/live-plan";
 import { ADVANCED_FIELDS_GUIDE } from "@/lib/simulation/live-plan-guide";
 
 // Drafts a LIVE PLAN for an ordinary case (lib/simulation/live-plan.ts): what happens to this patient, minute by
@@ -133,7 +133,8 @@ export async function draftLivePlan(
   let out = await generate(
     revise
       ? `A senior clinician read this live plan and asked for changes. Make exactly the changes asked for and keep everything ` +
-          `else as it is. Add a line to basis for each change ("Changed on the reviewer's advice: ...").\n\n` +
+          `else as it is. Add a line to basis for each change ("Changed on the reviewer's advice: ..."). A treatment with a ` +
+          `"fluid" (a rate ladder), time_limit_minutes and limitations are fixed: copy them exactly as they are.\n\n` +
           `CHANGES ASKED FOR:\n${revise.comments}\n\nCASE:\n${theCase}\n\nCURRENT PLAN:\n${JSON.stringify(previous)}`
       : `CASE:\n${theCase}`
   );
@@ -142,7 +143,9 @@ export async function draftLivePlan(
     return { ok: false, reason: "not_suitable", why: out.not_suitable.trim().slice(0, 600) };
   }
 
-  let plan = normaliseLivePlan(out?.plan, "ai");
+  // A revision keeps the fluid ladder exactly as it was, whatever the model returned.
+  const kept = (p: LivePlan) => (revise ? keepFluidConfig(p, revise.previous) : p);
+  let plan = kept(normaliseLivePlan(out?.plan, "ai"));
   let check = checkLivePlan(plan, measured);
 
   // One chance to fix what the check found.
@@ -151,7 +154,7 @@ export async function draftLivePlan(
       `This live plan has problems. Return the corrected {"plan": {...}}, changing only what is needed.\n\n` +
         `PROBLEMS:\n- ${check.errors.join("\n- ")}\n\nCASE:\n${theCase}\n\nPLAN:\n${JSON.stringify(out?.plan ?? {})}`
     );
-    plan = normaliseLivePlan(out?.plan, "ai");
+    plan = kept(normaliseLivePlan(out?.plan, "ai"));
     check = checkLivePlan(plan, measured);
   }
   if (check.errors.length > 0) return { ok: false, reason: "invalid", problems: check.errors };

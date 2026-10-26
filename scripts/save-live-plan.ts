@@ -7,13 +7,15 @@ import { createClient } from "@supabase/supabase-js";
 const R = "../lib/simulation/";
 const { upgradeLegacyCase } = require(R + "legacy-adapter");
 const { isSimulationCase } = require(R + "case-schema");
-const { normaliseLivePlan, checkLivePlan, measuredOnArrival, isLivePlan, carryReleaseBlockers } = require(R + "live-plan");
+const { normaliseLivePlan, checkLivePlan, measuredOnArrival, isLivePlan, carryReleaseBlockers, lostFluids } = require(R + "live-plan");
 const S = require("os").tmpdir();
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
 (async () => {
   const args = process.argv.slice(2);
   const replace = args.includes("--replace");
-  const [id, planFile] = args.filter((a) => a !== "--replace");
+  // Dropping a fluid ladder has to be said out loud.
+  const dropFluid = args.includes("--drop-fluid");
+  const [id, planFile] = args.filter((a) => a !== "--replace" && a !== "--drop-fluid");
   const { data, error } = await db.from("cases").select("case_json").eq("id", id).single();
   if (error) throw error;
   const caseJson = data.case_json as Record<string, any>;
@@ -26,6 +28,7 @@ const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_K
   // Release blockers belong to the case: the new plan keeps the old one's (scripts/release-blocker.ts clears them).
   const plan = carryReleaseBlockers({ ...normaliseLivePlan(raw.plan ?? raw, "ai"), drafted_at: new Date().toISOString() }, old);
   if (!isLivePlan(plan)) throw new Error("the plan would not be recognised by the site (isLivePlan); nothing saved");
+  if (!dropFluid && lostFluids(plan, old).length > 0) throw new Error(`the new plan drops the fluid ladder of ${lostFluids(plan, old).join(", ")}; pass --drop-fluid if that is meant`);
   const base = upgradeLegacyCase(caseJson);
   if (!isSimulationCase(base)) throw new Error("not playable");
   const check = checkLivePlan(plan, measuredOnArrival(base));
