@@ -119,18 +119,18 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
     it("the reassessment reports BP, perfusion, urine and the haematocrit, and they change once he recovers", () => {
         const before = run([[R, 1]]).out[0];
         assert.match(before, /90 mmHg/);
-        assert.match(before, /cold and mottled/);
-        assert.match(before, /very little urine/);
+        assert.match(before, /Peripheries still cold/);
+        assert.match(before, /Oliguria/);
         assert.match(before, /above 45%/);
         const after = run([["iv_access", 2], [COMP, 3], [R, 12]]).out[2];
-        assert.match(after, /hands are warmer/);
+        assert.match(after, /Peripheries warmer/);
         assert.match(after, /Urine is draining/);
     });
 
-    it("the harmful actions cost marks but do not undo correct care", () => {
+    it("the harmful actions cost marks but do not undo correct care; platelets cost nothing (the reviewer's choice)", () => {
         const { score } = run([["iv_access", 2], [COMP, 3], ["serial_monitoring_dengue", 4], ["free_flowing_fluids", 5], ["platelet_transfusion_count_only", 6], ["diclofenac_im", 7], ["dexamethasone_iv", 8]]);
-        assert.deepEqual(score.harmful.map((h) => h.id).sort(), ["dexamethasone_iv", "diclofenac_im", "free_flowing_fluids", "platelet_transfusion_count_only"]);
-        assert.equal(score.score, 40);
+        assert.deepEqual(score.harmful.map((h) => h.id).sort(), ["dexamethasone_iv", "diclofenac_im", "free_flowing_fluids"]);
+        assert.equal(score.score, 55);
     });
 });
 
