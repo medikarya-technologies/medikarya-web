@@ -17,6 +17,8 @@ export interface ShortCard {
   options: ShortOption[]
   /** Tick all that apply. */
   multi?: boolean
+  /** Settled without the reviewer's tick (from a source), so it is not listed as open. Shown under the question. */
+  settled?: string
 }
 
 // Offered on every single-choice question, so nothing forces a guess.
@@ -50,7 +52,8 @@ export const SHORT_CARDS: ShortCard[] = [
   {
     id: "S1",
     question: "Hypotensive shock: after improvement with the FIRST bolus, what next?",
-    hint: "The guideline's text and its Figure 13 say different things (pages 40 and 41). For now the case follows the text, as you chose for the other bolus questions. Please confirm or change.",
+    hint: "The guideline's text and its Figure 13 say different things (pages 40 and 41).",
+    settled: "Settled from WHO 2009, which this guideline's text follows: its text, its algorithm (Figure 2.3) and its summary all give 10 mL/kg/h for 1 hour, then the taper. Figure 13 here leaves that step out. The case uses 10 mL/kg/h for 1 hour. No need to answer.",
     options: [
       { id: "A", label: "10 mL/kg/h for 1 hour, then the taper (text, page 40)" },
       { id: "B", label: "Straight into the taper (Figure 13, page 41)" },

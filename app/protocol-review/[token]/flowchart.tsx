@@ -52,7 +52,7 @@ function Branches({ left, right }: { left: { label: string; body: ReactNode }; r
   )
 }
 
-const Q = ({ n }: { n: string }) => <span className="ml-1 rounded bg-amber-200 px-1.5 py-0.5 text-[12px] font-bold text-amber-900">question {n}</span>
+const Q = ({ n }: { n: string }) => <span className="ml-1 rounded bg-slate-200 px-1.5 py-0.5 text-[12px] font-semibold text-slate-700">question {n}</span>
 
 function Ladder() {
   return (
@@ -137,10 +137,10 @@ export function Flowchart() {
             label: "Yes",
             body: (
               <>
-                <Box tone="open">
-                  <p className="font-bold">First taper step (to confirm)</p>
-                  <p className="text-[13.5px]">After the first bolus: 10 mL/kg/h for 1 hour (guideline text, page 40)<Q n="1" /></p>
-                  <p className="text-[13.5px]">After a second or third bolus: 7 to 10 mL/kg/h for 1 to 2 hours<Q n="2" /></p>
+                <Box tone="good">
+                  <p className="font-bold">First taper step</p>
+                  <p className="text-[13.5px]">After the first bolus: 10 mL/kg/h for 1 hour (guideline text, page 40; WHO 2009)</p>
+                  <p className="text-[13.5px]">After a second or third bolus: 7 to 10 mL/kg/h for 1 to 2 hours</p>
                 </Box>
                 <Arrow />
                 <Box tone="good">Then the same taper as chart A</Box>
@@ -163,7 +163,6 @@ export function Flowchart() {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-200 pt-4 text-[13px] text-slate-600">
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-emerald-500 bg-emerald-50" /> settled</span>
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-red-400 bg-red-50" /> escalate</span>
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-dashed border-amber-400 bg-amber-50" /> to confirm (the questions below)</span>
       </div>
     </div>
   )

@@ -35,7 +35,7 @@ export function ShortForm({ token, initial, caseView }: { token: string; initial
 
   const done = SHORT_CARDS.filter((c) => !!answers[c.id]?.choice).length
   // Worked out from what was saved when the page opened, so the list does not jump while he ticks.
-  const [open] = useState(() => SHORT_CARDS.filter((c) => !initial.answers[c.id]?.choice))
+  const [open] = useState(() => SHORT_CARDS.filter((c) => !c.settled && !initial.answers[c.id]?.choice))
 
   const save = useCallback(
     async (submit: boolean) => {
@@ -130,7 +130,7 @@ export function ShortForm({ token, initial, caseView }: { token: string; initial
 
       <section id="flowchart" className="scroll-mt-4 mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 className="text-[20px] font-bold text-slate-900">2. Treatment flowchart</h2>
-        <p className="mt-1 text-[14px] text-slate-600">From the NCVBDC 2023 dengue guideline (Figures 12 and 13), with your first answers built in. Amber boxes follow the guideline for now and are waiting for your confirmation in the questions below.</p>
+        <p className="mt-1 text-[14px] text-slate-600">From the NCVBDC 2023 dengue guideline (Figures 12 and 13), with your first answers built in. Every step is now settled by your answers or the guideline.</p>
         <div className="mt-5">
           <Flowchart />
         </div>
@@ -196,12 +196,13 @@ function Question({ n, card, answer, onChange }: { n: number; card: ShortCard; a
     onChange({ choice: card.options.map((o) => o.id).filter((x) => next.has(x)).join(",") })
   }
   return (
-    <article id={card.id} className={`scroll-mt-16 rounded-xl border bg-white p-5 shadow-sm ${on.size === 0 ? "border-amber-300" : "border-slate-200"}`}>
+    <article id={card.id} className={`scroll-mt-16 rounded-xl border bg-white p-5 shadow-sm ${on.size === 0 && !card.settled ? "border-amber-300" : "border-slate-200"}`}>
       <p className="text-[16px] leading-snug font-semibold text-slate-900">
         <span className="mr-2 text-slate-400">{n === 0 ? "★" : n}</span>
         {card.question}
       </p>
       {card.hint && <p className="mt-1.5 text-[14px] leading-relaxed text-slate-600">{card.hint}</p>}
+      {card.settled && <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-[14px] leading-relaxed text-emerald-900">{card.settled}</p>}
       <fieldset className="mt-3 space-y-2">
         <legend className="sr-only">{card.question}</legend>
         {card.options.map((o) => (
