@@ -23,6 +23,7 @@ import {
 import { trackEvent } from "@/lib/clarity";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { fluidActionLabels } from "@/lib/simulation/fluid-infusion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { WalkthroughMarkdown, ProgressHeader, Nav, Section, Celebration } from "./feedback-steps";
 import type { InfoAccordionItem } from "./debrief-parts";
@@ -551,9 +552,13 @@ function LegacyCaseFeedback({
         ),
       });
     }
-    const examLabels: Record<string, string> = Object.fromEntries(
-      [...(caseData?.examination ?? []), ...(caseData?.custom_interventions ?? [])].map((m: { id: string; label: string }) => [m.id, m.label])
-    );
+    const examLabels: Record<string, string> = {
+      ...Object.fromEntries(
+        [...(caseData?.examination ?? []), ...(caseData?.custom_interventions ?? [])].map((m: { id: string; label: string }) => [m.id, m.label])
+      ),
+      // a fluid's rates and its stop, named by the fluid and the rate
+      ...Object.fromEntries(fluidActionLabels(caseData?.custom_interventions)),
+    };
     reviewContent = <EncounterReview sim={simulation} examLabels={examLabels} />;
   }
 

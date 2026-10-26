@@ -67,6 +67,63 @@ const ROLE: Record<string, { title: string; note: string; tone: string }> = {
 const th = "border-b border-slate-300 px-2 py-1.5 text-left text-[11.5px] font-bold tracking-wide text-slate-600 uppercase"
 const td = "border-b border-slate-200 px-2 py-1.5 align-top"
 
+const minutesText = (w?: { at_least: number; at_most: number }) =>
+  !w ? "—" : w.at_least % 60 === 0 && w.at_most % 60 === 0 ? `${w.at_least / 60} to ${w.at_most / 60} h` : `${w.at_least} to ${w.at_most} min`
+
+const COMPARE: Record<string, string> = { below: "below", above: "above", at_most: "at most", at_least: "at least" }
+
+/** A plan condition in words, for the few shapes a fluid's starting rate uses; anything else as it is written. */
+function conditionText(c: Json, label: (id: string) => string): string {
+  if (c.vital) return `${c.vital} ${Object.keys(COMPARE).filter((k) => c[k] !== undefined).map((k) => `${COMPARE[k]} ${c[k]}`).join(" and ")}`
+  if (c.given) return `${label(c.given)} has been given${c.doses ? ` ${c.doses} times or more` : ""}`
+  if (c.stage_reached) return `the untreated course has reached "${c.stage_reached}"`
+  if (c.all) return (c.all as Json[]).map((x) => conditionText(x, label)).join(" and ")
+  if (c.any) return (c.any as Json[]).map((x) => conditionText(x, label)).join(" or ")
+  if (c.not) return `not (${conditionText(c.not, label)})`
+  return JSON.stringify(c)
+}
+
+/** A rate-controlled fluid: the rates the student can choose, how long each should run, and when it overloads. */
+function FluidLadder({ fluid, label }: { fluid: Json; label: (id: string) => string }) {
+  return (
+    <div className="mt-1.5">
+      <p className="text-slate-800">
+        <span className="font-medium text-slate-500">Rate ladder: </span>the student starts it at one of these rates, steps it down one rate at a time and stops it
+        {fluid.volume_ml ? `; it finishes by itself after ${fluid.volume_ml} mL` : ""}.
+        {fluid.stop ? ` Stopping is right ${minutesText(fluid.stop)} after it was started.` : ""}
+      </p>
+      <table className="mt-1 w-full border-collapse text-[13px]">
+        <thead>
+          <tr>
+            <th className={th}>Rate</th>
+            <th className={th}>mL/h</th>
+            <th className={th}>Runs for</th>
+            <th className={th}>On the monitor</th>
+            <th className={th}>Kept on too long</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(fluid.levels ?? []).map((l: Json) => (
+            <tr key={l.id}>
+              <td className={td}>{l.label}</td>
+              <td className={`${td} tabular-nums`}>{l.ml_per_h}</td>
+              <td className={td}>{minutesText(l.hold_minutes)}</td>
+              <td className={td}>{l.effect ? `${effectText(l.effect)}${l.over_minutes ? ` over ${l.over_minutes} min` : ""}` : "—"}</td>
+              <td className={td}>{l.overload ? `After ${l.overload.after_minutes} min: ${effectText(l.overload.effect)}. Harmful.` : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {(fluid.start ?? []).length > 0 && (
+        <p className="mt-1 text-[13px] text-slate-700">
+          Right starting rate:{" "}
+          {(fluid.start as Json[]).map((r) => `${(fluid.levels ?? []).find((l: Json) => l.id === r.level)?.label ?? r.level}${r.when ? ` when ${conditionText(r.when, label)}` : " otherwise"}`).join("; ")}.
+        </p>
+      )}
+    </div>
+  )
+}
+
 /** `arrival`: the vitals on arrival when the case is a case sheet (whose vitals are written as text), not a converted case. */
 export function LivePlanReport({ caseJson, arrival: given }: { caseJson: Json; arrival?: Vitals }) {
   const plan: Json | undefined = caseJson.live_plan
@@ -185,6 +242,7 @@ export function LivePlanReport({ caseJson, arrival: given }: { caseJson: Json; a
                   <p className="mt-0.5 text-slate-800">
                     <span className="font-medium text-slate-500">The student sees: </span>“{t.says}”
                   </p>
+                  {t.fluid && <FluidLadder fluid={t.fluid} label={label} />}
                   {t.why && (
                     <p className="mt-0.5 text-slate-800">
                       <span className="font-medium text-slate-500">Why: </span>

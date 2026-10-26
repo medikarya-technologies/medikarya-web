@@ -7,7 +7,7 @@ import type { SimulationCaseConfig } from "./case-schema";
 import type { ClinicalEvent } from "./encounter-events";
 import { EncounterEngine } from "./encounter-engine";
 import { replayStudentEvents } from "./replay";
-import { availableFlag, compileCondition, compileLivePlan, isRepeatable, REASSESS_ID, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
+import { availableFlag, compileCondition, compileLivePlan, fluidStartAction, isRepeatable, REASSESS_ID, requiredFlag, scoreBedside, type LivePlan, type LiveTreatment } from "./live-plan";
 import { evaluateCondition } from "./conditions";
 
 const MIN = 60;
@@ -146,8 +146,11 @@ const given = (action: string, minutes: number): ClinicalEvent => ({ type: "INTE
  * A treatment's doses at these minutes, each further dose preceded by a reassessment when the plan asks for one: a
  * minute before it (a reassessment takes time), and never before the dose it follows. Shared with check-live-plan.
  */
-export const dosesAt = (t: LiveTreatment, times: number[]): ClinicalEvent[] =>
-    times.flatMap((at, i) => (i > 0 && t.reassess_before_repeat ? [given(REASSESS_ID, Math.max(times[i - 1], at - 1)), given(t.id, at)] : [given(t.id, at)]));
+export const dosesAt = (t: LiveTreatment, times: number[]): ClinicalEvent[] => {
+    // A fluid is started at a rate: the one its plan starts it at when nothing else applies.
+    const action = t.fluid ? fluidStartAction(t) : t.id;
+    return times.flatMap((at, i) => (i > 0 && t.reassess_before_repeat ? [given(REASSESS_ID, Math.max(times[i - 1], at - 1)), given(action, at)] : [given(action, at)]));
+};
 
 export function playthroughs(base: SimulationCaseConfig, plan: LivePlan): Playthroughs {
     const config = compileLivePlan(base, plan);

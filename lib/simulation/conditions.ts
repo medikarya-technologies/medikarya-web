@@ -10,6 +10,7 @@ import type {
     RuleCondition,
     StateThreshold,
 } from "./case-schema";
+import { deliveredBoundary, deliveredRateSeconds } from "./fluid-infusion";
 
 export interface PhysiologySnapshot {
     hr: number;
@@ -128,6 +129,10 @@ export function evaluateLeaf(cond: ConditionLeaf, ctx: ConditionContext): boolea
         const setAt = ctx.flagSetAt[flag];
         return ctx.flags[flag] === true && setAt !== undefined && ctx.time - setAt >= gte * 60;
     }
+    if ("fluid_delivered" in cond) {
+        const { gte_ml, ...schedule } = cond.fluid_delivered;
+        return deliveredRateSeconds(schedule, ctx.flags, ctx.flagSetAt, ctx.time) >= gte_ml * 3600;
+    }
     if ("parameter" in cond) {
         const { parameter, ...test } = cond;
         return testParameter(parameter, test, ctx.physiology);
@@ -160,6 +165,11 @@ export function collectTimeBoundaries(cond: RuleCondition, ctx: Pick<ConditionCo
         const { flag, gte } = cond.minutes_since_flag;
         const setAt = ctx.flagSetAt[flag];
         return ctx.flags[flag] === true && setAt !== undefined ? [setAt + gte * 60] : [];
+    }
+    if ("fluid_delivered" in cond) {
+        const { gte_ml, ...schedule } = cond.fluid_delivered;
+        const at = deliveredBoundary(schedule, gte_ml, ctx.flags, ctx.flagSetAt);
+        return at === null ? [] : [at];
     }
     return [];
 }

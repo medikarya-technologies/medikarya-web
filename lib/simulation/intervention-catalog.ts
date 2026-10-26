@@ -7,6 +7,7 @@
 // says what is on offer.
 
 import type { SimulationCaseConfig } from "./case-schema";
+import { fluidActionLabels } from "./fluid-infusion";
 
 export type InterventionGroup = "airway" | "circulation" | "medications" | "cardiac_procedures" | "other";
 
@@ -94,7 +95,7 @@ export function interventionFor(config: OwnTreatments, id: string): Intervention
     return config?.custom_interventions?.find((i) => i.id === id) ?? BY_ID.get(id);
 }
 
-/** What to call a treatment on screen. Falls back to the id, so nothing is ever blank. */
+/** What to call a treatment on screen (a fluid's rate or stop by the fluid and the rate). Falls back to the id, so nothing is ever blank. */
 export function interventionLabel(config: OwnTreatments, id: string): string {
-    return interventionFor(config, id)?.label ?? id;
+    return interventionFor(config, id)?.label ?? (id.includes("@") ? fluidActionLabels(config?.custom_interventions).get(id) : undefined) ?? id;
 }

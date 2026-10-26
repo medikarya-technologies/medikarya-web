@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { formatClock } from "@/lib/simulation/encounter-events"
 import { EncounterTimeline } from "./encounter-timeline"
-import type { BedsideScore, BedsideStatus } from "@/lib/simulation/live-plan"
+import type { BedsideScore, BedsideStatus, FluidStepStatus } from "@/lib/simulation/live-plan"
 
 interface AssistanceLine {
   label: string
@@ -75,8 +75,18 @@ const BEDSIDE_STATUS: Record<BedsideStatus, { text: string; tone: string }> = {
   not_due: { text: "Still in time", tone: "bg-enc-sheet text-enc-ink-3" },
 }
 
+const FLUID_STEP_STATUS: Record<FluidStepStatus, string> = {
+  on_time: "in time",
+  early: "too soon",
+  late: "too late",
+  missed: "not done in time",
+  not_due: "still in time when the encounter ended, so it does not count",
+  wrong: "the wrong rate",
+}
+
 /** The line under a bedside item: when it was needed and when it was given. */
 function bedsideTiming(i: Bedside["items"][number]): string {
+  if (i.fluid_steps) return `Started at ${i.at_minutes} min; each rate is scored on how long it ran before the next step`
   if (i.status === "not_needed") return "Your patient never came to need this, so it does not count either way"
   if (i.status === "not_due") return `Needed from ${i.required_at_minutes} min, but the encounter ended while there was still time to give it, so it does not count either way`
   const from = i.required_at_minutes !== undefined ? `needed from ${i.required_at_minutes} min, within ${i.within_minutes} min` : `needed within ${i.within_minutes} min`
@@ -119,6 +129,17 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
                 {bedsideTiming(i)}
                 {i.why ? `. ${i.why}` : ""}
               </p>
+              {i.fluid_steps && (
+                <ul className="mt-1 space-y-0.5">
+                  {i.fluid_steps.map((s, n) => (
+                    <li key={n} className="text-xs text-enc-ink-2">
+                      {s.label}: {s.at_minutes === null ? "" : `at ${s.at_minutes} min, `}
+                      {FLUID_STEP_STATUS[s.status]}
+                      {s.expected ? ` (the right rate here was ${s.expected})` : ""}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {i.doses && (
                 <ul className="mt-1 space-y-0.5">
                   {i.doses.map((d) => (
@@ -134,7 +155,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
             <li key={`${r.id}-${n}`} className="rounded-lg bg-enc-warn-soft p-2.5">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-sm font-medium text-enc-ink">{r.label}</span>
-                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-warn">{r.reason === "unavailable" || r.reason === "needs_first" ? "Not given" : "Dose refused"}</span>
+                <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-warn">{r.reason === "unavailable" || r.reason === "needs_first" ? "Not given" : r.reason === "fluid" ? "Not changed" : "Dose refused"}</span>
               </div>
               <p className="mt-0.5 text-xs text-enc-ink-2">
                 At {r.at_minutes} min. {r.said}
@@ -148,7 +169,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
                 <span className="shrink-0 rounded-full bg-enc-sheet px-2 py-0.5 text-[11px] font-semibold text-enc-crit">Harmful here</span>
               </div>
               <p className="mt-0.5 text-xs text-enc-ink-2">
-                Given at {h.at_minutes} min{h.why ? `. ${h.why}` : ""}
+                {h.id.includes(":overload") ? "At" : "Given at"} {h.at_minutes} min{h.why ? `. ${h.why}` : ""}
               </p>
             </li>
           ))}

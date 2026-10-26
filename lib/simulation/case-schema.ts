@@ -95,7 +95,18 @@ export type ConditionLeaf =
     | { state: string }
     | { alarm: string }
     | { minutes_since_flag: { flag: string; gte: number } }
+    /** At least this many mL of a rate-controlled infusion have run in (fluid-infusion.ts). */
+    | { fluid_delivered: FluidSchedule & { gte_ml: number } }
     | ParameterCondition;
+
+/**
+ * A rate-controlled infusion's rate history as flags: each rate's flag is set when it begins running at that rate, and
+ * delivery ends when any of `ends` is set (stopped, finished). The volume is worked out from the flags' set times.
+ */
+export interface FluidSchedule {
+    levels: Array<{ flag: string; ml_per_h: number }>;
+    ends: string[];
+}
 
 export type RuleCondition =
     | ConditionLeaf
@@ -229,6 +240,18 @@ export interface CustomInterventionDef {
      * it was asked for in a REASSESSED event. The student only asks; what is found is never taken from the client.
      */
     report?: ReassessmentReport;
+    /**
+     * A rate-controlled infusion. The tray shows its rates instead of one "Give": "<id>@<rate id>" starts it at a rate
+     * or steps it down to one, "<id>@stop" stops it (fluid-infusion.ts).
+     */
+    fluid?: FluidInfusionDef;
+}
+
+export interface FluidInfusionDef {
+    /** The rates, highest first. */
+    levels: Array<{ id: string; label: string; ml_per_h: number }>;
+    /** The volume it is set to give; it finishes itself once that has run in. Absent: it runs until stopped. */
+    volume_ml?: number;
 }
 
 /** What a reassessment reports. Each entry is read from the patient the engine holds, never from the client. */

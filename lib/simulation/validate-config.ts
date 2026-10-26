@@ -16,7 +16,9 @@ import {
     RHYTHM_TYPES,
     SCORING_DOMAINS,
     STABILITY_LEVELS,
+    type CustomInterventionDef,
 } from "./case-schema";
+import { fluidActionLabels } from "./fluid-infusion";
 import { tryParseBpDelta, tryParseBpSet, tryParseDelta } from "./patient-state";
 import { ACCESSORIES, EXPRESSIONS, GARMENTS, SKIN_TONES, SWELLINGS } from "./appearance";
 
@@ -48,7 +50,7 @@ const COMPARATORS = ["lt", "lte", "gt", "gte", "eq", "neq", "in"] as const;
 const CONDITION_KEYS = new Set([
     "all", "any", "not",
     "time_elapsed_gte_minutes", "time_elapsed_lt_minutes",
-    "flag", "is", "state", "alarm", "minutes_since_flag",
+    "flag", "is", "state", "alarm", "minutes_since_flag", "fluid_delivered",
     "parameter", ...COMPARATORS,
 ]);
 
@@ -252,6 +254,17 @@ export function validateSimulationCase(input: unknown, options: ValidationOption
                 error(`${path}.minutes_since_flag.flag`, `Flag "${m.flag}" is not declared in initial_state.flags.`);
             }
         }
+        if ("fluid_delivered" in cond) {
+            const f = cond.fluid_delivered;
+            const levels = isObj(f) && Array.isArray(f.levels) ? f.levels : null;
+            if (!isObj(f) || !levels || levels.length === 0 || !isNum(f.gte_ml) || f.gte_ml <= 0 || !Array.isArray(f.ends)) {
+                error(`${path}.fluid_delivered`, "Needs { levels: [{ flag, ml_per_h }], ends: [flags], gte_ml }.");
+            } else {
+                const flagsUsed = [...levels.map((l) => (isObj(l) ? l.flag : undefined)), ...f.ends];
+                for (const flag of flagsUsed) if (!isStr(flag) || !declaredFlags.has(flag)) error(`${path}.fluid_delivered`, `Flag "${String(flag)}" is not declared in initial_state.flags.`);
+                if (levels.some((l) => !isObj(l) || !isNum(l.ml_per_h) || l.ml_per_h <= 0)) error(`${path}.fluid_delivered.levels`, "Each rate needs ml_per_h above 0.");
+            }
+        }
         if ("parameter" in cond) {
             if (!(PHYSIOLOGICAL_PARAMETERS as readonly unknown[]).includes(cond.parameter)) {
                 error(`${path}.parameter`, `Unknown parameter "${String(cond.parameter)}".`);
@@ -355,6 +368,8 @@ export function validateSimulationCase(input: unknown, options: ValidationOption
     const ownTreatments = new Set<string>(
         Array.isArray(c.custom_interventions) ? c.custom_interventions.filter(isObj).map((t) => String(t.id)) : []
     );
+    // A rate-controlled infusion's rates and its stop are its own actions too.
+    if (Array.isArray(c.custom_interventions)) for (const label of fluidActionLabels(c.custom_interventions.filter(isObj) as unknown as CustomInterventionDef[]).keys()) ownTreatments.add(label);
     const consequenceActions = new Set<string>();
     const settableTo = new Set<string>(); // "flag:value" reachable by some consequence/rule
     if (!Array.isArray(c.action_consequences)) {

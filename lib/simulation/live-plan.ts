@@ -20,6 +20,7 @@ import type {
     ActionConsequence,
     Consciousness,
     CustomInterventionDef,
+    FluidInfusionDef,
     ReassessmentReport,
     EventRule,
     PhysiologicalChanges,
@@ -33,6 +34,7 @@ import type { ClinicalEvent } from "./encounter-events";
 import { INTERVENTIONS, type InterventionGroup } from "./intervention-catalog";
 import { evaluateCondition } from "./conditions";
 import { PatientState } from "./patient-state";
+import { FLUID_STOP, fluidAction, fluidCompletedFlag, fluidLevelFlag, fluidSchedule, fluidStopAction, fluidStoppedFlag, parseFluidAction } from "./fluid-infusion";
 
 // ── The plan ────────────────────────────────────────────────────────────────
 
@@ -180,7 +182,7 @@ export interface LiveTreatment {
      * LIMITATION: the total effect and the duration are fixed by the plan. The student cannot stop the infusion, step it
      * down or change its rate, and continuing it does no harm in the engine (no fluid overload, no rebound when it
      * ends). Cases whose teaching is fluid adjusted by response and stopped on reassessment (dengue, DKA, septic shock)
-     * are not adequately represented by this and must not be published on it.
+     * are not adequately represented by this and must not be published on it: they use `fluid` instead.
      */
     infusion?: { over_minutes: number; while?: LiveCondition };
     /**
@@ -190,6 +192,48 @@ export interface LiveTreatment {
     requires?: LiveRequirement[];
     /** A further dose needs a reassessment (the plan's `reassessment`) since the dose before it. */
     reassess_before_repeat?: boolean;
+
+    // ── Rate-controlled fluid (S2 of docs/live-plan-fluid-engine-spec.md). Optional.
+    /**
+     * An IV infusion run at a rate the student chooses from the plan's ladder, stepped down one rate at a time and
+     * stopped by them (fluid-infusion.ts). It is started once: no repeat doses and no `infusion`; its effect is set per
+     * rate. The patient's response is still the plan's own per-rate table, not a model of circulating volume (S3).
+     */
+    fluid?: LiveFluid;
+}
+
+/** One rate on a fluid's ladder. */
+export interface LiveFluidLevel {
+    id: string;
+    /** As the clinician writes it: "7 to 10 mL/kg/h". */
+    label: string;
+    /** The pump rate, whole mL per hour (the plan works it out from the patient's weight). */
+    ml_per_h: number;
+    /** How long it should run at this rate before the next step down (the guideline's "for 1 to 2 hours"). Absent: no step is expected from it. */
+    hold_minutes?: { at_least: number; at_most: number };
+    /** What running at this rate does to the monitor, as changes: at once when the rate begins, or spread over `over_minutes` while `while` holds and he is not yet stabilised. */
+    effect?: LiveVitals;
+    over_minutes?: number;
+    while?: LiveCondition;
+    /** What the student sees when it is stepped down to this rate. */
+    says?: string;
+    /** Still running at this rate `after_minutes` after it began, while `when` holds: too much fluid. It changes the monitor, the nurse says so, and it counts as harm. */
+    overload?: { after_minutes: number; when?: LiveCondition; effect: LiveVitals; nurse_says: string; why?: string };
+}
+
+export interface LiveFluid {
+    /** The ladder, highest rate first. */
+    levels: LiveFluidLevel[];
+    /** The volume it is set to give, mL; it finishes itself once that has run in. Absent: it runs until stopped. */
+    volume_ml?: number;
+    /** The right rate to start at, by the patient's state when it is started: the first whose `when` holds (or has none). Absent: the first rate. */
+    start?: Array<{ level: string; when?: LiveCondition }>;
+    /** When stopping it is right, in minutes after it was started. Absent: stopping is not scored. */
+    stop?: { at_least: number; at_most: number };
+    /** What the student sees when they stop it. */
+    stop_says?: string;
+    /** What the nurse says when the volume has run in. */
+    completed_says?: string;
 }
 
 /** A bedside reassessment the student can do at any time: each check reports what it finds right now. */
@@ -452,8 +496,46 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         if (t?.infusion && typeof t.infusion === "object") {
             out.infusion = { over_minutes: num(t.infusion.over_minutes) ?? NaN, ...(t.infusion.while !== undefined ? { while: condition(t.infusion.while) } : {}) };
         }
+        if (t?.fluid && typeof t.fluid === "object") out.fluid = readFluid(t.fluid);
         return out;
     };
+
+    // A fluid's ladder. Numbers that are not numbers become NaN, which the check reports, rather than being dropped.
+    const minutesWindow = (w: any) => ({ at_least: num(w?.at_least) ?? NaN, at_most: num(w?.at_most) ?? NaN });
+    const readFluid = (f: any): LiveFluid => ({
+        levels: (Array.isArray(f.levels) ? f.levels : []).map((l: any, i: number) => {
+            const effect = vitals(l?.effect);
+            const o = l?.overload;
+            return {
+                id: slug(l?.id) || `rate_${i + 1}`,
+                label: text(l?.label, 80),
+                ml_per_h: num(l?.ml_per_h) ?? NaN,
+                ...(l?.hold_minutes !== undefined ? { hold_minutes: minutesWindow(l.hold_minutes) } : {}),
+                ...(Object.keys(effect).length > 0 ? { effect } : {}),
+                ...(l?.over_minutes !== undefined ? { over_minutes: num(l.over_minutes) ?? NaN } : {}),
+                ...(l?.while !== undefined ? { while: condition(l.while) } : {}),
+                ...(text(l?.says) ? { says: text(l.says) } : {}),
+                ...(o && typeof o === "object"
+                    ? {
+                          overload: {
+                              after_minutes: num(o.after_minutes) ?? NaN,
+                              ...(o.when !== undefined ? { when: condition(o.when) } : {}),
+                              effect: vitals(o.effect),
+                              nurse_says: text(o.nurse_says),
+                              ...(text(o.why) ? { why: text(o.why) } : {}),
+                          },
+                      }
+                    : {}),
+            };
+        }),
+        ...(f.volume_ml !== undefined ? { volume_ml: num(f.volume_ml) ?? NaN } : {}),
+        ...(Array.isArray(f.start) && f.start.length > 0
+            ? { start: f.start.map((r: any) => ({ level: slug(r?.level), ...(r?.when !== undefined ? { when: condition(r.when) } : {}) })) }
+            : {}),
+        ...(f.stop !== undefined ? { stop: minutesWindow(f.stop) } : {}),
+        ...(text(f.stop_says) ? { stop_says: text(f.stop_says) } : {}),
+        ...(text(f.completed_says) ? { completed_says: text(f.completed_says) } : {}),
+    });
 
     // Repeat-dose fields are kept only when present, so a plan that does not use them reads exactly as before.
     const repeatFields = (t: any, role: TreatmentRole): Partial<LiveTreatment> => {
@@ -712,6 +794,7 @@ function checkState(t: LiveTreatment, where: string, plan: LivePlan, scope: Cond
         if (isRepeatable(t)) errors.push(`${where}: an infusion is started once; it cannot also have repeat doses.`);
         if ((t.responses ?? []).some((r) => r.effect)) errors.push(`${where}: an infusion's effect is spread over its minutes, so its responses can change what is said and found, not the effect.`);
     }
+    if (t.fluid) checkFluid(t, t.fluid, where, plan, scope, errors, warnings);
     if (t.required_when) {
         checkCondition(t.required_when, `${where}: required_when`, scope, errors);
         if (t.role !== "essential") errors.push(`${where}: required_when is for essential treatments.`);
@@ -720,6 +803,75 @@ function checkState(t: LiveTreatment, where: string, plan: LivePlan, scope: Cond
         if ((t.doses_required ?? 1) > 1) errors.push(`${where}: a treatment that is only sometimes required can require only one dose.`);
         if (plan.stabilised_by.includes(t.id)) errors.push(`${where}: a treatment that is only sometimes required cannot be in stabilised_by (the usual path); put it in an or_stabilised_by path.`);
     }
+}
+
+/** The longest encounter: a plan with a fluid ladder runs on into the ward hours, which the student moves through by waiting. */
+export const WARD_LIMIT_MINUTES = 48 * 60;
+/** The most minutes one rate's effect may be spread over (each minute is a rule). */
+const MAX_SPREAD_MINUTES = 120;
+
+/** A change to the monitor that one step can make: within the per-treatment limits, with both pressures or neither. */
+function checkEffect(e: LiveVitals | undefined, where: string, errors: string[]): void {
+    for (const k of Object.keys(e ?? {}) as Array<keyof LiveVitals>) {
+        if (Math.abs(e![k] as number) > MAX_EFFECT[k]) errors.push(`${where}: changes ${VITAL_NAME[k]} by ${e![k]}, more than one treatment can do (±${MAX_EFFECT[k]}).`);
+    }
+    if ((e?.sbp === undefined) !== (e?.dbp === undefined)) errors.push(`${where}: needs both sbp and dbp, or neither.`);
+}
+
+/** A fluid's ladder: rates from the highest down, whole numbers, windows inside the encounter, and nothing it cannot be combined with. */
+function checkFluid(t: LiveTreatment, f: LiveFluid, where: string, plan: LivePlan, scope: ConditionScope, errors: string[], warnings: string[]): void {
+    const w = `${where}: fluid`;
+    const limit = plan.time_limit_minutes;
+    const minutes = (n: number) => Number.isInteger(n) && n >= 1 && (!Number.isFinite(limit) || n < limit);
+    const badWindow = (x: { at_least: number; at_most: number }) => !minutes(x.at_least) || !minutes(x.at_most) || x.at_most < x.at_least;
+    if (f.levels.length < 1 || f.levels.length > 8) errors.push(`${w}: give from 1 to 8 rates.`);
+    const ids = new Set<string>();
+    f.levels.forEach((l, i) => {
+        const lw = `${w}.levels[${i}]${l.label ? ` (${l.label})` : ""}`;
+        if (!ID.test(l.id) || l.id === FLUID_STOP) errors.push(`${lw}: id must be lower-case letters, digits and underscores, and not "${FLUID_STOP}".`);
+        if (ids.has(l.id)) errors.push(`${lw}: the id "${l.id}" is used twice.`);
+        ids.add(l.id);
+        if (!l.label) errors.push(`${lw}: needs a label, the rate as a clinician writes it.`);
+        if (!Number.isInteger(l.ml_per_h) || l.ml_per_h < 1 || l.ml_per_h > 10000) errors.push(`${lw}: ml_per_h must be a whole number of mL per hour, from 1 to 10000.`);
+        else if (i > 0 && !(l.ml_per_h < f.levels[i - 1].ml_per_h)) errors.push(`${lw}: the rates go from the highest down, so this one must be lower than the one before it.`);
+        if (l.hold_minutes) {
+            if (badWindow(l.hold_minutes)) errors.push(`${lw}: hold_minutes needs whole minutes from 1, at_most no less than at_least, both within the encounter (${limit} min).`);
+        } else if (i < f.levels.length - 1) warnings.push(`${lw}: no hold_minutes, so when it is stepped down is not scored.`);
+        checkEffect(l.effect, `${lw}.effect`, errors);
+        if (l.over_minutes !== undefined) {
+            if (!Number.isInteger(l.over_minutes) || l.over_minutes < 1 || l.over_minutes > MAX_SPREAD_MINUTES || !minutes(l.over_minutes)) errors.push(`${lw}: over_minutes must be a whole number from 1 to ${MAX_SPREAD_MINUTES}, within the encounter.`);
+            if (!l.effect) errors.push(`${lw}: over_minutes spreads this rate's effect, so it needs an effect.`);
+        }
+        if (l.while) {
+            checkCondition(l.while, `${lw}.while`, scope, errors);
+            if (l.over_minutes === undefined) errors.push(`${lw}: while only goes with over_minutes (an effect given at once has nothing to stop).`);
+        }
+        if (l.says !== undefined && l.says.length < 10) errors.push(`${lw}: says is what the student sees when the rate comes down to this; write a sentence.`);
+        const o = l.overload;
+        if (o) {
+            if (!minutes(o.after_minutes)) errors.push(`${lw}: overload.after_minutes must be a whole number of minutes from 1, within the encounter (${limit} min).`);
+            else if (l.hold_minutes && o.after_minutes < l.hold_minutes.at_least) errors.push(`${lw}: overload comes before the rate's own hold time (${l.hold_minutes.at_least} min) is up.`);
+            if (o.when) checkCondition(o.when, `${lw}.overload.when`, scope, errors);
+            if (Object.keys(o.effect).length === 0) errors.push(`${lw}: overload needs an effect on the monitor.`);
+            checkEffect(o.effect, `${lw}.overload.effect`, errors);
+            if (o.nurse_says.length < 10) errors.push(`${lw}: overload.nurse_says is what tells the student it happened; write a sentence.`);
+        }
+    });
+    if (f.volume_ml !== undefined && (!Number.isInteger(f.volume_ml) || f.volume_ml < 1 || f.volume_ml > 10000)) errors.push(`${w}: volume_ml must be a whole number of mL, from 1 to 10000.`);
+    (f.start ?? []).forEach((r, i) => {
+        if (!ids.has(r.level)) errors.push(`${w}.start[${i}]: "${r.level}" is not one of its rates.`);
+        if (r.when) checkCondition(r.when, `${w}.start[${i}].when`, scope, errors);
+        else if (i < (f.start as unknown[]).length - 1) warnings.push(`${w}.start[${i}] has no condition, so the ones after it never apply.`);
+    });
+    if (f.stop && badWindow(f.stop)) errors.push(`${w}: stop needs whole minutes from 1, at_most no less than at_least, both within the encounter (${limit} min).`);
+    if (f.stop_says !== undefined && f.stop_says.length < 10) errors.push(`${w}: stop_says is what the student sees when they stop it; write a sentence.`);
+    if (f.completed_says !== undefined) {
+        if (f.volume_ml === undefined) errors.push(`${w}: completed_says only goes with volume_ml (a fluid without one never finishes by itself).`);
+        else if (f.completed_says.length < 10) errors.push(`${w}: completed_says is what the nurse says when it has run in; write a sentence.`);
+    }
+    if (isRepeatable(t)) errors.push(`${w}: a fluid is started once and then stepped down; it cannot also have repeat doses.`);
+    if (t.infusion) errors.push(`${w}: give the rate ladder or infusion, not both.`);
+    if (t.effect) errors.push(`${w}: a fluid's effect is set per rate (levels[].effect), not on the treatment.`);
 }
 
 /**
@@ -734,7 +886,11 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
     if (plan.summary.length < 20) errors.push("summary: say in a sentence or two what happens to this patient if nothing is done.");
 
     // ── time
-    if (!whole(plan.time_limit_minutes) || plan.time_limit_minutes < 6 || plan.time_limit_minutes > 45) errors.push("time_limit_minutes must be between 6 and 45.");
+    // A plan with a fluid ladder may run on for its hours on the ward; every other plan is one bedside session.
+    const ward = plan.treatments.some((t) => t.fluid);
+    if (!whole(plan.time_limit_minutes) || plan.time_limit_minutes < 6 || plan.time_limit_minutes > (ward ? WARD_LIMIT_MINUTES : 45)) {
+        errors.push(ward ? `time_limit_minutes must be between 6 and ${WARD_LIMIT_MINUTES} (48 hours) for a plan with a fluid ladder.` : "time_limit_minutes must be between 6 and 45.");
+    }
     if (!whole(plan.critical_window_minutes) || plan.critical_window_minutes < 2) errors.push("critical_window_minutes must be at least 2.");
     else if (whole(plan.time_limit_minutes) && plan.critical_window_minutes >= plan.time_limit_minutes) errors.push("critical_window_minutes must be shorter than time_limit_minutes.");
 
@@ -841,6 +997,7 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
     // moment it started, before any of its effect arrived.
     const onAPath = new Set([...plan.stabilised_by, ...(plan.or_stabilised_by ?? []).flatMap((p) => p.treatments)]);
     for (const t of plan.treatments) {
+        if (t.fluid?.levels.some((l) => l.over_minutes !== undefined) && onAPath.has(t.id) && !plan.end_points) errors.push(`${t.id}: a fluid whose effect is spread over minutes and that stops the deterioration needs end_points, so the patient is stabilised when it has worked, not the moment it starts.`);
         if (t.infusion && onAPath.has(t.id) && !plan.end_points) errors.push(`${t.id}: an infusion that stops the deterioration needs end_points, so the patient is stabilised when it has worked, not the moment it starts.`);
     }
     if (plan.stabilised_by_while) {
@@ -905,7 +1062,7 @@ export const isStateGated = (t: LiveTreatment): t is LiveTreatment & { repeat_on
     !!t.repeat_only_while && typeof t.repeat_only_while === "object";
 /** A treatment that uses any state field; every other treatment compiles exactly as before. */
 const usesState = (t: LiveTreatment) =>
-    !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t) || t.infusion || t.requires?.length || t.reassess_before_repeat);
+    !!(t.responses?.length || t.available_when || t.required_when || isStateGated(t) || t.infusion || t.requires?.length || t.reassess_before_repeat || t.fluid);
 /** Set by a reassessment, cleared by each valid dose of a treatment that needs one before its next dose. */
 const reassessedFlag = (treatmentId: string) => `reassessed_${treatmentId}`;
 
@@ -941,6 +1098,11 @@ function planConditions(plan: LivePlan): LiveCondition[] {
         if (t.required_when) out.push(t.required_when);
         if (isStateGated(t)) out.push(t.repeat_only_while);
         if (t.infusion?.while) out.push(t.infusion.while);
+        for (const l of t.fluid?.levels ?? []) {
+            if (l.while) out.push(l.while);
+            if (l.overload?.when) out.push(l.overload.when);
+        }
+        for (const r of t.fluid?.start ?? []) if (r.when) out.push(r.when);
     }
     if (plan.stabilised_by_while) out.push(plan.stabilised_by_while);
     if (plan.end_points) out.push(plan.end_points);
@@ -979,20 +1141,26 @@ const latch = (id: string, when: RuleCondition, flag: string): EventRule => ({ i
  * An infusion's effect, one share per minute after it was started. Each share acts in its own minute only, only while
  * the infusion's condition holds and the patient is not yet stabilised. Shares are whole numbers that add up exactly.
  */
-function infusionRules(t: LiveTreatment): EventRule[] {
-    if (!t.infusion || !t.effect) return [];
-    const n = t.infusion.over_minutes;
-    const total = t.effect;
+/** An effect spread evenly over `n` minutes: the change in each minute (1 to n), whole numbers (tenths for temperature) that add up exactly. */
+function minuteShares(total: LiveVitals, n: number): LiveVitals[] {
     const share = (k: keyof LiveVitals, m: number): number => {
         const tenths = k === "temp" ? 10 : 1;
         const v = (total[k] ?? 0) * tenths;
         return (Math.round((v * m) / n) - Math.round((v * (m - 1)) / n)) / tenths;
     };
     const keys = ["hr", "sbp", "dbp", "spo2", "rr", "temp"] as const;
+    return Array.from({ length: n }, (_, i) => Object.fromEntries(keys.filter((k) => total[k] !== undefined).map((k) => [k, share(k, i + 1)])) as LiveVitals);
+}
+const isNoChange = (v: LiveVitals) => (["hr", "sbp", "dbp", "spo2", "rr", "temp"] as const).every((k) => !v[k]);
+
+function infusionRules(t: LiveTreatment): EventRule[] {
+    if (!t.infusion || !t.effect) return [];
+    const n = t.infusion.over_minutes;
+    const shares = minuteShares(t.effect, n);
     const out: EventRule[] = [];
     for (let m = 1; m <= n; m++) {
-        const minute = Object.fromEntries(keys.filter((k) => total[k] !== undefined).map((k) => [k, share(k, m)])) as LiveVitals;
-        if (keys.every((k) => !minute[k])) continue;
+        const minute = shares[m - 1];
+        if (isNoChange(minute)) continue;
         out.push({
             id: `live_infusion_${t.id}_${m}`,
             when: {
@@ -1012,9 +1180,141 @@ function infusionRules(t: LiveTreatment): EventRule[] {
     return out;
 }
 
+// ── Rate-controlled fluid ───────────────────────────────────────────────────
+
+/** Set when a rate was kept running long enough to overload the patient. */
+const overloadFlag = (treatmentId: string, level: string) => `fluid_${treatmentId}_overload_${level}`;
+/** The engine's description of a fluid: for the tray, and for the condition that knows when its volume is in. */
+const fluidDef = (f: LiveFluid): FluidInfusionDef => ({
+    levels: f.levels.map((l) => ({ id: l.id, label: l.label, ml_per_h: l.ml_per_h })),
+    ...(f.volume_ml !== undefined ? { volume_ml: f.volume_ml } : {}),
+});
+/** Stopped, or finished by itself. */
+const fluidEnded = (t: LiveTreatment): RuleCondition => ({
+    any: [{ flag: fluidStoppedFlag(t.id), is: true }, ...(t.fluid?.volume_ml !== undefined ? [{ flag: fluidCompletedFlag(t.id), is: true }] : [])],
+});
+/** Running at the ladder's rate i: it reached that rate, has gone no lower, and has not ended. */
+function runningAt(t: LiveTreatment, i: number): RuleCondition {
+    const levels = (t.fluid as LiveFluid).levels;
+    return { all: [{ flag: fluidLevelFlag(t.id, levels[i].id), is: true }, ...levels.slice(i + 1).map((l) => ({ flag: fluidLevelFlag(t.id, l.id), is: false })), { not: fluidEnded(t) }] };
+}
+
+/** How a student who gives a fluid as planned starts it: at the rate its unconditional start names, else the first. */
+export function fluidStartAction(t: LiveTreatment): string {
+    const f = t.fluid as LiveFluid;
+    return fluidAction(t.id, f.start?.find((r) => !r.when)?.level ?? f.levels[0].id);
+}
+
+/**
+ * What a fluid does over time: each rate's effect spread minute by minute while it runs at that rate (and only before
+ * stabilisation, as an infusion), the overload of a rate kept on too long, and finishing once its volume is in.
+ */
+function fluidRules(t: LiveTreatment): EventRule[] {
+    const f = t.fluid;
+    if (!f) return [];
+    const out: EventRule[] = [];
+    f.levels.forEach((l, i) => {
+        const flag = fluidLevelFlag(t.id, l.id);
+        if (l.over_minutes !== undefined && l.effect) {
+            const shares = minuteShares(l.effect, l.over_minutes);
+            for (let m = 1; m <= l.over_minutes; m++) {
+                if (isNoChange(shares[m - 1])) continue;
+                out.push({
+                    id: `live_infusion_${t.id}__${l.id}_${m}`,
+                    when: {
+                        all: [
+                            { minutes_since_flag: { flag, gte: m } },
+                            { not: { minutes_since_flag: { flag, gte: m + 1 } } },
+                            runningAt(t, i),
+                            { flag: STABILISED, is: false },
+                            ...(l.while ? [compileCondition(l.while)] : []),
+                        ],
+                    },
+                    transition: "unchanged",
+                    keeps_state: true,
+                    physiological_changes: effectOf(shares[m - 1]),
+                    narrative: null,
+                });
+            }
+        }
+        if (l.overload) {
+            out.push({
+                id: `live_fluid_${t.id}_overload_${l.id}`,
+                when: { all: [{ minutes_since_flag: { flag, gte: l.overload.after_minutes } }, runningAt(t, i), ...(l.overload.when ? [compileCondition(l.overload.when)] : [])] },
+                transition: "unchanged",
+                keeps_state: true,
+                physiological_changes: effectOf(l.overload.effect),
+                narrative: l.overload.nurse_says,
+                sets: { [overloadFlag(t.id, l.id)]: true },
+            });
+        }
+    });
+    if (f.volume_ml !== undefined) {
+        out.push({
+            id: `live_fluid_${t.id}_completed`,
+            when: { all: [{ flag: given(t.id), is: true }, { not: fluidEnded(t) }, { fluid_delivered: { ...fluidSchedule(t.id, fluidDef(f)), gte_ml: f.volume_ml } }] },
+            transition: "unchanged",
+            keeps_state: true,
+            sets: { [fluidCompletedFlag(t.id)]: true },
+            narrative: f.completed_says ?? `The infusion has finished: all ${f.volume_ml} mL has run in.`,
+        });
+    }
+    return out;
+}
+
+/**
+ * A fluid on the tray. "<id>@<rate>" starts it at that rate (behind the treatment's own prerequisites and availability,
+ * with its responses), or once it runs steps it down to that rate, one rate at a time; "<id>@stop" stops it. Anything
+ * else is refused and changes nothing.
+ */
+function fluidConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[] {
+    const f = t.fluid as LiveFluid;
+    const started: RuleCondition = { flag: given(t.id), is: true };
+    const stopped: RuleCondition = { flag: fluidStoppedFlag(t.id), is: true };
+    const completed: RuleCondition | null = f.volume_ml !== undefined ? { flag: fluidCompletedFlag(t.id), is: true } : null;
+    const ended = (action: string): ActionConsequence[] => [
+        { action, when: { all: [started, stopped] }, trajectory_note: REFUSED.fluid("the infusion has been stopped.") },
+        ...(completed ? [{ action, when: { all: [started, completed] }, trajectory_note: REFUSED.fluid("the infusion has finished.") }] : []),
+    ];
+    const effectAtOnce = (l: LiveFluidLevel) => (l.over_minutes === undefined && l.effect ? { physiological_changes: effectOf(l.effect) } : {});
+    // The treatment itself has no plain "Give": a fluid is started at a rate.
+    const out: ActionConsequence[] = [{ action: t.id, trajectory_note: REFUSED.fluid("choose the rate to start it at.") }];
+    f.levels.forEach((l, i) => {
+        const action = fluidAction(t.id, l.id);
+        const usual = {
+            changes: { ...(l.over_minutes === undefined ? effectOf(l.effect) : {}), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) },
+            says: t.says,
+        };
+        const start = doseVariants(t, 1, [{ flag: given(t.id), is: false }], usual).map((c) => ({
+            ...c,
+            sets: { ...c.sets, [fluidLevelFlag(t.id, l.id)]: true },
+            trajectory_note: `Started at ${l.label}. ${c.trajectory_note}`,
+        }));
+        const running: ActionConsequence[] = f.levels.map((cur, j) => {
+            const when: RuleCondition = { all: [started, runningAt(t, j)] };
+            if (j === i - 1) return { action, when, sets: { [fluidLevelFlag(t.id, l.id)]: true }, ...effectAtOnce(l), trajectory_note: l.says ?? `The rate is reduced to ${l.label}.` };
+            const says =
+                j === i
+                    ? `it is already running at ${cur.label}.`
+                    : j > i
+                      ? `it is running at ${cur.label}, below this rate: the rate only comes down, one step at a time.`
+                      : `the rate comes down one step at a time: it is running at ${cur.label}, so the next step is ${f.levels[j + 1].label}.`;
+            return { action, when, trajectory_note: REFUSED.fluid(says) };
+        });
+        out.push(...stateConsequences(t, plan, [...start, ...running, ...ended(action)]).map((c) => ({ ...c, action })));
+    });
+    const stop = fluidStopAction(t.id);
+    out.push(
+        { action: stop, when: { flag: given(t.id), is: false }, trajectory_note: REFUSED.fluid("it is not running.") },
+        { action: stop, when: { all: [started, { not: fluidEnded(t) }] }, sets: { [fluidStoppedFlag(t.id)]: true }, trajectory_note: f.stop_says ?? "The infusion is stopped." },
+        ...ended(stop),
+    );
+    return out;
+}
+
 /** The rules a treatment's state fields need: its infusion's shares, and the record-only rules (available, required, doses falling due). */
 function stateRules(t: LiveTreatment): EventRule[] {
-    const out: EventRule[] = [...infusionRules(t)];
+    const out: EventRule[] = [...infusionRules(t), ...fluidRules(t)];
     if (t.available_when) out.push(latch(`live_available_${t.id}`, compileCondition(t.available_when), availableFlag(t.id)));
     if (t.required_when) out.push(latch(`live_required_${t.id}`, compileCondition(t.required_when), requiredFlag(t.id)));
     if (isStateGated(t)) {
@@ -1063,12 +1363,15 @@ function doseVariants(t: LiveTreatment, n: number, valid: RuleCondition[], usual
 }
 
 /** Everything a treatment that uses state fields does on the tray. */
-function stateConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[] {
+function stateConsequences(t: LiveTreatment, plan: LivePlan, own?: ActionConsequence[]): ActionConsequence[] {
     // An infusion's effect arrives minute by minute (infusionRules); starting it changes only rhythm or consciousness.
     const usual = { changes: { ...(t.infusion ? {} : effectOf(t.effect)), ...(t.rhythm ? { rhythm: t.rhythm } : {}), ...(t.consciousness ? { consciousness: t.consciousness } : {}) }, says: t.says };
-    const base = isRepeatable(t)
-        ? repeatConsequences(t, plan.reassessment?.label)
-        : [...doseVariants(t, 1, [{ flag: given(t.id), is: false }], usual), { action: t.id, when: { flag: given(t.id), is: true }, trajectory_note: "Already given. No further change." }];
+    // `own`: what the treatment does once its gates are open, when it is not the usual one dose or repeat doses (a fluid's rates).
+    const base =
+        own ??
+        (isRepeatable(t)
+            ? repeatConsequences(t, plan.reassessment?.label)
+            : [...doseVariants(t, 1, [{ flag: given(t.id), is: false }], usual), { action: t.id, when: { flag: given(t.id), is: true }, trajectory_note: "Already given. No further change." }]);
     const guard = (open: RuleCondition, cs: ActionConsequence[]) => cs.map((c) => ({ ...c, when: c.when ? { all: [open, c.when] } : open }));
     // Requirements in order: the first one not met is the reason given; once all are met, everything as usual.
     let guarded = base;
@@ -1097,6 +1400,8 @@ export const REFUSED = {
     unavailable: () => "Not given: not indicated at the moment.",
     not_reassessed: (label: string) => `Not given: reassess first (${label}) to see whether another dose is needed.`,
     needs_first: (says: string) => refusal(says),
+    /** A fluid's rate could not be set like that (not running, already at that rate, more than one step, stopped). */
+    fluid: (says: string) => refusal(says),
 } as const;
 export type RefusalReason = keyof typeof REFUSED;
 
@@ -1204,6 +1509,14 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         if (t.required_when) flags[requiredFlag(t.id)] = false;
         if (t.reassess_before_repeat) flags[reassessedFlag(t.id)] = false;
         if (isStateGated(t)) for (let n = 2; n <= Math.max(1, t.doses_required ?? 1); n++) Object.assign(flags, { [indicatedFlag(t.id, n)]: false, [notNeededFlag(t.id, n)]: false, [resolvedFlag(t.id, n)]: false });
+        if (t.fluid) {
+            for (const l of t.fluid.levels) {
+                flags[fluidLevelFlag(t.id, l.id)] = false;
+                if (l.overload) flags[overloadFlag(t.id, l.id)] = false;
+            }
+            flags[fluidStoppedFlag(t.id)] = false;
+            if (t.fluid.volume_ml !== undefined) flags[fluidCompletedFlag(t.id)] = false;
+        }
     }
     for (const f of plan.findings ?? []) flags[findingFlag(f.id)] = f.present;
     const referenced = stagesReferenced(planConditions(plan));
@@ -1287,7 +1600,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
 
     // ── the tray: a treatment acts once; giving it again changes nothing. A treatment with repeat doses acts once per
     //    valid dose instead (repeatConsequences).
-    const consequences: ActionConsequence[] = [...reassessmentConsequences(plan), ...plan.treatments.flatMap((t) => usesState(t) ? stateConsequences(t, plan) : isRepeatable(t) ? repeatConsequences(t) : [
+    const consequences: ActionConsequence[] = [...reassessmentConsequences(plan), ...plan.treatments.flatMap((t) => t.fluid ? fluidConsequences(t, plan) : usesState(t) ? stateConsequences(t, plan) : isRepeatable(t) ? repeatConsequences(t) : [
         {
             action: t.id,
             when: { flag: given(t.id), is: false },
@@ -1304,7 +1617,8 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
     ])];
 
     const own: CustomInterventionDef[] = [
-        ...plan.treatments.filter((t) => !isSharedTreatment(t.id)).map((t) => ({ id: t.id, label: t.label, detail: t.detail, group: t.group })),
+        // A fluid is always the case's own entry, so the tray can show its rates.
+        ...plan.treatments.filter((t) => !isSharedTreatment(t.id) || t.fluid).map((t) => ({ id: t.id, label: t.label, detail: t.detail, group: t.group, ...(t.fluid ? { fluid: fluidDef(t.fluid) } : {}) })),
         ...(plan.reassessment ? [{ id: REASSESS_ID, label: plan.reassessment.label, detail: plan.reassessment.detail, group: "other" as const, ...(plan.reassessment.report ? { report: compileReport(plan) } : {}) }] : []),
     ];
     const stillUnmeasured = (base.initial_state.unmeasured ?? []).filter((u) => {
@@ -1385,6 +1699,20 @@ export interface BedsideItem {
     doses?: Array<{ dose: number; at_minutes: number | null; status: BedsideStatus }>;
     /** For a treatment that is only sometimes required: when it became required. Its window counts from here. */
     required_at_minutes?: number;
+    /** For a fluid's rate item: the starting rate, how long each rate ran before the next step, and the stop. */
+    fluid_steps?: FluidStep[];
+}
+
+/** early: stepped down (or stopped) before the rate's time was up. wrong: started at a rate the patient's state did not call for. */
+export type FluidStepStatus = "on_time" | "early" | "late" | "missed" | "not_due" | "wrong";
+
+export interface FluidStep {
+    label: string;
+    /** When the step was taken (minutes after arrival), if it was. */
+    at_minutes: number | null;
+    status: FluidStepStatus;
+    /** For a wrong starting rate: the right one. */
+    expected?: string;
 }
 
 /** A further dose the engine refused (too soon, not indicated, or over the limit). It had no effect and did not count. */
@@ -1440,20 +1768,34 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
         return setAt === undefined ? null : toMinutes(setAt);
     };
 
+    const scoreOne = (t: LiveTreatment): BedsideItem => {
+        const within = t.within_minutes ?? plan.critical_window_minutes;
+        if (t.required_when) return scoreWhenRequired(t, within, givenAt(t), final.flagSetAt, end, credit);
+        if (isRepeatable(t)) return scoreDoses(t, within, final, end, credit);
+        const at = givenAt(t);
+        const item: BedsideItem = { id: t.id, label: t.label, status: at === null ? "missed" : at <= within ? "on_time" : "late", at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
+        credit.set(t.id, item.status === "on_time" ? 1 : item.status === "late" ? 0.5 : 0);
+        return item;
+    };
+    // A fluid that was started is also scored on how its rate was adjusted, as an item of its own.
     const items: BedsideItem[] = plan.treatments
         .filter((t) => t.role === "essential")
-        .map((t) => {
-            const within = t.within_minutes ?? plan.critical_window_minutes;
-            if (t.required_when) return scoreWhenRequired(t, within, givenAt(t), final.flagSetAt, end, credit);
-            if (isRepeatable(t)) return scoreDoses(t, within, final, end, credit);
-            const at = givenAt(t);
-            const item: BedsideItem = { id: t.id, label: t.label, status: at === null ? "missed" : at <= within ? "on_time" : "late", at_minutes: at, within_minutes: within, ...(t.why ? { why: t.why } : {}) };
-            credit.set(t.id, item.status === "on_time" ? 1 : item.status === "late" ? 0.5 : 0);
-            return item;
+        .flatMap((t) => {
+            const item = scoreOne(t);
+            const rate = t.fluid ? scoreFluidRate(config, plan, t, events, final, end, credit) : null;
+            return rate ? [item, rate] : [item];
         });
-    const harmful = plan.treatments
-        .filter((t) => t.role === "harmful" && givenAt(t) !== null)
-        .map((t) => ({ id: t.id, label: t.label, at_minutes: givenAt(t) as number, ...(t.why ? { why: t.why } : {}) }));
+    const harmful = [
+        ...plan.treatments
+            .filter((t) => t.role === "harmful" && givenAt(t) !== null)
+            .map((t) => ({ id: t.id, label: t.label, at_minutes: givenAt(t) as number, ...(t.why ? { why: t.why } : {}) })),
+        // A rate kept on until it overloaded the patient is harm, whoever's treatment it was.
+        ...plan.treatments.flatMap((t) =>
+            (t.fluid?.levels ?? [])
+                .filter((l) => l.overload && final.flagSetAt[overloadFlag(t.id, l.id)] !== undefined)
+                .map((l) => ({ id: `${t.id}:overload_${l.id}`, label: `Fluid overload: ${t.label} kept at ${l.label}`, at_minutes: toMinutes(final.flagSetAt[overloadFlag(t.id, l.id)]), ...(l.overload?.why ? { why: l.overload.why } : {}) }))
+        ),
+    ];
 
     // A treatment this patient never needed is left out altogether: no credit, and nothing lost.
     const counted = items.filter((i) => credit.has(i.id));
@@ -1538,6 +1880,67 @@ function scoreWhenRequired(t: LiveTreatment, within: number, at: number | null, 
     return { ...base, status, required_at_minutes: from };
 }
 
+const FLUID_CREDIT: Record<FluidStepStatus, number | null> = { on_time: 1, early: 0.5, late: 0.5, wrong: 0, missed: 0, not_due: null };
+
+/** "1 to 2 h", "60 to 90 min", "1 h". */
+function span(w: { at_least: number; at_most: number }): string {
+    const hours = w.at_least % 60 === 0 && w.at_most % 60 === 0;
+    const f = (n: number) => (hours ? String(n / 60) : String(n));
+    return `${w.at_least === w.at_most ? f(w.at_least) : `${f(w.at_least)} to ${f(w.at_most)}`} ${hours ? "h" : "min"}`;
+}
+
+/** The rate a fluid should have been started at: its start rules, read on the patient as they were when it was started. */
+function expectedStartLevel(config: SimulationCaseConfig, t: LiveTreatment, events: readonly ClinicalEvent[], startedAt: number): LiveFluidLevel {
+    const f = t.fluid as LiveFluid;
+    const i = events.findIndex((e) => e.type === "INTERVENTION_GIVEN" && e.timestamp === startedAt && parseFluidAction(e.action)?.id === t.id && !e.consequence.startsWith(REFUSED_PREFIX));
+    const ctx = PatientState.fromEvents(config, events.slice(0, Math.max(0, i))).context(startedAt);
+    const rule = f.start?.find((r) => !r.when || evaluateCondition(compileCondition(r.when), ctx));
+    return f.levels.find((l) => l.id === rule?.level) ?? f.levels[0];
+}
+
+/**
+ * How a fluid's rate was adjusted, once it was started: the starting rate against the plan's start rules, how long each
+ * rate ran before the next step against its hold time, and the stop against the plan's stop window. On time 1, early or
+ * late 0.5, the wrong starting rate or a rate kept past its time to the end 0; a step whose time was still open when the
+ * encounter ended does not count. A fluid that never started has nothing to adjust (its own item is missed).
+ */
+function scoreFluidRate(config: SimulationCaseConfig, plan: LivePlan, t: LiveTreatment, events: readonly ClinicalEvent[], final: PatientState, end: number, credit: Map<string, number>): BedsideItem | null {
+    const f = t.fluid as LiveFluid;
+    const setAt = (flag: string): number | undefined => final.flagSetAt[flag];
+    const startedAt = setAt(given(t.id));
+    if (startedAt === undefined || !(f.start?.length || f.stop || f.levels.some((l) => l.hold_minutes))) return null;
+    const runs = f.levels.flatMap((l) => (setAt(fluidLevelFlag(t.id, l.id)) === undefined ? [] : [{ l, at: setAt(fluidLevelFlag(t.id, l.id)) as number }]));
+    const stoppedAt = setAt(fluidStoppedFlag(t.id));
+    const finishedAt = f.volume_ml !== undefined ? setAt(fluidCompletedFlag(t.id)) : undefined;
+    const endedAt = stoppedAt ?? finishedAt;
+    const timed = (from: number, to: number | undefined, w: { at_least: number; at_most: number }): FluidStepStatus => {
+        if (to === undefined) return end - from / 60 > w.at_most ? "missed" : "not_due";
+        const ran = (to - from) / 60;
+        return ran < w.at_least ? "early" : ran > w.at_most ? "late" : "on_time";
+    };
+    const steps: FluidStep[] = [];
+    if (f.start?.length && runs[0]) {
+        const expected = expectedStartLevel(config, t, events, startedAt);
+        const first = runs[0].l;
+        steps.push({ label: `Started at ${first.label}`, at_minutes: toMinutes(startedAt), status: expected.id === first.id ? "on_time" : "wrong", ...(expected.id !== first.id ? { expected: expected.label } : {}) });
+    }
+    runs.forEach((r, k) => {
+        if (!r.l.hold_minutes) return;
+        const exit = runs[k + 1]?.at ?? endedAt;
+        steps.push({ label: `${r.l.label} for ${span(r.l.hold_minutes)}`, at_minutes: exit === undefined ? null : toMinutes(exit), status: timed(r.at, exit, r.l.hold_minutes) });
+    });
+    // A fluid that finished by itself needed no stopping.
+    if (f.stop && finishedAt === undefined) {
+        steps.push({ label: `Stopped ${span(f.stop)} after it was started`, at_minutes: stoppedAt === undefined ? null : toMinutes(stoppedAt), status: timed(startedAt, stoppedAt, f.stop) });
+    }
+    const counted = steps.filter((x) => FLUID_CREDIT[x.status] !== null);
+    const item = { id: `${t.id}:rate`, label: `${t.label}: rate adjusted to the response`, at_minutes: toMinutes(startedAt), within_minutes: t.within_minutes ?? plan.critical_window_minutes, fluid_steps: steps };
+    if (counted.length === 0) return { ...item, status: "not_due" };
+    credit.set(item.id, counted.reduce((sum, x) => sum + (FLUID_CREDIT[x.status] as number), 0) / counted.length);
+    const status: BedsideStatus = counted.every((x) => x.status === "on_time") ? "on_time" : counted.every((x) => x.status === "missed" || x.status === "wrong") ? "missed" : "late";
+    return { ...item, status };
+}
+
 /** Which path stopped the deterioration: the conditions of each, on the patient just before it happened. */
 function stabilisingPath(config: SimulationCaseConfig, plan: LivePlan, events: readonly ClinicalEvent[]): { path?: string } {
     const i = events.findIndex((e) => e.type === "STATE_TRANSITION" && e.trigger === "live_stabilised");
@@ -1554,7 +1957,7 @@ function stabilisingPath(config: SimulationCaseConfig, plan: LivePlan, events: r
 
 /** Every attempt the engine refused (a further dose too soon, not indicated or over the limit; a treatment not yet available), with the reason, in order. */
 function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: readonly ClinicalEvent[]): RefusedDose[] {
-    const byId = new Map(plan.treatments.filter((t) => isRepeatable(t) || t.available_when || t.requires?.length).map((t) => [t.id, t]));
+    const byId = new Map(plan.treatments.filter((t) => isRepeatable(t) || t.available_when || t.requires?.length || t.fluid).map((t) => [t.id, t]));
     if (byId.size === 0) return [];
     const count = (state: PatientState, t: LiveTreatment) => {
         let n = 0;
@@ -1564,7 +1967,9 @@ function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: read
     const out: RefusedDose[] = [];
     events.forEach((e, i) => {
         if (e.type !== "INTERVENTION_GIVEN") return;
-        const t = byId.get(e.action);
+        // A fluid's rates and its stop are its own actions.
+        const asFluid = parseFluidAction(e.action);
+        const t = byId.get(asFluid && byId.get(asFluid.id)?.fluid ? asFluid.id : e.action);
         // Only what the engine refused; "Already given" for a single-dose treatment is not a refusal.
         if (!t || !e.consequence.startsWith(REFUSED_PREFIX)) return;
         // The state just before and just after this attempt, from the log itself.
@@ -1577,15 +1982,17 @@ function refusedDoses(config: SimulationCaseConfig, plan: LivePlan, events: read
         const reason: RefusalReason =
             t.available_when && before.flags[availableFlag(t.id)] !== true
                 ? "unavailable"
-                : unmet
+                : unmet && !(t.fluid && had > 0)
                   ? "needs_first"
-                  : had >= (t.max_doses ?? 1)
-                    ? "limit"
-                    : sinceLast < (t.min_interval_minutes ?? 0) * 60
-                      ? "too_soon"
-                      : t.reassess_before_repeat && before.flags[reassessedFlag(t.id)] !== true
-                        ? "not_reassessed"
-                        : "not_indicated";
+                  : t.fluid
+                    ? "fluid"
+                    : had >= (t.max_doses ?? 1)
+                      ? "limit"
+                      : sinceLast < (t.min_interval_minutes ?? 0) * 60
+                        ? "too_soon"
+                        : t.reassess_before_repeat && before.flags[reassessedFlag(t.id)] !== true
+                          ? "not_reassessed"
+                          : "not_indicated";
         out.push({ id: t.id, label: t.label, at_minutes: toMinutes(e.timestamp), reason, said: e.consequence });
     });
     return out;
