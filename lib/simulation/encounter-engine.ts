@@ -230,7 +230,9 @@ export class EncounterEngine {
         }
         // Anything else due at the same instant as the alert happens with it.
         appended.push(...this.fireDue(to, true));
-        const event: ClinicalEvent = { type: "TIME_SKIPPED", timestamp: to, from: start, minutes: Math.round((seconds / 60) * 10) / 10, ...(stopped ? { stopped } : {}) };
+        // At least 0.1 min: a wait of a few seconds (skipping to a result) is still a wait, and a log entry of 0 is invalid.
+        const minutes = Math.max(0.1, Math.round((seconds / 60) * 10) / 10);
+        const event: ClinicalEvent = { type: "TIME_SKIPPED", timestamp: to, from: start, minutes, ...(stopped ? { stopped } : {}) };
         this.appendRaw(event);
         appended.push(event);
         this.commit();

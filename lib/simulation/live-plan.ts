@@ -218,6 +218,12 @@ export interface LiveFluidLevel {
     /** What the student sees when it is stepped down to this rate. */
     says?: string;
     /**
+     * While this holds, the rate may be left out: the rate above it can come straight down to the one below. For a
+     * ladder whose first step differs by path (NCVBDC 2023: after the first hypotensive bolus, 10 mL/kg/h for 1 hour
+     * and then 5 to 7; after a second bolus, 7 to 10 first). Never the first or last rate.
+     */
+    skip_when?: LiveCondition;
+    /**
      * Still running at this rate beyond `after_minutes` after it began (and, with `from_stabilisation`, beyond that long
      * after the patient was stabilised: the later of the two), while `when` holds: too much fluid. It happens once per
      * run: the monitor changes, the nurse says so, and it counts as harm. At exactly `after_minutes` it has not happened.
@@ -302,6 +308,11 @@ export interface LivePlan {
     critical_window_minutes: number;
     /** The encounter ends here. */
     time_limit_minutes: number;
+    /**
+     * "real": tests take their real ward times and the student waits or skips ahead to them (clinical_constraints
+     * .result_times). For a plan that runs for hours. Omitted: results are quick.
+     */
+    result_times?: "real";
     arrival?: {
         consciousness?: Consciousness;
         stability?: StabilityLevel;
@@ -404,6 +415,7 @@ export function keepFluidConfig(next: LivePlan, previous: unknown): LivePlan {
     return {
         ...next,
         time_limit_minutes: previous.time_limit_minutes,
+        ...(previous.result_times ? { result_times: previous.result_times } : {}),
         ...(previous.limitations ? { limitations: previous.limitations } : {}),
         treatments: next.treatments.map((t) => {
             const fluid = fluids.get(t.id);
@@ -554,6 +566,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
                 ...(l?.over_minutes !== undefined ? { over_minutes: num(l.over_minutes) ?? NaN } : {}),
                 ...(l?.while !== undefined ? { while: condition(l.while) } : {}),
                 ...(text(l?.says) ? { says: text(l.says) } : {}),
+                ...(l?.skip_when !== undefined ? { skip_when: condition(l.skip_when) } : {}),
                 ...(o && typeof o === "object"
                     ? {
                           overload: {
@@ -639,6 +652,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         ...(text(p.setting, 80) ? { setting: text(p.setting, 80) } : {}),
         critical_window_minutes: num(p.critical_window_minutes) ?? NaN,
         time_limit_minutes: num(p.time_limit_minutes) ?? NaN,
+        ...(p.result_times === "real" ? { result_times: "real" as const } : {}),
         ...(Object.keys(arrival).length > 0 ? { arrival } : {}),
         stages,
         treatments,
@@ -895,6 +909,10 @@ function checkFluid(t: LiveTreatment, f: LiveFluid, where: string, plan: LivePla
             if (l.over_minutes === undefined) errors.push(`${lw}: while only goes with over_minutes (an effect given at once has nothing to stop).`);
         }
         if (l.says !== undefined && l.says.length < 10) errors.push(`${lw}: says is what the student sees when the rate comes down to this; write a sentence.`);
+        if (l.skip_when) {
+            if (i === 0 || i === f.levels.length - 1) errors.push(`${lw}: skip_when needs a rate above and below it, so it cannot be on the first or last rate.`);
+            checkCondition(l.skip_when, `${lw}.skip_when`, scope, errors);
+        }
         const o = l.overload;
         if (o) {
             if (!minutes(o.after_minutes)) errors.push(`${lw}: overload.after_minutes must be a whole number of minutes from 1, within the encounter (${limit} min).`);
@@ -940,6 +958,9 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
     const ward = plan.treatments.some((t) => t.fluid);
     if (!whole(plan.time_limit_minutes) || plan.time_limit_minutes < 6 || plan.time_limit_minutes > (ward ? WARD_LIMIT_MINUTES : 45)) {
         errors.push(ward ? `time_limit_minutes must be between 6 and ${WARD_LIMIT_MINUTES} (48 hours) for a plan with a fluid ladder.` : "time_limit_minutes must be between 6 and 45.");
+    }
+    if (plan.result_times === "real" && whole(plan.time_limit_minutes) && plan.time_limit_minutes < 120) {
+        warnings.push(`result_times "real" in a ${plan.time_limit_minutes}-minute encounter: many results (a CBC takes 15 minutes, cultures a day) will not be back before it ends.`);
     }
     if (!whole(plan.critical_window_minutes) || plan.critical_window_minutes < 2) errors.push("critical_window_minutes must be at least 2.");
     else if (whole(plan.time_limit_minutes) && plan.critical_window_minutes >= plan.time_limit_minutes) errors.push("critical_window_minutes must be shorter than time_limit_minutes.");
@@ -1237,7 +1258,7 @@ const overloadFlag = (treatmentId: string, level: string, n = 1) => `fluid_${tre
 const RUNS = Array.from({ length: FLUID_RUNS }, (_, i) => i + 1);
 /** The engine's description of a fluid: for the tray, and for the condition that knows when its volume is in. */
 const fluidDef = (f: LiveFluid): FluidInfusionDef => ({
-    levels: f.levels.map((l) => ({ id: l.id, label: l.label, ml_per_h: l.ml_per_h })),
+    levels: f.levels.map((l) => ({ id: l.id, label: l.label, ml_per_h: l.ml_per_h, ...(l.skip_when ? { skippable: true } : {}) })),
     ...(f.volume_ml !== undefined ? { volume_ml: f.volume_ml } : {}),
 });
 const completedCond = (t: LiveTreatment): RuleCondition | null => (t.fluid?.volume_ml !== undefined ? { flag: fluidCompletedFlag(t.id), is: true } : null);
@@ -1359,16 +1380,23 @@ function fluidConsequences(t: LiveTreatment, plan: LivePlan): ActionConsequence[
             trajectory_note: `Started at ${l.label}. ${c.trajectory_note}`,
         }));
         const running: ActionConsequence[] = RUNS.flatMap((n) =>
-            f.levels.map((cur, j) => {
+            f.levels.flatMap((cur, j): ActionConsequence[] => {
                 const when: RuleCondition = { all: [started, runningAt(t, j, n)] };
-                if (j === i - 1) return { action, when, sets: { [fluidLevelFlag(t.id, l.id, n)]: true }, ...effectAtOnce(l), trajectory_note: l.says ?? `The rate is reduced to ${l.label}.` };
+                const reduce = (w: RuleCondition): ActionConsequence => ({ action, when: w, sets: { [fluidLevelFlag(t.id, l.id, n)]: true }, ...effectAtOnce(l), trajectory_note: l.says ?? `The rate is reduced to ${l.label}.` });
+                if (j === i - 1) return [reduce(when)];
                 const says =
                     j === i
                         ? `it is already running at ${cur.label}.`
                         : j > i
                           ? `it is running at ${cur.label}, below this rate: the rate only comes down, one step at a time.`
                           : `the rate comes down one step at a time: it is running at ${cur.label}, so the next step is ${f.levels[j + 1].label}.`;
-                return { action, when, trajectory_note: REFUSED.fluid(says) };
+                // Two rates down past one that may be left out: allowed while its skip_when holds, refused otherwise.
+                const skip = j === i - 2 ? f.levels[j + 1].skip_when : undefined;
+                if (skip) {
+                    const may = compileCondition(skip);
+                    return [reduce({ all: [started, runningAt(t, j, n), may] }), { action, when: { all: [started, runningAt(t, j, n), { not: may }] }, trajectory_note: REFUSED.fluid(says) }];
+                }
+                return [{ action, when, trajectory_note: REFUSED.fluid(says) }];
             })
         );
         // A stopped infusion restarts at the rate chosen, as a new run: the run before it, and its stop, stay on the record.
@@ -1711,7 +1739,12 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
     return {
         ...base,
         ...(plan.setting ? { setting: plan.setting } : {}),
-        clinical_constraints: { critical_window_minutes: plan.critical_window_minutes, hard_time_limit_minutes: plan.time_limit_minutes, time_scale: 1 },
+        clinical_constraints: {
+            critical_window_minutes: plan.critical_window_minutes,
+            hard_time_limit_minutes: plan.time_limit_minutes,
+            time_scale: 1,
+            ...(plan.result_times ? { result_times: plan.result_times } : {}),
+        },
         initial_state: {
             ...base.initial_state,
             rate: arrival.hr ?? base.initial_state.rate,

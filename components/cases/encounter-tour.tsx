@@ -15,7 +15,7 @@ const STEPS: TourStep[] = [
     id: "patient",
     target: "patient",
     title: "This is your patient",
-    body: "The monitor shows their vitals, live. They change if the patient gets worse, or better with what you do. The clock is the encounter's own time: it waits while you are away, and while this tour is open.",
+    body: "The monitor shows their vitals, live. They change if the patient gets worse, or better with what you do. The clock is the encounter's own time: it waits while you are away, and while this tour is open. To move time on, use Wait and watch under the clock; it stops early if the nurse calls.",
   },
   {
     id: "history",
@@ -33,7 +33,7 @@ const STEPS: TourStep[] = [
     id: "tests",
     target: "tab-tests",
     title: "Order tests from here",
-    body: "Pick from the list of investigations. Results take time to come back on the encounter clock, and a badge on this tab tells you when one is ready to read.",
+    body: "Pick from the list of investigations. Results take time to come back on the encounter clock, and a badge on this tab tells you when one is ready to read. To jump ahead, use Skip to result in the worklist.",
   },
   {
     id: "intervene",

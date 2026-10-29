@@ -9,18 +9,19 @@
 // happens (and why) is shown immediately, in the tray.
 
 import { useMemo, useState } from "react"
-import { AlertTriangle, CheckCircle2, Clock, Droplets, Info, Siren, Syringe } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Droplets, Info, Siren, Syringe } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatClock, type EventOf } from "@/lib/simulation/encounter-events"
-import { hardLimitSeconds, type FluidInfusionDef } from "@/lib/simulation/case-schema"
+import type { FluidInfusionDef } from "@/lib/simulation/case-schema"
 import { fluidAction, fluidStatus, fluidStopAction } from "@/lib/simulation/fluid-infusion"
 import { INTERVENTION_GROUPS, interventionLabel, interventionsForCase, type InterventionDef } from "@/lib/simulation/intervention-catalog"
 import { REFUSED_PREFIX, availableFlag } from "@/lib/simulation/live-plan"
 import { describeFindings } from "@/lib/simulation/reassessment"
 import { EXACT_HOLD_SECONDS } from "@/lib/simulation/live-vitals"
 import { useClinicalEvents } from "./clinical-event-manager"
+import { TimeSkipControl } from "./time-skip-control"
 
 interface Props {
   open: boolean
@@ -44,9 +45,6 @@ interface Outcome {
  */
 const refused = (consequence: string) => consequence.startsWith(REFUSED_PREFIX)
 
-/** "30 min", "1 h", "4 h". */
-const waitLabel = (minutes: number) => (minutes < 60 ? `${minutes} min` : `${minutes / 60} h`)
-
 /**
  * A rate-controlled infusion on the tray: start it at one of its rates, then step it down one rate at a time or stop it.
  * What it shows (rate, volume given and left) is worked out from the patient's flags, as the server works it out.
@@ -65,6 +63,8 @@ function FluidCard({ item, fluid, flags, flagSetAt, now, disabled, cooling, onGi
   const index = fluid.levels.findIndex((l) => l.id === status.level)
   const level = fluid.levels[index]
   const next = index >= 0 ? fluid.levels[index + 1] : undefined
+  // A rate that may be left out on some paths: the one below it is offered too, and the engine says whether it applies now.
+  const past = next?.skippable ? fluid.levels[index + 2] : undefined
   const button = (action: string, text: string, primary = false) => (
     <Button
       key={action}
@@ -104,6 +104,7 @@ function FluidCard({ item, fluid, flags, flagSetAt, now, disabled, cooling, onGi
           </>
         )}
         {status.state === "running" && next && button(fluidAction(item.id, next.id), `Step down to ${next.label}`, true)}
+        {status.state === "running" && past && button(fluidAction(item.id, past.id), `Step down to ${past.label}`)}
         {status.state === "running" && button(fluidStopAction(item.id), "Stop")}
         {status.canRestart && (
           <>
@@ -120,19 +121,8 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
   const { config, events, actions, isExpired, patient, now } = useClinicalEvents()
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [cooling, setCooling] = useState<ReadonlySet<string>>(new Set())
-  const [waited, setWaited] = useState<string | null>(null)
-
-  // Waiting moves the clock on; a nurse alert ends the wait early, so a deterioration is never skipped past.
-  const waitFor = (minutes: number) => {
-    const { to, stopped } = actions.wait(minutes)
-    setWaited(`Waited until ${formatClock(to)}${stopped === "alert" ? ": stopped early, the nurse is calling." : stopped === "limit" ? ": the encounter has ended." : "."}`)
-    setOutcome(null)
-  }
-
   const tray = useMemo(() => interventionsForCase(config), [config])
   const fluids = useMemo(() => new Map((config.custom_interventions ?? []).flatMap((i) => (i.fluid ? [[i.id, i.fluid] as const] : []))), [config])
-  // A case that runs on for hours (a fluid ladder) also lets the student wait through them; a wait still stops at a nurse alert.
-  const waits = hardLimitSeconds(config) > 3600 ? [1, 5, 30, 60, 240] : [1, 5]
   const recent = useMemo(
     () => events.filter((e): e is EventOf<"INTERVENTION_GIVEN"> => e.type === "INTERVENTION_GIVEN").slice(-5).reverse(),
     [events]
@@ -187,17 +177,7 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-enc-line-strong px-4 py-2 sm:px-6">
-          <span className="flex items-center gap-1 text-[12px] font-medium text-enc-ink-2">
-            <Clock className="h-3.5 w-3.5" /> Wait and watch
-          </span>
-          {waits.map((m) => (
-            <Button key={m} type="button" size="sm" variant="outline" disabled={isExpired} onClick={() => waitFor(m)} className="h-7 px-2.5 text-[11px]">
-              {waitLabel(m)}
-            </Button>
-          ))}
-          {waited && <span className="text-[12px] text-enc-ink-2">{waited}</span>}
-        </div>
+        <TimeSkipControl onSkipped={() => setOutcome(null)} className="shrink-0 border-b border-enc-line-strong px-4 py-2 sm:px-6" />
 
         <div className="min-h-0 flex-1 overflow-y-auto" data-lenis-prevent style={{ scrollbarWidth: "thin" }}>
           {/* Consequence feedback */}

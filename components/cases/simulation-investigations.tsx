@@ -9,7 +9,7 @@
 //   Worklist      what HAS been ordered and where each result stands (a queue)
 
 import { memo, useMemo, useState } from "react"
-import { Activity, Check, FlaskConical, Inbox, Loader2, ScanLine, Search, Stethoscope } from "lucide-react"
+import { Activity, Check, FastForward, FlaskConical, Inbox, Loader2, ScanLine, Search, Stethoscope } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import type { CatalogTest, TestCategory } from "@/lib/clinical-catalog"
@@ -27,6 +27,7 @@ import {
 import { useClinicalEvents } from "./clinical-event-manager"
 import { TestResultModal } from "./test-result-modal"
 import { Paper, PaperHeader, StatusPill, Timestamp } from "./encounter-ui"
+import { useTimeSkip } from "./use-time-skip"
 
 const KIND_ICON = {
   ecg: Activity,
@@ -104,8 +105,9 @@ const CatalogList = memo(function CatalogList({ tests, orderedIds, disabled, tur
 // ── Panel ───────────────────────────────────────────────────────────────────
 
 export function SimulationInvestigations() {
-  const { config, events, now, actions, isExpired } = useClinicalEvents()
+  const { config, events, now, getNow, limitSeconds, actions, isExpired } = useClinicalEvents()
   const { toast } = useToast()
+  const skip = useTimeSkip()
 
   const [query, setQuery] = useState("")
   const [category, setCategory] = useState<TestCategory | "all">("all")
@@ -133,6 +135,12 @@ export function SimulationInvestigations() {
   )
 
   const pending = orders.filter((o) => !isResultReady(config, o, now)).length
+
+  // Skip the clock to when this result is back. Like any wait it stops early at a nurse alert, and says what changed.
+  const skipToResult = (order: InvestigationOrder) => {
+    const summary = skip(readyAt(config, order) - getNow())
+    if (summary) toast({ title: summary.title, description: summary.lines.join(" "), duration: 6000 })
+  }
 
   return (
     <div className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-5 bg-enc-desk p-5 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-1">
@@ -193,6 +201,8 @@ export function SimulationInvestigations() {
                 const interpreted = interpretationFor(events, order) !== undefined
                 const revealed = isRevealed(events, order)
                 const left = Math.max(0, readyAt(config, order) - now)
+                // A result due after the encounter ends cannot be skipped to: the skip would end the case.
+                const afterEnd = readyAt(config, order) > limitSeconds
                 return (
                   <li key={order.key} className={cn("rounded-lg border bg-enc-sheet p-3 shadow-enc-sheet", ready ? "border-enc-ok/30" : "border-enc-line")}>
                     <div className="flex items-start justify-between gap-2">
@@ -207,9 +217,21 @@ export function SimulationInvestigations() {
                         </StatusPill>
                       )}
                     </div>
-                    <p className="mt-1 text-[12px] text-enc-ink-3">
-                      Ordered <Timestamp>{formatClock(order.orderedAt)}</Timestamp>
-                    </p>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <p className="text-[12px] text-enc-ink-3">
+                        Ordered <Timestamp>{formatClock(order.orderedAt)}</Timestamp>
+                      </p>
+                      {!ready && afterEnd && <span className="text-[12px] text-enc-ink-3">Back after this encounter ends</span>}
+                      {!ready && !afterEnd && !isExpired && left >= 3 && (
+                        <button
+                          type="button"
+                          onClick={() => skipToResult(order)}
+                          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-brand-700 transition-colors outline-none hover:bg-brand-50 focus-visible:ring-2 focus-visible:ring-brand-300"
+                        >
+                          <FastForward className="h-3.5 w-3.5" /> Skip to result
+                        </button>
+                      )}
+                    </div>
                     {ready && (
                       <div className="mt-2.5 flex items-center justify-between gap-2">
                         <button

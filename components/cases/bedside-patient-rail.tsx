@@ -31,6 +31,7 @@ import { monitorSound, SoundToggle } from "./monitor-sound"
 import { Eyebrow, Paper, StatusPill } from "./encounter-ui"
 import { PatientPortrait } from "./patient-portrait"
 import { usePatientAppearance } from "./use-patient-appearance"
+import { TimeSkipControl } from "./time-skip-control"
 import { useToast } from "@/hooks/use-toast"
 
 // ── The channels: colour is a function, as on a real monitor ────────────────
@@ -380,6 +381,9 @@ export function BedsidePatientRail({ onOpenDifferential, className }: BedsidePat
           <span className="text-[12px] text-enc-ink-3">elapsed</span>
           {!constraints.untimed && <span className="ml-auto font-mono text-[12px] text-enc-ink-3 tabular-nums">of {formatClock(limitSeconds)}</span>}
         </div>
+
+        {/* Skip the clock forward: it stops at a nurse alert and says what changed while you waited. */}
+        {!constraints.untimed && <TimeSkipControl />}
 
         {hasWindow && (
           <div>

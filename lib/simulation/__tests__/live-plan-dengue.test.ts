@@ -298,6 +298,27 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
         assert.equal(out[3], "The pump is turned down to 7 mL/kg/h (455 mL/h).");
         assert.match(out[4], /^Not given: it is running at 7 to 10 mL\/kg\/h, below this rate/);
     });
+
+    it("after a single hypotensive bolus, 10 mL/kg/h for 1 hour goes straight to 5 to 7 (NCVBDC 2023 p 40), on time", () => {
+        const { out, score } = run([
+            ["iv_access", 9], [BOLUS, 10], [rate("r10"), 11], [R, 70], [rate("r5"), 71], [rate("r3"), 71 + H], [rate("r2"), 71 + 3 * H], [STOP, 11 + 24 * H],
+        ], 11 + 24 * H + 10);
+        assert.equal(out[4], "The pump is turned down to 5 mL/kg/h (325 mL/h).");
+        assert.deepEqual(steps(score), [
+            ["Started at 10 mL/kg/h", "on_time"],
+            ["10 mL/kg/h for 60 to 90 min", "on_time"],
+            ["5 to 7 mL/kg/h for 1 to 2 h", "on_time"],
+            ["3 to 5 mL/kg/h for 2 to 4 h", "on_time"],
+            ["Stopped 24 to 48 h after it was started", "on_time"],
+        ]);
+        // The 7 to 10 step is still open on that path, and still the only way down in compensated shock (above).
+        assert.equal(run([["iv_access", 9], [BOLUS, 10], [rate("r10"), 11], [rate("r7"), 71]]).out[3], "The pump is turned down to 7 mL/kg/h (455 mL/h).");
+    });
+
+    it("after two boluses the infusion starts at 7 to 10, so there is nothing to step past", () => {
+        const { out } = run([["iv_access", 14], [BOLUS, 14.5], [R, 15], [BOLUS, 16.5], [rate("r7"), 17], [rate("r5"), 17 + H]], 17 + H + 1);
+        assert.equal(out[5], "The pump is turned down to 5 mL/kg/h (325 mL/h).");
+    });
 });
 
 describe("dengue shock: what the engine does with fluids (variants of the converted plan)", { skip: SKIP }, () => {
@@ -345,5 +366,14 @@ describe("dengue shock: what the engine does with fluids (variants of the conver
         const plan = c.live_plan as LivePlan;
         const early = sbpSeries(plan, [["iv_access", 2], [rate("r10"), 3], [rate("r7"), 10], [rate("r5"), 11], [rate("r3"), 12], [rate("r2"), 13], [STOP, 14]], 40).e.state;
         assert.equal(early.systolic, 104, "he recovers to the plan's recovery BP whatever the rate");
+    });
+
+    it("skip_when is refused on the first or last rate, which have no rate on both sides", () => {
+        for (const at of [0, 4]) {
+            const p = JSON.parse(JSON.stringify(c.live_plan));
+            p.treatments.find((x: { id: string }) => x.id === COMP).fluid.levels[at].skip_when = { given: BOLUS };
+            const { errors } = checkLivePlan(normaliseLivePlan(p, "ai"), measuredOnArrival(base));
+            assert.ok(errors.some((e) => /skip_when needs a rate above and below it/.test(e)), `rate ${at}`);
+        }
     });
 });

@@ -151,6 +151,12 @@ export interface ClinicalConstraints {
      * every case, timed or not: case-resolvers.ts, turnaroundMinutes.)
      */
     untimed?: boolean;
+    /**
+     * "real": results take their real ward times (a CBC 15 minutes, a blood culture a day) and the student waits or
+     * skips ahead to them. For a case that runs for hours, where acting before the result is the teaching (dengue:
+     * never delay fluids for the haematocrit). Omitted: results are quick, at most 30 real seconds.
+     */
+    result_times?: "real";
     /** Simulation seconds per real second. Defaults to 1. */
     time_scale?: number;
 }
@@ -248,8 +254,8 @@ export interface CustomInterventionDef {
 }
 
 export interface FluidInfusionDef {
-    /** The rates, highest first. */
-    levels: Array<{ id: string; label: string; ml_per_h: number }>;
+    /** The rates, highest first. `skippable`: on some paths the rate above may step past it (the engine decides when). */
+    levels: Array<{ id: string; label: string; ml_per_h: number; skippable?: boolean }>;
     /** The volume it is set to give; it finishes itself once that has run in. Absent: it runs until stopped. */
     volume_ml?: number;
 }

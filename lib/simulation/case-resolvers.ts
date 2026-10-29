@@ -15,6 +15,7 @@ import {
     deriveStatus,
     formatReferenceRange,
     formatValue,
+    getCatalogTest,
     type Sex,
     type TestCategory,
     type TestKind,
@@ -96,6 +97,9 @@ export function listOrders(events: readonly ClinicalEvent[]): InvestigationOrder
 /** The longest a student waits for any result, in real seconds. A virtual case is not a real lab queue. */
 export const MAX_RESULT_WAIT_SECONDS = 30;
 
+/** Real minutes for a test the catalog does not list, by kind, in a case with real result times. */
+const REAL_MINUTES_BY_KIND: Record<TestKind, number> = { bedside: 1, ecg: 1, lab: 30, imaging: 30, procedure: 30 };
+
 /**
  * Sim minutes until the result is back.
  *
@@ -104,8 +108,14 @@ export const MAX_RESULT_WAIT_SECONDS = 30;
  * culture a day), so a catalog test the case did not write is scaled down 60x: a 20-minute troponin is back in 20
  * seconds, and quick tests still come back before slow ones. Either way nothing takes longer than
  * MAX_RESULT_WAIT_SECONDS of real time, in an ordinary case or a live one.
+ *
+ * A case with real result times (clinical_constraints.result_times "real") uses the catalog's real minutes instead,
+ * uncapped: the case's own playing times would be seconds. A test the catalog does not have takes its kind's usual time.
  */
 export function turnaroundMinutes(config: SimulationCaseConfig, testId: string): number {
+    if (config.clinical_constraints?.result_times === "real") {
+        return getCatalogTest(testId)?.turnaroundMinutes ?? REAL_MINUTES_BY_KIND[getTestDef(config, testId)?.kind ?? "lab"];
+    }
     const override = config.investigation_results?.[testId]?.turnaround_minutes;
     const isCaseAuthored = config.custom_tests?.some((t) => t.id === testId) ?? false;
     const catalogMinutes = getTestDef(config, testId)?.turnaroundMinutes ?? 30;
