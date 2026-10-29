@@ -33,7 +33,7 @@ export default function ApiDocsClient() {
     const [openFaq, setOpenFaq] = useState<number | null>(null)
     const { toast } = useToast()
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         if (!email || !institution) {
             toast({ title: "Required fields missing", description: "Please provide your email and institution name.", variant: "destructive" })
@@ -45,7 +45,8 @@ export default function ApiDocsClient() {
             // `source` below says which form a message came from.
             const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_API || process.env.NEXT_PUBLIC_FORMSPREE_INSTITUTION
             if (endpoint) {
-                const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ name, email, institution, useCase, source: "medikarya_api_page" }) })
+                const formData = new FormData(e.currentTarget)
+                const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ name, email, institution, useCase, source: "medikarya_api_page", privacyNoticeVersion: "2026-10-29", privacyConsent: formData.get("privacy-consent") === "yes", privacyConsentAt: new Date().toISOString() }) })
                 if (!res.ok) throw new Error("Submission failed")
             } else {
                 // No inbox is connected to this form: never tell someone their request was received when it was not.
@@ -134,6 +135,7 @@ export default function ApiDocsClient() {
                                     </div>
                                     <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">Institution / Organisation <span className="text-red-400">*</span></label><Input placeholder="e.g. AIIMS New Delhi" value={institution} onChange={e => setInstitution(e.target.value)} required className="rounded-lg" /></div>
                                     <div className="space-y-1.5"><label className="text-sm font-medium text-slate-700">What do you have in mind?</label><Textarea placeholder="e.g. A workshop for our final-year batch before their clinical postations..." value={useCase} onChange={e => setUseCase(e.target.value)} rows={3} className="rounded-lg resize-none" /></div>
+                                    <label className="flex items-start gap-2 text-xs leading-relaxed text-slate-500"><input required type="checkbox" name="privacy-consent" value="yes" className="mt-0.5" /><span>I have read the <Link href="/privacy" className="underline">Privacy Policy</Link>. MediKarya may use these details to respond to this institutional enquiry.</span></label>
                                     <Button type="submit" disabled={isLoading} className="w-full rounded-lg bg-slate-900 hover:bg-slate-800 text-white">
                                         {isLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Submitting...</> : "Send"}
                                     </Button>

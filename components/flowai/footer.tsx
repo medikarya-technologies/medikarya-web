@@ -169,6 +169,9 @@ export function Footer() {
             </Link>
           </div>
         </div>
+        <div className="mt-5 border-t border-enc-line pt-4 text-xs leading-relaxed text-enc-ink-3">
+          MediKarya is operated by MEDIKARYA TECHNOLOGIES PRIVATE LIMITED (CIN U58202HR2026PTC146060), V-214, Second Floor, Gandhi Colony, Faridabad, Haryana 121001, India. Grievance Officer: Abhishek Singh, Founder · <a className="underline" href="mailto:abhishek@medikarya.in">abhishek@medikarya.in</a> · +91 87965 02901. Customer support: <a className="underline" href="mailto:contact@medikarya.in">contact@medikarya.in</a>. Privacy requests: <a className="underline" href="mailto:privacy@medikarya.in">privacy@medikarya.in</a>.
+        </div>
       </div>
     </footer>
   )

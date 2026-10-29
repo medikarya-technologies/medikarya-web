@@ -1,11 +1,14 @@
 "use client"
 
 import { SignUp } from "@clerk/nextjs"
+import { useState } from "react"
+import Link from "next/link"
 import { useMounted } from "@/hooks/use-mounted"
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 
 export default function SignUpClient() {
+  const [legalConsentAt, setLegalConsentAt] = useState("")
   const { ref, isVisible } = useScrollAnimation()
   // Clerk's box is drawn once the page has loaded, so the server and the first browser render match (hooks/use-mounted.ts)
   const mounted = useMounted()
@@ -52,11 +55,17 @@ export default function SignUpClient() {
             <p className="text-sm sm:text-base text-slate-600">Start your journey in AI-powered medical education</p>
           </div>
 
-          {/* Clerk SignUp Component */}
-          {mounted ? (
+          <label className="mb-5 flex items-start gap-2.5 text-left text-xs leading-relaxed text-slate-600">
+            <input type="checkbox" className="mt-0.5 accent-blue-600" checked={!!legalConsentAt} onChange={(e) => setLegalConsentAt(e.target.checked ? new Date().toISOString() : "")} />
+            <span>I confirm I am at least 18 years old. I have read and agree to the <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>. I agree that MediKarya may use the account information I provide to create and secure my account, and store my learning activity as explained in the Privacy Policy.</span>
+          </label>
+
+          {/* Account fields only appear after the privacy notice and agreement have been acknowledged. */}
+          {legalConsentAt ? (mounted ? (
             <SignUp
               signInUrl="/login"
               afterSignUpUrl="/dashboard"
+              unsafeMetadata={{ medikaryaLegalNoticeVersion: "2026-10-29", medikaryaTermsAcceptedAt: legalConsentAt, medikaryaPrivacyNoticeAcceptedAt: legalConsentAt }}
               appearance={{
                 elements: {
                   formButtonPrimary: "w-full rounded-xl py-4 sm:py-6 text-sm sm:text-base font-medium bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
@@ -76,7 +85,7 @@ export default function SignUpClient() {
             />
           ) : (
             <div aria-hidden className="min-h-[420px]" />
-          )}
+          )) : <p className="text-center text-xs text-slate-500">Check the box above to continue to account creation.</p>}
         </div>
       </div>
     </main>

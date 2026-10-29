@@ -3,64 +3,25 @@
 import Link from "next/link"
 import { ArrowLeft, Cookie } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { openCookieSettings } from "@/components/privacy/cookie-consent"
 
 export default function CookiesClient() {
-    return (
-        <div className="min-h-screen bg-studio-50 font-sans text-slate-600 selection:bg-brand-100 selection:text-brand-900">
-            <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-xl">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-slate-800 text-lg">
-                        <div className="flex h-8 w-8 items-center justify-center">
-                            <img src="https://www.medikarya.in/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
-                        </div>
-                        MediKarya
-                    </Link>
-                    <Button asChild variant="ghost" size="sm" className="text-slate-500 hover:text-brand-600">
-                        <Link href="/" className="flex items-center gap-2"><ArrowLeft className="h-4 w-4" />Back to Home</Link>
-                    </Button>
-                </div>
-            </header>
-            <main className="container mx-auto px-4 py-12 max-w-4xl">
-                <div className="mb-10 text-center">
-                    <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl mb-4">Cookie Policy</h1>
-                    <p className="text-lg text-slate-600">Last updated: December 10, 2025</p>
-                </div>
-                <div className="prose prose-slate prose-lg max-w-none bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-slate-100">
-                    <p className="lead">This Cookie Policy explains how MediKarya uses cookies and similar technologies to recognize you when you visit our website.</p>
-                    <div className="not-prose my-10 bg-brand-50 border border-brand-100 rounded-2xl p-6 flex gap-4">
-                        <Cookie className="h-8 w-8 text-brand-600 flex-shrink-0" />
-                        <div>
-                            <h3 className="font-bold text-brand-900 text-lg mb-1">What are cookies?</h3>
-                            <p className="text-brand-800 text-sm">Cookies are small data files placed on your device when you visit a website. They help websites work efficiently and provide reporting information.</p>
-                        </div>
-                    </div>
-                    <h3>1. Essential Cookies</h3>
-                    <p>These cookies are strictly necessary to provide you with services available through our website, such as access to secure areas like the Dashboard.</p>
-                    <ul>
-                        <li><strong>Authentication:</strong> We use cookies to verify your account and determine when you&apos;re logged in.</li>
-                        <li><strong>Security:</strong> We use cookies to help keep your account and data safe and secure.</li>
-                    </ul>
-                    <h3>2. Analytics and Performance Cookies</h3>
-                    <p>These cookies enhance performance and functionality. We may use tools like Vercel Analytics to understand how users use the website.</p>
-                    <h3>3. Functionality Cookies</h3>
-                    <p>These cookies allow our website to remember choices you make to provide enhanced, more personal features.</p>
-                    <Separator className="my-8" />
-                    <h3>4. Managing Cookies</h3>
-                    <p>You can exercise your cookie preferences by setting your browser controls to block or delete cookies. Note that blocking cookies may restrict access to some features.</p>
-                    <h3>5. Updates to this Policy</h3>
-                    <p>We may update this Cookie Policy from time to time. Please re-visit regularly to stay informed.</p>
-                    <div className="not-prose mt-8">
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">Questions?</h3>
-                        <Button variant="outline" asChild><a href="mailto:privacy@medikarya.in">privacy@medikarya.in</a></Button>
-                    </div>
-                </div>
-            </main>
-            <footer className="border-t py-8 bg-white">
-                <div className="container mx-auto px-4 text-center text-sm text-slate-500">
-                    &copy; {new Date().getFullYear()} MediKarya. All rights reserved.
-                </div>
-            </footer>
-        </div>
-    )
+    return <div className="min-h-screen bg-studio-50 font-sans text-slate-600">
+        <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-xl"><div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-slate-800"><img src="/medikarya.svg" alt="" className="h-8 w-8" />MediKarya</Link>
+            <Button asChild variant="ghost" size="sm"><Link href="/" className="flex items-center gap-2"><ArrowLeft className="h-4 w-4" />Back to Home</Link></Button>
+        </div></header>
+        <main className="container mx-auto max-w-4xl px-4 py-12">
+            <div className="mb-10 text-center"><h1 className="mb-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Cookie Policy</h1><p className="text-lg">Last updated: October 29, 2026</p></div>
+            <article className="prose prose-slate prose-lg max-w-none rounded-3xl border border-slate-100 bg-white p-8 shadow-sm sm:p-12">
+                <p>We use essential browser storage and cookies to provide MediKarya. Optional analytics are off unless you choose to allow them. You can change your decision at any time using the button below.</p>
+                <div className="not-prose my-8 rounded-2xl border border-brand-100 bg-brand-50 p-6"><Cookie className="mb-3 h-6 w-6 text-brand-600"/><h2 className="font-bold text-slate-900">Manage your choice</h2><p className="mt-1 text-sm text-slate-700">Your current choice is stored in this browser. Removing site data in your browser also resets it.</p><button onClick={openCookieSettings} className="mt-4 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white">Change cookie choice</button></div>
+                <h2>Essential storage</h2><p>Authentication and security cookies are needed for sign-in, account sessions, and protection against misuse. Theme, tutorial, and case interface preferences may be saved in local storage on your device. These are not used for advertising.</p>
+                <h2>Optional analytics</h2><p>Only after you select “Accept analytics,” we load Microsoft Clarity to understand how visitors interact with pages and Vercel Speed Insights to measure page performance. These providers may use cookies or similar identifiers and receive technical information such as device, browser, pages visited, and interaction/performance events. We do not load these analytics when you select “Essential only.”</p>
+                <h2>Managing browser storage</h2><p>You can remove or block cookies and local storage using your browser settings. Blocking essential cookies can prevent sign-in or other features from working. You can withdraw analytics permission using the control above; the new choice prevents future analytics loading in this browser. You can also clear site data to remove locally stored preferences.</p>
+                <h2>More information</h2><p>See our <Link href="/privacy">Privacy Policy</Link> for details about the personal data we process, purposes, providers, retention, and how to contact us. Questions: <a href="mailto:privacy@medikarya.in">privacy@medikarya.in</a>.</p>
+            </article>
+        </main>
+        <footer className="border-t bg-white py-8 text-center text-sm text-slate-500">© {new Date().getFullYear()} MediKarya. All rights reserved.</footer>
+    </div>
 }

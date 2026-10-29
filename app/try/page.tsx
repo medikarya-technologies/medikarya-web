@@ -54,12 +54,12 @@ export default function TryPage() {
 
   useEffect(() => {
     loadCase()
-    setGuestId(getOrCreateGuestId())
   }, [loadCase])
 
   const handleStartCase = async () => {
     try {
       setIsStarting(true)
+      setGuestId(getOrCreateGuestId())
       await new Promise((resolve) => setTimeout(resolve, 800))
       const response = await fetch(`/api/cases/${FREE_CASE_ID}/start`, {
         method: "POST",

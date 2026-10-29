@@ -1,74 +1,56 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, Lock, Database } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+
+const updated = "October 29, 2026"
 
 export default function PrivacyClient() {
     return (
         <div className="min-h-screen bg-studio-50 font-sans text-slate-600 selection:bg-brand-100 selection:text-brand-900">
-            <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-xl">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-slate-800 text-lg">
-                        <div className="flex h-8 w-8 items-center justify-center">
-                            <img src="https://www.medikarya.in/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
-                        </div>
-                        MediKarya
-                    </Link>
-                    <Button asChild variant="ghost" size="sm" className="text-slate-500 hover:text-brand-600">
-                        <Link href="/" className="flex items-center gap-2"><ArrowLeft className="h-4 w-4" />Back to Home</Link>
-                    </Button>
-                </div>
-            </header>
-            <main className="container mx-auto px-4 py-12 max-w-4xl">
-                <div className="mb-10 text-center">
-                    <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl mb-4">Privacy Policy</h1>
-                    <p className="text-lg text-slate-600">Last updated: December 10, 2025</p>
-                </div>
-                <div className="prose prose-slate prose-lg max-w-none bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-slate-100">
-                    <p className="lead">At MediKarya, we are committed to protecting your personal information and your right to privacy. This policy explains how we collect, use, and safeguard your data when you visit our website or use our simulation platform.</p>
-                    <div className="grid md:grid-cols-2 gap-6 not-prose my-10">
-                        <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
-                            <Database className="h-6 w-6 text-brand-600 mb-3" />
-                            <h4 className="font-bold text-slate-900 mb-2">What We Collect</h4>
-                            <p className="text-sm text-slate-600">Email addresses, professional details (Role, Specialty), and usage data regarding your simulation performance.</p>
-                        </div>
-                        <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100">
-                            <Lock className="h-6 w-6 text-brand-600 mb-3" />
-                            <h4 className="font-bold text-slate-900 mb-2">How We Protect It</h4>
-                            <p className="text-sm text-slate-600">We use industry-standard encryption and security measures. We never sell your data to third parties.</p>
-                        </div>
-                    </div>
-                    <h3>1. Information We Collect</h3>
-                    <p>We collect personal information that you voluntarily provide when you register, express interest in joining our platform, or contact us.</p>
+            <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-xl"><div className="container mx-auto flex h-16 items-center justify-between px-4">
+                <Link href="/" className="flex items-center gap-2 text-lg font-bold text-slate-800"><img src="/medikarya.svg" alt="" className="h-8 w-8" />MediKarya</Link>
+                <Button asChild variant="ghost" size="sm"><Link href="/" className="flex items-center gap-2"><ArrowLeft className="h-4 w-4" />Back to Home</Link></Button>
+            </div></header>
+            <main className="container mx-auto max-w-4xl px-4 py-12">
+                <div className="mb-10 text-center"><h1 className="mb-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Privacy Policy</h1><p className="text-lg">Last updated: {updated}</p></div>
+                <article className="prose prose-slate prose-lg max-w-none rounded-3xl border border-slate-100 bg-white p-8 shadow-sm sm:p-12">
+                    <p><strong>In brief:</strong> MediKarya collects account details, learning activity, messages you submit, and basic device and service logs to provide and secure its medical education platform. We do not sell personal data. Optional analytics run only if you accept them in the cookie controls. This notice explains our handling of information, including sensitive personal data where applicable under Indian law.</p>
+                    <h2>Who is responsible for your data?</h2>
+                    <p><strong>MEDIKARYA TECHNOLOGIES PRIVATE LIMITED</strong> (CIN U58202HR2026PTC146060), the company operating MediKarya ("MediKarya", "we", "us"), is responsible for personal data described here. Registered office: V-214, Second Floor, Gandhi Colony, Faridabad, Haryana 121001, India. Website: <a href="https://www.medikarya.in">medikarya.in</a>. <strong>Grievance Officer: Abhishek Singh, Founder</strong> — <a href="mailto:abhishek@medikarya.in">abhishek@medikarya.in</a>. Privacy and data requests: <a href="mailto:privacy@medikarya.in">privacy@medikarya.in</a>. Consumer complaints: <a href="mailto:contact@medikarya.in">contact@medikarya.in</a> or +91 87965 02901.</p>
+                    <h2>What we collect, and why</h2>
                     <ul>
-                        <li><strong>Personal Information:</strong> Name, email address, job title, medical specialty, and years of experience.</li>
-                        <li><strong>Simulation Data:</strong> Performance metrics, diagnosis accuracy, and learning progress logs.</li>
+                        <li><strong>Account and profile:</strong> name, email address, account identifier, profile details you provide, and a record of the legal notice version and your acceptance time. Clerk processes sign-in and account security (including passwords, which we do not receive in readable form); we use account information to create and operate your account, provide support, and associate your learning records with you. Sign-up acceptance metadata is held with your Clerk account; first-case notice acceptance is saved in your browser.</li>
+                        <li><strong>Learning and simulation:</strong> case starts, case identifiers, your questions and conversation history for the current AI interaction, selections, investigation orders, submitted answers, scores, feedback, quiz results, and progress. We use these to run the simulation, generate feedback and quizzes, show your learning history, and maintain service integrity. Conversation history is sent to Google Gemini to generate responses; the chat API does not persist the conversation on our servers, but in-progress chat and case actions are stored in your browser so you can resume. Your submitted answers and learning results may be saved to your account. Guest attempts use a random browser identifier and may store attempt results so we can provide the case and its debrief.</li>
+                        <li><strong>Payments and plans:</strong> plan, subscription and transaction references, payment status, and billing period. Razorpay receives checkout details (including the email and name prefilled from your account) and processes payment credentials; we receive payment and subscription status and identifiers. We do not store full card or UPI credentials.</li>
+                        <li><strong>Messages and contributions:</strong> name, email, institution, designation, specialty, phone/WhatsApp number, message, feedback, case reports, and case or review content you submit through our forms or Case Studio, along with form-consent records. Contact forms are delivered by Formspree. Do not submit identifiable patient information or other people’s sensitive data.</li>
+                        <li><strong>Attribution and certificates:</strong> if you contribute or review a case, or receive a certificate, your chosen/public display name, attribution, certificate identifier, title, issue date and verification status may appear on the public site so the work or credential can be credited and verified. We show a reviewer’s name only where the reviewer has chosen to be named.</li>
+                        <li><strong>Technical and security data:</strong> IP address and request metadata used for rate limits and abuse prevention, essential authentication/session cookies, and basic server logs. If you accept analytics, Microsoft Clarity may collect interaction/session analytics and Vercel Speed Insights may collect performance metrics. If you use voice input, your browser’s speech-recognition service processes the audio or transcript under that provider’s terms.</li>
+                        <li><strong>Device preferences:</strong> theme, tutorial progress, first-case notice acceptance and other interface preferences may be stored in your browser’s local storage. In-progress simulation chat and case actions are also stored there so you can resume; clear the site’s browser storage to remove them.</li>
                     </ul>
-                    <h3>2. How We Use Your Information</h3>
-                    <ul>
-                        <li>To facilitate account creation and logon process.</li>
-                        <li>To send you administrative information (account status, product updates).</li>
-                        <li>To personalize your educational experience.</li>
-                        <li>To improve our AI models using anonymized aggregate data.</li>
-                    </ul>
-                    <h3>3. Data Sharing</h3>
-                    <p>We do <strong>not</strong> share, sell, rent, or trade your information with third parties for their promotional purposes.</p>
-                    <h3>4. Security of Your Information</h3>
-                    <p>We use administrative, technical, and physical security measures to help protect your personal information.</p>
-                    <Separator className="my-8" />
-                    <h3>5. Your Privacy Rights</h3>
-                    <p>You may have rights to request access to, correction of, or deletion of your personal information. Contact us at any time to exercise these rights.</p>
-                    <h3>6. Contact Us</h3>
-                    <p>Questions? Email us at <a href="mailto:privacy@medikarya.in">privacy@medikarya.in</a>.</p>
-                </div>
+                    <h2>Purposes and legal basis</h2>
+                    <p>We process data to provide the service you request, operate accounts and subscriptions, personalise learning, respond to support requests, protect the service, meet legal obligations, and improve the platform. Optional analytics are processed only after you choose “Accept analytics”; you can withdraw that choice using <Link href="/cookies">Cookie settings</Link>. Where consent is required by applicable law, we will seek it before the relevant processing and provide a way to withdraw it. You can still use the core service if you decline optional analytics.</p>
+                    <h2>AI processing</h2>
+                    <p>When you use AI patient conversations, evaluations or generated quizzes, the relevant message, conversation context, case content, submitted answers and/or learning feedback are sent to Google Gemini through its API to generate the requested educational response. We may use Google Gemini or Anthropic Claude for internal case drafting and conversion by authorised staff. Do not enter real patient identifiers, clinical records, or confidential information in the product or contributions. AI outputs can be inaccurate and are for education only. We do not use your personal account data to train our own general-purpose AI models.</p>
+                    <h2>Who receives data</h2>
+                    <p>We use service providers to host and operate the platform: Clerk (authentication), Supabase (database), Google (AI generation), Anthropic (internal AI-assisted case work), Razorpay (payments), Formspree (contact forms), Vercel (hosting and, if enabled, performance analytics), and Microsoft (Clarity analytics, only when accepted). Razorpay checkout and links you choose to open, such as WhatsApp, connect your browser to those providers. They process information for the relevant service purpose under their own terms and privacy practices. We may also disclose information where required by law, to protect users or the service, or as part of a business reorganisation. We do not sell personal data or share it with third parties for their own advertising.</p>
+                    <h2>Retention</h2>
+                    <p>We retain account and learning records while your account is active and as needed to provide the service. Payment, tax, security, and dispute records may be retained for the periods required by law or to resolve claims. Messages are retained while needed to respond and maintain relevant business records. You may request erasure; some information may need to be retained where law requires it or for legitimate security and dispute purposes. Optional browser storage can be cleared through your browser settings.</p>
+                    <h2>Security and incidents</h2>
+                    <p>We use access controls and technical and organisational safeguards intended to protect personal data. No online service can promise absolute security. If a personal data breach affecting you occurs, we will take steps required by applicable law, including notifying affected people and authorities where required.</p>
+                    <h2>Your choices and requests</h2>
+                    <p>You may ask us to confirm whether we process your personal data, review or correct it, request erasure, withdraw consent where processing relies on consent, or raise a grievance. Email <a href="mailto:privacy@medikarya.in">privacy@medikarya.in</a> from your account email and describe your request; we may ask for reasonable information to verify your identity. Include “Privacy request” in the subject. You may request account closure and erasure through this same channel. We will address privacy grievances within one month and other requests within the time required by applicable law. You may nominate another person to exercise your rights where the law allows.</p>
+                    <p>If you are not satisfied with our response, you may use the complaint route made available by the Data Protection Board of India under applicable law. This page and our contact details are the channels to exercise rights and raise a grievance.</p>
+                    <h2>Children</h2>
+                    <p>MediKarya is intended for adults aged 18 and above. We do not knowingly invite children to create accounts. If you believe a child has provided personal data, contact us so we can review and take appropriate action.</p>
+                    <h2>International processing</h2>
+                    <p>Our service providers may process or store information in locations outside your state or country. We use service providers to deliver the functions described above, and will apply the transfer and protection requirements that Indian law imposes on the information involved. Contact us if you need more information about a particular provider or transfer.</p>
+                    <h2>Changes and contact</h2>
+                    <p>We will post changes on this page and update the date above. Material changes will be communicated through the service or by email where appropriate. Questions or privacy requests: <a href="mailto:privacy@medikarya.in">privacy@medikarya.in</a>. See our <Link href="/cookies">Cookie Policy and controls</Link>.</p>
+                </article>
             </main>
-            <footer className="border-t py-8 bg-white">
-                <div className="container mx-auto px-4 text-center text-sm text-slate-500">
-                    &copy; {new Date().getFullYear()} MediKarya. All rights reserved.
-                </div>
-            </footer>
+            <footer className="border-t bg-white py-8 text-center text-sm text-slate-500">© {new Date().getFullYear()} MediKarya. All rights reserved.</footer>
         </div>
     )
 }

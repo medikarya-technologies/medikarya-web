@@ -4,12 +4,12 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { cn } from "@/lib/utils"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import Script from "next/script"
 import { LayoutClient } from "@/components/LayoutClient"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeController } from "@/components/theme-controller"
 import { themeInitScript } from "@/lib/theme"
+import { CookieConsent } from "@/components/privacy/cookie-consent"
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -103,8 +103,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Preconnect hints — warm up TCP/TLS before JS requests these origins */}
           <link rel="preconnect" href="https://clerk.medikarya.in" />
           <link rel="dns-prefetch" href="https://clerk.medikarya.in" />
-          <link rel="preconnect" href="https://scripts.clarity.ms" crossOrigin="anonymous" />
-          <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
         </head>
         <body
           className={cn(geistSans.variable, geistMono.variable, geistSans.className)}
@@ -149,15 +147,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ])
             }}
           />
-          <Script id="clarity-script" strategy="afterInteractive">
-            {`
-              (function(c,l,a,r,i,t,y){
-                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "vhuxiqi1u5");
-            `}
-          </Script>
           {/* Script to clean up browser extension attributes */}
           <script
             dangerouslySetInnerHTML={{
@@ -203,7 +192,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LayoutClient>
             {children}
           </LayoutClient>
-          <SpeedInsights />
+          <CookieConsent />
           <Toaster />
         </body>
       </html>

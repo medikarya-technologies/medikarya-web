@@ -14,11 +14,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-const CONSENT_KEY = "medikarya-first-case-consent"
+const CONSENT_KEY = "medikarya-first-case-consent-2026-10-29"
 
 export function hasFirstCaseConsent(): boolean {
   try {
-    return localStorage.getItem(CONSENT_KEY) === "1"
+    return localStorage.getItem(CONSENT_KEY) !== null
   } catch {
     // Storage unavailable (private browsing, etc.) — don't block the case on every load over this.
     return true
@@ -27,7 +27,7 @@ export function hasFirstCaseConsent(): boolean {
 
 function persistFirstCaseConsent() {
   try {
-    localStorage.setItem(CONSENT_KEY, "1")
+    localStorage.setItem(CONSENT_KEY, JSON.stringify({ version: "2026-10-29", acceptedAt: new Date().toISOString() }))
   } catch {
     /* ignore */
   }
@@ -55,19 +55,27 @@ export function FirstCaseConsentDialog({
   onAgree: () => void
   onCancel: () => void
 }) {
+  const [adultConfirmed, setAdultConfirmed] = useState(false)
+  useEffect(() => {
+    if (open) setAdultConfirmed(false)
+  }, [open])
+
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onCancel() }}>
       <DialogContent className="gap-0 p-0 sm:max-w-sm">
         <DialogHeader className="gap-1.5 px-5 pt-5 pb-0 pr-12 text-left">
           <DialogTitle className="text-[15.5px] font-semibold text-enc-ink">A quick note before you start</DialogTitle>
           <DialogDescription className="text-[13.5px] leading-relaxed text-enc-ink-2">
-            These are teaching cases, made for practice rather than for guiding the care of real patients. We save your answers so we can
-            score them and keep improving the cases.
+            These are fictional teaching cases, not guidance for real patient care. Your messages are sent to Google Gemini for patient replies. Your submitted answers may be sent to Google Gemini for scoring, feedback and quizzes, and scores are saved to your learning history. In-progress chat and case actions are saved in this browser so you can resume. Do not enter a real patient’s name, contact details, medical record, or any real person’s health information.
           </DialogDescription>
         </DialogHeader>
 
         <DialogFooter className="flex-col gap-3 px-5 pt-4 pb-5 sm:flex-col">
-          <Button type="button" onClick={onAgree} className="h-10 w-full rounded-lg bg-brand-600 text-[14px] font-semibold text-white shadow-none hover:bg-brand-700">
+          <label className="flex items-start gap-2 text-left text-[12px] leading-relaxed text-enc-ink-3">
+            <input type="checkbox" className="mt-0.5" checked={adultConfirmed} onChange={(e) => setAdultConfirmed(e.target.checked)} />
+            <span>I confirm that I am at least 18 years old.</span>
+          </label>
+          <Button type="button" disabled={!adultConfirmed} onClick={onAgree} className="h-10 w-full rounded-lg bg-brand-600 text-[14px] font-semibold text-white shadow-none hover:bg-brand-700">
             Start the case
           </Button>
           <p className="text-center text-[12px] leading-snug text-enc-ink-3">

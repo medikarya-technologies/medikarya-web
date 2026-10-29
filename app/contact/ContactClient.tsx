@@ -86,13 +86,14 @@ export default function ContactClient({ initialTopic = "other" }: { initialTopic
     const advisor = topic === "advisor"
     const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF((p) => ({ ...p, [k]: e.target.value }))
 
-    const submit = async (e: React.FormEvent) => {
+    const submit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setState("sending")
         try {
             const endpoint = process.env.NEXT_PUBLIC_FORMSPREE_INSTITUTION
             // No inbox connected: never tell someone their message was sent when it was not.
             if (!endpoint) throw new Error("This form is not connected")
+            const formData = new FormData(e.currentTarget)
             const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -100,6 +101,9 @@ export default function ContactClient({ initialTopic = "other" }: { initialTopic
                     ...f,
                     topic: TOPICS.find((t) => t.id === topic)?.label,
                     source: advisor ? "medikarya_advisor_application" : topic === "college" ? "medikarya_institution_contact" : "medikarya_contact",
+                    privacyNoticeVersion: "2026-10-29",
+                    privacyConsent: formData.get("privacy-consent") === "yes",
+                    privacyConsentAt: new Date().toISOString(),
                 }),
             })
             if (!res.ok) throw new Error("Form submission failed")
@@ -247,6 +251,11 @@ export default function ContactClient({ initialTopic = "other" }: { initialTopic
                                         placeholder={advisor ? "e.g. the kinds of cases you would like to review" : topic === "college" ? "e.g. a workshop for our final-year batch before their clinical postings" : "How can we help?"}
                                     />
                                 </Field>
+
+                                <label className="flex items-start gap-2.5 text-[12.5px] leading-relaxed text-enc-ink-3">
+                                    <input required type="checkbox" name="privacy-consent" value="yes" className="mt-1 accent-brand-600" />
+                                    <span>I have read the <Link href="/privacy" className="underline">Privacy Policy</Link>. MediKarya may use these details to respond to this message or application and manage the related relationship.</span>
+                                </label>
 
                                 {state === "error" && (
                                     <p className="rounded-lg bg-red-50 px-3.5 py-2.5 text-[14px] text-red-800">
