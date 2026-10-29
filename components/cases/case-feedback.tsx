@@ -517,10 +517,10 @@ function LegacyCaseFeedback({
         <div className="pt-4 border-t border-enc-line">
           <h4 className="text-sm font-semibold text-enc-ink mb-2.5 flex items-center gap-2">
             <BookOpen className="w-3.5 h-3.5 text-enc-ink-3" />
-            References
+            Guidelines and references
           </h4>
           <ul className="space-y-2">
-            {caseData.discussion.references.slice(0, 2).map((ref: string, i: number) => (
+            {caseData.discussion.references.map((ref: string, i: number) => (
               <li key={i} className="text-xs text-enc-ink-3 leading-normal pl-2 border-l-2 border-enc-line-strong">
                 {ref}
               </li>

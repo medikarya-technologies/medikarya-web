@@ -6,7 +6,8 @@
 //   2. what you did last: recent attempts, each a way back into the case;
 //   3. what to do next: one suggested case, chosen by lib/library/case-library.ts;
 //   4. and your plan: what it opens, and how much of today's allowance is left (components/plans/plan-card.tsx).
-// A student who took part in a workshop also sees their certificate at the top of the side column.
+// A student who took part in a workshop also sees their certificate at the top of the side column, and everyone sees
+// what is new at the bedside until they dismiss it (whats-new.tsx).
 // A student with no attempts yet gets the four steps of a case in place of a table of nothing.
 
 import { useEffect, useMemo, useState } from "react"
@@ -27,6 +28,7 @@ import { TrainingPanel } from "./training-panel"
 import { useDisplayName } from "./use-display-name"
 import { PlanCard } from "@/components/plans/plan-card"
 import { CertificateCard, type MyCertificate } from "./certificate-card"
+import { WhatsNew } from "./whats-new"
 import { usePlan } from "@/components/plans/use-plan"
 import { useUpgrade } from "@/components/plans/upgrade-dialog"
 import { GUEST_CASE_IDS, lockedFor } from "@/lib/plans/limits"
@@ -48,7 +50,7 @@ interface Props {
 const STEPS = [
   { icon: MessageSquare, title: "History", text: "Ask the patient what brought them in. Every answer goes on your record." },
   { icon: Hand, title: "Examine", text: "Look for what the patient cannot tell you." },
-  { icon: FlaskConical, title: "Investigate", text: "Order tests. Results come back on a running clock, as they would on the ward." },
+  { icon: FlaskConical, title: "Investigate", text: "Order tests. Results come back on a running clock, as they would on the ward, or skip ahead to them." },
   { icon: Stethoscope, title: "Diagnose", text: "Commit to a diagnosis and a plan, then see how your reasoning compares." },
 ]
 
@@ -212,6 +214,7 @@ export function DashboardOverview({ initialStats, cases = [], progress = {}, use
         {started ? <RecentAttempts attempts={stats.recentCases} byId={byId} /> : <FirstCase />}
         <div className="space-y-6">
           <CertificateCard certificates={certificates} />
+          <WhatsNew liveCount={cases.filter((c) => c.live).length} />
           <PlanCard cases={cases} />
           {resume && resumeCase && <ResumeCard one={resume} c={resumeCase} />}
           <Suggested next={next} progress={progress} planLimited={cases.some((c) => !openToPlan(c))} />

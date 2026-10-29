@@ -35,7 +35,7 @@ export default function StorySection() {
   return (
     <section id="story" className="bg-brand-50 py-24 sm:py-32" ref={ref}>
       <div className="mx-auto max-w-5xl space-y-20 px-4 sm:space-y-28">
-        <Moment n="01" label="History" title="You don't get the diagnosis." text="You ask. The patient answers in their own words — and the story shifts with every question." reverse={false} visible={isVisible} delay={0} accentClassName="text-brand-600">
+        <Moment n="01" label="History" title="You don't get the diagnosis." text="You ask. The patient answers in their own words, and the story shifts with every question." reverse={false} visible={isVisible} delay={0} accentClassName="text-brand-600">
           <Screenshot src="/screens/encounter-mother-rohan.png" alt="Real encounter chat: a worried mother describing her son's three days of vomiting to the student doctor" />
         </Moment>
 
@@ -43,7 +43,7 @@ export default function StorySection() {
           n="02"
           label="Investigate"
           title="Nothing is flagged for you."
-          text="Order what you need. Results return on their own clock, and you're the one who has to read them."
+          text="Order what you need. Results return on their own clock, as on the ward: wait for them or skip ahead, and you're the one who has to read them."
           reverse
           visible={isVisible}
           delay={120}

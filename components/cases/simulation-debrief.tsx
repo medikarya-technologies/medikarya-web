@@ -95,6 +95,13 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
   const safetyCount: number = sim.safetyIssues?.length ?? 0
   const takeaways: string[] = sim.keyLearningPoints?.length ? sim.keyLearningPoints : (caseData?.discussion?.keyPoints ?? [])
   const references: string[] = caseData?.discussion?.references ?? []
+  // A clinician who reviewed part of the case (the dengue fluid protocol) is named only with their consent (show_name),
+  // and only here, after the case: naming what they reviewed on the briefing would hint at the answer.
+  const pr = caseData?.protocol_review
+  const protocolReviewer: string | null =
+    pr?.show_name && pr.reviewer_name
+      ? `${pr.scope ?? "Protocol"} reviewed by ${[pr.reviewer_name, pr.reviewer_designation, pr.reviewer_institution].filter(Boolean).join(", ")}.`
+      : null
   const expertImpressions: Array<{ testId: string; title: string; text: string }> = sim.expertImpressions ?? []
 
   const examLabels: Record<string, string> = Object.fromEntries(
@@ -405,19 +412,21 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
             </div>
           </div>
 
-          {references.length > 0 && (
+          {(references.length > 0 || protocolReviewer) && (
             <div className="pt-4 border-t border-enc-line">
               <h4 className="text-sm font-semibold text-enc-ink mb-2.5 flex items-center gap-2">
                 <BookOpen className="w-3.5 h-3.5 text-enc-ink-3" />
-                References
+                Guidelines and references
               </h4>
+              {/* Every source the case follows is credited, not a sample of them. */}
               <ul className="space-y-2">
-                {references.slice(0, 2).map((ref, i) => (
+                {references.map((ref, i) => (
                   <li key={i} className="text-xs text-enc-ink-3 leading-normal pl-2 border-l-2 border-enc-line-strong">
                     {ref}
                   </li>
                 ))}
               </ul>
+              {protocolReviewer && <p className="mt-3 text-xs text-enc-ink-2">{protocolReviewer}</p>}
             </div>
           )}
 
