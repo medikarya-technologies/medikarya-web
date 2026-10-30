@@ -227,8 +227,8 @@
     }
   },
   "24-year-old-man-struggling-to-breathe-after-a-bike-accident": {
-    "plan_sha": "70fb57f4b9ecc538fee90fbcbe0b0b070de50b1b12ad790fcce120bef5948223",
-    "compiled_sha": "56d1e67b5a72e0b8e8284e3a5317ef3fb790008d2fd86419e510cb1a26ac0d17",
+    "plan_sha": "7fecac60fb427b7b63e2fdd9334c8a7f18d6041cec4cbe67f014f415024ef698",
+    "compiled_sha": "2d72c127a010167da8e84a2c5732f6964933c98868cf6478dce037a883af8d3d",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -393,8 +393,8 @@
     }
   },
   "26-year-old-woman-who-cannot-catch-her-breath": {
-    "plan_sha": "3cd72760f5baeacd0531b91f4226f581a063cbf908ca40d4b728d1e52535f147",
-    "compiled_sha": "062b284bdd7c0d679e9451d128b5ca40d9f10b8ddce3d5b03c1f7168ac268d29",
+    "plan_sha": "c684503c03de412333d5618d49a84a5d633c17428101d749690ea01e6f23107e",
+    "compiled_sha": "1f527b1de67810bc234e9f2659670984051fe47c800f472d5d3e3d26dd962c27",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -575,7 +575,7 @@
   },
   "29-year-old-man-with-belly-pain-as-his-fever-settles": {
     "plan_sha": "127a366786179fc8a638de769adb1ddcd279606b33e72ca3c63d6cfc2140bbb4",
-    "compiled_sha": "5c48248a28a1536dacc2979db7b1bc82b89c4868597d5bfecdb644f37d58185c",
+    "compiled_sha": "95ff40eacd2c092a8856cede4048c25a002b0502305d675745479997ae603d39",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1836,8 +1836,8 @@
     }
   },
   "46-year-old-man-whose-legs-are-too-weak-to-stand": {
-    "plan_sha": "69d4b4059b031734d3bc8ab1f1658dfa9738e8283d2b2a196ccd7d36f20a2475",
-    "compiled_sha": "d35385b96b7f1b21a3cadf5d1aed2cc1f93bf262b568389e61ce535adb9f54c7",
+    "plan_sha": "ad53cb676508f96962228e21ea71aa1f0869503a620dd1c7cdbe1468e6b2f44c",
+    "compiled_sha": "e2e0a91daaa63c032a237673b0958574ece407485f0a0c5755791d59640e2dc0",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2080,8 +2080,8 @@
     }
   },
   "48-year-old-man-who-suddenly-could-not-breathe-and-fainted": {
-    "plan_sha": "a3021ee386a81065d7200751bd395c9d599f7ce133df7918a058c5693ec2ae12",
-    "compiled_sha": "bc3b11210562501a3f9f85796a658c8bca6dbf53628184b26570965f92b9dbc4",
+    "plan_sha": "8e2c1ab8eb326f973031c5f6a584222ae3c699a8aae38f33bdccb889aa90f129",
+    "compiled_sha": "f23bea9499f6c4eb98794475c07b6f25bdbb09ad09395d739a237c1ea27987ac",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2285,8 +2285,8 @@
     }
   },
   "52-year-old-man-vomiting-blood-at-2-am": {
-    "plan_sha": "3d616933007aecf385d8091702b24a799a227ab4117f17624f5a6e92000f6ff2",
-    "compiled_sha": "ed3a0c806528836a1dde57d75c11cf5132733d056683e58e5f6b8ea467129d5f",
+    "plan_sha": "ed5410a232d9a770c6c6e477532c44ab9e734569e5105d0530c30fd7b85f1626",
+    "compiled_sha": "7450847e53a4a58a4d6e731314434ac1268c279b93025ad0913c9f899e9db12f",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2465,8 +2465,8 @@
     }
   },
   "54-year-old-man-with-black-stools-who-vomited-blood": {
-    "plan_sha": "5aab4d624e7d2438730efdd00ee84e249ccd2d0b7adefe8ee75209d8ddcdf7e1",
-    "compiled_sha": "152d6ebf45263d394300f123290518865bde7ae6d568b0d0ca1ac59eb4959af0",
+    "plan_sha": "a844d1a4c010a189f06ebffe6a30378b6a933bfd89a98f37071ddf3c3eaaa804",
+    "compiled_sha": "402706c690a3a33dbd7dea9110cf1debcdb55cb24b61e06eb3629619c38cc402",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2631,8 +2631,8 @@
     }
   },
   "56-year-old-man-with-chest-pain-and-a-slow-pulse": {
-    "plan_sha": "54ac262737607ed66d16ac625f98788522d22ba84e9e44b9d0a000cebb1fb1d8",
-    "compiled_sha": "ff3245229d0d5f816125468b2ea384e7db26b313cbb2d0575363a4ae03d22851",
+    "plan_sha": "7fba1403197f50149e9b3ab09bab8b97909097ce09d7928ca0366557031b193f",
+    "compiled_sha": "2c634e1b3c8e9273097a8ccb648322123d97f7f78dd61b5f33d30eda324a1a26",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -3068,8 +3068,8 @@
     }
   },
   "58-year-old-woman-who-woke-up-gasping-for-breath": {
-    "plan_sha": "66c86cb32dd5eb0d3430095b04f449561a6b436364d22c1b6160539f914e3f28",
-    "compiled_sha": "5f93d98bab727b1826a9ccb555bf6e10062253b38359d07f55423e67aa1da951",
+    "plan_sha": "34f14fc125bcf45988da3004381524610022dddebe5e6751e46a7db29ae23d34",
+    "compiled_sha": "e8ef08e36bc60624785c127d9e7e8bc301d20f0f634f1f398f248b4449035621",
     "playthroughs": {
       "untreated": {
         "score": 0,
