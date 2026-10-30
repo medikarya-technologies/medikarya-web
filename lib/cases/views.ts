@@ -31,6 +31,8 @@ const WITHHELD = [
   "source",
   // which treatments are essential, which harm, and why: the encounter runs on the rules made from it, not on it
   "live_plan",
+  // who reviewed what: "Fluid protocol reviewed by" would hint at the answer, so it arrives with the debrief
+  "protocol_review",
 ] as const;
 
 /** The case as the encounter needs it while it is being played. */
@@ -54,5 +56,6 @@ export function debriefOf(caseData: Json): Json {
     discussion: caseData.discussion,
     walkthrough: caseData.walkthrough,
     reinforcement: caseData.reinforcement,
+    protocol_review: caseData.protocol_review,
   };
 }
