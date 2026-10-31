@@ -40,8 +40,8 @@ const BUTTON = "pointer-events-none inline-flex h-9 shrink-0 items-center gap-1.
 const PRIMARY = cn(BUTTON, "bg-brand-600 text-white group-hover:bg-brand-700")
 const SECONDARY = cn(BUTTON, "border border-enc-line-strong bg-enc-sheet text-enc-ink-2 group-hover:bg-enc-console group-hover:text-enc-ink")
 
-// One beat of the trace, 60 px wide; copies of it slide left by one beat forever (.enc-pulse-sweep), so the loop is
-// seamless. Still under prefers-reduced-motion.
+// One beat of the trace, 60 px wide; copies of it slide left by one beat, so the loop is seamless. It runs only while
+// the card is hovered or focused (.enc-pulse-sweep-active in globals.css, WCAG 2.2.2), and never under reduced motion.
 const BEAT = "M0,14 L16,14 L19,11 L22,14 L26,14 L28,17 L31,3 L34,22 L37,14 L44,14 L48,10 L53,14 L60,14"
 
 /** The live card's monitor strip: a moving trace, under the LIVE label. */
@@ -49,7 +49,7 @@ function MonitorStrip({ locked }: { locked?: boolean }) {
   return (
     <div aria-hidden className={cn("absolute inset-x-0 top-0 h-[68px] overflow-hidden bg-enc-scope", locked && "opacity-60")}>
       <svg className="absolute inset-x-0 bottom-1.5 h-7 w-full text-enc-ecg" preserveAspectRatio="xMinYMid slice" viewBox="0 0 480 28">
-        <g className={locked ? undefined : "enc-pulse-sweep"}>
+        <g className={locked ? undefined : "enc-pulse-sweep-active"}>
           {Array.from({ length: 9 }, (_, i) => (
             <path key={i} d={BEAT} transform={`translate(${i * 60} 0)`} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           ))}
@@ -184,7 +184,7 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
       <span className="absolute top-4 left-4 flex items-center gap-1.5">
         {live && (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-enc-scope-raised px-1.5 py-0.5 text-[11px] leading-4 font-bold tracking-[0.12em] text-enc-scope-crit">
-            <span className={cn("h-1.5 w-1.5 rounded-full bg-enc-scope-crit", !locked && "enc-live-dot")} />
+            <span className="h-1.5 w-1.5 rounded-full bg-enc-scope-crit" />
             LIVE
           </span>
         )}

@@ -92,7 +92,7 @@ async function saveDraft(
   if (authored) {
     const base = upgradeLegacyCase({ ...caseJson })
     const planCheck = isSimulationCase(base)
-      ? checkLivePlan(authored, measuredOnArrival(base))
+      ? checkLivePlan(authored, measuredOnArrival(base), base.patient?.age)
       : { errors: ["the converted case cannot run at the bedside"], warnings: [] }
     if (planCheck.errors.length === 0) {
       plan = { ...authored, drafted_at: new Date().toISOString() }

@@ -24,7 +24,7 @@ async function load(): Promise<LiveCase[]> {
     const authored = isSimulationCase(c)
     const base = authored ? null : upgradeLegacyCase(c)
     const playable = !!base && isSimulationCase(base)
-    const check = plan && playable ? checkLivePlan(plan, measuredOnArrival(base as any)) : null
+    const check = plan && playable ? checkLivePlan(plan, measuredOnArrival(base as any), (base as any).patient?.age) : null
     return {
       id: row.id,
       title: row.title ?? c.title ?? row.id,

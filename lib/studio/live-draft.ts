@@ -146,7 +146,7 @@ export async function draftLivePlan(
   // A revision keeps the fluid ladder exactly as it was, whatever the model returned.
   const kept = (p: LivePlan) => (revise ? keepFluidConfig(p, revise.previous) : p);
   let plan = kept(normaliseLivePlan(out?.plan, "ai"));
-  let check = checkLivePlan(plan, measured);
+  let check = checkLivePlan(plan, measured, typeof caseJson?.patient?.age === "number" ? caseJson.patient.age : undefined);
 
   // One chance to fix what the check found.
   if (check.errors.length > 0) {
@@ -155,7 +155,7 @@ export async function draftLivePlan(
         `PROBLEMS:\n- ${check.errors.join("\n- ")}\n\nCASE:\n${theCase}\n\nPLAN:\n${JSON.stringify(out?.plan ?? {})}`
     );
     plan = kept(normaliseLivePlan(out?.plan, "ai"));
-    check = checkLivePlan(plan, measured);
+    check = checkLivePlan(plan, measured, typeof caseJson?.patient?.age === "number" ? caseJson.patient.age : undefined);
   }
   if (check.errors.length > 0) return { ok: false, reason: "invalid", problems: check.errors };
 

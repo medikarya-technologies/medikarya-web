@@ -31,7 +31,7 @@ const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_K
   if (!dropFluid && lostFluids(plan, old).length > 0) throw new Error(`the new plan drops the fluid ladder of ${lostFluids(plan, old).join(", ")}; pass --drop-fluid if that is meant`);
   const base = upgradeLegacyCase(caseJson);
   if (!isSimulationCase(base)) throw new Error("not playable");
-  const check = checkLivePlan(plan, measuredOnArrival(base));
+  const check = checkLivePlan(plan, measuredOnArrival(base), base.patient?.age);
   if (check.errors.length || check.warnings.length) throw new Error(`${id}: ${JSON.stringify(check)}`);
   const { error: e2 } = await db.from("cases").update({ case_json: { ...caseJson, live_plan: plan }, updated_at: new Date().toISOString() }).eq("id", id);
   if (e2) throw e2;

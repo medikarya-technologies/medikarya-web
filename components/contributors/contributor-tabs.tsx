@@ -218,7 +218,7 @@ export function ContributorTabs({
                             role="writer"
                             eyebrow="Medical students and doctors"
                             title="Our case writers"
-                            text="The patients in our library come from people who saw them. A writer is credited by name on every case of theirs that goes live."
+                            text="The patients contributed to our library come from people who saw them. A writer is credited by name on every case of theirs that goes live."
                         />
                         {writers.length > 0 && (
                             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

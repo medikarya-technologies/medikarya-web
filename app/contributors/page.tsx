@@ -18,7 +18,7 @@ export const revalidate = 300
 
 export const metadata: Metadata = {
     title: "Contributors",
-    description: "The clinicians and medical students behind MediKarya's cases: our Clinical Advisory Board, the doctors who review every case, and the students who write them.",
+    description: "The clinicians and medical students behind MediKarya's cases: our Clinical Advisory Board, the doctors who review contributed cases, and the students who write them.",
     alternates: { canonical: "https://www.medikarya.in/contributors" },
     robots: { index: true, follow: true },
     openGraph: {
@@ -130,7 +130,7 @@ export default async function ContributorsPage() {
                             <span>Contributors</span>
                         </div>
                         <h1 className="text-4xl leading-tight font-bold tracking-tight text-slate-900 sm:text-5xl">
-                            Every case here was written and checked by <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">real people.</span>
+                            Every case contributed here is written and checked by <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">real people.</span>
                         </h1>
                         <p className="text-lg leading-relaxed text-slate-600">
                             A medical student writes up a patient they saw. A doctor checks the medicine. Senior clinicians tell us where we are wrong. These
