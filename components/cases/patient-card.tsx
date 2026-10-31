@@ -12,8 +12,7 @@ import { appearanceAtArrival } from "@/lib/simulation/arrival"
 import { formatClock } from "@/lib/simulation/clock-format"
 import { relativeDay } from "@/lib/library/relative-day"
 import { Button } from "@/components/ui/button"
-import { Eye, FileText, Loader2, Play } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Eye, Loader2, Play } from "lucide-react"
 import { Eyebrow, Paper, StatusPill } from "./encounter-ui"
 import { PatientPortrait } from "./patient-portrait"
 
@@ -227,34 +226,8 @@ export function PatientCard({ patient, caseTitle, onStartCase, caseData, startin
         </div>
       </Paper>
 
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="lg" className="h-11 w-full gap-2 rounded-lg border-enc-line-strong bg-enc-sheet text-[14px] font-medium text-enc-ink-2 hover:bg-enc-console hover:text-enc-ink sm:w-auto">
-              <FileText className="h-4 w-4" />
-              View guidelines
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[80vh] max-w-3xl overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Clinical guidelines</DialogTitle>
-              <DialogDescription>Standard evaluation and management protocols.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3 text-[14px] text-enc-ink-2">
-              {GUIDELINES.map((g) => (
-                <div key={g.title} className="rounded-lg border border-enc-line bg-enc-desk p-4">
-                  <h4 className="mb-2 font-semibold text-enc-ink">{g.title}</h4>
-                  <ul className="list-disc space-y-1 pl-5">
-                    {g.points.map((p) => (
-                      <li key={p}>{p}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
-
+      {/* Start stands alone: the old "View guidelines" here opened the same generic checklist for every case */}
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
         <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
           <Button
             size="lg"
@@ -298,30 +271,3 @@ export function PatientCard({ patient, caseTitle, onStartCase, caseData, startin
     </div>
   )
 }
-
-const GUIDELINES: Array<{ title: string; points: string[] }> = [
-  {
-    title: "General assessment",
-    points: [
-      "Assess airway, breathing, and circulation immediately upon presentation.",
-      "Obtain a detailed history including onset, duration, and progression of symptoms.",
-      "Perform a comprehensive physical examination with focus on the affected systems.",
-    ],
-  },
-  {
-    title: "Diagnostic approach",
-    points: [
-      "Order investigations based on clinical suspicion and pre-test probability.",
-      "Avoid unnecessary testing to reduce cost and patient discomfort.",
-      "Review vital signs and red flags before ruling out serious pathology.",
-    ],
-  },
-  {
-    title: "Management principles",
-    points: [
-      "Prioritize stabilization of unstable patients.",
-      "Provide symptomatic relief while awaiting confirmatory diagnosis.",
-      "Involve specialists early for complex or rapidly deteriorating cases.",
-    ],
-  },
-]

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: "How MediKarya Works",
     description: "From a live AI patient to a scored debrief: the real step-by-step flow of a MediKarya case, and what happens at each stage.",
     openGraph: {
-        title: "How MediKarya Works — From First History to Debrief",
+        title: "How MediKarya Works: From First History to Debrief",
         description: "See exactly what happens in a MediKarya case: a live patient, real-time vitals, a ranked differential, dual scoring, and a full debrief.",
         images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "How MediKarya Works" }],
     },

@@ -140,7 +140,8 @@ export function EncounterTopBar({ title, subtitle, portrait, showIntervene, crit
 // ── Workspace header: the brief, then the tabs ──────────────────────────────
 
 interface WorkspaceHeaderProps {
-  brief: string
+  /** A line the case writes for the student; absent, the header is just the tabs. */
+  brief?: string
   tabs: TabDef[]
   active: TabId
   onChange: (id: TabId) => void
@@ -150,12 +151,16 @@ interface WorkspaceHeaderProps {
 export function WorkspaceHeader({ brief, tabs, active, onChange, isExpired }: WorkspaceHeaderProps) {
   return (
     <div className="hidden shrink-0 border-b border-enc-line-strong bg-enc-sheet md:block">
-      <div className="flex items-baseline gap-3 px-6 pt-3">
-        <Eyebrow className="shrink-0">Brief</Eyebrow>
-        <p className="truncate text-[13px] text-enc-ink-2" title={brief}>
-          {brief}
-        </p>
-      </div>
+      {brief ? (
+        <div className="flex items-baseline gap-3 px-6 pt-3">
+          <Eyebrow className="shrink-0">Brief</Eyebrow>
+          <p className="truncate text-[13px] text-enc-ink-2" title={brief}>
+            {brief}
+          </p>
+        </div>
+      ) : (
+        <div className="pt-2" />
+      )}
       <nav className="flex items-end gap-1 px-4" role="tablist" aria-label="Encounter sections">
         {tabs.map(({ id, label, icon: Icon, badge }) => {
           const selected = active === id

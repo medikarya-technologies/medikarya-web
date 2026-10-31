@@ -242,7 +242,7 @@ export function Billing({ cases, preview }: { cases: LibraryCase[]; preview?: Su
   return (
     <PageContainer>
       <PageHeader eyebrow="Account" title="Plan & billing" description="Your plan, what it includes, and how it's billed." />
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <SubscriptionPanel preview={preview} />
         <PlanCard cases={cases} />
       </div>

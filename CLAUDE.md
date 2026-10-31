@@ -65,7 +65,7 @@ on the user. Detailed notes per feature live in the auto-memory folder (index `M
   writes (book conversions, original live cases) need no clinician sign-off for now, and the team switches live
   cases on in Admin > Live; keep the sign-off link working for later. Never invent clinical facts: every dose,
   threshold and timing comes from the source or a current guideline, checked and cited.
-- Public site copy: sounds like a person wrote it, no em dashes, no rupee amounts on the main site's marketing pages,
+- Public site copy: sounds like a person wrote it, no em dashes, no rupee amounts in the main site's marketing copy (prices belong only in the pricing section and the plan pages, which keep them: Razorpay needs a site to show its prices),
   and no detail of how cases are built with AI (it is our moat). The studio's rewards and terms pages do show pay.
 - Studio: no second Google font (it breaks the Turbopack dev server).
 - Write like the code around you; comments say why, in plain English.

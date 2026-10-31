@@ -13,7 +13,7 @@ export const metadata: Metadata = {
         follow: true,
     },
     openGraph: {
-        title: "About MediKarya — AI Clinical Simulation for Medical Students",
+        title: "About MediKarya: AI Clinical Simulation for Medical Students",
         description: "We're building the practice environment that medical education has always needed: realistic, affordable, and available before your first real patient.",
         images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Platform Preview" }],
     },

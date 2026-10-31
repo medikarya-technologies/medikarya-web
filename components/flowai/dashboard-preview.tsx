@@ -66,7 +66,7 @@ export function DashboardPreview() {
             <iframe
               className="h-full w-full"
               src={`https://www.youtube.com/embed/${VIDEO_ID}?autoplay=1`}
-              title="MediKarya — interactive clinical case walkthrough"
+              title="MediKarya: an interactive clinical case walkthrough"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
@@ -74,10 +74,12 @@ export function DashboardPreview() {
             <>
               <img src="/demo-thumbnail.jpg" alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-slate-900/25 transition-colors group-hover:bg-slate-900/15" />
-              <span className="absolute inset-0 flex items-center justify-center">
-                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 shadow-lg transition-transform group-hover:scale-110">
-                  <Play className="ml-0.5 h-6 w-6 fill-brand-600 text-brand-600" />
+              {/* lower left, so it never sits on the title the thumbnail itself carries */}
+              <span className="absolute bottom-4 left-4 flex items-center gap-2.5 rounded-full bg-white/95 py-2 pr-4 pl-2 shadow-lg transition-transform group-hover:scale-105 sm:bottom-5 sm:left-5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600">
+                  <Play className="ml-0.5 h-4 w-4 fill-white text-white" />
                 </span>
+                <span className="text-[14px] font-semibold text-enc-ink">Watch the demo</span>
               </span>
             </>
           )}

@@ -73,7 +73,7 @@ export default function DeteriorationSection() {
           <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
             <PatientPortraitStyled age={PATIENT.age} gender={PATIENT.gender} seed={PATIENT.seed} look={BASELINE_LOOK} variant="face" className="h-11 w-11 rounded-full ring-1 ring-white/15" label="Patient on arrival" />
             <div>
-              <p className="text-[11px] font-semibold tracking-widest text-white/40 uppercase">On arrival — 00:00</p>
+              <p className="text-[11px] font-semibold tracking-widest text-white/40 uppercase">On arrival · 00:00</p>
               <p className="text-sm text-white/80">Anxious, pale, sweating, clutching his chest.</p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function DeteriorationSection() {
           <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
             <PatientPortraitStyled age={PATIENT.age} gender={PATIENT.gender} seed={PATIENT.seed} look={CRISIS_LOOK} variant="face" className="h-11 w-11 rounded-full ring-1 ring-enc-crit/50" label="Patient in cardiogenic shock" />
             <div>
-              <p className="text-[11px] font-semibold tracking-widest text-enc-crit uppercase">Untreated — 20:00</p>
+              <p className="text-[11px] font-semibold tracking-widest text-enc-crit uppercase">Untreated · 20:00</p>
               <p className="text-sm text-white/80">Grey, drowsy, drenched in sweat. Barely rousable.</p>
             </div>
           </div>
@@ -127,9 +127,9 @@ export default function DeteriorationSection() {
         className={cn("relative mx-auto mt-8 max-w-md text-center text-[13px] text-white/50 transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}
         style={{ transitionDelay: isVisible ? "220ms" : "0ms" }}
       >
-        Deteriorating cases like this one are part of{" "}
+        Live emergencies like this one: one free on the Student plan, every day on{" "}
         <Link href="#pricing" className="font-semibold text-brand-400 hover:text-brand-300">
-          Pro
+          Intern and Resident
         </Link>
         .
       </p>

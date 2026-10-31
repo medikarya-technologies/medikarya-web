@@ -24,7 +24,7 @@ export const PLAN_OFFERS: Record<Plan, PlanOffer> = {
     tagline: "A simple way to experience MediKarya.",
     monthly: 0,
     yearly: 0,
-    features: ["2 cases a day, Beginner difficulty", "One live emergency case, on us — try it once", "No account needed"],
+    features: ["2 cases a day, Beginner difficulty", "One live emergency case, free to try", "No account needed"],
   },
   intern: {
     plan: "intern",
@@ -42,7 +42,7 @@ export const PLAN_OFFERS: Record<Plan, PlanOffer> = {
     tagline: "For deeper simulation and advanced clinical scenarios.",
     monthly: 399,
     yearly: 3999,
-    features: ["Everything in Intern", "All cases, including Advanced — unlimited a day", "10 live emergency cases a day", "Real-time vitals & telemetry", "Advanced performance analytics"],
+    features: ["Everything in Intern", "All cases including Advanced, with no daily limit", "10 live emergency cases a day", "Real-time vitals & telemetry", "Advanced performance analytics"],
   },
 };
 
