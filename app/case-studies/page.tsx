@@ -18,23 +18,17 @@ import { GUEST_CASE_IDS } from "@/lib/plans/limits"
 import { CASE_GUIDES } from "@/lib/seo/case-guides"
 import { liveClockLabel } from "@/lib/library/case-library"
 import { cn } from "@/lib/utils"
+import { pageMetadata } from "@/lib/seo/site"
 
 export const revalidate = 300
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/case-studies" },
+export const metadata: Metadata = pageMetadata({
+    path: "/case-studies",
     title: "Clinical Cases for Medical Students: Case Library",
     description: "Every patient in the MediKarya library, as you first meet them: who they are and what they came in with. Work each one up yourself, then see where your reasoning held and where it broke.",
-    openGraph: {
-        title: "MediKarya Case Library: Patients to Work Up Yourself",
-        description: "Real presentations across paediatrics, obstetrics, medicine, surgery and more. Take the history, order the tests, commit to a diagnosis, then get a debrief and questions on what you missed.",
-        images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Clinical Cases" }],
-    },
-    twitter: {
-        card: "summary_large_image",
-        images: ["https://www.medikarya.in/og-image.png"],
-    },
-}
+    socialTitle: "MediKarya Case Library: Patients to Work Up Yourself",
+    socialDescription: "Real presentations across paediatrics, obstetrics, medicine, surgery and more. Take the history, order the tests, commit to a diagnosis, then get a debrief and questions on what you missed.",
+})
 
 /** What happens in every case, in order. Each line is something the platform does today (see /how-it-works). */
 const LOOP = [

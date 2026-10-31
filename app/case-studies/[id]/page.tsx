@@ -40,13 +40,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description,
         keywords: guide?.keywords,
-        alternates: { canonical: url },
+        // A case with a guide also has a plain Markdown copy, for tools that read text rather than pages
+        alternates: { canonical: url, ...(guide ? { types: { "text/markdown": `${url}.md` } } : {}) },
         robots: guide ? { index: true, follow: true } : { index: false, follow: true },
         openGraph: {
             title,
             description,
             type: "article",
             url,
+            siteName: "MediKarya",
+            locale: "en_IN",
             images: [{ url: `${BASE_URL}/og-image.png`, width: 1200, height: 630, alt: c.displayTitle }],
         },
         twitter: { card: "summary_large_image", title, description, images: [`${BASE_URL}/og-image.png`] },
