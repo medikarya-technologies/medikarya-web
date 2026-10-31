@@ -12,12 +12,14 @@ import { useScrollAnimation } from "@/lib/scroll-animation"
 import { Eyebrow } from "@/components/cases/encounter-ui"
 import { studioLinks } from "@/lib/site-links"
 
+// Compact on the home page (round 2 of the design review): a student reading this page is not the one being
+// recruited, so each door is one line and its offer; the full account is on /contribute.
 interface Door {
   role: ContributorRole
   who: string
   title: string
   text: string
-  points: string[]
+  offer: string
   cta: string
   href: string
 }
@@ -27,8 +29,8 @@ const DOORS: Door[] = [
     role: "writer",
     who: "Medical students, interns and doctors",
     title: "Write a case",
-    text: "Seen a patient worth teaching from? Write them up on a structured case sheet. We turn it into a patient other students learn from, and a doctor reviews it before it goes live.",
-    points: ["Your name on every case of yours that goes live", "A payout for each published case", "Titles and a certificate anyone can verify"],
+    text: "Seen a patient worth teaching from? Write them up; a doctor reviews the case before it goes live.",
+    offer: "Your name on it, a payout for each published case, and a certificate anyone can verify.",
     cta: "Start writing",
     href: studioLinks.writeACase,
   },
@@ -36,8 +38,8 @@ const DOORS: Door[] = [
     role: "reviewer",
     who: "Interns, PG residents, doctors and faculty",
     title: "Review cases",
-    text: "You are handed one case at a time in your specialty, as a one-page report. Approve it, or say what is wrong.",
-    points: ["About ten minutes a case, no need to play it", "An honorarium for each case you review", "Named on a case only if you choose to be"],
+    text: "One case at a time in your specialty, as a one-page report. Approve it, or say what is wrong.",
+    offer: "About ten minutes a case, an honorarium for each, and your name only if you choose.",
     cta: "Become a reviewer",
     href: studioLinks.becomeAReviewer,
   },
@@ -51,20 +53,19 @@ export default function ContributeSection() {
   })
 
   return (
-    <section id="contribute" className="scroll-mt-20 bg-enc-desk py-20 sm:py-28" ref={ref}>
+    <section id="contribute" className="scroll-mt-20 bg-enc-desk py-16 sm:py-20" ref={ref}>
       <div className="mx-auto max-w-5xl px-4">
         <div {...appear()} className={cn("mx-auto max-w-2xl text-center", appear().className)}>
           <Eyebrow className="text-brand-600">Write or review</Eyebrow>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink sm:text-4xl">Our patients come from people who saw them.</h2>
-          <p className="mt-4 text-[15.5px] leading-relaxed text-enc-ink-2">
-            Cases contributed here are written by a medical student or doctor from a real presentation, then checked by a doctor before a student meets them.
-            We are looking for both.
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-enc-ink sm:text-3xl">Our patients come from people who saw them.</h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-enc-ink-2">
+            Cases contributed here are written from a real presentation and checked by a doctor before a student meets them. We are looking for writers and reviewers.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
           {DOORS.map((d, i) => (
-            <div key={d.title} {...appear(100 + i * 100)} className={cn("flex flex-col rounded-2xl border border-enc-line-strong bg-enc-sheet p-6 shadow-enc-lift sm:p-7", appear().className)}>
+            <div key={d.title} {...appear(100 + i * 100)} className={cn("flex flex-col rounded-2xl border border-enc-line-strong bg-enc-sheet p-5 shadow-enc-sheet sm:p-6", appear().className)}>
               <div className="flex items-center gap-3">
                 <RoleMark role={d.role} size="lg" />
                 <div>
@@ -72,19 +73,17 @@ export default function ContributeSection() {
                   <h3 className="text-xl font-bold text-enc-ink">{d.title}</h3>
                 </div>
               </div>
-              <p className="mt-4 text-[15px] leading-relaxed text-enc-ink-2">{d.text}</p>
-              <ul className="mt-4 space-y-2">
-                {d.points.map((p) => (
-                  <li key={p} className="flex items-start gap-2.5 text-[14.5px] text-enc-ink">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" strokeWidth={2.4} /> {p}
-                  </li>
-                ))}
-              </ul>
+              <p className="mt-3 text-[14.5px] leading-relaxed text-enc-ink-2">{d.text}</p>
+              <p className="mt-2 flex items-start gap-2 text-[14px] text-enc-ink">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" strokeWidth={2.4} /> {d.offer}
+              </p>
+              {/* at least a little air above the button, and the two buttons level with each other */}
+              <div className="min-h-5 flex-1" />
               <a
                 href={d.href}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-6 inline-flex items-center justify-center gap-2 self-start rounded-xl bg-brand-600 px-5 py-2.5 text-[14.5px] font-semibold text-white transition-colors hover:bg-brand-700"
+                className="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-brand-600 px-5 py-2.5 text-[14.5px] font-semibold text-white transition-colors hover:bg-brand-700"
               >
                 {d.cta} <ArrowRight className="h-4 w-4" />
               </a>
@@ -92,7 +91,7 @@ export default function ContributeSection() {
           ))}
         </div>
 
-        <div {...appear(320)} className={cn("mt-8 flex flex-col items-center justify-center gap-x-6 gap-y-2 text-[14.5px] sm:flex-row", appear().className)}>
+        <div {...appear(320)} className={cn("mt-6 flex flex-col items-center justify-center gap-x-6 gap-y-2 text-[14.5px] sm:flex-row", appear().className)}>
           <Link href="/contributors" className="inline-flex items-center gap-1.5 font-semibold text-brand-600 hover:underline">
             Meet our writers, reviewers and advisors <ArrowRight className="h-4 w-4" />
           </Link>

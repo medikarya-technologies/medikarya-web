@@ -20,9 +20,10 @@ export function Footer() {
       )}
     >
       <div className="mx-auto max-w-6xl px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        {/* On a phone the two link lists sit side by side; the company and the contact details take the full width. */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4 lg:gap-8">
           {/* Company Info */}
-          <div className="space-y-4">
+          <div className="col-span-2 space-y-4 lg:col-span-1">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center">
                 <img src="/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
@@ -126,7 +127,7 @@ export function Footer() {
           </div>
 
           {/* Contact */}
-          <div className="space-y-4">
+          <div className="col-span-2 space-y-4 lg:col-span-1">
             <h3 className="text-sm font-semibold text-enc-ink">Get in touch</h3>
             <div className="space-y-2">
               <a href="mailto:contact@medikarya.in" className="flex items-center gap-2 text-sm text-enc-ink-2 hover:text-enc-ink transition-colors">

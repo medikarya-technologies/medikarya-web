@@ -28,6 +28,9 @@ import { MarqueeStrip } from "@/components/flowai/marquee-strip"
 // twice: right after Hero (previews the page's own real narrative beats before Story tells them), and now
 // between Reviews and Pricing (was between Reviews and Video) — the breathing pause right before the decision
 // point, an even more natural spot than before. Each instance gets different real content.
+// Round 2 of the design review (2026-10-31): ReviewsSection folded into PilotProofSection (the survey answers now sit
+// under the student's quote, so the pilot is told once); ContributeSection made compact (the details live on
+// /contribute). Tone sequence now: ... Video(Sheet) -> Pilot(Tinted) -> Contribute(Desk) -> Pricing(Dark) -> ...
 // getCases() no longer called — FeaturesBento (the only consumer) is removed.
 
 const JOURNEY_ITEMS = ["History", "Investigate", "Deteriorate", "Debrief", "Reinforce"]
@@ -44,9 +47,6 @@ const DebriefSection = dynamic(() => import("@/components/flowai/sections/debrie
 })
 const PilotProofSection = dynamic(() => import("@/components/flowai/sections/pilot-proof-section"), {
   loading: () => <div className="h-[520px] w-full bg-brand-50" />,
-})
-const ReviewsSection = dynamic(() => import("@/components/flowai/sections/reviews-section"), {
-  loading: () => <div className="h-[560px] w-full bg-enc-sheet" />,
 })
 const ContributeSection = dynamic(() => import("@/components/flowai/sections/contribute-section"), {
   loading: () => <div className="h-[620px] w-full bg-enc-desk" />,
@@ -114,7 +114,6 @@ export default function Page() {
       <DebriefSection />
       <DashboardPreview />
       <PilotProofSection />
-      <ReviewsSection />
       <ContributeSection />
       <MarqueeStrip items={SKILL_ITEMS} />
       <PricingSection />
