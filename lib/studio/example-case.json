@@ -323,6 +323,18 @@
      "radiation exposure",
      "previous similar complaints"
     ],
+    "reference_questions": [
+     "How long have you had this swelling in your neck?",
+     "Is the swelling painful? Has it been getting bigger?",
+     "Any difficulty swallowing?",
+     "Has your voice changed or become hoarse?",
+     "Do you get breathless when you walk or climb stairs?",
+     "Did you have a fever or cough before the swelling came?",
+     "Any sweating, palpitations or weight loss?",
+     "Any problem with your eyes, like bulging or double vision?",
+     "Have you ever had radiation or X-ray treatment to your neck?",
+     "Have you had a similar swelling before?"
+    ],
     "important_questions": [],
     "red_flag_questions": [
      "difficulty swallowing",

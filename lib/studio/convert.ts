@@ -56,11 +56,16 @@ Tests
 - category is "Laboratory", "Imaging" or "Special". "origin" and, for "ai", "basis" go inside result.
 
 Scoring (evaluation_config)
-- history.required_questions: 8–12 short phrases a good student must ask; red_flag_questions: the dangerous misses.
+- history.required_questions: 8–12 short phrases a good student must ask, ONE topic each, each naming its topic in
+  plain words a student would use ("blood in the sputum", not "haemoptysis quantification"; "how long the cough has
+  lasted", not "how long"). red_flag_questions: the dangerous misses.
+- history.reference_questions: 8–15 questions a strong student would actually type, in plain words, together asking
+  every required question (they are used to check the scoring can credit this history).
 - testing: core_tests = what confirms the diagnosis (each must be in tests[]); optional_tests = reasonable extras;
   distractor_tests = 5–10 catalog ids that are low-value here; dangerous_tests = 1–4 catalog ids that are invasive or
   unsafe without indication. Every id must be in tests[] or the catalog.
-- diagnosis.accepted_primary: 3–5 wordings of the diagnosis; must_include_keywords: 1–3 words.
+- diagnosis.accepted_primary: 3–5 wordings of the diagnosis; must_include_keywords: 1–2 words that EVERY correct
+  answer contains (all of them must appear in the student's answer, so never list alternatives like "tb", "koch").
 - management.core_steps (3–6) and dangerous_steps (1–4), fitting Indian practice.
 - red_flags: {intent, keywords[], present_in_case, critical}.
 

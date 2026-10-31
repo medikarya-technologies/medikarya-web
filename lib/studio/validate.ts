@@ -4,6 +4,8 @@
 // "errors" (the draft would break or spoil something; the converter asks the model to fix them) or "warnings"
 // (worth a human look during the game check).
 
+import { contentTokens, requiredKeys, scoreHistory } from "../../engine/evaluation/historyCoverage";
+
 export interface CheckResult {
   errors: string[];
   warnings: string[];
@@ -130,6 +132,8 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
     const h = ev.history;
     if (!isObj(h) || !strArr(h.required_questions) || h.required_questions.length < 4 || !strArr(h.red_flag_questions)) {
       errors.push("evaluation_config.history needs required_questions (at least 4) and red_flag_questions.");
+    } else {
+      historyChecks(h.required_questions, h.reference_questions, errors, warnings);
     }
     const t = ev.testing;
     if (!isObj(t)) errors.push("evaluation_config.testing is missing.");
@@ -156,7 +160,17 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
     }
     const d = ev.diagnosis;
     if (!isObj(d) || !strArr(d.accepted_primary) || d.accepted_primary.length === 0) errors.push("evaluation_config.diagnosis.accepted_primary is empty.");
-    else accepted = d.accepted_primary;
+    else {
+      accepted = d.accepted_primary;
+      // The scorer counts an answer correct if it matches an accepted wording exactly OR contains EVERY keyword. One
+      // keyword ("copd") is a second route to correct; several that are really alternatives ("tb", "tuberculosis",
+      // "koch") can never all appear, so the keyword route would be dead. At least one accepted wording must
+      // contain them all.
+      const kws = strArr(d.must_include_keywords) ? d.must_include_keywords : [];
+      if (kws.length > 1 && !d.accepted_primary.some((dx: string) => kws.every((k: string) => dx.toLowerCase().includes(k.toLowerCase())))) {
+        errors.push(`diagnosis.must_include_keywords (${kws.join(", ")}) must ALL appear in a correct answer, but no accepted wording contains them all: they look like alternatives. Keep one, or only words every correct answer contains.`);
+      }
+    }
     const m = ev.management;
     if (!isObj(m) || !strArr(m.core_steps) || m.core_steps.length === 0 || !strArr(m.dangerous_steps)) {
       errors.push("evaluation_config.management needs core_steps (at least one) and dangerous_steps.");
@@ -197,6 +211,45 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
   }
 
   return { errors, warnings };
+}
+
+/**
+ * The history the scorer can mark (EVALUATION_ENGINE.md, "History, version 2"). Each required question must name
+ * its own topic, or no student can be credited for it when the AI examiner is unavailable; and the case's own
+ * strong reference history, when it has one, must be credited with at least 90% of them by the keyword matcher.
+ */
+export function historyChecks(required: readonly string[], reference: unknown, errors: string[], warnings: string[]): void {
+  const seen = new Set<string>();
+  for (const q of required) {
+    const key = q.trim().toLowerCase();
+    if (seen.has(key)) errors.push(`history.required_questions has "${q}" twice.`);
+    seen.add(key);
+    if (contentTokens(q).length === 0) errors.push(`history.required_questions: "${q}" names no topic (only words like "how long" or "when"): say what is asked about, e.g. "how long the cough has lasted".`);
+  }
+  if (required.length > 15) errors.push(`history.required_questions has ${required.length}; keep it to 15 at most (8-12 is usual), one topic each.`);
+  else if (required.length > 12) warnings.push(`history.required_questions has ${required.length}; 8-12 is usual.`);
+
+  requiredKeys(required).forEach((k, i) => {
+    if (k.tokens.length > 0 && k.distinctTokens.length === 0 && k.distinctIntents.size === 0) {
+      warnings.push(`history.required_questions: "${required[i]}" has no word of its own (all its words are in other required questions); name what sets it apart.`);
+    }
+  });
+
+  if (reference === undefined) {
+    warnings.push("history.reference_questions is missing: add the questions a strong student would ask (8-15), so the history scoring can be checked on this case.");
+    return;
+  }
+  if (!strArr(reference) || reference.length === 0) {
+    errors.push("history.reference_questions must be a list of questions a strong student would ask.");
+    return;
+  }
+  const h = scoreHistory({ required, questions: reference });
+  if (h.asked < Math.ceil(0.9 * h.of)) {
+    const missed = h.items.filter((i) => !i.covered).map((i) => i.required);
+    errors.push(
+      `history.reference_questions is credited with only ${h.asked} of ${h.of} required questions without the AI (at least 90% needed). Not matched: ${missed.join(" | ")}. Reword those required questions with the plain words a student would use, or add the question a strong student would ask.`
+    );
+  }
 }
 
 /**

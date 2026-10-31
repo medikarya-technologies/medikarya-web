@@ -228,7 +228,7 @@
   },
   "24-year-old-man-struggling-to-breathe-after-a-bike-accident": {
     "plan_sha": "7fecac60fb427b7b63e2fdd9334c8a7f18d6041cec4cbe67f014f415024ef698",
-    "compiled_sha": "7e3440fb3dee10939a40f8613e0fb370bb6e2a5eee6155616dec993091f85939",
+    "compiled_sha": "777a43673926c323f6dacb6a721bbb9fd52d416d6d4c932d26394e0b632a4dcb",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -402,7 +402,7 @@
   },
   "26-year-old-woman-who-cannot-catch-her-breath": {
     "plan_sha": "c684503c03de412333d5618d49a84a5d633c17428101d749690ea01e6f23107e",
-    "compiled_sha": "70ce35895a28f68095839005910a801d3b3972f1f7a166aed00fbcd1f5bd98a4",
+    "compiled_sha": "05927f2b9149c4d114bed707ac6d833006ba843986883a32dac2b58157b3399d",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -589,7 +589,7 @@
   },
   "29-year-old-man-with-belly-pain-as-his-fever-settles": {
     "plan_sha": "127a366786179fc8a638de769adb1ddcd279606b33e72ca3c63d6cfc2140bbb4",
-    "compiled_sha": "13435ed07d5db782b2d560c8dc5d4aaa6f8d74fcd3566c267020b9cccfce6ffd",
+    "compiled_sha": "7b52d967920e0bc959ccd65a0a03ca37ab7b7a43416d89e039ec481a71cdc67a",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -814,7 +814,7 @@
   },
   "32-year-old-man-brought-in-fitting": {
     "plan_sha": "12dda86824d12952bcc7ef143a55978357f8a83889fe09ddc1bc71987f3a0d10",
-    "compiled_sha": "71e724295f59acf3628396cc4d5900c6927ae47eba4312d5b4a6dfd1bd4c07d2",
+    "compiled_sha": "fa9f71341595e95e86a75092756b637e6d66210dcb1fe7b00adeed468619ff67",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1046,7 +1046,7 @@
   },
   "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing": {
     "plan_sha": "1037584b25ed590aca191d1dc283fd48eea303e7ee8de878d6f338576030fe69",
-    "compiled_sha": "288537d2befd07e29d58b1e39123ec08396033640f846e51347851a6d6b1410a",
+    "compiled_sha": "a57abf6110dd9136edfcf649955307fd7bd06a383103d415659b730c7e4d850b",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1496,7 +1496,7 @@
   },
   "40-year-old-man-found-unconscious-at-home": {
     "plan_sha": "8eb9dce45f9c6d413f7507eedb0dcbb9d1828dce26a0edac772cad6cd260632e",
-    "compiled_sha": "82917fb5f9ed9c411106352d5683cf1f2d822a8328e1f6402e7f8bb9cdae50f2",
+    "compiled_sha": "fa2bf5dd9b00906c8864b9fbf80be18d7c0808593b4ebad6b0e6b6f9bde4a5f3",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1685,7 +1685,7 @@
   },
   "45-year-old-woman-with-fever-who-has-become-confused": {
     "plan_sha": "86c2a9d68d5aa3232889884d20616e0ea3e395c1dde700f6dbc2369b97789123",
-    "compiled_sha": "bd041aaea1ef7ca43e0c81a2650987fa2fd10b435462c813c868b99e8de3dbb7",
+    "compiled_sha": "8c84673fe777dfb8e013273c674bf0dff007266944794b979b7da242640c70ba",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1889,7 +1889,7 @@
   },
   "46-year-old-man-whose-legs-are-too-weak-to-stand": {
     "plan_sha": "ad53cb676508f96962228e21ea71aa1f0869503a620dd1c7cdbe1468e6b2f44c",
-    "compiled_sha": "4bf003a88e2f74f8b23a31923e6271e710169ec3a4b3831551dbfc2be481d102",
+    "compiled_sha": "9e01ef4bc183532c2dd98d25f7e196994b243c82b909a82f7762ff9436105f20",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2138,7 +2138,7 @@
   },
   "48-year-old-man-who-suddenly-could-not-breathe-and-fainted": {
     "plan_sha": "8e2c1ab8eb326f973031c5f6a584222ae3c699a8aae38f33bdccb889aa90f129",
-    "compiled_sha": "b691f14fd69d315753a5dd8b3e7dfa957be44dd5beb2394828b1fc912ba548eb",
+    "compiled_sha": "99df29f6658ae9453665b225bc7288ae3ef24b98e84e293c18a77af6542683dd",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2353,7 +2353,7 @@
   },
   "52-year-old-man-vomiting-blood-at-2-am": {
     "plan_sha": "ed5410a232d9a770c6c6e477532c44ab9e734569e5105d0530c30fd7b85f1626",
-    "compiled_sha": "aec49e9f962ecfa1e8193ba4b8d687c1d1cbf282eb583d25a0253f39c4576f65",
+    "compiled_sha": "0761b5f836c0cbebc30f4c24ec2a27adedd65b6e468ea2a35f3caeeabd22dd8d",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2538,7 +2538,7 @@
   },
   "54-year-old-man-with-black-stools-who-vomited-blood": {
     "plan_sha": "a844d1a4c010a189f06ebffe6a30378b6a933bfd89a98f37071ddf3c3eaaa804",
-    "compiled_sha": "6979be7141d43cbcc7bc55276246fbb2776747eb0018f333d1147241ba0147a0",
+    "compiled_sha": "a6127120bddb6bdd2c3dc6c541025c196993a4326d16336cf594266ac585e47a",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2712,7 +2712,7 @@
   },
   "56-year-old-man-with-chest-pain-and-a-slow-pulse": {
     "plan_sha": "7fba1403197f50149e9b3ab09bab8b97909097ce09d7928ca0366557031b193f",
-    "compiled_sha": "5e13f8d92785bc64f263017cd16cdfe5e38869fdf20fb56f6ae1df96388986a6",
+    "compiled_sha": "6c44ff8191262fabc8eb98763b38ebb5e7a94ba6426cca54870d7c0a2d4d474b",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2937,7 +2937,7 @@
   },
   "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
     "plan_sha": "8f5dd205b2d217397aa88b2f822967a09e0c3731248faa5b7851e91df183f3f3",
-    "compiled_sha": "908b3b063bb684f99231ba98b08d4fcd81c35f55a6fdb0e8bdcfebbf8714db33",
+    "compiled_sha": "a6e221ae94859601272b007171b8ff9e48f6626ae6268c29edcacb41d5af334b",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -3167,7 +3167,7 @@
   },
   "58-year-old-woman-who-woke-up-gasping-for-breath": {
     "plan_sha": "34f14fc125bcf45988da3004381524610022dddebe5e6751e46a7db29ae23d34",
-    "compiled_sha": "f8c600a1c50b01704d52446af92f8de63688bca6905cd83ed4870eb8ea8d4f6b",
+    "compiled_sha": "731870dad0d710190b5134ee3d94d28bbec41319091bfbf401ea133a179d0e4b",
     "playthroughs": {
       "untreated": {
         "score": 0,

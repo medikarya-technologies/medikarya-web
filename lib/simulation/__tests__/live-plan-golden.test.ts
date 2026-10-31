@@ -2,6 +2,9 @@
 // field must compile to exactly the same engine rules and play exactly the same: untreated, correct, with harmful
 // treatments, and late. Re-recorded on purpose on 2026-10-31, when every plan gained the course after treatment
 // (a late recovery and lasting harm, lateRecoveries and lastingEffect in live-plan.ts).
+// Re-recorded again the same day when every case gained history.reference_questions: the compiled rules carry a copy
+// of the case's history section, so 14 compiled hashes moved; every plan and every playthrough stayed identical.
+// And once more when nine cases' required history questions were reworded (two of them live): same reason, same result.
 //
 // The synthetic fixture is committed in full and runs everywhere. The real plans (data/cases, not in git) are checked
 // wherever they are present, and only while the plan itself is unchanged: an edited plan is re-recorded on purpose.

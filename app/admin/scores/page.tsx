@@ -103,6 +103,11 @@ export default async function TopScoresPage({ searchParams }: Props) {
                   <h2 className="text-[16px] font-bold text-slate-900">{c.title}</h2>
                   <span className="shrink-0 text-[13px] text-slate-500">{c.players} played</span>
                 </header>
+                {c.mixedScoring && (
+                  <p className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-[13px] text-amber-800">
+                    Some of these attempts were marked by the old history scoring and some by the new, so their totals are not comparable.
+                  </p>
+                )}
                 <table className="w-full text-[14.5px]">
                   <thead>
                     <tr className="text-left text-[12px] uppercase tracking-wide text-slate-500">

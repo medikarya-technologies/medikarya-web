@@ -51,6 +51,22 @@ describe("skills: classic scoring", () => {
     });
 });
 
+describe("skills: history scoring versions", () => {
+    it("once version 2 has marked an attempt, history counts only version 2 attempts", () => {
+        const p = buildSkillProfile([classic(10, { historyScore: 2.5 }), classic(11, { historyScore: 20, historyVersion: 2 })]);
+        const history = p.skills.find((s) => s.id === "history")!;
+        assert.equal(history.average, 80);
+        assert.equal(history.attempts, 1);
+        // the other parts still count both attempts
+        assert.equal(p.skills.find((s) => s.id === "reasoning")!.attempts, 2);
+    });
+
+    it("with only version 1 attempts, history counts them all as before", () => {
+        const p = buildSkillProfile([classic(10, { historyScore: 2.5 }), classic(11, { historyScore: 5 })]);
+        assert.equal(p.skills.find((s) => s.id === "history")!.attempts, 2);
+    });
+});
+
 describe("skills: rubric scoring", () => {
     const rubric = (day: number): AttemptFeedback => ({
         case_id: "61-year-old-man-with-severe-chest-pain-and-sweating",

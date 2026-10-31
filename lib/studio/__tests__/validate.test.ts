@@ -47,7 +47,12 @@ function good(): any {
       { id: "usg_neck_thyroid", name: "USG neck", category: "Imaging", result: { summary: "Nodule", values: [], interpretation: "Benign", origin: "ai", basis: "Follows the documented swelling" } },
     ],
     evaluation_config: {
-      history: { required_questions: ["a", "b", "c", "d"], important_questions: [], red_flag_questions: ["dysphagia"] },
+      history: {
+        required_questions: ["how long the neck swelling has been there", "difficulty swallowing", "change in voice", "weight loss"],
+        reference_questions: ["since when is the swelling in your neck?", "any difficulty swallowing food?", "has your voice changed?", "have you lost weight?"],
+        important_questions: [],
+        red_flag_questions: ["dysphagia"],
+      },
       testing: { testing_required: true, core_tests: ["tsh", "usg_neck_thyroid"], optional_tests: ["ft4"], distractor_tests: ["troponin_i", "ct_neck", "ft4"], dangerous_tests: ["lumbar_puncture"] },
       diagnosis: { accepted_primary: ["non-toxic nodular goitre", "multinodular goitre"], must_include_keywords: ["goitre"] },
       management: { core_steps: ["Refer for thyroidectomy"], dangerous_steps: ["Radioiodine without FNAC"] },
@@ -57,6 +62,38 @@ function good(): any {
     walkthrough: "### Walkthrough",
   };
 }
+
+describe("checkDraft: the history the scorer can mark", () => {
+  it("rejects a required question that names no topic", () => {
+    const c = good();
+    c.evaluation_config.history.required_questions[0] = "how long";
+    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes('"how long" names no topic')));
+  });
+
+  it("rejects a reference history the scorer cannot credit", () => {
+    const c = good();
+    c.evaluation_config.history.reference_questions = ["since when is the swelling?", "any other symptoms?"];
+    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("credited with only 1 of 4")));
+  });
+
+  it("warns when there is no reference history", () => {
+    const c = good();
+    delete c.evaluation_config.history.reference_questions;
+    assert.ok(checkDraft(c, ctx).warnings.some((w) => w.includes("reference_questions is missing")));
+  });
+
+  it("rejects diagnosis keywords that are alternatives, since every one must appear", () => {
+    const c = good();
+    c.evaluation_config.diagnosis.must_include_keywords = ["goitre", "thyroid"];
+    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("look like alternatives")));
+  });
+
+  it("allows one keyword that the accepted wordings need not contain (a second route to correct)", () => {
+    const c = good();
+    c.evaluation_config.diagnosis.must_include_keywords = ["mng"];
+    assert.equal(checkDraft(c, ctx).errors.some((e) => e.includes("must_include_keywords")), false);
+  });
+});
 
 describe("checkDraft", () => {
   it("passes a complete, clean draft", () => {

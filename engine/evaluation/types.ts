@@ -154,6 +154,13 @@ export interface FinalEvaluationResult {
     missedRedFlags: string[];      // final resolved intents that incurred penalty
     redFlagResolutions: RedFlagResolution[];  // full tiered breakdown for UI
 
+    /** Which history scorer the student saw (EVALUATION_ENGINE.md, "History, version 2"). */
+    scoringVersion?: { history: 1 | 2 };
+    /** Both history scores, and version 2's workings. */
+    historyScoring?: { mode: "v1" | "shadow" | "v2"; v1: number; v2: import("./historyCoverage").HistoryV2 };
+    /** With version 2: how many required history questions were asked, and which were not. */
+    historyReview?: { version: 2; asked: number; of: number; missed: string[] };
+
     // feedback
     feedback: {
         strengths: string[];

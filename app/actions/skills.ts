@@ -10,6 +10,7 @@ const COLUMNS = [
     "case_id",
     "created_at",
     "historyScore:feedback_json->historyScore",
+    "historyVersion:feedback_json->scoringVersion->history",
     "testingScore:feedback_json->testingScore",
     "reasoningScore:feedback_json->reasoningScore",
     "diagnosisScore:feedback_json->diagnosisScore",
