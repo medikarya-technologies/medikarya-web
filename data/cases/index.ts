@@ -212,6 +212,14 @@ const cachedCaseList = unstable_cache(
   { revalidate: 60, tags: ['cases'] }
 );
 
+/**
+ * The published list, or an error when the database cannot be read (getCases() falls back to the bundled cases
+ * instead). For pages that state counts, where "1 published case" would be worse than saying nothing.
+ */
+export async function getCasesOrThrow(): Promise<CaseMetadata[]> {
+  return withBundled(await cachedCaseList());
+}
+
 export async function getCases(): Promise<CaseMetadata[]> {
   try {
     return withBundled(await cachedCaseList());

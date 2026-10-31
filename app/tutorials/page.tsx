@@ -3,21 +3,14 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, PlayCircle, Clock, Zap, BookOpen, Target } from "lucide-react"
 import type { Metadata } from "next"
+import { pageMetadata } from "@/lib/seo/site"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/tutorials" },
-    title: "Tutorials: MediKarya Visual Learning Center",
-    description: "Step-by-step video guides for mastering clinical reasoning, diagnostic workflow, and AI patient simulation on MediKarya. Built for medical students.",
-    openGraph: {
-        title: "MediKarya Tutorials: Learn Clinical Simulation",
-        description: "Step-by-step guides to mastering the MediKarya platform, improving your diagnostic workflow, and building clinical confidence.",
-        images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Tutorials" }],
-    },
-    twitter: {
-        card: "summary_large_image",
-        images: ["https://www.medikarya.in/og-image.png"],
-    },
-}
+export const metadata: Metadata = pageMetadata({
+    path: "/tutorials",
+    title: "Tutorials: How to Use MediKarya",
+    description: "Video guides to working a case on MediKarya: getting started, moving through a patient case, ordering investigations, diagnostic reasoning and reading ECGs.",
+    socialTitle: "MediKarya Tutorials: Learn Clinical Simulation",
+})
 
 const gettingStarted = [
     {

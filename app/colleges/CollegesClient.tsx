@@ -10,7 +10,7 @@ import { ArrowLeft, BookCopy, Check, Loader2, ChevronDown, ChevronUp, PenLine, U
 import { useToast } from "@/components/ui/use-toast"
 
 // Only what MediKarya does today. There is no public API: this page is for colleges and faculty who want to use
-// MediKarya with a batch of students, and its address (/api-docs) is kept so old links still work.
+// MediKarya with a batch of students. It now lives at /colleges; the old /api-docs links redirect here (next.config.mjs).
 const features = [
     { Icon: Users, iconBg: "bg-brand-50", iconColor: "text-brand-600", title: "A workshop or a pilot", description: "We run a session with your students on their own phones or laptops, working real cases end to end, and share what the batch found hard. Our first pilot was with 4th-year MBBS students at Maulana Azad Medical College in May 2026." },
     { Icon: BookCopy, iconBg: "bg-brand-50", iconColor: "text-brand-600", title: "Access for a batch", description: "We can open MediKarya for a whole batch for a workshop or a term, so every student works the same cases and sees their own debrief after each one." },
@@ -23,7 +23,7 @@ const faqs = [
     { q: "Who do we talk to?", a: "The founding team, directly. We reply to every message ourselves, usually within two working days." },
 ]
 
-export default function ApiDocsClient() {
+export default function CollegesClient() {
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [institution, setInstitution] = useState("")

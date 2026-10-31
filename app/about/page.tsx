@@ -3,21 +3,22 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, Stethoscope, Brain, BookOpen, Heart } from "lucide-react"
 import type { Metadata } from "next"
+import { pageMetadata } from "@/lib/seo/site"
+import { getCasesOrThrow } from "@/data/cases"
+import { libraryStats } from "@/lib/seo/markdown"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/about" },
+// The case counts below come from the published list, so this page cannot fall behind the library again (it said
+// "10 published cases" long after there were 44). If the list cannot be read, the page says it without numbers.
+export const revalidate = 300
+
+export const metadata: Metadata = pageMetadata({
+    path: "/about",
     title: "About MediKarya",
-    description: "MediKarya is an AI-powered clinical simulation platform built for medical students in India. Learn about our mission, what we're building, and the problem we're solving.",
-    robots: {
-        index: true,
-        follow: true,
-    },
-    openGraph: {
-        title: "About MediKarya: AI Clinical Simulation for Medical Students",
-        description: "We're building the practice environment that medical education has always needed: realistic, affordable, and available before your first real patient.",
-        images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Platform Preview" }],
-    },
-}
+    absoluteTitle: true,
+    description: "MediKarya is clinical case practice for medical students in India. Why we built it, what it is, and where it is today.",
+    socialTitle: "About MediKarya: Clinical Case Practice for Medical Students",
+    socialDescription: "We're building the practice environment that medical education has always needed: realistic, affordable, and available before your first real patient.",
+})
 
 const values = [
     {
@@ -50,7 +51,8 @@ const values = [
     },
 ]
 
-export default function AboutPage() {
+export default async function AboutPage() {
+    const library = await getCasesOrThrow().then(libraryStats).catch(() => null)
     return (
         <main className="min-h-screen flex flex-col bg-white">
             <div className="flex-1 relative">
@@ -142,7 +144,7 @@ export default function AboutPage() {
                     <section className="mb-20">
                         <h2 className="text-2xl font-bold text-slate-900 mb-3">Where we are right now</h2>
                         <p className="text-slate-600 leading-relaxed mb-4">
-                            MediKarya is in early development. We currently have 10 published clinical cases, including a real-time cardiac emergency that deteriorates based on how it's managed, and are actively building the case library and platform features. If you're a medical student, clinician, or educator who wants to help shape what this becomes: we'd genuinely like to hear from you.
+                            MediKarya is in early development. We currently have {library ? `${library.patients} published patient cases across ${library.specialties} specialties, ${library.live} of them` : "a growing library of published patient cases, some of them"} live emergencies where the patient deteriorates based on how they're managed, and are actively building the case library and platform features. If you're a medical student, clinician, or educator who wants to help shape what this becomes: we'd genuinely like to hear from you.
                         </p>
                         <p className="text-slate-600 leading-relaxed">
                             We're based in India and building this for the Indian medical education context, with a longer-term goal of expanding to other LMIC settings where the same gap exists.

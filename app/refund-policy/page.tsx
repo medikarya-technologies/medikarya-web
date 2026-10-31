@@ -1,12 +1,12 @@
 import type { Metadata } from "next"
 import RefundPolicyClient from "./RefundPolicyClient"
+import { pageMetadata } from "@/lib/seo/site"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/refund-policy" },
-    title: "Refund & Cancellation Policy",
+export const metadata: Metadata = pageMetadata({
+    path: "/refund-policy",
+    title: "Refund and Cancellation Policy",
     description: "How MediKarya subscriptions renew, how to cancel, and when payments are refunded.",
-    robots: { index: true, follow: true },
-}
+})
 
 export default function RefundPolicyPage() {
     return <RefundPolicyClient />
