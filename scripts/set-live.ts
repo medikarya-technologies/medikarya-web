@@ -22,7 +22,7 @@ const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_K
   if (state === "on") {
     const base = upgradeLegacyCase(caseJson);
     if (!isSimulationCase(base)) throw new Error("this case cannot run at the bedside, so it cannot be made live");
-    const check = checkLivePlan(plan, measuredOnArrival(base));
+    const check = checkLivePlan(plan, measuredOnArrival(base), base.patient?.age);
     if (check.errors.length > 0) throw new Error(`the plan does not pass the check:\n  ${check.errors.join("\n  ")}`);
     const blockers = openReleaseBlockers(plan);
     if (blockers.length > 0) throw new Error(`still blocked: ${blockers.map((b: { id: string }) => b.id).join(", ")}`);

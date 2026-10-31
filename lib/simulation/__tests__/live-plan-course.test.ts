@@ -73,6 +73,13 @@ describe("course: safe to call recovered", () => {
         assert.equal(fine.outcome.unsafe_at_end, undefined);
     });
 
+    it("judges a child's recovery on the floors for the age", () => {
+        // 85/50 is ordinary for a two-year-old (systolic floor 74) but under the adult floor of 90
+        const toddler = plan({ recovery: { ...recovery, vitals: { ...recovery.vitals, sbp: 85, dbp: 50 } } });
+        assert.deepEqual(checkLivePlan(toddler, measuredOnArrival(base()), 2).errors, []);
+        assert.match(checkLivePlan(toddler, measuredOnArrival(base()), 40).errors.join(" | "), /BP 85\/50/);
+    });
+
     it("refuses a plan whose own recovery is unsafe", () => {
         const bad = plan({ recovery: { ...recovery, vitals: { ...recovery.vitals, spo2: 88 } } });
         assert.match(checkLivePlan(bad, measuredOnArrival(base())).errors.join(" | "), /recovery\.vitals: a patient at SpO₂ 88% has not recovered/);

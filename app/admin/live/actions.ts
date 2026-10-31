@@ -139,7 +139,7 @@ export async function setLiveAction(caseId: string, on: boolean): Promise<LiveRe
     if (on) {
       const base = upgradeLegacyCase(caseJson)
       if (!isSimulationCase(base)) return { ok: false, error: "This case cannot run at the bedside, so it cannot be made live." }
-      const check = checkLivePlan(plan, measuredOnArrival(base))
+      const check = checkLivePlan(plan, measuredOnArrival(base), base.patient?.age)
       if (check.errors.length > 0) return { ok: false, error: "The plan does not pass the check. Fix it first.", details: check.errors }
       const blockers = openReleaseBlockers(plan)
       if (blockers.length > 0) return { ok: false, error: "Something still blocks this case's release. Settle it first.", details: blockers.map((b) => b.text) }

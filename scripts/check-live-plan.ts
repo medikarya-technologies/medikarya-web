@@ -22,7 +22,7 @@ const measured = measuredOnArrival(base);
 console.log("ARRIVAL (from the case):", JSON.stringify(measured));
 
 const plan = normaliseLivePlan(raw.plan ?? raw, "ai");
-const check = checkLivePlan(plan, measured);
+const check = checkLivePlan(plan, measured, base.patient?.age);
 console.log(`CHECK: ${check.errors.length} errors, ${check.warnings.length} warnings`);
 for (const e of check.errors) console.log("  ERROR:", e);
 for (const w of check.warnings) console.log("  warning:", w);

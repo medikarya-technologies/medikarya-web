@@ -982,7 +982,8 @@ function checkFluid(t: LiveTreatment, f: LiveFluid, where: string, plan: LivePla
  * Is this plan complete and sensible enough to run? `measured` is what the case itself records on arrival: a vital it
  * does not record must be given in `arrival.vitals`.
  */
-export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePlanCheck {
+/** `ageYears`: the patient's age, so a child's recovery is judged on the floors for the age (unsafeReadings). */
+export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}, ageYears?: number): LivePlanCheck {
     const errors: string[] = [];
     const warnings: string[] = [];
     const whole = (n: number) => Number.isFinite(n);
@@ -1133,7 +1134,7 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
     }
     checkAbsolute(r.vitals, "recovery.vitals", errors);
     if (r.nurse_says.length < 10) errors.push("recovery.nurse_says: write the sentence the nurse says when the patient settles.");
-    const unsafe = unsafeReadings({ hr: r.vitals.hr, sbp: r.vitals.sbp, dbp: r.vitals.dbp, spo2: r.vitals.spo2, rr: r.vitals.rr, consciousness: r.consciousness });
+    const unsafe = unsafeReadings({ hr: r.vitals.hr, sbp: r.vitals.sbp, dbp: r.vitals.dbp, spo2: r.vitals.spo2, rr: r.vitals.rr, consciousness: r.consciousness }, ageYears);
     if (unsafe.length > 0) errors.push(`recovery.vitals: a patient at ${unsafe.join(", ")} has not recovered. Where the patient settles has to be safe.`);
     const stageOrder = plan.stages.map((s) => s.id);
     const seen = new Set<string>();
@@ -1146,7 +1147,7 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}): LivePl
         checkAbsolute(a.vitals, `${where}.vitals`, errors);
         if (a.after_minutes !== undefined && (!whole(a.after_minutes) || a.after_minutes < 1 || a.after_minutes > 30)) errors.push(`${where}.after_minutes must be between 1 and 30.`);
         const settled = { ...r.vitals, ...a.vitals };
-        const worse = unsafeReadings({ hr: settled.hr, sbp: settled.sbp, dbp: settled.dbp, spo2: settled.spo2, rr: settled.rr, consciousness: a.consciousness ?? r.consciousness });
+        const worse = unsafeReadings({ hr: settled.hr, sbp: settled.sbp, dbp: settled.dbp, spo2: settled.spo2, rr: settled.rr, consciousness: a.consciousness ?? r.consciousness }, ageYears);
         if (worse.length > 0) errors.push(`${where}: a patient at ${worse.join(", ")} has not recovered; if a late patient does not recover, the plan should not stabilise them (end_points).`);
         if (i > 0 && stageOrder.indexOf(a.stage) <= stageOrder.indexOf(r.after_stage![i - 1].stage)) errors.push(`${where}: list the steps in the order of the untreated course.`);
     });
@@ -1914,7 +1915,7 @@ export function withLivePlan<T extends SimulationCaseConfig>(base: T, viewerIsAd
     if (!livePlanApplies(plan, viewerIsAdmin) || isLivePlanCase(base)) return base;
     // Only an ordinary case (no rules of its own): a case written as a live one keeps its own physiology.
     if (base.scoring_mode !== "classic" || base.event_rules.length > 0) return base;
-    if (checkLivePlan(plan, measuredOnArrival(base)).errors.length > 0) return base;
+    if (checkLivePlan(plan, measuredOnArrival(base), base.patient?.age).errors.length > 0) return base;
     return compileLivePlan(base, plan);
 }
 
