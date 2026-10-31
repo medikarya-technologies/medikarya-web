@@ -7,7 +7,7 @@ import path from "path";
 const R = "../lib/simulation/";
 const { upgradeLegacyCase } = require(R + "legacy-adapter");
 const { isSimulationCase } = require(R + "case-schema");
-const { normaliseLivePlan, checkLivePlan, compileLivePlan, measuredOnArrival, scoreBedside, blendLiveScore } = require(R + "live-plan");
+const { normaliseLivePlan, checkLivePlan, compileLivePlan, measuredOnArrival, scoreBedside, blendLiveScore, unmodelledCourse } = require(R + "live-plan");
 const { validateSimulationCase } = require(R + "validate-config");
 const { EncounterEngine } = require(R + "encounter-engine");
 const { replayStudentEvents } = require(R + "replay");
@@ -26,6 +26,7 @@ const check = checkLivePlan(plan, measured);
 console.log(`CHECK: ${check.errors.length} errors, ${check.warnings.length} warnings`);
 for (const e of check.errors) console.log("  ERROR:", e);
 for (const w of check.warnings) console.log("  warning:", w);
+for (const n of unmodelledCourse(plan)) console.log("  not modelled:", n);
 if (check.errors.length) process.exit(1);
 
 const c = compileLivePlan(base, plan);

@@ -243,6 +243,12 @@ export function LivePlanReport({ caseJson, arrival: given }: { caseJson: Json; a
                     <span className="font-medium text-slate-500">The student sees: </span>“{t.says}”
                   </p>
                   {t.fluid && <FluidLadder fluid={t.fluid} label={label} />}
+                  {t.lasting && (
+                    <p className="mt-0.5 text-slate-800">
+                      <span className="font-medium text-slate-500">After the recovery: </span>
+                      {Object.keys(t.lasting).length === 0 ? "wears off" : `still ${effectText(t.lasting)}, if given before then`}
+                    </p>
+                  )}
                   {t.why && (
                     <p className="mt-0.5 text-slate-800">
                       <span className="font-medium text-slate-500">Why: </span>
@@ -266,9 +272,26 @@ export function LivePlanReport({ caseJson, arrival: given }: { caseJson: Json; a
         {plan.recovery?.rhythm ? `, ${word(plan.recovery.rhythm)}` : ""}.
       </p>
       {plan.recovery?.nurse_says && <p className="mt-1 text-[13.5px] text-slate-600">Nurse: “{plan.recovery.nurse_says}”</p>}
+      {Array.isArray(plan.recovery?.after_stage) && plan.recovery.after_stage.length > 0 && (
+        <ul className="mt-2 space-y-1 text-[14px] text-slate-800">
+          {plan.recovery.after_stage.map((a: Json) => {
+            const v = { ...plan.recovery.vitals, ...a.vitals }
+            return (
+              <li key={a.stage}>
+                Stabilised only after reaching <strong>{plan.stages?.find((s: Json) => s.id === a.stage)?.name ?? a.stage}</strong>: {a.after_minutes ?? plan.recovery.after_minutes} minutes
+                later they settle at HR {v.hr}, BP {v.sbp}/{v.dbp}, SpO₂ {v.spo2}%, RR {v.rr}
+                {a.consciousness ? `, ${word(a.consciousness)}` : ""}
+                {a.rhythm ? `, ${word(a.rhythm)}` : ""}.
+              </li>
+            )
+          })}
+        </ul>
+      )}
       <p className="mt-2 text-[13.5px] text-slate-700">
         Scoring: 60% is the ordinary scoring in section 6 (history, investigations, diagnosis, written plan); 40% is the bedside: each essential treatment
-        counts in full if given in time, half if late, nothing if never given, and 15 points come off for each harmful treatment given.
+        counts in full if given in time, half if late, nothing if never given, and 15 points come off for each harmful treatment given. A patient never
+        stabilised by the end holds the bedside at 25 at most, and a patient is called recovered only at safe readings (no single NEWS2 red
+        score on SpO₂, systolic BP, pulse, breathing or response, and a mean pressure of 65 or more).
       </p>
 
       {Array.isArray(plan.basis) && plan.basis.length > 0 && (

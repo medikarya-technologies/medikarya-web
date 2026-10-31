@@ -6,7 +6,7 @@ import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
 import { isSimulationCase } from "@/lib/simulation/case-schema"
 import { upgradeLegacyCase } from "@/lib/simulation/legacy-adapter"
-import { checkLivePlan, isLivePlan, measuredOnArrival, openReleaseBlockers } from "@/lib/simulation/live-plan"
+import { checkLivePlan, isLivePlan, measuredOnArrival, openReleaseBlockers, unmodelledCourse } from "@/lib/simulation/live-plan"
 import { LiveRow, type LiveCase } from "./live-row"
 
 // Admin → Live cases. Every case in the library, and where each stands on becoming a live one: no plan, a proposed
@@ -50,7 +50,8 @@ async function load(): Promise<LiveCase[]> {
               : null,
             blockers: openReleaseBlockers(plan).map((b) => b.text),
             errors: check?.errors ?? [],
-            warnings: check?.warnings ?? [],
+            // what the plan leaves the engine to assume after treatment (a late recovery, harm the recovery erases)
+            warnings: [...(check?.warnings ?? []), ...unmodelledCourse(plan)],
           }
         : null,
     }

@@ -100,7 +100,9 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
     ? outcome.worst_stage
       ? `Your patient reached "${outcome.worst_stage}" before you stabilised them, then recovered.`
       : "You stabilised your patient before they got any worse, and they recovered."
-    : outcome.stabilised
+    : outcome.unsafe_at_end
+      ? `You stopped the deterioration, but at the end your patient was not safe: ${outcome.unsafe_at_end.join(", ")}.`
+      : outcome.stabilised
       ? "You stabilised your patient just before the encounter ended."
       : outcome.worst_stage
         ? `Your patient was never stabilised and reached "${outcome.worst_stage}".`
@@ -117,6 +119,11 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
       </div>
       <div className="space-y-2.5 p-3">
         <p className="text-sm font-medium text-enc-ink">{ending}</p>
+        {bedside.capped && (
+          <p className="text-xs text-enc-crit">
+            Your patient was never stabilised, so the bedside score is held at {bedside.capped.at} (it would have been {bedside.capped.from}), whatever else was given in time.
+          </p>
+        )}
         {outcome.path && outcome.path !== "usual" && <p className="text-xs text-enc-ink-2">They were stabilised through: {outcome.path}.</p>}
         <ul className="space-y-1.5">
           {bedside.items.map((i) => (

@@ -18,6 +18,7 @@ import {
     compileCondition,
     compileLivePlan,
     doseFlag,
+    LEFT_DYING_CAP,
     measuredOnArrival,
     normaliseLivePlan,
     REFUSED,
@@ -261,7 +262,8 @@ describe("state: a rescue required only once the patient needs it, and the path 
         const wide = shock({ treatments: (shockRaw().treatments as Array<Record<string, unknown>>).map((t) => (t.id === "rescue_bolus" ? { ...t, within_minutes: 10 } : t)) });
         const { score } = run(wide, [["iv_access", 13], ["fluid_bolus_20ml_kg", 13]]);
         assert.equal(item(score, "rescue_bolus").status, "not_due");
-        assert.equal(score.score, 50, "only access and bolus count, both late");
+        assert.equal(score.capped?.from, 50, "only access and bolus count, both late");
+        assert.equal(score.score, LEFT_DYING_CAP, "and he was never stabilised");
     });
 
     it("an attempt before it was available cannot stabilise the patient or earn credit", () => {

@@ -2,7 +2,7 @@
 // lib/simulation/live-plan-guide.ts
 // =========================
 // What the AI drafter (lib/studio/live-draft.ts) is told about a live plan's optional fields: repeat doses, state,
-// infusions, prerequisites and reassessment. Kept here, beside the plan's own types and pure, so a test can hold it
+// infusions, prerequisites, reassessment, and how the recovery follows the course (late, after harm). Kept here, beside the plan's own types and pure, so a test can hold it
 // to the engine: every field it names exists, and its worked example passes the site's own check.
 
 /** The optional fields, by the name a plan uses. The test checks each is described in the guide. */
@@ -26,6 +26,8 @@ export const ADVANCED_FIELDS = [
     "stabilised_by_while",
     "or_stabilised_by",
     "reassessment",
+    "after_stage",
+    "lasting",
 ] as const;
 
 export const ADVANCED_FIELDS_GUIDE = `OPTIONAL FIELDS. Use one only when this patient's course needs it, and say in basis what each number rests on.
@@ -55,6 +57,10 @@ Plan fields:
   reports explicit findings (each check's says when its condition holds, else otherwise). Optional report:
   { vitals: [..], consciousness: true, findings: [<finding ids>] } also records those readings each time it is done;
   the engine reads them from the patient, so never write a reading into the plan.
+- recovery.after_stage: [{ stage, vitals, after_minutes?, consciousness?, rhythm?, nurse_says? }]: where a patient
+  stabilised only after reaching that step of the untreated course settles instead (the furthest step reached
+  applies; its vitals override the usual recovery's). Without it a late patient recovers exactly like a timely one.
+  Every patient must still settle at safe readings; one who would not should not be stabilised (end_points).
 
 Treatment fields:
 - max_doses (2 to 10), min_interval_minutes, doses_required (essential only), repeat_within_minutes: a treatment given
@@ -73,7 +79,9 @@ Treatment fields:
   does no harm. Do not use it for fluid that has to be adjusted by response and stopped on reassessment (dengue,
   DKA, septic shock fluids); say in basis that the case needs that and cannot be represented yet.
 - requires: [{ when, says }]: what must be true before it can be given, in order, for example IV access for an IV drug
-  ({"given": "iv_access"}, says "there is no IV access yet.") or a required sequence of treatments.`;
+  ({"given": "iv_access"}, says "there is no IV access yet.") or a required sequence of treatments.
+- lasting (harmful only): what of its effect is still there after the recovery, as changes on top of it, when it was
+  given before then (a sedative's slowed breathing). {} says it wears off. Without it the recovery erases the harm.`;
 
 /**
  * A plan that uses every optional field the way the guide describes. It is a format example only (an imaginary
@@ -105,7 +113,7 @@ export const ADVANCED_EXAMPLE = {
             available_when: { stage_reached: "much_worse" }, required_when: { stage_reached: "much_worse" },
         },
         { id: "continuous_monitoring", role: "supportive", says: "He is on the monitor." },
-        { id: "furosemide_iv", role: "harmful", effect: { sbp: -10, dbp: -6, hr: 8 }, says: "His pressure falls further.", why: "Format example harm." },
+        { id: "furosemide_iv", role: "harmful", effect: { sbp: -10, dbp: -6, hr: 8 }, lasting: { sbp: -4, dbp: -2 }, says: "His pressure falls further.", why: "Format example harm." },
     ],
     stabilised_by: ["iv_access", "drug_a"],
     stabilised_by_while: { not: { stage_reached: "much_worse" } },
@@ -120,6 +128,13 @@ export const ADVANCED_EXAMPLE = {
         ],
         report: { vitals: ["sbp", "dbp", "pp"], findings: ["cold_peripheries"] },
     },
-    recovery: { after_minutes: 4, vitals: { hr: 126, sbp: 94, dbp: 58, spo2: 99, rr: 30 }, consciousness: "alert", nurse_says: "He is settling. Pulse {hr}, BP {bp}.", findings: { cold_peripheries: false } },
+    recovery: {
+        after_minutes: 4,
+        vitals: { hr: 126, sbp: 94, dbp: 58, spo2: 99, rr: 30 },
+        consciousness: "alert",
+        nurse_says: "He is settling. Pulse {hr}, BP {bp}.",
+        findings: { cold_peripheries: false },
+        after_stage: [{ stage: "much_worse", vitals: { hr: 134, sbp: 92, dbp: 56 }, after_minutes: 6, nurse_says: "He is settling, more slowly. Pulse {hr}, BP {bp}." }],
+    },
     basis: ["Format example only: not clinical advice."],
 };

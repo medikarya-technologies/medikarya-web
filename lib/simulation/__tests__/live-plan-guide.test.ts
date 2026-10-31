@@ -23,7 +23,7 @@ describe("the drafter's guide to optional fields", () => {
         const plan = normaliseLivePlan(ADVANCED_EXAMPLE, "ai") as unknown as Record<string, unknown>;
         const treatments = plan.treatments as Array<Record<string, unknown>>;
         for (const f of ADVANCED_FIELDS) {
-            const used = f in plan || treatments.some((t) => f in t);
+            const used = f in plan || f in (plan.recovery as object) || treatments.some((t) => f in t);
             assert.ok(used, `${f} is in the example and survives normalising`);
         }
     });
