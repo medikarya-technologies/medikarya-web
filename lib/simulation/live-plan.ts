@@ -147,7 +147,7 @@ export interface LiveTreatment {
     /**
      * For a harmful treatment: what of its effect is still there once the patient has recovered, as changes on top of
      * the recovery (a sedative's slowed breathing, say), when it was given before then. `{}` says on purpose that it
-     * wears off. Absent: the recovery replaces it, as before, and the plan reads as not saying (unmodelledCourse).
+     * wears off. Absent: HARM_LASTING_SHARE of its `effect` stays (lastingEffect).
      */
     lasting?: LiveVitals;
 
@@ -290,7 +290,7 @@ export interface LiveRecovery {
     /**
      * Where a patient stabilised only after reaching a step of the untreated course settles instead: the entry for the
      * furthest step reached applies (its vitals over `vitals`; its own minutes, rhythm, consciousness and words where
-     * given). Absent: every patient settles to `vitals`, however late, and the plan reads as not saying (unmodelledCourse).
+     * given). Absent: derived from the plan's own steps (lateRecoveries), so a late patient never settles like a timely one.
      */
     after_stage?: LiveLateRecovery[];
 }
@@ -1146,9 +1146,6 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}, ageYear
         if (Object.keys(a.vitals).length === 0 && !a.consciousness && !a.rhythm) errors.push(`${where}: say how this patient settles differently (vitals, consciousness or rhythm).`);
         checkAbsolute(a.vitals, `${where}.vitals`, errors);
         if (a.after_minutes !== undefined && (!whole(a.after_minutes) || a.after_minutes < 1 || a.after_minutes > 30)) errors.push(`${where}.after_minutes must be between 1 and 30.`);
-        const settled = { ...r.vitals, ...a.vitals };
-        const worse = unsafeReadings({ hr: settled.hr, sbp: settled.sbp, dbp: settled.dbp, spo2: settled.spo2, rr: settled.rr, consciousness: a.consciousness ?? r.consciousness }, ageYears);
-        if (worse.length > 0) errors.push(`${where}: a patient at ${worse.join(", ")} has not recovered; if a late patient does not recover, the plan should not stabilise them (end_points).`);
         if (i > 0 && stageOrder.indexOf(a.stage) <= stageOrder.indexOf(r.after_stage![i - 1].stage)) errors.push(`${where}: list the steps in the order of the untreated course.`);
     });
     plan.treatments.forEach((t, i) => {
@@ -1163,16 +1160,109 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}, ageYear
 }
 
 /**
- * What a plan leaves the engine to assume about the course after treatment, in a sentence each: late treatment that
- * settles exactly like timely treatment, and harm that the recovery erases. Not errors (an older plan runs as it always
- * did), but each is something a clinician should decide. Shown to admins beside the check.
+ * Where a plan leaves the course after treatment to the engine's defaults (lateRecoveries, lastingEffect), in a
+ * sentence each. Not errors: the defaults give every plan real consequences. But each is a simulation estimate a
+ * clinician may want to replace with the case's own numbers. Shown to admins beside the check.
  */
 export function unmodelledCourse(plan: LivePlan): string[] {
     const out: string[] = [];
-    if (!plan.recovery.after_stage?.length) out.push("recovery.after_stage: a patient stabilised late, after the worst steps of the untreated course, recovers exactly like one treated in time. Say how a late patient settles.");
-    const erased = plan.treatments.filter((t) => t.role === "harmful" && !t.lasting && (t.effect || t.responses?.some((x) => x.effect)));
-    if (erased.length > 0) out.push(`lasting: once the patient recovers, no harm is left from ${erased.map((t) => t.id).join(", ")}. For each, say what lasts (lasting), or {} if it wears off.`);
+    if (!plan.recovery.after_stage?.length) {
+        out.push(`recovery.after_stage: not written, so a patient stabilised after a step past the last on-time minute (${onTimeBy(plan)} min) settles by the default: up to ${Math.round(LATE_RECOVERY_SHARE * 100)}% of the way back toward the worst step reached, ${LATE_RECOVERY_EXTRA_MINUTES} minutes slower per step. Write the case's own if a clinician can say better.`);
+    }
+    const defaulted = plan.treatments.filter((t) => t.role === "harmful" && !t.lasting && t.effect && !isNoChange(t.effect));
+    if (defaulted.length > 0) out.push(`lasting: not written for ${defaulted.map((t) => t.id).join(", ")}, so ${Math.round(HARM_LASTING_SHARE * 100)}% of each one's effect stays after the recovery. Say what really lasts, or {} if it wears off.`);
     return out;
+}
+
+// ── The course after treatment: real consequences ──────────────────────────
+// Simulation parameters, not clinical values (the product owner's decision, 31 Oct 2026): a plan that says nothing
+// about a late patient or a lasting harm still gives one, from its own numbers, so treating late or giving something
+// harmful never ends exactly like doing it right. A plan replaces either with its own (after_stage, lasting).
+
+/** How far back toward the worst step reached a late patient settles, at the last step (earlier steps: less, in proportion). */
+export const LATE_RECOVERY_SHARE = 0.5;
+/** How much longer a late patient takes to settle, per step of the untreated course reached. */
+export const LATE_RECOVERY_EXTRA_MINUTES = 2;
+/** How much of a harmful treatment's effect is still there after the recovery, when the plan does not say. */
+export const HARM_LASTING_SHARE = 0.5;
+
+const LATE_NURSE_SAYS = "The patient has stopped getting worse, but the delay has cost them: pulse {hr}, BP {bp}, SpO₂ {spo2}. They will need close watching.";
+
+/**
+ * How a patient stabilised after each step of the untreated course settles: the plan's own after_stage if it has one;
+ * otherwise, for every step that comes after care on time could have stopped the course (onTimeBy), the recovery moved part of the way back toward the
+ * monitor at that step (LATE_RECOVERY_SHARE at the last step, in proportion before it), slower by
+ * LATE_RECOVERY_EXTRA_MINUTES a step, and no more awake than one level better than the patient was at that step. A step
+ * before then is part of the course even with care given on time, so it costs nothing. `arrival` is the monitor on
+ * arrival (the case's and the plan's).
+ */
+export function lateRecoveries(plan: LivePlan, arrival: LiveVitals = {}): LiveLateRecovery[] {
+    if (plan.recovery.after_stage?.length) return plan.recovery.after_stage;
+    const r = plan.recovery;
+    const n = plan.stages.length;
+    let monitor: LiveVitals = { ...arrival };
+    let awake: Consciousness = plan.arrival?.consciousness ?? r.consciousness ?? "alert";
+    const level = (c: Consciousness) => CONSCIOUSNESS_LEVELS.indexOf(c);
+    return plan.stages.flatMap((s, i) => {
+        monitor = { ...monitor, ...s.vitals };
+        if (s.consciousness) awake = s.consciousness;
+        if (s.at_minutes <= onTimeBy(plan)) return [];
+        const share = (LATE_RECOVERY_SHARE * (i + 1)) / n;
+        const vitals: LiveVitals = {};
+        for (const k of ["hr", "sbp", "dbp", "spo2", "rr", "temp"] as const) {
+            const to = r.vitals[k];
+            const at = monitor[k];
+            if (to === undefined || at === undefined) continue;
+            const v = to + share * (at - to);
+            const settled = k === "temp" ? Math.round(v * 10) / 10 : Math.round(v);
+            if (settled !== to) vitals[k] = settled;
+        }
+        // A diastolic that would reach the systolic is kept 10 below it, as the engine itself does.
+        const sbp = vitals.sbp ?? r.vitals.sbp;
+        const dbp = vitals.dbp ?? r.vitals.dbp;
+        if (sbp !== undefined && dbp !== undefined && dbp > sbp - 10) vitals.dbp = sbp - 10;
+        const usual = r.consciousness ?? "alert";
+        const best = CONSCIOUSNESS_LEVELS[Math.max(0, level(awake) - 1)];
+        const consciousness = level(best) > level(usual) ? best : undefined;
+        return [
+            {
+                stage: s.id,
+                vitals,
+                after_minutes: r.after_minutes + LATE_RECOVERY_EXTRA_MINUTES * (i + 1),
+                ...(consciousness ? { consciousness } : {}),
+                nurse_says: LATE_NURSE_SAYS,
+            },
+        ];
+    });
+}
+
+/**
+ * The last minute at which care given on time could still stop the course: the critical window, or a stabilising
+ * treatment's own deadline with every further dose it needs on time, whichever is later.
+ */
+export function onTimeBy(plan: LivePlan): number {
+    const deadline = (id: string) => {
+        const t = plan.treatments.find((x) => x.id === id);
+        if (!t) return 0;
+        const extra = Math.max(0, (t.doses_required ?? 1) - 1) * (t.repeat_within_minutes ?? t.min_interval_minutes ?? 0);
+        return (t.within_minutes ?? plan.critical_window_minutes) + extra;
+    };
+    return Math.max(plan.critical_window_minutes, ...plan.stabilised_by.map(deadline));
+}
+
+/** What of a harmful treatment is still there after the recovery: the plan's `lasting`, or HARM_LASTING_SHARE of its effect. */
+export function lastingEffect(t: LiveTreatment): LiveVitals | null {
+    if (t.role !== "harmful") return null;
+    if (t.lasting) return isNoChange(t.lasting) ? null : t.lasting;
+    if (!t.effect) return null;
+    const out: LiveVitals = {};
+    for (const k of ["hr", "sbp", "dbp", "spo2", "rr", "temp"] as const) {
+        const e = t.effect[k];
+        if (!e) continue;
+        const v = k === "temp" ? Math.round(e * HARM_LASTING_SHARE * 10) / 10 : Math.sign(e) * Math.round(Math.abs(e) * HARM_LASTING_SHARE);
+        if (v) out[k] = v;
+    }
+    return isNoChange(out) ? null : out;
 }
 
 // ── Is the patient safe to call settled? ────────────────────────────────────
@@ -1730,13 +1820,15 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         }
     }
     for (const f of plan.findings ?? []) flags[findingFlag(f.id)] = f.present;
-    // A late recovery needs to know how far the untreated course got.
-    const late = plan.recovery.after_stage ?? [];
+    // A late recovery needs to know how far the untreated course got (lateRecoveries: the plan's own, or derived).
+    const late = lateRecoveries(plan, arrival);
     const referenced = new Set([...stagesReferenced(planConditions(plan)), ...late.map((a) => a.stage)]);
     for (const id of referenced) flags[reachedFlag(id)] = false;
-    const lasting = plan.treatments.filter((t) => t.role === "harmful" && t.lasting && !isNoChange(t.lasting));
-    const shaped = late.length > 0 || lasting.length > 0;
-    if (shaped) Object.assign(flags, { [RECOVERED]: false, [SETTLED]: false });
+    const lasting = plan.treatments.flatMap((t) => {
+        const l = lastingEffect(t);
+        return l ? [{ t, l }] : [];
+    });
+    Object.assign(flags, { [RECOVERED]: false, [SETTLED]: false });
 
     // ── the untreated course: each step moves the monitor by the difference from the step before, so whatever a
     //    treatment has already improved stays improved.
@@ -1782,6 +1874,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
                       },
                   ],
               };
+    // "Stable" only at readings that are safe (unsafeReadings); a late patient who settles short of that is "unstable".
     const settleTo = (v: LiveVitals, rhythm: RhythmType | undefined, consciousness: Consciousness | undefined): PhysiologicalChanges => ({
         ...(v.hr !== undefined ? { hr_set: v.hr } : {}),
         ...(v.sbp !== undefined && v.dbp !== undefined ? { bp_set: `${v.sbp}/${v.dbp}` } : {}),
@@ -1790,9 +1883,9 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         ...(v.temp !== undefined ? { temp_set: v.temp } : {}),
         ...(rhythm ? { rhythm } : {}),
         consciousness: consciousness ?? "alert",
-        stability: "stable",
+        stability: unsafeReadings({ ...v, consciousness: consciousness ?? "alert" }, base.patient?.age).length > 0 ? "unstable" : "stable",
     });
-    const recoverySets = (r.findings || shaped ? { sets: { ...findingSets(r.findings), ...(shaped ? { [RECOVERED]: true } : {}) } } : {});
+    const recoverySets = { sets: { ...findingSets(r.findings), [RECOVERED]: true } };
     // A late patient: the furthest step reached decides, so each entry holds only while no later listed step was reached.
     const reachedNone = (stages: string[]): RuleCondition[] => stages.map((id) => ({ flag: reachedFlag(id), is: false }));
     const lateRules: EventRule[] = late.map((a, i) => ({
@@ -1805,12 +1898,12 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
     }));
     // Harm given before the recovery is put back on top of it, once, at that instant; harm given later acts on the
     // monitor itself, so the latch closes straight after.
-    const lastingRules: EventRule[] = lasting.map((t) => ({
+    const lastingRules: EventRule[] = lasting.map(({ t, l }) => ({
         id: `live_lasting_${t.id}`,
         when: { all: [{ flag: RECOVERED, is: true }, { flag: SETTLED, is: false }, { flag: given(t.id), is: true }] },
         transition: "unchanged",
         keeps_state: true,
-        physiological_changes: effectOf(t.lasting),
+        physiological_changes: effectOf(l),
         narrative: null,
     }));
     const rules: EventRule[] = [
@@ -1834,7 +1927,7 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         },
         ...lateRules,
         ...lastingRules,
-        ...(shaped ? [latch("live_settled_recovery", { flag: RECOVERED, is: true }, SETTLED)] : []),
+        latch("live_settled_recovery", { flag: RECOVERED, is: true }, SETTLED),
         // Record-only rules (a treatment becoming available or required, a further dose falling due) before the
         // untreated steps, so a decision at an instant is made on the patient as they were at that instant.
         ...plan.treatments.flatMap(stateRules),
@@ -1991,6 +2084,8 @@ export interface BedsideScore {
         recovered: boolean;
         /** Stabilised, but at the end at readings nobody would call settled. Present only then. */
         unsafe_at_end?: string[];
+        /** Why the patient settled worse than one treated in time: the furthest step reached first, and each harm that lasted. Present only then. */
+        settled_worse?: { late_after?: string; harms?: string[] };
         /** The furthest step of the untreated course the patient reached, if any. */
         worst_stage: string | null;
         /** In a plan with other paths: the one that stabilised the patient (the usual one is "usual"). */
@@ -2077,7 +2172,10 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
 
     const reached = [...plan.stages].reverse().find((s) => final.firedRules.has(`live_stage_${s.id}`));
     const refused = refusedDoses(config, plan, events);
-    const settled = final.firedRules.has("live_recovery") || (plan.recovery.after_stage ?? []).some((a) => final.firedRules.has(`live_recovery_after_${a.stage}`));
+    const settled = [...final.firedRules].some((id) => id === "live_recovery" || id.startsWith("live_recovery_after_"));
+    const lateStage = plan.stages.find((s) => final.firedRules.has(`live_recovery_after_${s.id}`));
+    const lastingHarms = plan.treatments.filter((t) => final.firedRules.has(`live_lasting_${t.id}`)).map((t) => t.label);
+    const settledWorse = lateStage || lastingHarms.length > 0 ? { ...(lateStage ? { late_after: lateStage.name } : {}), ...(lastingHarms.length > 0 ? { harms: lastingHarms } : {}) } : null;
     const unsafe = stabilised ? unsafeReadings({ hr: final.rate, sbp: final.systolic, dbp: final.diastolic, spo2: final.spo2, rr: final.rr, consciousness: final.consciousness }, config.patient?.age) : [];
     return {
         score,
@@ -2088,6 +2186,7 @@ export function scoreBedside(config: SimulationCaseConfig, plan: LivePlan, event
             stabilised,
             recovered: settled && unsafe.length === 0,
             ...(unsafe.length > 0 ? { unsafe_at_end: unsafe } : {}),
+            ...(settledWorse ? { settled_worse: settledWorse } : {}),
             worst_stage: reached?.name ?? null,
             ...(plan.or_stabilised_by?.length ? stabilisingPath(config, plan, events) : {}),
         },

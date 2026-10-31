@@ -59,8 +59,9 @@ Plan fields:
   the engine reads them from the patient, so never write a reading into the plan.
 - recovery.after_stage: [{ stage, vitals, after_minutes?, consciousness?, rhythm?, nurse_says? }]: where a patient
   stabilised only after reaching that step of the untreated course settles instead (the furthest step reached
-  applies; its vitals override the usual recovery's). Without it a late patient recovers exactly like a timely one.
-  Every patient must still settle at safe readings; one who would not should not be stabilised (end_points).
+  applies; its vitals override the usual recovery's). Without it the engine derives one from the plan's own steps (part
+  of the way back toward the worst step reached, slower), for steps past the time care on time could have stopped it.
+  A late patient may settle at unsafe readings: that is a real consequence, and the debrief says so.
 
 Treatment fields:
 - max_doses (2 to 10), min_interval_minutes, doses_required (essential only), repeat_within_minutes: a treatment given
@@ -81,7 +82,8 @@ Treatment fields:
 - requires: [{ when, says }]: what must be true before it can be given, in order, for example IV access for an IV drug
   ({"given": "iv_access"}, says "there is no IV access yet.") or a required sequence of treatments.
 - lasting (harmful only): what of its effect is still there after the recovery, as changes on top of it, when it was
-  given before then (a sedative's slowed breathing). {} says it wears off. Without it the recovery erases the harm.`;
+  given before then (a sedative's slowed breathing). {} says it wears off (a short-acting drug). Without it half of the
+  harm's effect stays.`;
 
 /**
  * A plan that uses every optional field the way the guide describes. It is a format example only (an imaginary

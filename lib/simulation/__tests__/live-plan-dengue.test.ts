@@ -147,8 +147,9 @@ describe("dengue shock: the converted plan", { skip: SKIP }, () => {
         // Six minutes after the fluid but in hypotensive shock (the slow rate alone does nothing): still raised.
         const shocked = run([["iv_access", 9], [rate("r10"), 10], [R, 16.5]]).out[2];
         assert.match(shocked, /still above 45%/);
-        // Recovered on the bolus path, the next reassessment reports the fall.
-        const recovered = run([["iv_access", 9], [BOLUS, 10], [R, 17]]).out[2];
+        // Recovered on the bolus path, the next reassessment reports the fall. He reached hypotensive shock (past the
+        // 8-minute window), so he settles more slowly: 6 minutes plus 2 for each step reached.
+        const recovered = run([["iv_access", 9], [BOLUS, 10], [R, 21]]).out[2];
         assert.match(recovered, /Haematocrit trend: falling/);
     });
 

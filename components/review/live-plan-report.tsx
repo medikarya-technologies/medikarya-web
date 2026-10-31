@@ -287,6 +287,18 @@ export function LivePlanReport({ caseJson, arrival: given }: { caseJson: Json; a
           })}
         </ul>
       )}
+      {!(Array.isArray(plan.recovery?.after_stage) && plan.recovery.after_stage.length > 0) && (
+        <p className="mt-2 text-[14px] text-slate-800">
+          Stabilised only after a step that comes later than treatment on time could have stopped the course, they settle less well: part of the way back toward the worst step they reached (half
+          the way at the last step, less before it), 2 minutes slower for each step. A simulation estimate, to be replaced with this case&apos;s own
+          numbers where a clinician can say better.
+        </p>
+      )}
+      {(plan.treatments ?? []).some((t: Json) => t.role === "harmful" && t.effect && !t.lasting) && (
+        <p className="mt-1 text-[14px] text-slate-800">
+          A harmful treatment given before they recover leaves half of its effect on the monitor afterwards, unless the plan says what lasts.
+        </p>
+      )}
       <p className="mt-2 text-[13.5px] text-slate-700">
         Scoring: 60% is the ordinary scoring in section 6 (history, investigations, diagnosis, written plan); 40% is the bedside: each essential treatment
         counts in full if given in time, half if late, nothing if never given, and 15 points come off for each harmful treatment given. A patient never

@@ -10,7 +10,7 @@ import { upgradeLegacyCase } from "../legacy-adapter";
 import { replayStudentEvents } from "../replay";
 import type { SimulationCaseConfig } from "../case-schema";
 import type { ClinicalEvent } from "../encounter-events";
-import { checkLivePlan, compileLivePlan, LEFT_DYING_CAP, measuredOnArrival, normaliseLivePlan, scoreBedside, unmodelledCourse, unsafeReadings, type LivePlan } from "../live-plan";
+import { checkLivePlan, compileLivePlan, lastingEffect, lateRecoveries, LEFT_DYING_CAP, measuredOnArrival, normaliseLivePlan, onTimeBy, scoreBedside, unmodelledCourse, unsafeReadings, type LivePlan } from "../live-plan";
 import { goldenFixtureCase, goldenFixturePlan } from "./live-plan-golden-fixture";
 
 // The fixture's plan on an adult, so the adult floors apply.
@@ -128,11 +128,11 @@ describe("course: a late patient settles somewhere worse (recovery.after_stage)"
         assert.equal(run(late(), [["iv_access", 13], ["fluid_bolus_20ml_kg", 13]], 19).fired.has("live_recovery_after_decompensated"), true);
     });
 
-    it("refuses an unknown step, the wrong order, and a late recovery that is not safe", () => {
+    it("refuses an unknown step and the wrong order, and allows a late recovery that is not safe (that is the consequence)", () => {
         const errors = (after_stage: unknown) => checkLivePlan(plan({ recovery: { ...recovery, after_stage } }), measuredOnArrival(base())).errors.join(" | ");
         assert.match(errors([{ stage: "arrest", vitals: { hr: 140 } }]), /"arrest" is not one of the stages/);
         assert.match(errors([{ stage: "decompensated", vitals: { hr: 140 } }, { stage: "compensated_shock", vitals: { hr: 132 } }]), /in the order of the untreated course/);
-        assert.match(errors([{ stage: "decompensated", vitals: { spo2: 86 } }]), /SpO₂ 86% has not recovered/);
+        assert.doesNotMatch(errors([{ stage: "decompensated", vitals: { spo2: 86 } }]), /has not recovered/);
         assert.match(errors([{ stage: "decompensated", vitals: {} }]), /say how this patient settles differently/);
     });
 });
@@ -166,9 +166,45 @@ describe("course: harm that outlasts the recovery (lasting)", () => {
         assert.match(checkLivePlan(p, measuredOnArrival(base())).errors.join(" | "), /only a harmful treatment leaves something behind/);
     });
 
-    it("a plan without either field compiles exactly as before: no recovery flags, no new rules", () => {
-        const rules = compileLivePlan(base(), plan()).event_rules.map((r) => r.id);
-        assert.equal(rules.some((id) => id.startsWith("live_lasting_") || id.startsWith("live_settled_") || id.startsWith("live_recovery_after_")), false);
-        assert.equal("live_recovered" in compileLivePlan(base(), plan()).initial_state.flags, false);
+});
+
+describe("course: the defaults, for a plan that says neither", () => {
+    // The fixture's window is 8 minutes and its stabilising treatments are due by 8, so a timely patient can still reach
+    // compensated shock (6 min) at no cost; decompensated shock (12 min) is past it.
+    const long = () => plan({ time_limit_minutes: 30 });
+
+    it("care on time, even past a step inside the window: the usual recovery", () => {
+        assert.equal(onTimeBy(plan()), 8);
+        assert.deepEqual(lateRecoveries(plan(), measuredOnArrival(base())).map((a) => a.stage), ["decompensated"]);
+        const r = run(long(), [["iv_access", 7], ["fluid_bolus_20ml_kg", 8]]);
+        assert.equal(r.fired.has("live_recovery"), true);
+        assert.equal(r.score.outcome.settled_worse, undefined);
+        assert.deepEqual([r.state.rate, r.state.systolic, r.state.diastolic], [126, 94, 58]);
+    });
+
+    it("late, after decompensated shock: half way back toward it, slower, drowsy, and not safe to call recovered", () => {
+        const r = run(long(), [["iv_access", 13], ["fluid_bolus_20ml_kg", 13]]);
+        // 4 minutes plus 2 for each of the two steps: settled at 21, not before
+        assert.equal(run(long(), [["iv_access", 13], ["fluid_bolus_20ml_kg", 13]], 20).fired.has("live_recovery_after_decompensated"), false);
+        assert.equal(r.fired.has("live_recovery_after_decompensated"), true);
+        assert.deepEqual([r.state.rate, r.state.systolic, r.state.diastolic, r.state.spo2, r.state.rr, r.state.consciousness], [152, 78, 48, 96, 39, "drowsy"]);
+        assert.equal(r.state.stability, "unstable");
+        assert.equal(r.score.outcome.recovered, false);
+        assert.deepEqual(r.score.outcome.settled_worse, { late_after: "Decompensated shock" });
+        assert.deepEqual(r.score.outcome.unsafe_at_end, ["BP 78/48"]);
+    });
+
+    it("a harm given before the recovery leaves half its effect, and the debrief names it", () => {
+        const r = run(long(), [["iv_access", 1], ["furosemide_iv", 2], ["fluid_bolus_20ml_kg", 3]]);
+        assert.deepEqual(lastingEffect(plan().treatments.find((t) => t.id === "furosemide_iv") as never), { hr: 4, sbp: -5, dbp: -3 });
+        assert.deepEqual([r.state.rate, r.state.systolic, r.state.diastolic], [130, 89, 55]);
+        assert.deepEqual(r.score.outcome.settled_worse, { harms: ["Furosemide IV"] });
+        assert.equal(r.score.outcome.recovered, false, "89 systolic is under the floor");
+    });
+
+    it("both at once, and nothing for a supportive treatment", () => {
+        const r = run(long(), [["iv_access", 13], ["furosemide_iv", 13], ["ondansetron_4mg", 13], ["fluid_bolus_20ml_kg", 13]]);
+        assert.deepEqual(r.score.outcome.settled_worse, { late_after: "Decompensated shock", harms: ["Furosemide IV"] });
+        assert.equal(lastingEffect(plan().treatments.find((t) => t.id === "ondansetron_4mg") as never), null);
     });
 });
