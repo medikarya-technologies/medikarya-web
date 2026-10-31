@@ -12,7 +12,7 @@ import { studioLinks } from "@/lib/site-links"
 export const metadata: Metadata = {
     alternates: { canonical: "https://www.medikarya.in/contribute" },
     title: "Contribute",
-    description: "MediKarya's cases are written by medical students from patients they have seen and checked by doctors. Write a case, or review cases in your specialty.",
+    description: "Medical students write up patients they have seen, and a doctor checks each case before it is published. Write a case, or review cases in your specialty.",
     robots: {
         index: true,
         follow: true,
@@ -107,10 +107,10 @@ export default function ContributePage() {
                 <div className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:pt-14">
                     <p className="text-center text-xs font-semibold uppercase tracking-widest text-brand-600">The MediKarya Case Studio</p>
                     <h1 className="mx-auto mt-3 max-w-3xl text-center text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-                        The cases students practise on are written by students, and checked by doctors.
+                        Write up a patient you saw. A doctor checks it, and students practise on it.
                     </h1>
                     <p className="mx-auto mt-4 max-w-2xl text-center text-lg leading-relaxed text-slate-600">
-                        Every new patient on MediKarya starts as a real one someone saw on the ward. Writing and reviewing happen in the Case Studio; pick your way in
+                        Every case written here starts as a real patient someone saw on the ward. Writing and reviewing happen in the Case Studio; pick your way in
                         below.
                     </p>
 

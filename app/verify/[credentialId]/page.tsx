@@ -168,7 +168,7 @@ export default async function VerifyPage({ params }: Props) {
         </dl>
       </div>
       <p className="mt-5 text-[14px] leading-relaxed text-slate-600">
-        MediKarya is a clinical simulation platform for medical students. New cases are written by medical students from patients they have seen, and checked by a
+        MediKarya is a clinical simulation platform for medical students. Cases contributed by medical students, from patients they have seen, are checked by a
         doctor before they are published.{" "}
         {certificate.kind === "workshop" ? "Workshop certificates go to students who work through the workshop's cases." : "Contributors and reviewers earn titles for that work."}{" "}
         <Link href="/" className="font-medium text-sky-700 hover:underline">
