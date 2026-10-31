@@ -1,7 +1,7 @@
-// The case study guides still waiting for a doctor's check (pendingCheck in lib/seo/case-guides.ts), printed as one
-// Markdown sheet a doctor can read and mark up. Needs no secrets and touches nothing.
+// Any case study guides held back with pendingCheck (lib/seo/case-guides.ts), printed as one Markdown sheet a doctor
+// can read and mark up. Needs no secrets and touches nothing. Prints an empty sheet when nothing is held back.
 //   node --experimental-strip-types scripts/case-guides-review.mjs > guides-for-review.md
-// When a guide has been read and corrected, delete its `pendingCheck: true` line and it goes live on the next deploy.
+// When a held guide has been read and corrected, delete its `pendingCheck: true` line and it goes live on the next deploy.
 const { GUIDES_AWAITING_CHECK } = await import("../lib/seo/case-guides.ts");
 
 const list = (items) => items.map((i) => `- ${i}`).join("\n");
