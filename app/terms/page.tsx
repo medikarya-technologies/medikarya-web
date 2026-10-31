@@ -1,12 +1,12 @@
 import type { Metadata } from "next"
 import TermsClient from "./TermsClient"
+import { pageMetadata } from "@/lib/seo/site"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/terms" },
+export const metadata: Metadata = pageMetadata({
+    path: "/terms",
     title: "Terms of Service",
-    description: "Read MediKarya's terms of service. Our platform is strictly an educational simulation tool and must not be used to guide real patient care.",
-    robots: { index: true, follow: true },
-}
+    description: "MediKarya's terms of service. The platform is an educational simulation and must not be used to guide real patient care.",
+})
 
 export default function TermsPage() {
     return <TermsClient />

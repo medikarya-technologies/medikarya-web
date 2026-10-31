@@ -4,12 +4,12 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { cn } from "@/lib/utils"
 import { ClerkProvider } from "@clerk/nextjs"
 import "./globals.css"
-import Script from "next/script"
 import { LayoutClient } from "@/components/LayoutClient"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeController } from "@/components/theme-controller"
 import { themeInitScript } from "@/lib/theme"
 import { CookieConsent } from "@/components/privacy/cookie-consent"
+import { organizationJsonLd, websiteJsonLd, OG_IMAGE } from "@/lib/seo/site"
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -27,46 +27,29 @@ export const metadata: Metadata = {
   // No site-wide canonical here: every page would inherit it and tell Google it is a copy of the home page. Each
   // public page sets its own (alternates.canonical in its metadata).
   title: {
-    default: "MediKarya - Clinical Case Practice for Medical Students",
+    default: "MediKarya: Clinical Case Practice for MBBS Students",
     template: "%s | MediKarya"
   },
-  description: "Talk to a live AI patient with real-time vitals, rank your differential, order investigations, then see where your reasoning broke and practise what you missed, before your first real patient.",
-  keywords: [
-    "AI patient simulation for medical students",
-    "clinical reasoning practice MBBS",
-    "virtual patient cases medical education",
-    "diagnostic reasoning training India",
-    "medical student simulation platform",
-    "OSCE preparation online",
-    "AI medical education platform India",
-    "clinical training for MBBS students",
-    "differential diagnosis practice",
-    "MediKarya"
-  ],
-  authors: [{ name: "MediKarya Team" }], // Replace with actual author if known
+  description: "Practise on patients before your first real one: take the history, examine, order tests, rank a differential and get a debrief on your reasoning and your bedside care. Built for MBBS students in India.",
+  applicationName: "MediKarya",
+  authors: [{ name: "MediKarya", url: "https://www.medikarya.in/about" }],
   creator: "MediKarya",
+  publisher: "MediKarya",
   openGraph: {
     type: "website",
-    locale: "en_US",
-    url: "/",
-    title: "MediKarya - Gain Clinical Confidence",
-    description: "Talk to a live AI patient with real-time vitals, rank your differential, then see where your reasoning broke and practise what you missed.",
+    locale: "en_IN",
+    url: "https://www.medikarya.in/",
+    title: "MediKarya: Clinical Case Practice for MBBS Students",
+    description: "Take the history from a live patient, order tests, rank your differential, then see where your reasoning broke and practise what you missed.",
     siteName: "MediKarya",
-    images: [
-      {
-        url: "https://www.medikarya.in/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "MediKarya Platform Preview",
-      },
-    ],
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: "MediKarya: clinical case practice for MBBS students" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MediKarya - Clinical Case Practice for Medical Students",
-    description: "Talk to a live AI patient with real-time vitals and rank your differential, before your first real patient.",
-    images: ["https://www.medikarya.in/og-image.png"],
-    creator: "@medikarya", // Replace with actual handle
+    site: "@Medikaryain",
+    title: "MediKarya: Clinical Case Practice for MBBS Students",
+    description: "Take the history from a live patient, rank your differential and see where your reasoning broke, before your first real patient.",
+    images: [OG_IMAGE],
   },
   robots: {
     index: true,
@@ -79,8 +62,20 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  // Search Console and Bing Webmaster Tools ownership tags, from Vercel's environment variables (the codes are not
+  // secrets, but this way they change without a code change). Unset, no tag is printed. A Domain property verified by
+  // DNS needs neither.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+  },
+  // app/favicon.ico is added by Next on its own. Listing icons here replaces app/icon.svg's automatic tag, so it is
+  // named again; the PNG is for search results and home screens that want a bitmap of at least 48px.
   icons: {
-    icon: "/icon.svg",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     apple: "/medikarya.png",
   },
   generator: 'Next.js'
@@ -96,7 +91,7 @@ export const viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
-      <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <html lang="en-IN" className="scroll-smooth" suppressHydrationWarning>
         <head>
           {/* Puts the dark theme on before the first paint, for someone who chose it (lib/theme.ts) */}
           <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
@@ -109,43 +104,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           suppressHydrationWarning={true}
         >
           <ThemeController />
-          {/* Organization + WebSite JSON-LD structured data */}
-          <Script
-            id="json-ld-org"
+          {/* Organization + WebSite JSON-LD. A plain script, so it is in the HTML the server sends: next/script put it
+              in only after hydration, which crawlers that do not run JavaScript never saw. */}
+          <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{
-              __html: JSON.stringify([
-                {
-                  "@context": "https://schema.org",
-                  "@type": "Organization",
-                  "name": "MediKarya",
-                  "url": "https://www.medikarya.in",
-                  "logo": "https://www.medikarya.in/medikarya.svg",
-                  "description": "Clinical case practice for medical students in India: take a history from a virtual patient, order tests, give a ranked differential and get a debrief on your reasoning.",
-                  "foundingDate": "2026",
-                  "areaServed": "IN",
-                  "knowsAbout": [
-                    "Clinical Reasoning",
-                    "Medical Education",
-                    "AI in Healthcare",
-                    "Diagnostic Simulation",
-                    "MBBS Training",
-                    "Case-Based Learning"
-                  ],
-                  "sameAs": [
-                    "https://www.linkedin.com/company/medikarya",
-                    "https://www.reddit.com/r/medicalschool"
-                  ]
-                },
-                {
-                  "@context": "https://schema.org",
-                  "@type": "WebSite",
-                  "name": "MediKarya",
-                  "url": "https://www.medikarya.in",
-                  "description": "AI patient simulation platform for medical students: practise clinical reasoning, diagnostics, and case-based learning."
-                }
-              ])
-            }}
+            dangerouslySetInnerHTML={{ __html: JSON.stringify([organizationJsonLd(), websiteJsonLd()]) }}
           />
           {/* Script to clean up browser extension attributes */}
           <script

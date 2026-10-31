@@ -8,6 +8,7 @@ import { listAdvisors } from "@/lib/advisors/invites"
 import { contributorPictures } from "@/lib/studio/source"
 import { studioLinks } from "@/lib/site-links"
 import { ContributorTabs, type EarlyContributor } from "@/components/contributors/contributor-tabs"
+import { pageMetadata } from "@/lib/seo/site"
 
 // The people behind MediKarya's cases, in one place: the Clinical Advisory Board, the doctors who review cases, the
 // students who write them, and the two people who helped before there was a platform. Nobody is named here who is
@@ -16,17 +17,13 @@ import { ContributorTabs, type EarlyContributor } from "@/components/contributor
 
 export const revalidate = 300
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+    path: "/contributors",
     title: "Contributors",
     description: "The clinicians and medical students behind MediKarya's cases: our Clinical Advisory Board, the doctors who review contributed cases, and the students who write them.",
-    alternates: { canonical: "https://www.medikarya.in/contributors" },
-    robots: { index: true, follow: true },
-    openGraph: {
-        title: "The People Behind MediKarya's Cases",
-        description: "Cases contributed to MediKarya are written by medical students from patients they saw, and checked by a doctor. These are the people who do that work.",
-        images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Platform Preview" }],
-    },
-}
+    socialTitle: "The People Behind MediKarya's Cases",
+    socialDescription: "Cases contributed to MediKarya are written by medical students from patients they saw, and checked by a doctor. These are the people who do that work.",
+})
 
 interface Person {
     name: string

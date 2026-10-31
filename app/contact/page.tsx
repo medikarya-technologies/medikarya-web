@@ -1,16 +1,14 @@
 import type { Metadata } from "next"
 import ContactClient, { type ContactTopic } from "./ContactClient"
+import { pageMetadata } from "@/lib/seo/site"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/contact" },
+export const metadata: Metadata = pageMetadata({
+    path: "/contact",
     title: "Contact",
     description: "Join MediKarya's Clinical Advisory Board, bring MediKarya to your college, or ask us anything. By form, WhatsApp or email.",
-    robots: { index: true, follow: true },
-    openGraph: {
-        title: "Contact MediKarya",
-        description: "Join the Clinical Advisory Board, run a workshop with your students, or ask us anything.",
-    },
-}
+    socialTitle: "Contact MediKarya",
+    socialDescription: "Join the Clinical Advisory Board, run a workshop with your students, or ask us anything.",
+})
 
 const TOPICS: ContactTopic[] = ["advisor", "college", "other"]
 

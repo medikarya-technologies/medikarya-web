@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Navbar } from "@/components/flowai/navbar"
 import { Hero } from "@/components/flowai/hero"
 import { MarqueeStrip } from "@/components/flowai/marquee-strip"
+import { pageMetadata } from "@/lib/seo/site"
 
 // Section lineup — 8 chapters below the hero.
 // Removed: TheoryTransition, PatientReveal, Workflow, SocialProof, FeaturesBento, FAQ,
@@ -64,43 +65,13 @@ const Footer = dynamic(() => import("@/components/flowai/footer").then((mod) => 
   loading: () => <div className="h-[320px] w-full bg-enc-console" />,
 })
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
+  path: "/",
   title: "MediKarya: AI Patient Simulation for Medical Students",
-  description: "Practise clinical reasoning on virtual patients who answer in their own words. Take a history, order tests, and see exactly where your reasoning held up.",
-  alternates: {
-    canonical: "https://www.medikarya.in/",
-  },
-  keywords: [
-    "AI patient simulation",
-    "clinical reasoning for medical students",
-    "virtual patient cases MBBS",
-    "medical student simulation India",
-    "OSCE preparation AI",
-    "diagnostic reasoning practice",
-    "AI clinical training platform",
-    "MediKarya",
-  ],
-  openGraph: {
-    title: "MediKarya: AI Patient Simulation for Medical Students",
-    description: "Practise clinical reasoning on virtual patients who answer in their own words. Take a history, order tests, and see exactly where your reasoning held up.",
-    url: "https://www.medikarya.in/",
-    type: "website",
-    images: [
-      {
-        url: "https://www.medikarya.in/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "MediKarya: practise clinical decisions before they become real",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "MediKarya: AI Patient Simulation for Medical Students",
-    description: "Practise clinical reasoning on virtual patients who answer in their own words. Take a history, order tests, and see exactly where your reasoning held up.",
-    images: ["https://www.medikarya.in/og-image.png"],
-  },
-}
+  absoluteTitle: true,
+  description: "Practise clinical cases on a live patient: take the history, order tests, rank your differential and see exactly where your reasoning held up. Built for MBBS students in India.",
+  imageAlt: "MediKarya: practise clinical decisions before they become real",
+})
 
 export default function Page() {
   return (

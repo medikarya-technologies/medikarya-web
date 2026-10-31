@@ -119,7 +119,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/api-docs" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
+                <Link href="/colleges" className="text-enc-ink-2 hover:text-enc-ink transition-colors">
                   For colleges
                 </Link>
               </li>

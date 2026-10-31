@@ -4,25 +4,14 @@ import Link from "next/link"
 import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react"
 import type { Metadata } from "next"
 import ArticleGrid from "./ArticleGrid"
+import { pageMetadata } from "@/lib/seo/site"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/blog" },
+export const metadata: Metadata = pageMetadata({
+    path: "/blog",
     title: "Blog: Clinical Reasoning for Medical Students",
-    description: "The MediKarya blog explores clinical reasoning training, simulation-based medical education, and AI in healthcare. Written for medical students, educators, and clinicians.",
-    robots: {
-        index: true,
-        follow: true,
-    },
-    openGraph: {
-        title: "MediKarya Blog: Clinical Reasoning & Medical Education",
-        description: "Deep dives into clinical reasoning, AI-driven medical education, diagnostic thinking, and the future of healthcare simulation.",
-        images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Blog" }],
-    },
-    twitter: {
-        card: "summary_large_image",
-        images: ["https://www.medikarya.in/og-image.png"],
-    },
-}
+    description: "Articles on clinical reasoning, learning medicine on the wards, and practising on simulated patients. Written for medical students in India.",
+    socialTitle: "MediKarya Blog: Clinical Reasoning and Medical Education",
+})
 
 // Featured pillar article (first article)
 const featured = {

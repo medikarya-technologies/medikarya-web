@@ -3,21 +3,21 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, HeartPulse, ListChecks, Scale, AlertTriangle, FlaskConical, ClipboardCheck, Brain, Users, Unlock, Sparkles } from "lucide-react"
 import type { Metadata } from "next"
+import { pageMetadata } from "@/lib/seo/site"
+import { getCasesOrThrow } from "@/data/cases"
+import { libraryStats } from "@/lib/seo/markdown"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/features" },
+// The case counts below come from the published list, so this page cannot fall behind the library again (it said
+// "10 published cases" long after there were 44). If the list cannot be read, the page says it without numbers.
+export const revalidate = 300
+
+export const metadata: Metadata = pageMetadata({
+    path: "/features",
     title: "Features",
-    description: "A live bedside monitor, a ranked differential instead of one guess, dual Clinical and Independent scoring, and live emergencies that get worse if you wait: what's actually built into MediKarya.",
-    openGraph: {
-        title: "MediKarya Features: What's Actually Built",
-        description: "A live bedside monitor, a ranked differential, dual scoring, and a real-time deteriorating patient. See what's actually in the platform.",
-        images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Features" }],
-    },
-    twitter: {
-        card: "summary_large_image",
-        images: ["https://www.medikarya.in/og-image.png"],
-    },
-}
+    description: "A live bedside monitor, a ranked differential instead of one guess, two scores, and live emergencies where the patient gets worse until you act: what's actually built into MediKarya.",
+    socialTitle: "MediKarya Features: What's Actually Built",
+    socialDescription: "A live bedside monitor, a ranked differential, two scores, and patients who deteriorate until you act. See what's actually in the platform.",
+})
 
 const features = [
     {
@@ -32,7 +32,7 @@ const features = [
         iconBg: "bg-blue-50",
         iconColor: "text-blue-500",
         title: "A ranked differential",
-        desc: "You commit to three things, in order: your working diagnosis, a real alternative, and the one you can't afford to miss.",
+        desc: "You commit to three things, in order: your working diagnosis, a real alternative, and the one you can't afford to miss. Not a single guess in a text box.",
     },
     {
         Icon: Scale,
@@ -46,14 +46,14 @@ const features = [
         iconBg: "bg-amber-50",
         iconColor: "text-amber-600",
         title: "A patient who can get worse",
-        desc: "In the live emergency cases the monitor doesn't wait for you: delay or mismanage the treatment and the patient deteriorates, as at a real bedside.",
+        desc: "In the live emergency cases the monitor doesn't wait for you: delay or mismanage the patient and they deteriorate, exactly like they would at the bedside.",
     },
     {
         Icon: FlaskConical,
         iconBg: "bg-emerald-50",
         iconColor: "text-emerald-500",
         title: "Investigations that take real time",
-        desc: "Order from a real test catalogue and results come back on a realistic delay, and a 12-lead ECG gets its own interpretation view.",
+        desc: "Order from a real test catalogue and results come back on a realistic delay, with their own 12-lead ECG interpretation view, not an instant answer key.",
     },
     {
         Icon: ClipboardCheck,
@@ -67,14 +67,14 @@ const features = [
         iconBg: "bg-cyan-50",
         iconColor: "text-cyan-600",
         title: "A quiz built from your own gaps",
-        desc: "Five questions built from what this attempt showed you missed, so the practice fits your gaps rather than a fixed bank.",
+        desc: "Five questions generated from what this specific attempt showed you missed, not a static bank of generic questions everyone gets.",
     },
     {
         Icon: Users,
         iconBg: "bg-pink-50",
         iconColor: "text-pink-500",
         title: "Patients who look like your patients",
-        desc: "Age-accurate portraits in Indian attire, drawn to match each case.",
+        desc: "Age-accurate portraits in Indian attire, drawn to match each case, not a stock photo or a cartoon avatar that could belong to any patient anywhere.",
     },
     {
         Icon: Unlock,
@@ -85,7 +85,8 @@ const features = [
     },
 ]
 
-export default function FeaturesPage() {
+export default async function FeaturesPage() {
+    const library = await getCasesOrThrow().then(libraryStats).catch(() => null)
     return (
         <main className="min-h-screen flex flex-col bg-white">
             <div className="flex-1 relative">
@@ -146,7 +147,7 @@ export default function FeaturesPage() {
                     <section className="mb-20 bg-slate-900 rounded-2xl p-8 md:p-10 text-white">
                         <h2 className="text-xl font-bold mb-3">What's not built yet</h2>
                         <p className="text-slate-300 leading-relaxed">
-                            Nine cases run as live emergencies so far: tension pneumothorax, acute severe asthma, dengue shock, hyperkalaemia, pulmonary embolism, a variceal bleed, a bleeding ulcer, an inferior STEMI and acute pulmonary oedema. The rest of the library shares the same live monitor, ranked differential and dual scoring, but those patients don't get worse if mismanaged. We add live cases one at a time, each checked against current guidelines.
+                            Real-time deterioration runs on {library ? `${library.live} of our ${library.patients} cases, the live emergencies` : "our live emergency cases"}. The rest of the library shares the same live monitor, ranked differential and dual scoring, but the patient doesn't deteriorate if mismanaged. We add live cases one at a time, each checked against current guidelines.
                         </p>
                     </section>
 

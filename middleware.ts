@@ -32,6 +32,7 @@ const isPublicRoute = createRouteMatcher([
     "/contributors(.*)",
     "/verify(.*)",
     "/tutorials(.*)",
+    "/colleges(.*)",
     "/api-docs(.*)",
     "/api/webhook(.*)",
     "/api/clerk-webhook(.*)",

@@ -5,24 +5,18 @@ import { RoleMark, type ContributorRole } from "@/components/contributors/role-m
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/flowai/footer"
 import { studioLinks } from "@/lib/site-links"
+import { pageMetadata } from "@/lib/seo/site"
 
 // How to write or review cases. The work itself happens in the Case Studio (a separate site): this page explains the
 // two ways in and sends people straight there. Everything said here is how the programme works today.
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/contribute" },
-    title: "Contribute",
+export const metadata: Metadata = pageMetadata({
+    path: "/contribute",
+    title: "Write or Review a Clinical Case",
     description: "Medical students write up patients they have seen, and a doctor checks each case before it is published. Write a case, or review cases in your specialty.",
-    robots: {
-        index: true,
-        follow: true,
-    },
-    openGraph: {
-        title: "Write or Review Clinical Cases | MediKarya",
-        description: "Students write up patients they have seen; doctors check them; published cases carry their names. Titles and verifiable certificates for both.",
-        url: "/contribute",
-    },
-}
+    socialTitle: "Write or Review Clinical Cases | MediKarya",
+    socialDescription: "Students write up patients they have seen; doctors check them; published cases carry their names. Titles and verifiable certificates for both.",
+})
 
 const JOURNEY = [
     "A student writes up a patient they saw, on a structured case sheet.",

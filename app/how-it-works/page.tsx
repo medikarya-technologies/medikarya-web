@@ -3,21 +3,22 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, ArrowRight, MessageSquare, Activity, FlaskConical, ListChecks, Scale, ClipboardCheck, Brain, Workflow } from "lucide-react"
 import type { Metadata } from "next"
+import { pageMetadata } from "@/lib/seo/site"
+import { getCasesOrThrow } from "@/data/cases"
+import { libraryStats } from "@/lib/seo/markdown"
 
-export const metadata: Metadata = {
-    alternates: { canonical: "https://www.medikarya.in/how-it-works" },
+// The case counts below come from the published list, so this page cannot fall behind the library again (it said
+// "10 published cases" long after there were 44). If the list cannot be read, the page says it without numbers.
+export const revalidate = 300
+
+export const metadata: Metadata = pageMetadata({
+    path: "/how-it-works",
     title: "How MediKarya Works",
-    description: "From a live AI patient to a scored debrief: the real step-by-step flow of a MediKarya case, and what happens at each stage.",
-    openGraph: {
-        title: "How MediKarya Works: From First History to Debrief",
-        description: "See exactly what happens in a MediKarya case: a live patient, real-time vitals, a ranked differential, dual scoring, and a full debrief.",
-        images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "How MediKarya Works" }],
-    },
-    twitter: {
-        card: "summary_large_image",
-        images: ["https://www.medikarya.in/og-image.png"],
-    },
-}
+    absoluteTitle: true,
+    description: "From a live patient to a scored debrief: the real step-by-step flow of a MediKarya case, and what happens at each stage.",
+    socialTitle: "How MediKarya Works: From First History to Debrief",
+    socialDescription: "See exactly what happens in a MediKarya case: a live patient, real-time vitals, a ranked differential, two scores, and a full debrief.",
+})
 
 const steps = [
     {
@@ -60,11 +61,12 @@ const steps = [
         step: "07",
         Icon: Brain,
         title: "Close the loop with a reinforcement quiz",
-        desc: "Five questions built from the gaps this attempt showed. It's the same mistake, asked a different way, while it's still fresh.",
+        desc: "Five questions generated from the specific gaps this attempt actually showed, not a generic quiz bank. It's the same mistake, asked a different way, while it's still fresh.",
     },
 ]
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage() {
+    const library = await getCasesOrThrow().then(libraryStats).catch(() => null)
     return (
         <main className="min-h-screen flex flex-col bg-white">
             <div className="flex-1 relative">
@@ -128,7 +130,7 @@ export default function HowItWorksPage() {
                     <section className="mb-20 bg-slate-900 rounded-2xl p-8 md:p-10 text-white">
                         <h2 className="text-xl font-bold mb-3">Worth knowing before you start</h2>
                         <p className="text-slate-300 leading-relaxed">
-                            Real-time deterioration, a patient who gets worse if you don't act in time, runs on nine live emergency cases so far: tension pneumothorax, acute severe asthma, dengue shock, hyperkalaemia, pulmonary embolism, a variceal bleed, a bleeding ulcer, an inferior STEMI and acute pulmonary oedema. The rest of the library uses the same live monitor, history, investigations, ranked differential and dual scoring, without the deterioration. We add live cases one at a time.
+                            Real-time deterioration, a patient who gets worse if you don't act in time, runs on {library ? `${library.live} of our ${library.patients} cases, the live emergencies` : "our live emergency cases"}. The rest of the library uses the same live monitor, history, investigations, ranked differential and dual scoring, without that deterioration mechanic. We're building it out case by case, not claiming it everywhere at once.
                         </p>
                     </section>
 

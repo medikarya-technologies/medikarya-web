@@ -1,34 +1,31 @@
 import { MetadataRoute } from 'next'
 import { getCases } from '@/data/cases'
+import { ARTICLES, articleLastModified } from '@/lib/blog/articles'
 import { CASE_GUIDES } from '@/lib/seo/case-guides'
 
-const blogPosts: { slug: string; lastModified: string }[] = [
-    { slug: 'ai-revolutionizing-medical-education',    lastModified: '2026-10-04' },
-    { slug: 'feynman-technique-clinical-reasoning',    lastModified: '2026-04-20' },
-    { slug: 'sepsis-case-based-approach',              lastModified: '2026-04-18' },
-    { slug: 'why-medical-students-need-simulation',    lastModified: '2026-04-16' },
-    { slug: 'breaking-down-diagnostic-process',        lastModified: '2026-04-14' },
-    { slug: 'future-ai-assisted-diagnosis',            lastModified: '2026-10-06' },
-]
-
+// lastModified is the day a page's content last really changed (Google uses it only while it stays accurate), so
+// bump a date here when a page's words change, not for a restyle. The blog's dates come from the articles themselves.
 const staticRoutes: { path: string; lastModified: string; priority: number }[] = [
-    { path: '',              lastModified: '2026-04-20', priority: 1.0 },
-    { path: '/about',        lastModified: '2026-10-04', priority: 0.8 },
-    { path: '/features',     lastModified: '2026-10-04', priority: 0.9 },
-    { path: '/how-it-works', lastModified: '2026-10-04', priority: 0.9 },
-    { path: '/try',          lastModified: '2026-10-04', priority: 0.8 },
-    { path: '/blog',         lastModified: '2026-10-04', priority: 0.9 },
-    { path: '/contact',      lastModified: '2026-10-04', priority: 0.6 },
+    { path: '',              lastModified: '2026-10-31', priority: 1.0 },
+    { path: '/about',        lastModified: '2026-10-31', priority: 0.8 },
+    { path: '/features',     lastModified: '2026-10-31', priority: 0.9 },
+    { path: '/how-it-works', lastModified: '2026-10-31', priority: 0.9 },
+    { path: '/try',          lastModified: '2026-10-29', priority: 0.8 },
+    { path: '/blog',         lastModified: '2026-10-09', priority: 0.9 },
+    { path: '/contact',      lastModified: '2026-10-29', priority: 0.6 },
     { path: '/privacy',      lastModified: '2025-12-01', priority: 0.3 },
     { path: '/terms',        lastModified: '2025-12-01', priority: 0.3 },
     { path: '/refund-policy', lastModified: '2026-09-27', priority: 0.3 },
     { path: '/cookies',      lastModified: '2025-12-01', priority: 0.3 },
-    { path: '/tutorials',    lastModified: '2026-10-04', priority: 0.8 },
-    { path: '/case-studies', lastModified: '2026-10-06', priority: 0.9 },
-    { path: '/contribute',   lastModified: '2026-10-04', priority: 0.7 },
-    { path: '/contributors', lastModified: '2026-10-04', priority: 0.7 },
-    { path: '/api-docs',     lastModified: '2026-10-04', priority: 0.6 },
+    { path: '/tutorials',    lastModified: '2026-10-31', priority: 0.8 },
+    { path: '/case-studies', lastModified: '2026-10-31', priority: 0.9 },
+    { path: '/contribute',   lastModified: '2026-10-31', priority: 0.7 },
+    { path: '/contributors', lastModified: '2026-10-31', priority: 0.7 },
+    { path: '/colleges',     lastModified: '2026-10-31', priority: 0.7 },
 ]
+
+/** The day the case study guides (lib/seo/case-guides.ts) last changed: bump it when a guide is added or edited. */
+const CASE_GUIDES_UPDATED = '2026-10-31'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.medikarya.in'
@@ -40,9 +37,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority,
     }))
 
-    const blogEntries: MetadataRoute.Sitemap = blogPosts.map(({ slug, lastModified }) => ({
+    const blogEntries: MetadataRoute.Sitemap = Object.entries(ARTICLES).map(([slug, article]) => ({
         url: `${baseUrl}/blog/${slug}`,
-        lastModified: new Date(lastModified),
+        lastModified: new Date(articleLastModified(article)),
         changeFrequency: 'monthly' as const,
         priority: 0.8,
     }))
@@ -53,11 +50,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .filter((c) => CASE_GUIDES[c.id])
         .map((c) => ({
             url: `${baseUrl}/case-studies/${c.id}`,
-            lastModified: new Date('2026-10-06'),
+            lastModified: new Date(CASE_GUIDES_UPDATED),
             changeFrequency: 'monthly' as const,
             priority: 0.8,
         }))
 
     return [...staticEntries, ...blogEntries, ...caseEntries]
 }
-
