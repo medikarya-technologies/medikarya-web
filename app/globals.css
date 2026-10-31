@@ -269,7 +269,7 @@
 
   --color-enc-ink: oklch(0.25 0.02 255);
   --color-enc-ink-2: oklch(0.45 0.02 255);
-  --color-enc-ink-3: oklch(0.58 0.016 255);
+  --color-enc-ink-3: oklch(0.54 0.016 255); /* 4.5:1 or better on sheet and desk (WCAG 1.4.3); 0.58 was 4.3 and 4.0 */
   /* a strong fill that carries white text (a badge, an active chip), and the scrim behind a drawer or a spinner */
   --color-enc-fill: oklch(0.25 0.02 255);
   --color-enc-scrim: oklch(0.25 0.02 255);
@@ -328,11 +328,23 @@
   animation: enc-pulse-sweep 2.4s linear infinite;
 }
 
+/* The same loop, running only while its card (.group) is hovered or focused: the library's live cards
+   (components/dashboard/case-row.tsx). Ten traces moving forever with no way to stop them fails WCAG 2.2.2. */
+.enc-pulse-sweep-active {
+  animation: enc-pulse-sweep 2.4s linear infinite paused;
+}
+
+.group:hover .enc-pulse-sweep-active,
+.group:focus-within .enc-pulse-sweep-active {
+  animation-play-state: running;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .enc-breathe,
   .enc-blink,
   .enc-live-dot,
-  .enc-pulse-sweep {
+  .enc-pulse-sweep,
+  .enc-pulse-sweep-active {
     animation: none;
   }
 }
