@@ -44,10 +44,10 @@ const SECONDARY = cn(BUTTON, "border border-enc-line-strong bg-enc-sheet text-en
 // the card is hovered or focused (.enc-pulse-sweep-active in globals.css, WCAG 2.2.2), and never under reduced motion.
 const BEAT = "M0,14 L16,14 L19,11 L22,14 L26,14 L28,17 L31,3 L34,22 L37,14 L44,14 L48,10 L53,14 L60,14"
 
-/** The live card's monitor strip: a moving trace, under the LIVE label. */
-function MonitorStrip({ locked }: { locked?: boolean }) {
+/** The live card's monitor strip: a moving trace, under the LIVE label. `compact`: a lower strip, for a card whose title sits beside the face (the public case library). */
+export function MonitorStrip({ locked, compact }: { locked?: boolean; compact?: boolean }) {
   return (
-    <div aria-hidden className={cn("absolute inset-x-0 top-0 h-[68px] overflow-hidden bg-enc-scope", locked && "opacity-60")}>
+    <div aria-hidden className={cn("absolute inset-x-0 top-0 overflow-hidden bg-enc-scope", compact ? "h-12" : "h-[68px]", locked && "opacity-60")}>
       <svg className="absolute inset-x-0 bottom-1.5 h-7 w-full text-enc-ecg" preserveAspectRatio="xMinYMid slice" viewBox="0 0 480 28">
         <g className={locked ? undefined : "enc-pulse-sweep-active"}>
           {Array.from({ length: 9 }, (_, i) => (
