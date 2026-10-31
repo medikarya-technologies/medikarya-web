@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: "Features",
     description: "A live bedside monitor, a ranked differential instead of one guess, dual Clinical and Independent scoring, and a real-time cardiac emergency: what's actually built into MediKarya.",
     openGraph: {
-        title: "MediKarya Features — What's Actually Built",
+        title: "MediKarya Features: What's Actually Built",
         description: "A live bedside monitor, a ranked differential, dual scoring, and a real-time deteriorating patient. See what's actually in the platform.",
         images: [{ url: "https://www.medikarya.in/og-image.png", width: 1200, height: 630, alt: "MediKarya Features" }],
     },

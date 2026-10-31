@@ -32,7 +32,7 @@ const FREE_CASE = { id: "2-year-old-boy-with-vomiting-and-watery-diarrhea", age:
 
 const EXCHANGE: Array<{ from: "patient" | "student"; text: string }> = [
   { from: "student", text: "How long has he been vomiting?" },
-  { from: "patient", text: "Since yesterday afternoon — no blood, just everything he's eaten." },
+  { from: "patient", text: "Since yesterday afternoon. No blood, just everything he's eaten." },
   { from: "student", text: "Any loose stools as well?" },
 ]
 
@@ -101,7 +101,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-lg text-pretty text-lg leading-relaxed text-enc-ink-2">
-            Talk to a live patient, work through the case, and decide what to do next, before the stakes are real.
+            Take the history, examine, order tests and decide what to do next. Then see exactly where your reasoning held and where it broke.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -162,10 +162,8 @@ export function Hero() {
                 <p className="text-[12.5px] font-semibold text-enc-ink leading-none">{FREE_CASE.label}</p>
                 <p className="mt-0.5 text-[11px] text-enc-ink-3">Chief complaint: vomiting and loose stools</p>
               </div>
-              <span className="ml-auto flex shrink-0 items-center gap-1 text-[10px] font-bold tracking-widest text-enc-ok uppercase">
-                <span className="enc-live-dot h-1.5 w-1.5 rounded-full bg-enc-ok" />
-                Live
-              </span>
+              {/* the free case, which is a bedside case: "Live" is kept for the emergencies whose patient changes */}
+              <span className="ml-auto shrink-0 rounded-md bg-brand-50 px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-brand-700 uppercase">Free case</span>
             </div>
 
             {/* ECG strip — real TelemetryMonitor */}

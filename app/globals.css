@@ -388,6 +388,11 @@ html {
   animation: marquee 30s linear infinite;
 }
 
+/* The home page's ticker strips (components/flowai/marquee-strip.tsx) stop while a pointer is over them. */
+.marquee-pause:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
 .animate-marquee-left {
   animation: marquee 20s linear infinite;
 }

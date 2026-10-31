@@ -57,7 +57,7 @@ function Strip({ items }: { items: string[] }) {
 
 export function MarqueeStrip({ items }: { items: string[] }) {
   return (
-    <div className="overflow-hidden border-y border-white/10 bg-brand-900 py-3.5" aria-hidden>
+    <div className="marquee-pause overflow-hidden border-y border-white/10 bg-brand-900 py-3.5" aria-hidden>
       <div className="flex">
         <Strip items={items} />
         <Strip items={items} />

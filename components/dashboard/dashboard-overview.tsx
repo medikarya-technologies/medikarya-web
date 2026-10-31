@@ -210,7 +210,7 @@ export function DashboardOverview({ initialStats, cases = [], progress = {}, use
         }
       />
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         {started ? <RecentAttempts attempts={stats.recentCases} byId={byId} /> : <FirstCase />}
         <div className="space-y-6">
           <CertificateCard certificates={certificates} />

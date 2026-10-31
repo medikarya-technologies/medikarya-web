@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
-import { cn, formatPatientAge } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
 import { evaluateSimulation } from "@/app/actions/evaluate"
 import { scoreEncounter } from "@/engine/evaluation/DualScorer"
@@ -477,9 +477,8 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   }
 
   // ── The encounter ─────────────────────────────────────────────────────
-  const objective =
-    caseData.objective ??
-    `Evaluate a ${formatPatientAge(p.age)} ${String(p.gender).toLowerCase()} presenting with ${String(p.chiefComplaint).toLowerCase()}`
+  // Only a brief the case itself writes: the patient card beside the tabs already says who they are and why they came.
+  const objective: string | undefined = typeof caseData.objective === "string" && caseData.objective.trim() ? caseData.objective : undefined
   const initialDifferential = ((): string[] => {
     const last = [...events].reverse().find((e): e is EventOf<"DIFFERENTIAL_SUBMITTED"> => e.type === "DIFFERENTIAL_SUBMITTED")
     return last?.ranked ?? []
@@ -659,15 +658,18 @@ function CompactVitals({ onOpen }: { onOpen: () => void }) {
   )
 
   return (
-    <button type="button" onClick={onOpen} data-tour="patient" className="flex shrink-0 items-center gap-4 bg-enc-scope px-4 py-2.5 text-left" aria-label="Open the patient and monitor">
-      <Activity className={cn("h-4 w-4 shrink-0", alarms.length > 0 ? "enc-live-dot text-enc-scope-crit" : "text-enc-ecg")} />
-      <span className="flex flex-1 items-baseline gap-4">
-        {cell("HR", patient.rhythm === "vf" || unmeasured.has("hr") ? "—" : String(live.hr), "text-enc-ecg")}
-        {cell("BP", unmeasured.has("bp") ? "—" : live.systolic + "/" + live.diastolic, "text-enc-nibp")}
-        {cell("SpO₂", unmeasured.has("spo2") ? "—" : String(live.spo2), "text-enc-spo2")}
+    // An alarm gets a line of its own under the numbers: on a phone the one row has no room left for it.
+    <button type="button" onClick={onOpen} data-tour="patient" className="flex shrink-0 flex-col gap-1.5 bg-enc-scope px-4 py-2.5 text-left" aria-label="Open the patient and monitor">
+      <span className="flex w-full items-center gap-4">
+        <Activity className={cn("h-4 w-4 shrink-0", alarms.length > 0 ? "enc-live-dot text-enc-scope-crit" : "text-enc-ecg")} />
+        <span className="flex min-w-0 flex-1 items-baseline gap-4">
+          {cell("HR", patient.rhythm === "vf" || unmeasured.has("hr") ? "—" : String(live.hr), "text-enc-ecg")}
+          {cell("BP", unmeasured.has("bp") ? "—" : live.systolic + "/" + live.diastolic, "text-enc-nibp")}
+          {cell("SpO₂", unmeasured.has("spo2") ? "—" : String(live.spo2), "text-enc-spo2")}
+        </span>
+        <span className="shrink-0 font-mono text-[12px] text-enc-scope-dim tabular-nums">{formatClock(now)}</span>
       </span>
-      {alarms.length > 0 && <span className="rounded bg-enc-crit px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">{alarmLabel(alarms[0])}</span>}
-      <span className="font-mono text-[12px] text-enc-scope-dim tabular-nums">{formatClock(now)}</span>
+      {alarms.length > 0 && <span className="self-start rounded bg-enc-crit px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-white">{alarmLabel(alarms[0])}</span>}
     </button>
   )
 }
