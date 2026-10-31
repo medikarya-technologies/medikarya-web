@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
-    "plan_sha": "d1e1d07eb3685d123b4ede091395a85edc74e2ac3f37911e6aa74ec0a2e99156",
-    "compiled_sha": "4d40f4186efc411913dccd87d96db7ac255993f3b36a02551888acb545e4798f",
+    "plan_sha": "b6a01f2dc6e21fad9c30c08dfbc08c2f81dcdba951a8c6924ad84b3d6919292e",
+    "compiled_sha": "c1c34785bef6412a79639a1d8afb6c0372bc4638b1367f62764d39c10fd409bb",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -44,7 +44,7 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "3ec69b3a68c747d1f706460cff30d580560346ac14fa7829e9b1619594201641"
+        "events_sha": "8412af571b8a51cb7b7dd1e712d335632b77cd23093aa3ee882cf7d5225a1bc6"
       },
       "correct": {
         "score": 100,
@@ -129,13 +129,13 @@
           "sbp": 88,
           "dbp": 53,
           "spo2": 78,
-          "rr": 16,
+          "rr": 11,
           "temp": 36.8,
           "consciousness": "unresponsive",
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "0d6182c4766a78826a80de57d1862d65953a66e8f23f2fab0d5b99cb2a590878"
+        "events_sha": "d6f5cf6dd2c96fa20a376766a7cf73bb62e5c6c53352a336a9b157708ae17ba1"
       },
       "late": {
         "score": 25,
@@ -178,10 +178,10 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "f29e51b413e4b96f6b34cd5da50d6be713fb28c82eb382ed354b134786f0ffb0"
+        "events_sha": "d7115d59c2723d44c07f93d115be37e9c8bc2d1af3fbffc1e829b68fae50ad53"
       },
       "rescue": {
-        "score": 71,
+        "score": 77,
         "items": [
           [
             "iv_access",
@@ -201,34 +201,37 @@
           ],
           [
             "intubation_rsi",
-            "not_needed"
+            "on_time"
           ]
         ],
         "harmful": [],
         "outcome": {
           "stabilised": true,
-          "recovered": true,
+          "recovered": false,
+          "unsafe_at_end": [
+            "unresponsive"
+          ],
           "worst_stage": "Respiratory muscle fatigue",
-          "path": "usual"
+          "path": "Atropine to end points, with intubation and ventilation"
         },
         "final": {
-          "hr": 92,
-          "sbp": 112,
-          "dbp": 70,
-          "spo2": 95,
-          "rr": 20,
+          "hr": 82,
+          "sbp": 104,
+          "dbp": 63,
+          "spo2": 96,
+          "rr": 15,
           "temp": 36.8,
-          "consciousness": "drowsy",
-          "stability": "stable",
-          "rhythm": "sinus_normal"
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "16e6dfb731436b262bed19c5570ca65c486c5f8bfb3b4d09b93c30a49f7097d8"
+        "events_sha": "a462bcf8aff0ba0d93e11b52267faf4937edd56158ef37f1b04dbf2f26af0a8e"
       }
     }
   },
   "24-year-old-man-struggling-to-breathe-after-a-bike-accident": {
     "plan_sha": "7fecac60fb427b7b63e2fdd9334c8a7f18d6041cec4cbe67f014f415024ef698",
-    "compiled_sha": "777a43673926c323f6dacb6a721bbb9fd52d416d6d4c932d26394e0b632a4dcb",
+    "compiled_sha": "e71bd218739f7e172c5b2b4fc2926cbd341ed3a7524d25c43b4b91ceda64507a",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -267,7 +270,7 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "26963a68a65b8483089d77945c98309a4dd71e608cabd4f7a86b4079e06a0f2d"
+        "events_sha": "5543c2a19b2d95cbdecf594698a2e26fc063d074245a172e9887cb35bca8ca97"
       },
       "correct": {
         "score": 100,
@@ -383,26 +386,29 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Rising pressure in the chest"
+          },
           "worst_stage": "Rising pressure in the chest"
         },
         "final": {
-          "hr": 112,
-          "sbp": 118,
-          "dbp": 74,
-          "spo2": 94,
-          "rr": 24,
+          "hr": 116,
+          "sbp": 113,
+          "dbp": 71,
+          "spo2": 92,
+          "rr": 26,
           "temp": 36.4,
           "consciousness": "alert",
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "06538ac30db2e55f9e5fc6eb364353855e6a763c01146a2221e6ea4bd70b59fa"
+        "events_sha": "af669bbe15f266436d3db8e35aaa2f47c75eed53220aed3166f6a61cd8571dca"
       }
     }
   },
   "26-year-old-woman-who-cannot-catch-her-breath": {
     "plan_sha": "c684503c03de412333d5618d49a84a5d633c17428101d749690ea01e6f23107e",
-    "compiled_sha": "05927f2b9149c4d114bed707ac6d833006ba843986883a32dac2b58157b3399d",
+    "compiled_sha": "3946894917bba470af716631e83106745f2edd6205ae842e831c86518c8bbf39",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -445,7 +451,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "22b57360bae6f788f12e0570de00bc5a8b914fa780e4434fdb91c803a4abf283"
+        "events_sha": "645c02928fcb6b827dd2633039fcbf179742712dd8cc9a57e15891f88f164212"
       },
       "correct": {
         "score": 100,
@@ -569,27 +575,30 @@
         "harmful": [],
         "outcome": {
           "stabilised": true,
-          "recovered": true,
+          "recovered": false,
+          "unsafe_at_end": [
+            "SpO₂ 89%"
+          ],
           "worst_stage": "Silent chest"
         },
         "final": {
-          "hr": 110,
-          "sbp": 122,
-          "dbp": 76,
-          "spo2": 95,
-          "rr": 22,
+          "hr": 136,
+          "sbp": 112,
+          "dbp": 70,
+          "spo2": 89,
+          "rr": 13,
           "temp": 37.6,
-          "consciousness": "alert",
-          "stability": "stable",
+          "consciousness": "drowsy",
+          "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "54912ac36982c889b6f54994ed7de672a1545455d5e89a0ab50dd00dda9231f8"
+        "events_sha": "05e3a27c5ee5054fa97b23a530bf8bae9719a46253034665bdd3a9acbf2e9f39"
       }
     }
   },
   "29-year-old-man-with-belly-pain-as-his-fever-settles": {
     "plan_sha": "127a366786179fc8a638de769adb1ddcd279606b33e72ca3c63d6cfc2140bbb4",
-    "compiled_sha": "7b52d967920e0bc959ccd65a0a03ca37ab7b7a43416d89e039ec481a71cdc67a",
+    "compiled_sha": "6e4d7b5f24a8b24d64e509e4fd4954158b908c4c386fd86a7c49df02ac5d2f46",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -628,7 +637,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "74d57bf58992f83c34a448403b2a269085363905617367b11009a914e5ae821f"
+        "events_sha": "73fb36746589fbb3f15a52de3d191632ec8efceb984785af29f138ae1a5107a8"
       },
       "correct": {
         "score": 100,
@@ -764,7 +773,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "01c22a0ee63d68a9e5599f8b20c625ca76720770a2f2e06084fce31d5eefa094"
+        "events_sha": "ae31719661fb16c914d11e491dc2b7a0fe7cbc00d4d11a64da2cba7f14b2f998"
       },
       "rescue": {
         "score": 75,
@@ -794,27 +803,30 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Pulse pressure narrowing"
+          },
           "worst_stage": "Pulse pressure narrowing",
           "path": "usual"
         },
         "final": {
-          "hr": 112,
-          "sbp": 104,
+          "hr": 114,
+          "sbp": 103,
           "dbp": 84,
           "spo2": 97,
-          "rr": 22,
+          "rr": 23,
           "temp": 36.8,
           "consciousness": "alert",
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "586f9c2c8108826175bd14dda7dcc2d79df5a656a792743de218cbbe30112dad"
+        "events_sha": "1916f6babf60ddf6c669152ae34215bb2bbfc8747b935187dfd707da1f5c6510"
       }
     }
   },
   "32-year-old-man-brought-in-fitting": {
     "plan_sha": "12dda86824d12952bcc7ef143a55978357f8a83889fe09ddc1bc71987f3a0d10",
-    "compiled_sha": "fa9f71341595e95e86a75092756b637e6d66210dcb1fe7b00adeed468619ff67",
+    "compiled_sha": "1e1ded10d0b1190b568dc73362b77a03e2c62d6abe5640889d314cf54131d172",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -857,7 +869,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "24211a7d5fed049f3a0ce444646b5b2d643704db239547c71041bf88f46cbb18"
+        "events_sha": "593e50e7345da6283aa38f0ecca10c0b96c0400a2b1fb7d53da7641258c17f1e"
       },
       "correct": {
         "score": 100,
@@ -997,7 +1009,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "840e18b05a5fbca8e564d6ab4f9593919a1c91c39d6b84dfc727de62b11a750f"
+        "events_sha": "cee23e230d1999ed07118f7d196a2cbcf5c33cab61d656483ddb6a2ccf8dfd89"
       },
       "rescue": {
         "score": 65,
@@ -1027,26 +1039,29 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Worsening hypoxia and fever"
+          },
           "worst_stage": "Worsening hypoxia and fever"
         },
         "final": {
-          "hr": 108,
-          "sbp": 138,
-          "dbp": 82,
-          "spo2": 96,
-          "rr": 18,
+          "hr": 118,
+          "sbp": 146,
+          "dbp": 87,
+          "spo2": 93,
+          "rr": 22,
           "temp": 38.8,
-          "consciousness": "drowsy",
+          "consciousness": "altered",
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "76dfec44af0363b4a77f67535907c810c0d2aa39d656dd17e1f81f569bceb5e4"
+        "events_sha": "4fcb4585e3f02a0270d8b262357e76efd4e9e7147f088aeee51039966064916b"
       }
     }
   },
   "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing": {
     "plan_sha": "1037584b25ed590aca191d1dc283fd48eea303e7ee8de878d6f338576030fe69",
-    "compiled_sha": "a57abf6110dd9136edfcf649955307fd7bd06a383103d415659b730c7e4d850b",
+    "compiled_sha": "4cf367f93f03ee52dfe816030a2e8cc095e7ef0ef09794b6438c218a787f1822",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1081,7 +1096,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "f8d069e8a204a5a2aa5217d3f34bd4935d2faaec69bf5de51c90b5152d8e5743"
+        "events_sha": "400fcd1cbba33e2f5e060f7c0190e62e2a7838d9d2ccb645d6243a1ac1b673a8"
       },
       "correct": {
         "score": 100,
@@ -1185,26 +1200,29 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Neck and respiratory muscle weakness"
+          },
           "worst_stage": "Neck and respiratory muscle weakness"
         },
         "final": {
-          "hr": 96,
-          "sbp": 132,
-          "dbp": 82,
-          "spo2": 98,
-          "rr": 14,
+          "hr": 101,
+          "sbp": 136,
+          "dbp": 84,
+          "spo2": 96,
+          "rr": 18,
           "temp": 37.1,
           "consciousness": "drowsy",
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "f29f9b48c28b37ad7f99fd1920aebce7c1c8dc3d99e390f3cf8a473e4210ec97"
+        "events_sha": "bccfff49c4af5422475199fafc73281a3bc00b94b45af0b26da2aed130c8847f"
       }
     }
   },
   "36-year-old-man-with-sudden-breathlessness": {
-    "plan_sha": "d0ecc1cd5d7c74458ea20e892b21a4f74a94294811703b7ea19a1f82c36f83f7",
-    "compiled_sha": "19d9e7ed1e2d83ff07d341a8980efb8037ea5a1b288f25ae689eeeb06bc1c549",
+    "plan_sha": "9f7de1fac4d02c875b9c2cc8707abadb246571cc0c9d62fe62c57a4cb5d7ea78",
+    "compiled_sha": "fc60bc43783b7dd400474387af0e03710c874f81a6f70eafb15f7a5b56a84583",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1259,7 +1277,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e6c3ad676d9518423caca2d5ebc873fb6df1bb6aaf09876f3bcd9691c14f1a45"
+        "events_sha": "a77906b6fd680e6a606fc5c1ebe5628da3d338cedbdbb3fe534de0f327079ac9"
       },
       "correct": {
         "score": 100,
@@ -1360,19 +1378,13 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "settled_worse": {
-            "harms": [
-              "Adrenaline 1 mg IV",
-              "Sit him upright"
-            ]
-          },
           "worst_stage": "Worsening airway swelling",
           "path": "usual"
         },
         "final": {
-          "hr": 130,
-          "sbp": 128,
-          "dbp": 78,
+          "hr": 106,
+          "sbp": 104,
+          "dbp": 64,
           "spo2": 96,
           "rr": 20,
           "temp": 37.8,
@@ -1380,7 +1392,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "f4d646c2203a44c772a5b4c2c5edcec8fae0624006d04398104859daf2365541"
+        "events_sha": "3bfed94f431e4f16746b1a0c10a15fa0c31c3e1bd8fe15c42b81a5c7f28d8493"
       },
       "late": {
         "score": 25,
@@ -1435,7 +1447,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "947fd9c658828b50f896c85191d9c77ce11446b82c8ce062c526b05bc8dd6cd7"
+        "events_sha": "c1d57e9fff4d14d69f279c5fd595de5b64f533a8a0a7b75c721955ccc50762c3"
       },
       "rescue": {
         "score": 25,
@@ -1490,13 +1502,13 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "4f396310ed1ccf6b76925a2a1922dd00b7597cee54ed37c0a4217596bbfa98ad"
+        "events_sha": "07caad271c9ad3211c8a44098f5ec8f3c9a139620957a9b973ef331a3bee2a2f"
       }
     }
   },
   "40-year-old-man-found-unconscious-at-home": {
     "plan_sha": "8eb9dce45f9c6d413f7507eedb0dcbb9d1828dce26a0edac772cad6cd260632e",
-    "compiled_sha": "fa2bf5dd9b00906c8864b9fbf80be18d7c0808593b4ebad6b0e6b6f9bde4a5f3",
+    "compiled_sha": "a77c58ffdc8222022c76e3e7848dbb8a805e812434d44b752a82ef674539bd94",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1539,7 +1551,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "36a35786fea973f7df0e774b9f80dc5c6445f30315e7a53bdf0b563300d0e922"
+        "events_sha": "b306d412cd1954e6f95c1ced0fb15ba3ded3eb5a4c47c8be6898bab9630c2912"
       },
       "correct": {
         "score": 100,
@@ -1666,26 +1678,29 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Ongoing fluid loss"
+          },
           "worst_stage": "Ongoing fluid loss"
         },
         "final": {
-          "hr": 106,
-          "sbp": 104,
+          "hr": 108,
+          "sbp": 103,
           "dbp": 72,
           "spo2": 98,
-          "rr": 28,
+          "rr": 29,
           "temp": 37.9,
           "consciousness": "altered",
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "eb1971ac505f991d9c80b3586e80031bf22be3b55a1ca9d86b7036a810fd96b0"
+        "events_sha": "333a776d1c7d04afe62d4515167833cfc9c337e569335778499f7754078655d7"
       }
     }
   },
   "45-year-old-woman-with-fever-who-has-become-confused": {
     "plan_sha": "86c2a9d68d5aa3232889884d20616e0ea3e395c1dde700f6dbc2369b97789123",
-    "compiled_sha": "8c84673fe777dfb8e013273c674bf0dff007266944794b979b7da242640c70ba",
+    "compiled_sha": "8c027503a24eddd1b51e97fb8671a0d7c62f3a25cb84461d92499cb8c21ec2ac",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1732,7 +1747,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "ab50194bc3f6a12208fbf1edb114a99fc67af78161b1215658479ef0ed3e5cd3"
+        "events_sha": "5da6c79bfccba15a396e11fe8d476dff8443aa197e84c51f01435bdbb4ecfbb3"
       },
       "correct": {
         "score": 100,
@@ -1869,27 +1884,27 @@
         "harmful": [],
         "outcome": {
           "stabilised": true,
-          "recovered": true,
+          "recovered": false,
           "worst_stage": "Decompensated septic shock"
         },
         "final": {
-          "hr": 108,
-          "sbp": 102,
-          "dbp": 58,
-          "spo2": 97,
-          "rr": 22,
+          "hr": 130,
+          "sbp": 92,
+          "dbp": 52,
+          "spo2": 94,
+          "rr": 32,
           "temp": 39.2,
-          "consciousness": "drowsy",
-          "stability": "stable",
+          "consciousness": "altered",
+          "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "d392317c6b451da5331c1d9b008fa0b70d30e9a58f833923f5bcbb8667fe3c99"
+        "events_sha": "c63b6d4bdf8268eeb9e33bc30b06a91244b9a4aebe9119229ad2f023a7f3fbe0"
       }
     }
   },
   "46-year-old-man-whose-legs-are-too-weak-to-stand": {
     "plan_sha": "ad53cb676508f96962228e21ea71aa1f0869503a620dd1c7cdbe1468e6b2f44c",
-    "compiled_sha": "9e01ef4bc183532c2dd98d25f7e196994b243c82b909a82f7762ff9436105f20",
+    "compiled_sha": "be5a914d2e70ea7545ebc9a69c0854fa985e7323c46594e0df18ae7cd27b87d3",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1936,7 +1951,7 @@
           "stability": "critical",
           "rhythm": "complete_heart_block"
         },
-        "events_sha": "cc08a0c4a9200f0a458f5665d078441e3888bbc9f94c17879b72612403ca3bad"
+        "events_sha": "090d88065e2a1e559fd1351edbc86f92f01325c7f0fe8c2acb27b398ae3e5e95"
       },
       "correct": {
         "score": 100,
@@ -2085,7 +2100,7 @@
           "stability": "critical",
           "rhythm": "complete_heart_block"
         },
-        "events_sha": "8d83d3d640f39a8098c4ed02165b7289f2f5b9a0e3a5a971f6d5607e0fc35ede"
+        "events_sha": "28a313a4f237607714578aa77fedf499d81553d5e1a072122dcb6818fccf6451"
       },
       "rescue": {
         "score": 67,
@@ -2119,10 +2134,13 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Slowing pulse"
+          },
           "worst_stage": "Slowing pulse"
         },
         "final": {
-          "hr": 66,
+          "hr": 63,
           "sbp": 150,
           "dbp": 90,
           "spo2": 96,
@@ -2132,13 +2150,13 @@
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "5830da5858a4bd1a98810fe971d3123009fa3be8ef151de5cc90030d0a56c5ce"
+        "events_sha": "477cbee0534ea367e7e3407916591e106ddaf78b1262311d5c6f833b91f5467f"
       }
     }
   },
   "48-year-old-man-who-suddenly-could-not-breathe-and-fainted": {
     "plan_sha": "8e2c1ab8eb326f973031c5f6a584222ae3c699a8aae38f33bdccb889aa90f129",
-    "compiled_sha": "99df29f6658ae9453665b225bc7288ae3ef24b98e84e293c18a77af6542683dd",
+    "compiled_sha": "880dc79219e16b102ed2ba7b5f586d656a67a9bbd281bed1c718b36f8037730d",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2177,7 +2195,7 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "1796691ab36910bfa7e302fdcb15a03ef0f731837aadb84208bc054f4e9580cd"
+        "events_sha": "d4d02ed5c17996d204a56319db6b9217369fa7c5fcae9b772a117d5f2e0e9502"
       },
       "correct": {
         "score": 100,
@@ -2308,7 +2326,7 @@
           "stability": "critical",
           "rhythm": "sinus_bradycardia"
         },
-        "events_sha": "613bb3fdf2ef8fb88864cb36354c697f75862448969656b230a02a2b210701c3"
+        "events_sha": "82af5e748dbac8096def85e87719a31e2740c5755df90868193fa7d436450eb8"
       },
       "rescue": {
         "score": 75,
@@ -2334,26 +2352,29 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Worsening shock"
+          },
           "worst_stage": "Worsening shock"
         },
         "final": {
-          "hr": 104,
-          "sbp": 104,
-          "dbp": 66,
-          "spo2": 93,
-          "rr": 24,
+          "hr": 108,
+          "sbp": 101,
+          "dbp": 64,
+          "spo2": 92,
+          "rr": 25,
           "temp": 37.2,
           "consciousness": "alert",
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "1c6d49d54f876dfde3df3f44bbf928b80fe05804cdbd0fafa7c6671e4ad97b4d"
+        "events_sha": "958ef156a79153dd17d1f3f432513e6f4b96bc35ae4648d14cfabbc9742ddd61"
       }
     }
   },
   "52-year-old-man-vomiting-blood-at-2-am": {
     "plan_sha": "ed5410a232d9a770c6c6e477532c44ab9e734569e5105d0530c30fd7b85f1626",
-    "compiled_sha": "0761b5f836c0cbebc30f4c24ec2a27adedd65b6e468ea2a35f3caeeabd22dd8d",
+    "compiled_sha": "9f95a252a5caafbf87cf4b070ccef6d7850c6208992a93bc70123d5f27840a0c",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2396,7 +2417,7 @@
           "stability": "critical",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "94c941c6a604eb584f662cc8e41553b771ed0661588e869668a1d03282e13c76"
+        "events_sha": "d626ee5220bba9b94611692f513cf51881fa343fe88bccd94ac972338a9912f2"
       },
       "correct": {
         "score": 100,
@@ -2519,26 +2540,29 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Worsening shock"
+          },
           "worst_stage": "Worsening shock"
         },
         "final": {
-          "hr": 70,
-          "sbp": 102,
-          "dbp": 62,
+          "hr": 72,
+          "sbp": 96,
+          "dbp": 58,
           "spo2": 97,
-          "rr": 18,
+          "rr": 20,
           "temp": 36.6,
           "consciousness": "alert",
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "38d42ceb27b3c9f86ea13e2f6a3bbdf3cf1d50d5f40a27150a700dbd4e7dbd28"
+        "events_sha": "6f9ed72ab19629e04e10b3455529f34c4684458f9e0badbf9b2aa87fa3e32a2c"
       }
     }
   },
   "54-year-old-man-with-black-stools-who-vomited-blood": {
     "plan_sha": "a844d1a4c010a189f06ebffe6a30378b6a933bfd89a98f37071ddf3c3eaaa804",
-    "compiled_sha": "a6127120bddb6bdd2c3dc6c541025c196993a4326d16336cf594266ac585e47a",
+    "compiled_sha": "8c519f33f673f93c662f162627029cfa958fcbf4dbdf3045387144b9538631be",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2577,7 +2601,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "5cbb7e254b2303f357d39a1c9e9e9ec0863fa828f679eda0af18c6ac7bb8c96d"
+        "events_sha": "8066cee7f1a9b1ef04617f3377b70875af8a6ed879ad355e98633450a5b7d291"
       },
       "correct": {
         "score": 100,
@@ -2706,13 +2730,13 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "bde122b5d308cbcc456939c0f088508c367435570066bdaacb42e0de2e9a0a67"
+        "events_sha": "a0070285fbb8ea3218f4057c94cd1fff2e297845e864c0324711e0ca86c20e44"
       }
     }
   },
   "56-year-old-man-with-chest-pain-and-a-slow-pulse": {
     "plan_sha": "7fba1403197f50149e9b3ab09bab8b97909097ce09d7928ca0366557031b193f",
-    "compiled_sha": "6c44ff8191262fabc8eb98763b38ebb5e7a94ba6426cca54870d7c0a2d4d474b",
+    "compiled_sha": "148ba0b2ef72bb4fc5df860adf610781b53053a56fe9d9ddd177c0951ff0b6c9",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2763,7 +2787,7 @@
           "stability": "critical",
           "rhythm": "complete_heart_block"
         },
-        "events_sha": "f88c4306ed6991c8cf9f2eb5a087daa436328bb083655faa2317f907f1724ffe"
+        "events_sha": "e6c17b213a1d5c3007697e7c5748b5dc6ff9a281515497ab50086ee3296b6e13"
       },
       "correct": {
         "score": 100,
@@ -2931,13 +2955,13 @@
           "stability": "critical",
           "rhythm": "complete_heart_block"
         },
-        "events_sha": "18da954df0169d2da1e3256a6720778bf7d600380a119c04e456beea545fb9e2"
+        "events_sha": "3698dc85cb8a8702190dd7fed3b7260bdf1aea7e2fe35971b8aea77a5422788a"
       }
     }
   },
   "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
     "plan_sha": "8f5dd205b2d217397aa88b2f822967a09e0c3731248faa5b7851e91df183f3f3",
-    "compiled_sha": "a6e221ae94859601272b007171b8ff9e48f6626ae6268c29edcacb41d5af334b",
+    "compiled_sha": "625e23f0bcfa51a48c7df065293885ea31508ace8dbf1c9b60175ada4dad7628",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2980,7 +3004,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "75f650f60cb816f1f4cfc9694c56584bc14cc7b05f8557e0964206654acd2a32"
+        "events_sha": "8ce949a2e92da1e63dc1a653f822e99570bd36721bd367f389c3955a316ec6db"
       },
       "correct": {
         "score": 100,
@@ -3118,7 +3142,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "0a8e3e9e444d380e016abd40a00c992c1447c4f43232142692d0408363e7fd1c"
+        "events_sha": "fa277b336cf4a9fb9f543282af1e83be2df93e69c878eff9a600014f4c460543"
       },
       "rescue": {
         "score": 80,
@@ -3148,26 +3172,29 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
+          "settled_worse": {
+            "late_after": "Deepening drowsiness"
+          },
           "worst_stage": "Deepening drowsiness"
         },
         "final": {
-          "hr": 94,
-          "sbp": 140,
-          "dbp": 84,
+          "hr": 96,
+          "sbp": 142,
+          "dbp": 85,
           "spo2": 97,
           "rr": 16,
           "temp": 36.1,
-          "consciousness": "alert",
+          "consciousness": "drowsy",
           "stability": "stable",
           "rhythm": "sinus_normal"
         },
-        "events_sha": "69b8b72e2985b3af89024f778bdecf66e033eeb7b106d582407ae8877fa909a8"
+        "events_sha": "30b0bee8a983b08ee0fcafc1d4179c2273aeaae572d640a5ae45a9bfc5326f0e"
       }
     }
   },
   "58-year-old-woman-who-woke-up-gasping-for-breath": {
     "plan_sha": "34f14fc125bcf45988da3004381524610022dddebe5e6751e46a7db29ae23d34",
-    "compiled_sha": "731870dad0d710190b5134ee3d94d28bbec41319091bfbf401ea133a179d0e4b",
+    "compiled_sha": "98fe141625c66daeaacfe33c6a6197a1e4f224ceac646c007f289842c48a0e48",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -3214,7 +3241,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "60c4eabbe7144c499151f02c53c7e753ba7c5e96566904e441b8b8141f01c4ac"
+        "events_sha": "1265bd699147a9996e5565114458d631849d32326da73dd7e07bfd538be5ea55"
       },
       "correct": {
         "score": 100,
@@ -3369,7 +3396,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e87104c6b3643ab34418c086a0fdfbc02cd6c06d1590513546d934a54d18c4c9"
+        "events_sha": "ae1ac00c29d47fe5884739508a35dc44d11a8a922694c709fe5b78bfa7759167"
       },
       "rescue": {
         "score": 58,
@@ -3402,21 +3429,27 @@
         "harmful": [],
         "outcome": {
           "stabilised": true,
-          "recovered": true,
+          "recovered": false,
+          "unsafe_at_end": [
+            "SpO₂ 90%"
+          ],
+          "settled_worse": {
+            "late_after": "Confused and tiring"
+          },
           "worst_stage": "Confused and tiring"
         },
         "final": {
-          "hr": 102,
-          "sbp": 152,
-          "dbp": 90,
-          "spo2": 94,
-          "rr": 22,
+          "hr": 109,
+          "sbp": 164,
+          "dbp": 95,
+          "spo2": 90,
+          "rr": 27,
           "temp": 36.9,
-          "consciousness": "alert",
-          "stability": "stable",
+          "consciousness": "drowsy",
+          "stability": "unstable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e38a56a987e5f00acdf8d8e632cbc3f2e2ea1af394b3e07e137bb8a2609246a2"
+        "events_sha": "620d3370e01e69dfdd67ce125abb0ebd332dee9dbd6a988f08e23f6fab30e1c5"
       }
     }
   }
