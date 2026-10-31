@@ -6,10 +6,11 @@
 // ranked, and the history/exam/investigation lists are what you would do for ANY patient with this complaint.
 // A case with no guide here still gets a page, but it is noindex (a title and two sentences is a thin page).
 //
-// Clinical content: standard undergraduate teaching, to be checked by a doctor before it goes live. A guide marked
-// `pendingCheck: true` is written but not live: CASE_GUIDES (what every page, the sitemap, llms.txt and the .md copies
-// read) leaves it out, so its case keeps a noindex page with no guide. When a doctor has read it and any corrections
-// are made, delete that one line and the guide goes live on the next deploy. GUIDES_AWAITING_CHECK lists them.
+// Clinical content: standard undergraduate teaching, with no doses, thresholds or timings that need a source. Like the
+// cases the MediKarya team writes, these guides go live without a separate clinician sign-off for now (owner's
+// decision, 2026-10-31). To hold one back (for a doctor's read, say), add `pendingCheck: true` to it: CASE_GUIDES (what
+// every page, the sitemap, llms.txt and the .md copies read) then leaves it out, its case keeps a noindex page with no
+// guide, and scripts/case-guides-review.mjs prints it for review. GUIDES_AWAITING_CHECK lists any held back.
 
 export interface CaseGuide {
     /** Written but not yet read by a doctor: kept out of every public page until this line is removed. */
@@ -563,10 +564,9 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
         ],
     },
 
-    // Written 2026-10-31 for the cases that had no guide. Each waits for a doctor's read (see the top of this file).
+    // Written 2026-10-31 for the cases that had no guide.
 
     "24-year-old-man-struggling-to-breathe-after-a-bike-accident": {
-        pendingCheck: true,
         seoTitle: "Breathless After a Bike Accident: Live Trauma Case",
         metaDescription: "A live emergency case for medical students: a young rider getting more breathless after a road accident. The primary survey, chest injuries that kill early, red flags and the first tests.",
         h1: "Breathless after a road accident in a 24-year-old: a live trauma case",
@@ -621,7 +621,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "26-year-old-woman-who-cannot-catch-her-breath": {
-        pendingCheck: true,
         seoTitle: "Acute Breathlessness in a Young Adult: Live Case",
         metaDescription: "A live emergency case for medical students: a 26-year-old who can only speak a few words at a time. How to judge severity fast, red flags, examination, first tests and the differential.",
         h1: "A 26-year-old who cannot catch her breath: a live emergency case",
@@ -680,7 +679,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "29-year-old-man-with-belly-pain-as-his-fever-settles": {
-        pendingCheck: true,
         seoTitle: "Abdominal Pain as a Fever Settles: Ward Case",
         metaDescription: "A live ward case for medical students: abdominal pain, vomiting and weakness as a four-day fever comes down. What to ask, warning signs, fluid assessment, first tests and the differential.",
         h1: "Abdominal pain and vomiting as a fever settles in a 29-year-old: a live ward case",
@@ -738,7 +736,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "46-year-old-man-whose-legs-are-too-weak-to-stand": {
-        pendingCheck: true,
         seoTitle: "Sudden Leg Weakness With Kidney Disease: Live Case",
         metaDescription: "A live emergency case for medical students: a man with long-standing kidney disease whose legs have gone weak since the morning. What to ask, red flags, the bedside tests that come first and the differential.",
         h1: "Legs too weak to stand in a 46-year-old with kidney disease: a live emergency case",
@@ -792,7 +789,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "52-year-old-man-vomiting-blood-at-2-am": {
-        pendingCheck: true,
         seoTitle: "Vomiting Blood: Live Upper GI Bleed Case",
         metaDescription: "A live emergency case for medical students: a 52-year-old vomiting fresh blood at 2 a.m. Resuscitation first, what to ask, signs to look for, the first tests and the causes of upper GI bleeding.",
         h1: "Vomiting blood at 2 a.m. in a 52-year-old: a live emergency case",
@@ -846,7 +842,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "54-year-old-man-with-black-stools-who-vomited-blood": {
-        pendingCheck: true,
         seoTitle: "Black Stools and Fainting: Live GI Bleed Case",
         metaDescription: "A live emergency case for medical students: black stools for two days, vomiting blood and a faint. Spotting shock, what to ask about painkillers, the first tests and the differential.",
         h1: "Black stools, vomiting blood and a faint in a 54-year-old: a live emergency case",
@@ -903,7 +898,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "58-year-old-woman-who-woke-up-gasping-for-breath": {
-        pendingCheck: true,
         seoTitle: "Woke Up Gasping for Breath: Live Emergency Case",
         metaDescription: "A live emergency case for medical students: a 58-year-old who woke at night fighting for breath. What to ask, red flags, the focused examination, first tests and the differential of acute breathlessness.",
         h1: "Woke up gasping for breath at night, a 58-year-old: a live emergency case",
@@ -955,7 +949,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "48-year-old-man-who-suddenly-could-not-breathe-and-fainted": {
-        pendingCheck: true,
         seoTitle: "Sudden Breathlessness and Collapse: Live Case",
         metaDescription: "A live emergency case for medical students: a 48-year-old who suddenly became breathless and fainted. Recognising shock, what to ask, first tests and the differential of breathlessness with collapse.",
         h1: "Suddenly breathless and fainted, a 48-year-old: a live emergency case",
@@ -1011,7 +1004,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "56-year-old-man-with-chest-pain-and-a-slow-pulse": {
-        pendingCheck: true,
         seoTitle: "Chest Pain With a Slow Pulse: Live Emergency Case",
         metaDescription: "A live emergency case for medical students: a farmer at a district hospital with chest pain, faintness and a slow pulse. What to ask, red flags, the ECG first and the differential.",
         h1: "Chest pain and a slow pulse in a 56-year-old: a live emergency case",
@@ -1064,7 +1056,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "66-year-old-man-with-numb-feet": {
-        pendingCheck: true,
         seoTitle: "Numb, Burning Feet in an Older Man: Practice Case",
         metaDescription: "A neurology case for medical students: a 66-year-old with numb feet that burn at night and a cut he did not feel. History, red flags, how to examine sensation, first tests and the differential of neuropathy.",
         h1: "Numb, burning feet in a 66-year-old: a neuropathy case to work up",
@@ -1120,7 +1111,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "32-year-old-man-brought-in-fitting": {
-        pendingCheck: true,
         seoTitle: "A Seizure That Will Not Stop: Practice Case",
         metaDescription: "A neurology emergency case for medical students: a 32-year-old brought in still fitting. First steps, what to ask the witness, red flags, the first tests and the causes to look for.",
         h1: "Brought in fitting, a 32-year-old: a seizure emergency to work up",
@@ -1181,7 +1171,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "32-year-old-woman-with-unsteady-walking": {
-        pendingCheck: true,
         seoTitle: "Unsteady Walking for Two Days: Practice Case",
         metaDescription: "A neurology case for medical students: a 32-year-old unsteady on her feet for two days after a cold. What to ask, red flags, how to examine balance and coordination, first tests and the differential.",
         h1: "Unsteady walking for two days in a 32-year-old: an ataxia case to work up",
@@ -1236,7 +1225,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "48-year-old-man-with-weak-legs-after-a-stomach-upset": {
-        pendingCheck: true,
         seoTitle: "Weak Legs After a Stomach Upset: Practice Case",
         metaDescription: "A neurology case for medical students: a 48-year-old whose legs have weakened over four days. Nerve versus cord, the breathing checks that matter, first tests and the differential of acute weakness.",
         h1: "Weak legs four days after a stomach upset, a 48-year-old: a case to work up",
@@ -1289,7 +1277,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "58-year-old-woman-whose-right-side-suddenly-went-weak": {
-        pendingCheck: true,
         seoTitle: "Sudden Weakness and Slurred Words: Stroke Case",
         metaDescription: "A neurology emergency case for medical students: a 58-year-old whose right hand dropped a cup and whose speech went an hour ago. Time last seen well, mimics to exclude, the first tests and the differential.",
         h1: "Sudden right-sided weakness and loss of speech, a 58-year-old: a case to work up",
@@ -1342,7 +1329,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "76-year-old-woman-with-brief-weakness-of-her-right-arm-and-leg": {
-        pendingCheck: true,
         seoTitle: "Brief Weakness That Fully Recovered: Practice Case",
         metaDescription: "A neurology case for medical students: a 76-year-old with right arm and leg weakness and slurred speech that went within ten minutes. What to ask, risk, examination, first tests and the differential.",
         h1: "Brief weakness of the right arm and leg in a 76-year-old: a case to work up",
@@ -1393,7 +1379,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "25-year-old-woman-with-sudden-chest-pain-and-breathlessness": {
-        pendingCheck: true,
         seoTitle: "Sudden Sharp Chest Pain in a Young Woman: Case",
         metaDescription: "A respiratory case for medical students: a 25-year-old with sudden sharp chest pain and breathlessness, worse on breathing in. What to ask, red flags, examination, first tests and the differential.",
         h1: "Sudden sharp chest pain and breathlessness in a 25-year-old: a case to work up",
@@ -1448,7 +1433,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "57-year-old-taxi-driver-who-keeps-dozing-off": {
-        pendingCheck: true,
         seoTitle: "Daytime Sleepiness in a Taxi Driver: Practice Case",
         metaDescription: "A respiratory case for medical students: a 57-year-old taxi driver who keeps nodding off and has fallen asleep at the wheel. What to ask, red flags, examination, first tests and the differential.",
         h1: "A 57-year-old taxi driver who keeps dozing off: a sleepiness case to work up",
@@ -1499,7 +1483,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "34-year-old-man-with-a-cough-for-six-weeks-and-weight-loss": {
-        pendingCheck: true,
         seoTitle: "Six-Week Cough With Weight Loss: Practice Case",
         metaDescription: "A respiratory case for medical students: a 34-year-old with six weeks of cough, evening fevers, night sweats and weight loss. What to ask, red flags, first tests and the differential.",
         h1: "A cough for six weeks with weight loss in a 34-year-old: a case to work up",
@@ -1551,7 +1534,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "48-year-old-man-whose-fever-came-back-after-a-chest-infection": {
-        pendingCheck: true,
         seoTitle: "Fever Back After a Chest Infection: Practice Case",
         metaDescription: "A respiratory case for medical students: a 48-year-old whose fever has returned after he stopped antibiotics early for a chest infection. What to ask, red flags, first tests and the differential.",
         h1: "Fever back after a chest infection in a 48-year-old: a case to work up",
@@ -1604,7 +1586,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "69-year-old-man-with-a-long-cough-and-worsening-breathlessness": {
-        pendingCheck: true,
         seoTitle: "Chronic Cough, Breathlessness, Swollen Ankles: Case",
         metaDescription: "A respiratory case for medical students: a 69-year-old former smoker with years of cough, worsening breathlessness and new ankle swelling. What to ask, red flags, examination, first tests and the differential.",
         h1: "A long cough, worsening breathlessness and swollen ankles in a 69-year-old: a case to work up",
@@ -1656,7 +1637,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "50-year-old-man-having-a-health-check-for-life-insurance": {
-        pendingCheck: true,
         seoTitle: "A Health Check in a Well Adult: Practice Case",
         metaDescription: "An internal medicine case for medical students: a well 50-year-old having a health check for life insurance. What to ask, how to examine, which tests to order, and how to handle what you find.",
         h1: "A health check for life insurance in a 50-year-old: a case to work up",
@@ -1707,7 +1687,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "48-year-old-woman-with-worsening-upper-back-pain": {
-        pendingCheck: true,
         seoTitle: "Upper Back Pain That Wakes Her at Night: Case",
         metaDescription: "An internal medicine case for medical students: a 48-year-old with mid-back pain that is worse and now wakes her, after normal tests months ago. Red flags, what to ask, examination, first tests and the differential.",
         h1: "Worsening upper back pain that wakes her at night, a 48-year-old: a case to work up",
@@ -1760,7 +1739,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "79-year-old-man-who-has-been-tired-and-unwell-for-weeks": {
-        pendingCheck: true,
         seoTitle: "Tired and Unwell for Weeks at 79: Practice Case",
         metaDescription: "An internal medicine case for medical students: a 79-year-old tired and unwell for five or six weeks who has lost interest in things. What to ask, red flags, first tests and a broad differential.",
         h1: "Tired and unwell for weeks, a 79-year-old: a case to work up",
@@ -1818,7 +1796,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "45-year-old-woman-with-fever-who-has-become-confused": {
-        pendingCheck: true,
         seoTitle: "Fever With New Confusion: Emergency Practice Case",
         metaDescription: "An emergency case for medical students: a 45-year-old with two days of high fever, shivering and right-sided pain who has stopped making sense. What to ask, red flags, first tests and the differential.",
         h1: "Fever and new confusion in a 45-year-old: an emergency case to work up",
@@ -1876,7 +1853,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing": {
-        pendingCheck: true,
         seoTitle: "Drooping Eyelids and Trouble Swallowing: Case",
         metaDescription: "An emergency case for medical students: a 34-year-old with drooping eyelids, double vision and difficulty swallowing that came on over hours. Protecting breathing, what to ask, first tests and the differential.",
         h1: "Drooping eyelids, double vision and trouble swallowing in a 34-year-old: a case to work up",
@@ -1932,7 +1908,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "40-year-old-man-found-unconscious-at-home": {
-        pendingCheck: true,
         seoTitle: "Found Unconscious at Home: Practice Case",
         metaDescription: "An emergency case for medical students: a 40-year-old found unconscious by his wife. The first minutes, what to ask the witness, red flags, the first tests and the differential of coma.",
         h1: "Found unconscious at home, a 40-year-old: a case to work up",
@@ -1989,7 +1964,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
-        pendingCheck: true,
         seoTitle: "Sweaty and Hard to Wake at 58: Practice Case",
         metaDescription: "An endocrine emergency case for medical students: a 58-year-old found confused and drenched in sweat after two days of diarrhoea and vomiting. First steps, what to ask, first tests and the differential.",
         h1: "Sweaty and hard to wake, a 58-year-old: a case to work up",
@@ -2047,7 +2021,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes": {
-        pendingCheck: true,
         seoTitle: "Upper Abdominal Pain and Yellow Eyes: Practice Case",
         metaDescription: "A gastroenterology case for medical students: a 58-year-old with months of upper abdominal pain, now with yellow eyes, dark urine and pale stools. What to ask, red flags, first tests and the differential.",
         h1: "Upper abdominal pain and yellow eyes in a 58-year-old: a jaundice case to work up",
@@ -2101,7 +2074,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "70-year-old-woman-with-abdominal-pain-and-vomiting": {
-        pendingCheck: true,
         seoTitle: "Abdominal Pain, Vomiting and Jaundice at 70: Case",
         metaDescription: "A gastroenterology case for medical students: a 70-year-old with three days of waves of upper abdominal pain, vomiting and yellow eyes. What to ask, red flags, first tests and the differential.",
         h1: "Three days of abdominal pain and vomiting in a 70-year-old: a case to work up",
@@ -2153,7 +2125,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "79-year-old-man-in-a-care-home-who-has-become-confused": {
-        pendingCheck: true,
         seoTitle: "Sudden Confusion in a Care Home Resident: Case",
         metaDescription: "A geriatric medicine case for medical students: a 79-year-old who has become sleepy, frightened and aggressive over a day and a half. Delirium versus dementia, what to ask, first tests and the causes to find.",
         h1: "Confused over a day and a half, a 79-year-old in a care home: a case to work up",
@@ -2208,7 +2179,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "85-year-old-man-who-keeps-falling": {
-        pendingCheck: true,
         seoTitle: "Repeated Falls in an 85-Year-Old: Practice Case",
         metaDescription: "A geriatric medicine case for medical students: an 85-year-old who lives alone and has fallen about eight times in three months, dizzy each time. What to ask, examination, first tests and the causes.",
         h1: "An 85-year-old who keeps falling: a falls case to work up",
@@ -2262,7 +2232,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "42-year-old-woman-with-eight-days-of-fever-after-cutting-grass": {
-        pendingCheck: true,
         seoTitle: "Eight Days of Fever in a Farm Worker: Case",
         metaDescription: "An infectious disease case for medical students: a farm worker from the hills with eight days of high fever, headache and body aches after the monsoon. What to ask, examination, first tests and the differential.",
         h1: "Eight days of fever after cutting grass, a 42-year-old: a case to work up",
@@ -2319,7 +2288,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "22-year-old-woman-37-weeks-pregnant-with-a-bad-headache": {
-        pendingCheck: true,
         seoTitle: "Severe Headache at 37 Weeks Pregnant: Case",
         metaDescription: "An obstetrics case for medical students: a first-time mother at 37 weeks with a headache since morning, blurred vision and swelling. What to ask, red flags, examination, first tests and the differential.",
         h1: "A bad headache at 37 weeks of pregnancy, a 22-year-old: a case to work up",
@@ -2376,7 +2344,6 @@ const ALL_CASE_GUIDES: Readonly<Record<string, CaseGuide>> = {
     },
 
     "28-year-old-man-with-a-spreading-rash-and-mouth-sores": {
-        pendingCheck: true,
         seoTitle: "Spreading Rash and Mouth Sores: Practice Case",
         metaDescription: "A dermatology emergency case for medical students: a 28-year-old with fever, a painful spreading rash, red eyes and raw mouth sores. What to ask, red flags, examination, first tests and the differential.",
         h1: "A spreading rash and mouth sores in a 28-year-old: a case to work up",
