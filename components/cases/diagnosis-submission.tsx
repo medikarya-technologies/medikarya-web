@@ -72,7 +72,7 @@ export function DiagnosisSubmission(props: DiagnosisSubmissionProps) {
 // ─── Ranked differential (simulation cases) ───────────────────────────────────
 
 const SLOTS = [
-  { label: "Most likely", hint: "Your working diagnosis — the one you would act on now.", placeholder: "Your working diagnosis" },
+  { label: "Most likely", hint: "Your working diagnosis: the one you would act on now.", placeholder: "Your working diagnosis" },
   { label: "Important alternative", hint: "The diagnosis that most plausibly competes with it.", placeholder: "What else could explain this picture?" },
   { label: "Can't miss", hint: "The dangerous diagnosis you must exclude, even if unlikely.", placeholder: "What dangerous diagnosis must you rule out?" },
 ] as const
@@ -412,7 +412,7 @@ function LegacyDiagnosisSubmission({
           </Label>
           <Textarea
             id="supporting-findings"
-            placeholder={`Key history and test results that support your diagnosis — one per line.\ne.g. Profuse watery diarrhoea × 2 days\nRotavirus ELISA positive\nMild hyponatraemia on electrolytes`}
+            placeholder={`Key history and test results that support your diagnosis, one per line.\ne.g. Profuse watery diarrhoea × 2 days\nRotavirus ELISA positive\nMild hyponatraemia on electrolytes`}
             value={supportingFindings}
             onChange={(e) => setSupportingFindings(e.target.value)}
             className="min-h-[80px] resize-none text-sm border-slate-200 focus:border-brand-300"

@@ -44,7 +44,7 @@ export default function DebriefSection() {
 
   return (
     <section className="bg-brand-50 py-20 sm:py-24" ref={ref}>
-      <div className="mx-auto max-w-5xl space-y-16 px-4 sm:space-y-20">
+      <div className="mx-auto max-w-6xl space-y-16 px-4 sm:space-y-20">
         <Moment
           n="03"
           label="Debrief"

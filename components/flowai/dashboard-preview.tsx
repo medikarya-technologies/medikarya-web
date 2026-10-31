@@ -8,7 +8,8 @@
 // real (i.ytimg.com/vi/<id>/hqdefault.jpg, confirmed with curl), but a hotlinked youtube.com/ytimg.com image is
 // exactly the kind of third-party request ad blockers routinely strip, which is likely why it rendered as a flat
 // slate-900 fallback for the user testing this in their own browser. public/demo-thumbnail.jpg is that same real
-// frame, downloaded once and served from this origin, so no blocker can single it out.
+// frame, downloaded once and served from this origin, so no blocker can single it out. Since 2026-10-31 it is the
+// 1280x720 copy (maxresdefault.jpg) rather than the 480x360 one, which was blurry stretched across the frame.
 //
 // Re-added after being cut in the user's own consolidation pass — "watch the whole thing end to end" right
 // after the numbered moments close (debrief-section.tsx's 03/04), before the real-artifact proof section
@@ -73,7 +74,8 @@ export function DashboardPreview() {
           ) : (
             <>
               <img src="/demo-thumbnail.jpg" alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-slate-900/25 transition-colors group-hover:bg-slate-900/15" />
+              {/* The cover is pale, so only a breath of shade: enough to lift the play button, not enough to turn it grey. */}
+              <div className="absolute inset-0 bg-slate-900/5 transition-colors group-hover:bg-transparent" />
               {/* lower left, so it never sits on the title the thumbnail itself carries */}
               <span className="absolute bottom-4 left-4 flex items-center gap-2.5 rounded-full bg-white/95 py-2 pr-4 pl-2 shadow-lg transition-transform group-hover:scale-105 sm:bottom-5 sm:left-5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600">

@@ -260,7 +260,7 @@ export function ECGStrip({ params, criticalFindings }: ECGStripProps) {
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-brand-600" />
           <span className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-            ECG Rhythm Strip — Lead II
+            ECG rhythm strip, lead II
           </span>
         </div>
         <span className="text-[10px] text-slate-400 font-mono">
@@ -273,7 +273,7 @@ export function ECGStrip({ params, criticalFindings }: ECGStripProps) {
         <div className="px-4 py-2 bg-red-50 border-b border-red-200 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
           <span className="text-xs font-semibold text-red-700 leading-snug">
-            CRITICAL: {finding ?? "Abnormal cardiac rhythm — see interpretation"}
+            CRITICAL: {finding ?? "Abnormal cardiac rhythm: see the interpretation"}
           </span>
         </div>
       )}

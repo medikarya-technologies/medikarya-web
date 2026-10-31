@@ -111,7 +111,7 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
   return (
     <div className="overflow-hidden rounded-xl border border-enc-line bg-enc-desk">
       <div className="flex items-center justify-between border-b border-enc-line bg-enc-sheet px-4 py-2.5">
-        <h4 className="text-[10px] font-bold tracking-widest text-enc-ink-3 uppercase">At the bedside</h4>
+        <h4 className="text-[13px] font-semibold text-enc-ink">At the bedside</h4>
         <span className="text-sm font-bold text-enc-ink">
           {bedside.score}
           <span className="text-[10px] font-medium text-enc-ink-3"> / 100</span>
@@ -215,15 +215,15 @@ export function EncounterReview({ sim, examLabels }: { sim: any; examLabels: Rec
 
   return (
     <div className="space-y-6">
-      <dl className="grid grid-cols-3 gap-3 text-center">
+      <dl className="grid grid-cols-3 gap-2 text-center sm:gap-3">
         <div className="rounded-xl border border-enc-line bg-enc-desk p-3">
-          <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold tracking-wide text-enc-ink-3 uppercase">
+          <dt className="flex items-center justify-center gap-1 text-[12px] font-medium text-enc-ink-3">
             <Clock className="h-3 w-3" /> Duration
           </dt>
           <dd className="mt-1 font-mono text-sm font-semibold text-enc-ink">{formatClock(milestones.endedAt ?? 0)}</dd>
         </div>
         <div className="rounded-xl border border-enc-line bg-enc-desk p-3">
-          <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold tracking-wide text-enc-ink-3 uppercase">
+          <dt className="flex items-center justify-center gap-1 text-[12px] font-medium text-enc-ink-3">
             <Zap className="h-3 w-3" /> Orders
           </dt>
           <dd className="mt-1 text-sm font-semibold text-enc-ink">
@@ -232,7 +232,7 @@ export function EncounterReview({ sim, examLabels }: { sim: any; examLabels: Rec
           </dd>
         </div>
         <div className="rounded-xl border border-enc-line bg-enc-desk p-3">
-          <dt className="flex items-center justify-center gap-1 text-[10px] font-semibold tracking-wide text-enc-ink-3 uppercase">
+          <dt className="flex items-center justify-center gap-1 text-[12px] font-medium text-enc-ink-3">
             <Stethoscope className="h-3 w-3" /> {timing.label}
           </dt>
           <dd className="mt-1 font-mono text-sm font-semibold text-enc-ink">{timing.value}</dd>
@@ -246,9 +246,9 @@ export function EncounterReview({ sim, examLabels }: { sim: any; examLabels: Rec
       <Button
         variant="outline"
         onClick={() => setShowTimeline((v) => !v)}
-        className="h-11 w-full gap-2 rounded-xl border-enc-line-strong text-enc-ink-2 font-semibold tracking-wide hover:bg-enc-desk"
+        className="h-11 w-full gap-2 rounded-xl border-enc-line-strong text-enc-ink-2 font-semibold hover:bg-enc-desk"
       >
-        <ListChecks className="h-4 w-4" /> {showTimeline ? "HIDE TIMELINE" : "REVIEW CASE, MINUTE BY MINUTE"}
+        <ListChecks className="h-4 w-4" /> {showTimeline ? "Hide the timeline" : "Go through the case minute by minute"}
       </Button>
       {showTimeline && <EncounterTimeline events={sim.events ?? []} examLabels={examLabels} />}
     </div>

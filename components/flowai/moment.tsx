@@ -36,19 +36,21 @@ export function Moment({
   return (
     <div
       className={cn(
-        "grid items-center gap-10 transition-all duration-700 ease-out sm:grid-cols-2 sm:gap-16",
+        // the screenshot gets the wider column (it is the evidence; the words are a caption to it)
+        "grid items-center gap-10 transition-all duration-700 ease-out md:gap-14",
+        reverse ? "md:grid-cols-[7fr_5fr]" : "md:grid-cols-[5fr_7fr]",
         visible ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0"
       )}
       style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
     >
-      <div className={reverse ? "sm:order-2" : ""}>
+      <div className={reverse ? "md:order-2" : ""}>
         <p className={cn("text-[12.5px] font-bold tracking-widest uppercase", accentClassName)}>
           {n} · {label}
         </p>
         <h3 className="mt-3 text-3xl font-bold tracking-tight text-enc-ink sm:text-4xl">{title}</h3>
         <p className="mt-4 max-w-sm text-[15.5px] leading-relaxed text-enc-ink-2">{text}</p>
       </div>
-      <div className={cn("mx-auto w-full", reverse ? "sm:order-1" : "flex sm:justify-end")}>{children}</div>
+      <div className={cn("mx-auto flex w-full justify-center", reverse ? "md:order-1 md:justify-start" : "md:justify-end")}>{children}</div>
     </div>
   )
 }

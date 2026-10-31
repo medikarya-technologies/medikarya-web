@@ -322,7 +322,7 @@ export function ClinicalEventProvider({
         const availability = engine.policy.availability("socratic_hint")
         if (!availability.available) return { ok: false, reason: "Hints are not available in this case." }
         const hint = selectSocraticHint(config, engine.state.snapshot(), t, shownHintIds(engine.events))
-        if (!hint) return { ok: false, reason: "No new hint right now — keep working the case." }
+        if (!hint) return { ok: false, reason: "No new hint right now. Keep working the case." }
         const result = engine.requestAssist("socratic_hint", t, `${HINT_TARGET_PREFIX}${hint.id}`)
         return result.ok ? { ok: true, hint: hint.hint, cost: result.cost } : { ok: false, reason: "Hints are not available." }
       },
