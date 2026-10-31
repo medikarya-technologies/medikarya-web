@@ -4,6 +4,7 @@ import { toGeminiHistory, type ChatTurn } from "./chatHistory";
 import { caseRules } from "./caseRules";
 import { consciousnessGuidance, speakerKind } from "./consciousnessGuidance";
 import { patientFactsText } from "./patientFacts";
+import { spokenDashes } from "./speech";
 
 export interface CaseResponse {
     response: string;
@@ -53,19 +54,20 @@ You are roleplaying as a patient (or guardian) who has just walked into a doctor
 
 ${compiledMemory}
 
-Write ONE short, emotional, natural sentence that you would say first thing — as if you just sat down across from the doctor.
-- Sound worried, scared, or distressed — like a real person, not a medical report.
+Write ONE short, emotional, natural sentence that you would say first thing, as if you just sat down across from the doctor.
+- Sound worried, scared, or distressed, like a real person, not a medical report.
 - Do NOT introduce yourself by name.
 - Do NOT list all your symptoms. Just express the most dominant feeling or complaint naturally.
-- Example style: "Doctor, please help — my chest hasn't stopped hurting since last night."
+- Example style: "Doctor, please help, my chest hasn't stopped hurting since last night."
 - Example style: "I'm really scared, doctor. My little boy has been vomiting all day and he can't keep anything down."
 - Keep it to ONE sentence only.
+- Do not use dashes; speak the way a person talks.
 `.trim();
 
         try {
             const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) return isGuardian
-                ? `Doctor, please help — something is wrong with my ${caseData.patient.name}.`
+                ? `Doctor, please help, something is wrong with my ${caseData.patient.name}.`
                 : "Doctor, I'm not feeling well at all.";
 
             const genAI = new GoogleGenerativeAI(apiKey);
@@ -76,6 +78,7 @@ Write ONE short, emotional, natural sentence that you would say first thing — 
             // Strip any roleplay prefix like "Patient:" or quotes
             line = line.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
             line = line.replace(/^["']|["']$/g, "").trim();
+            line = spokenDashes(line);
             return line || (isGuardian ? "Doctor, please help my child." : "Doctor, I'm not feeling well.");
         } catch {
             return isGuardian
@@ -177,7 +180,7 @@ ${compiledMemory}
             text = text.replace(/^(patient|mother|father|guardian|me)\s*:\s*/i, "").trim();
             text = text.replace(/^["'""'']|["'""'']$/g, "").trim();
 
-            const finalResponse = text || "I don't know.";
+            const finalResponse = spokenDashes(text) || "I don't know.";
 
             return {
                 response: finalResponse,

@@ -31,7 +31,6 @@ import {
   CheckCircle2,
   Clock,
   FlaskConical,
-  ListChecks,
   Pill,
   Scale,
   ScanSearch,
@@ -40,10 +39,9 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/clarity"
-import { scoreBand } from "@/lib/library/case-library"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { AssistanceAudit, EncounterReview, InfoAccordion, type InfoAccordionItem } from "./debrief-parts"
-import { Celebration, Nav, ProgressHeader, Section, WalkthroughMarkdown } from "./feedback-steps"
+import { Celebration, DiagnosisCompare, Kicker, Nav, ProgressHeader, ScoreRow, Section, SubHeading, WalkthroughMarkdown } from "./feedback-steps"
 
 interface SimulationDebriefProps {
   feedback: any
@@ -65,21 +63,12 @@ interface Step {
 }
 
 const DOMAINS = [
-  { key: "clinical_reasoning", label: "Clinical Reasoning", icon: Brain, bg: "bg-blue-50", text: "text-blue-700" },
-  { key: "investigation_accuracy", label: "Investigation Accuracy", icon: FlaskConical, bg: "bg-violet-50", text: "text-violet-700" },
-  { key: "management", label: "Management", icon: Pill, bg: "bg-indigo-50", text: "text-indigo-700" },
-  { key: "efficiency", label: "Efficiency", icon: Timer, bg: "bg-amber-50", text: "text-amber-700" },
+  { key: "clinical_reasoning", label: "Clinical reasoning", icon: Brain },
+  { key: "investigation_accuracy", label: "Choice of tests", icon: FlaskConical },
+  { key: "management", label: "Management", icon: Pill },
+  { key: "efficiency", label: "Efficiency", icon: Timer },
 ] as const
 
-const BAND_BAR: Record<string, string> = { ok: "bg-enc-ok", warn: "bg-enc-warn", crit: "bg-enc-crit" }
-
-function SubHeading({ children, icon: Icon, tone = "text-enc-ink-3" }: { children: React.ReactNode; icon: React.ElementType; tone?: string }) {
-  return (
-    <p className={cn("mb-3 mt-6 flex items-center gap-1.5 border-t border-enc-line pt-6 text-[11px] font-bold uppercase tracking-widest", tone)}>
-      <Icon className="h-3.5 w-3.5" /> {children}
-    </p>
-  )
-}
 
 export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizStart, mode = "live", guestMode = false, onReport }: SimulationDebriefProps) {
   const sim = feedback.simulation
@@ -137,7 +126,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
         {
           id: "takeaway",
           icon: BookOpen,
-          title: "Clinical Takeaway",
+          title: "Clinical takeaway",
           teaser: "Key points to remember from this case",
           content: (
             <ul className="space-y-3">
@@ -156,56 +145,44 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
   const steps: Step[] = [
     {
       key: "outcome",
-      title: "Case Outcome",
+      title: "Case outcome",
       icon: Activity,
       content: (
         <div className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-enc-desk border border-enc-line">
-            <p className="text-enc-ink-3 text-xs uppercase tracking-wide font-semibold mb-1">You Suspected</p>
-            <p className="text-base font-medium text-enc-ink">{sim.diagnosis?.studentDiagnosis || "No diagnosis provided"}</p>
-          </div>
-          <div className="p-3.5 rounded-xl bg-enc-desk border border-enc-line">
-            <p className="text-enc-ink-3 text-xs uppercase tracking-wide font-semibold mb-1">Actual Diagnosis</p>
-            <p className="text-base font-medium text-brand-600 flex items-center gap-2">
-              {sim.diagnosis?.groundTruth}
-              {sim.diagnosis?.isCorrect && <CheckCircle2 className="w-4 h-4 text-enc-ok" />}
-            </p>
-          </div>
-          <p className="text-enc-ink-3 italic text-sm">
-            Let's calmly walk through how your reasoning unfolded and identify key decision points.
-          </p>
+          <DiagnosisCompare yours={sim.diagnosis?.studentDiagnosis} actual={sim.diagnosis?.groundTruth ?? ""} correct={!!sim.diagnosis?.isCorrect} />
+          <p className="text-sm text-enc-ink-3">Next: what you did well, what you missed, and why it mattered.</p>
         </div>
       ),
     },
     {
       key: "decisions",
-      title: "What You Did Well & Decision Consequences",
+      title: "What you did, and what you missed",
       icon: Scale,
       content: (
         <div>
           <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_1.6fr]">
             <div>
-              <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-enc-ok">
-                <CheckCircle2 className="h-3.5 w-3.5" /> What you did well
-              </p>
+              <h3 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-enc-ok">
+                <CheckCircle2 className="h-4 w-4" /> What you did well
+              </h3>
               {didWell.length > 0 ? (
                 <div className="space-y-2.5">
                   {didWell.map((text, i) => (
                     <div key={i} className="flex items-start gap-2.5 rounded-xl bg-enc-ok-soft p-3.5">
                       <CheckCircle2 className="w-4 h-4 text-enc-ok mt-0.5 shrink-0" />
-                      <span className="text-sm font-medium text-enc-ok">{text}</span>
+                      <span className="text-sm text-enc-ink">{text}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-enc-ink-2">No specific strengths noted, but that's okay! We learn from every case.</p>
+                <p className="text-sm text-enc-ink-2">Nothing stood out as a strength this time.</p>
               )}
             </div>
 
             <div>
-              <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-enc-crit">
-                <XCircle className="h-3.5 w-3.5" /> What you missed
-              </p>
+              <h3 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-enc-crit">
+                <XCircle className="h-4 w-4" /> What you missed
+              </h3>
               {missed.length > 0 ? (
                 <div className="space-y-2.5">
                   {missed.map((m, i) => (
@@ -215,7 +192,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
                         <span className={cn("text-sm", m.critical ? "text-enc-crit" : "text-enc-warn")}>
                           {m.text}
                           {m.critical && (
-                            <span className="ml-2 rounded bg-enc-sheet px-1.5 py-0.5 align-middle text-[10px] font-bold tracking-wider text-enc-crit uppercase">
+                            <span className="ml-2 rounded bg-enc-sheet px-1.5 py-0.5 align-middle text-[11px] font-semibold text-enc-crit">
                               critical
                             </span>
                           )}
@@ -247,7 +224,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
                   </div>
                 </div>
                 <div className="p-3.5 rounded-xl bg-enc-desk border border-enc-line">
-                  <p className="text-enc-ink-3 text-xs uppercase tracking-wide font-semibold mb-1">Why It Mattered</p>
+                  <Kicker>Why it mattered</Kicker>
                   <p className="text-enc-ink-2 leading-relaxed text-sm">{sim.reasoningError.whyItMattered}</p>
                 </div>
                 {sim.otherErrors?.length > 0 && (
@@ -272,7 +249,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
       ? [
           {
             key: "difference",
-            title: "Why the Difference?",
+            title: "Why the two scores differ",
             icon: Scale,
             content: <AssistanceAudit clinical={clinical} independent={independent} cost={cost} assistance={assistance} />,
           } satisfies Step,
@@ -280,7 +257,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
       : []),
     {
       key: "review",
-      title: "Review the Encounter",
+      title: "Review the encounter",
       icon: Clock,
       content: (
         <div className="space-y-5">
@@ -290,7 +267,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
           {expertImpressions.length > 0 && (
             <>
               <SubHeading icon={ScanSearch} tone="text-brand-700">Expert interpretations</SubHeading>
-              <p className="text-xs text-enc-ink-3 italic -mt-1 mb-2">Shown to every student, whether or not you asked for an interpretation during the case.</p>
+              <p className="text-xs text-enc-ink-3 -mt-1 mb-2">Shown to every student, whether or not you asked for an interpretation during the case.</p>
               <div className="space-y-2.5">
                 {expertImpressions.map((x) => (
                   <div key={x.testId} className="p-3.5 rounded-xl bg-brand-50 border border-brand-100">
@@ -314,7 +291,7 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
                       <BookOpen className="h-3.5 w-3.5" />
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-enc-ink">Expert Walkthrough</p>
+                      <p className="text-sm font-semibold text-enc-ink">Expert walkthrough</p>
                       <p className="text-xs font-normal text-enc-ink-3">How an expert would approach this case</p>
                     </div>
                   </div>
@@ -332,81 +309,49 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
     },
     {
       key: "additional",
-      title: "Performance Summary",
+      title: "Performance summary",
       icon: Award,
       content: (
         <div className="space-y-5">
-          {/* Scores — always shown inline, never collapsed */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-enc-desk p-4 rounded-xl border border-enc-line flex flex-col items-center text-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2 opacity-5">
-                <Award className="w-12 h-12 text-enc-ink" />
-              </div>
-              <span className="text-enc-ink-3 text-[10px] font-bold uppercase tracking-widest mb-1.5">Clinical Score</span>
-              <div className="flex items-baseline gap-0.5">
-                <span className="text-4xl font-bold text-enc-ink tracking-tighter tabular-nums">{clinical}</span>
-                <span className="text-enc-ink-3 text-base font-medium">/100</span>
-              </div>
-              <span className="mt-1.5 text-[11px] text-enc-ink-3">What you did</span>
+          {/* Two scores: what you did, and what you did without help. Side by side, the same weight, so neither reads
+              as the "real" one. */}
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-enc-line bg-enc-desk">
+            <div className="px-5 py-4">
+              <Kicker>Clinical score</Kicker>
+              <p className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold tracking-tighter text-enc-ink tabular-nums">{clinical}</span>
+                <span className="text-base font-medium text-enc-ink-3">/ 100</span>
+              </p>
+              <p className="mt-1 text-[12px] text-enc-ink-3">What you did</p>
             </div>
-            <div className="bg-brand-600 p-4 rounded-xl flex flex-col items-center text-center relative overflow-hidden shadow-md shadow-brand-600/20">
-              <div className="absolute top-0 right-0 p-2 opacity-10 text-white">
-                <Activity className="w-12 h-12" />
-              </div>
-              <span className="text-brand-200 text-[10px] font-bold uppercase tracking-widest mb-1.5">Independent Score</span>
-              <div className="flex items-baseline gap-0.5">
-                <span className="text-4xl font-bold text-white tracking-tighter tabular-nums">{independent}</span>
-                <span className="text-brand-200 text-base font-medium">/100</span>
-              </div>
-              <span className="mt-1.5 text-[11px] text-brand-200">{cost > 0 ? `Without help (−${cost})` : "No assistance used"}</span>
+            <div className="border-l border-enc-line px-5 py-4">
+              <Kicker>Independent score</Kicker>
+              <p className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold tracking-tighter text-enc-ink tabular-nums">{independent}</span>
+                <span className="text-base font-medium text-enc-ink-3">/ 100</span>
+              </p>
+              <p className="mt-1 text-[12px] text-enc-ink-3">{cost > 0 ? `Without help (−${cost})` : "No help used"}</p>
             </div>
           </div>
 
           {feedback.xpEarned !== undefined && (
-            <div className="flex items-center justify-center gap-2 text-sm text-enc-ink-3">
-              <Award className="h-3.5 w-3.5 text-amber-500" />
-              <span className="font-semibold text-enc-ink">+{feedback.xpEarned} XP</span> earned from your Clinical score
-            </div>
+            <p className="text-center text-sm text-enc-ink-3">
+              <span className="font-semibold text-brand-700">+{feedback.xpEarned} XP</span>, from your clinical score
+            </p>
           )}
 
-          {/* Domain bars — always inline */}
-          <div className="bg-enc-desk rounded-xl border border-enc-line overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-enc-line bg-enc-sheet">
-              <h4 className="text-[10px] font-bold text-enc-ink-3 uppercase tracking-widest">Performance by area</h4>
-            </div>
-            <div className="p-1.5 space-y-0.5">
-              {DOMAINS.map(({ key, label, icon: Icon, bg, text }) => {
-                const score: number = sim.domains?.[key] ?? 0
-                return (
-                  <div key={key} className="p-2.5 rounded-lg hover:bg-enc-sheet transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className={`p-1 rounded-md ${bg} ${text}`}>
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-sm font-medium text-enc-ink-2">{label}</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="font-bold text-enc-ink tabular-nums text-sm">{score}</span>
-                        <span className="text-[10px] text-enc-ink-3 font-medium uppercase">/ 100</span>
-                      </div>
-                    </div>
-                    <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-enc-line">
-                      <div className={cn("h-full rounded-full", BAND_BAR[scoreBand(score)])} style={{ width: `${score}%` }} />
-                    </div>
-                  </div>
-                )
-              })}
-
+          <div className="overflow-hidden rounded-xl border border-enc-line bg-enc-sheet">
+            <h4 className="border-b border-enc-line bg-enc-desk px-4 py-2.5 text-[13px] font-semibold text-enc-ink">Score by area</h4>
+            <div className="divide-y divide-enc-line">
+              {DOMAINS.map(({ key, label, icon }) => (
+                <ScoreRow key={key} label={label} icon={icon} score={sim.domains?.[key] ?? 0} max={100} />
+              ))}
               {safetyCount > 0 && (
-                <div className="mt-1 p-2.5 rounded-lg bg-enc-crit-soft flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-1 rounded-md bg-enc-sheet text-enc-crit">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="text-sm font-bold text-enc-crit">Unsafe interventions</span>
-                  </div>
-                  <span className="font-black text-enc-crit">{safetyCount}</span>
+                <div className="flex items-center justify-between bg-enc-crit-soft px-4 py-3">
+                  <span className="flex items-center gap-2.5 text-sm font-semibold text-enc-crit">
+                    <AlertTriangle className="h-4 w-4" /> Unsafe interventions
+                  </span>
+                  <span className="font-bold text-enc-crit tabular-nums">{safetyCount}</span>
                 </div>
               )}
             </div>

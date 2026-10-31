@@ -8,12 +8,10 @@ import {
   Activity,
   FlaskConical,
   Brain,
-  ArrowRight,
   Award,
   BookOpen,
   Clock,
   Scale,
-  PartyPopper,
   AlertTriangle,
   Network,
   Stethoscope,
@@ -22,10 +20,9 @@ import {
 } from "lucide-react";
 import { trackEvent } from "@/lib/clarity";
 import dynamic from "next/dynamic";
-import { cn } from "@/lib/utils";
 import { fluidActionLabels } from "@/lib/simulation/fluid-infusion";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { WalkthroughMarkdown, ProgressHeader, Nav, Section, Celebration } from "./feedback-steps";
+import { WalkthroughMarkdown, ProgressHeader, Nav, Section, Celebration, DiagnosisCompare, Kicker, ScoreRow, SubHeading } from "./feedback-steps";
 import type { InfoAccordionItem } from "./debrief-parts";
 
 // Only simulation results use the clinical debrief; keep it out of the classic review's bundle.
@@ -38,14 +35,6 @@ const AssistanceAudit = dynamic(() => import("./debrief-parts").then((m) => m.As
 const EncounterReview = dynamic(() => import("./debrief-parts").then((m) => m.EncounterReview), { ssr: false });
 const InfoAccordion = dynamic(() => import("./debrief-parts").then((m) => m.InfoAccordion), { ssr: false });
 const BedsideSummary = dynamic(() => import("./debrief-parts").then((m) => m.BedsideSummary), { ssr: false });
-
-function SubHeading({ children, icon: Icon, tone = "text-enc-ink-3" }: { children: React.ReactNode; icon: React.ElementType; tone?: string }) {
-  return (
-    <p className={cn("mb-3 mt-6 flex items-center gap-1.5 border-t border-enc-line pt-6 text-[11px] font-bold uppercase tracking-widest", tone)}>
-      <Icon className="h-3.5 w-3.5" /> {children}
-    </p>
-  );
-}
 
 interface CaseFeedbackProps {
   feedback: any
@@ -80,24 +69,11 @@ function ConsequenceItem({ action, effect, outcome, type, isLast }: { action: st
         {!isLast && <div className={`w-0.5 flex-1 my-1 rounded-full ${c.thread}`} />}
       </div>
 
-      <div className={`flex-1 p-4 rounded-xl ${c.bg} flex flex-col gap-3 mb-6 last:mb-0`}>
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-enc-ink-3 mb-0.5 block">Decision</span>
-          <p className={`text-sm font-bold ${c.text} leading-tight`}>{action}</p>
-        </div>
+      <div className={`flex-1 p-4 rounded-xl ${c.bg} flex flex-col gap-2 mb-4 last:mb-0`}>
+        <p className={`text-sm font-bold ${c.text} leading-snug`}>{action}</p>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-start gap-2.5">
-            <ArrowRight className="w-3.5 h-3.5 text-enc-ink-3 mt-0.5 flex-shrink-0" />
-            <p className={`text-xs ${c.text} opacity-90 leading-normal`}>{effect}</p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <ArrowRight className="w-3.5 h-3.5 text-enc-ink-3 flex-shrink-0" />
-            <div className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-enc-sheet ${c.text}`}>
-              {outcome}
-            </div>
-          </div>
-        </div>
+        <p className="text-[13px] leading-normal text-enc-ink-2">{effect}</p>
+        <span className={`self-start rounded-md bg-enc-sheet px-2 py-0.5 text-[12px] font-semibold tabular-nums ${c.text}`}>{outcome}</span>
       </div>
     </div>
   )
@@ -176,19 +152,24 @@ function LegacyCaseFeedback({
   // --- Build Decision Consequence Chain ---
   const consequenceChain: Array<{action: string, effect: string, outcome: string, type: 'success'|'warning'|'danger'}> = [];
 
+  // The outcome line quotes the real points from the breakdown on the last step, so the two can never disagree.
+  const pts = (v: unknown) => (typeof v === "number" ? (Number.isInteger(v) ? String(v) : v.toFixed(1)) : "0");
+
   try {
     if (feedback.isCorrect) {
       consequenceChain.push({
-        action: "Synthesised clinical findings accurately",
-        effect: `Correctly identified ${resolvedCorrectDiagnosis}`,
-        outcome: "+15 Diagnosis Score",
+        action: "Put the findings together correctly",
+        effect: `You reached ${resolvedCorrectDiagnosis}.`,
+        outcome: `Diagnosis ${pts(feedback.diagnosisScore)} of 15`,
         type: "success"
       });
     } else {
       consequenceChain.push({
-        action: "Misinterpreted clinical findings",
-        effect: `Diagnosed ${feedback.studentDiagnosis || "unknown"} instead of ${resolvedCorrectDiagnosis}`,
-        outcome: "0 Diagnosis Score",
+        action: "The findings pointed somewhere else",
+        effect: feedback.studentDiagnosis
+          ? `You diagnosed ${feedback.studentDiagnosis}; the case was ${resolvedCorrectDiagnosis}.`
+          : `No diagnosis was given; the case was ${resolvedCorrectDiagnosis}.`,
+        outcome: `Diagnosis ${pts(feedback.diagnosisScore)} of 15`,
         type: "danger"
       });
     }
@@ -197,9 +178,9 @@ function LegacyCaseFeedback({
     if (feedback.missedRedFlags && feedback.missedRedFlags.length > 0) {
       feedback.missedRedFlags.forEach((flag: string) => {
         consequenceChain.push({
-          action: `Missed red flag: ${flag.replace(/_/g, " ")}`,
-          effect: "Failed to rule out critical differential or complication",
-          outcome: "-5 Safety Penalty",
+          action: `Missed a red flag: ${flag.replace(/_/g, " ")}`,
+          effect: "A dangerous cause or complication was left unexcluded.",
+          outcome: "5 points off for safety",
           type: "danger"
         });
       });
@@ -210,25 +191,25 @@ function LegacyCaseFeedback({
 
     if (unnecessaryTests > 0) {
       consequenceChain.push({
-        action: `Ordered ${unnecessaryTests} unnecessary investigation(s)`,
-        effect: "Wasted clinical resources and potential patient discomfort",
-        outcome: "Reduced Testing Score",
+        action: unnecessaryTests === 1 ? "Ordered a test the case did not need" : `Ordered ${unnecessaryTests} tests the case did not need`,
+        effect: "Each one costs the patient time, money or discomfort without changing the plan.",
+        outcome: `Tests ${pts(feedback.testingScore)} of 20`,
         type: "warning"
       });
     }
 
     if (missedTests && missedTests.length > 0) {
       consequenceChain.push({
-        action: `Failed to order core investigation(s)`,
-        effect: "Diagnosis lacked sufficient objective evidence",
-        outcome: "Reduced Testing Score",
+        action: "Left out a key investigation",
+        effect: "The diagnosis rested on less objective evidence than it needed.",
+        outcome: `Tests ${pts(feedback.testingScore)} of 20`,
         type: "warning"
       });
     } else if (appropriateTests > 0 && unnecessaryTests === 0) {
        consequenceChain.push({
-         action: "Ordered highly targeted investigations",
-         effect: "Validates hypotheses efficiently without waste",
-         outcome: "Max Testing Score",
+         action: "Ordered only the tests that mattered",
+         effect: "Nothing was wasted, and nothing essential was left out.",
+         outcome: `Tests ${pts(feedback.testingScore)} of 20`,
          type: "success"
        })
     }
@@ -236,16 +217,16 @@ function LegacyCaseFeedback({
     // History Quality
     if (feedback.historyScore >= 20) {
       consequenceChain.push({
-        action: "Conducted thorough history taking",
-        effect: "Gathered strong clinical evidence prior to tests",
-        outcome: "Max History Score",
+        action: "Took a thorough history",
+        effect: "You had most of the story before ordering anything.",
+        outcome: `History ${pts(feedback.historyScore)} of 25`,
         type: "success"
       });
     } else if (feedback.historyScore < 15) {
       consequenceChain.push({
-        action: "Conducted incomplete patient history",
-        effect: "Proceeded with limited clinical context",
-        outcome: "Low History Score",
+        action: "The history left gaps",
+        effect: "You moved on with less of the story than the case needed.",
+        outcome: `History ${pts(feedback.historyScore)} of 25`,
         type: "warning"
       });
     }
@@ -261,15 +242,15 @@ function LegacyCaseFeedback({
   if (consequenceChain.length === 0) {
     consequenceChain.push(
       {
-        action: "Completed Clinical Evaluation",
-        effect: "Structured metrics derived from history and diagnosis",
-        outcome: "Evaluation Generated",
+        action: "Your assessment was scored",
+        effect: "The breakdown on the last step shows where the points came from.",
+        outcome: `${pts(feedback.score)} of 100`,
         type: "success"
       },
       {
-        action: "Submitted Final Diagnosis",
-        effect: "Review your detailed diagnostic breakdown below",
-        outcome: "Review Recommended",
+        action: "Your diagnosis was submitted",
+        effect: feedback.studentDiagnosis ? `You diagnosed ${feedback.studentDiagnosis}.` : "No diagnosis was given.",
+        outcome: `Diagnosis ${pts(feedback.diagnosisScore)} of 15`,
         type: "warning"
       }
     )
@@ -285,58 +266,43 @@ function LegacyCaseFeedback({
   // full rationale — both flows share the same restructuring.
   const steps = [
     {
-      title: "Case Outcome",
+      title: "Case outcome",
       icon: Activity,
       content: (
         <div className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-enc-desk border border-enc-line">
-            <p className="text-enc-ink-3 text-xs uppercase tracking-wide font-semibold mb-1">You Suspected</p>
-            <p className="text-base font-medium text-enc-ink">
-              {feedback.studentDiagnosis || "No diagnosis provided"}
-            </p>
-          </div>
-          <div className="p-3.5 rounded-xl bg-enc-desk border border-enc-line">
-            <p className="text-enc-ink-3 text-xs uppercase tracking-wide font-semibold mb-1">Actual Diagnosis</p>
-            <p className="text-base font-medium text-brand-600 flex items-center gap-2">
-              {resolvedCorrectDiagnosis}
-              {feedback.isCorrect && <CheckCircle2 className="w-4 h-4 text-enc-ok" />}
-            </p>
-          </div>
-          <p className="text-enc-ink-3 italic text-sm">
-            Let's calmly walk through how your reasoning unfolded and identify key decision points.
-          </p>
+          <DiagnosisCompare yours={feedback.studentDiagnosis} actual={resolvedCorrectDiagnosis} correct={!!feedback.isCorrect} />
+          <p className="text-sm text-enc-ink-3">Next: what you did, and what each choice led to.</p>
         </div>
       ),
     },
     {
-      title: "What You Did Well & Decision Consequences",
+      title: "What you did, and what it led to",
       icon: Network,
       content: (
         <div>
           <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_1.6fr]">
             <div>
-              <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-enc-ok">
-                <CheckCircle2 className="h-3.5 w-3.5" /> What you did well
-              </p>
+              <h3 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-enc-ok">
+                <CheckCircle2 className="h-4 w-4" /> What you did well
+              </h3>
               {feedback.feedback.strengths && feedback.feedback.strengths.length > 0 ? (
                 <div className="space-y-2.5">
                   {feedback.feedback.strengths.map((str: string, i: number) => (
                     <div key={i} className="flex items-start gap-2.5 rounded-xl bg-enc-ok-soft p-3.5">
                       <CheckCircle2 className="w-4 h-4 text-enc-ok mt-0.5 shrink-0" />
-                      <span className="text-sm font-medium text-enc-ok">{str.replace(/✅/g, '').trim()}</span>
+                      <span className="text-sm text-enc-ink">{str.replace(/✅/g, '').trim()}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-enc-ink-2">No specific strengths noted, but that's okay! We learn from every case.</p>
+                <p className="text-sm text-enc-ink-2">Nothing stood out as a strength this time. The choices on the right show where the points went.</p>
               )}
             </div>
 
             <div>
-              <p className="mb-1 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-enc-ink-3">
-                <Network className="h-3.5 w-3.5" /> Decision consequences
-              </p>
-              <p className="text-xs text-enc-ink-3 mb-3 italic">Tracing the impact of your clinical actions:</p>
+              <h3 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-enc-ink">
+                <Network className="h-4 w-4 text-enc-ink-3" /> Your choices and what they cost or earned
+              </h3>
               <div>
                 {consequenceChain.map((item, i) => (
                   <ConsequenceItem
@@ -352,7 +318,7 @@ function LegacyCaseFeedback({
           {filteredMissedTests.length > 0 && (
             <>
               <SubHeading icon={FlaskConical} tone="text-brand-700">Tests you should have considered</SubHeading>
-              <p className="mb-2.5 text-sm">Consider ordering these tests to narrow down your differential:</p>
+              <p className="mb-2.5 text-sm">These would have narrowed your differential:</p>
               <div className="flex flex-wrap gap-2">
                 {filteredMissedTests.map((test: string, i: number) => (
                   <div key={i} className="px-2.5 py-1 rounded-lg bg-brand-50 text-brand-700 font-medium text-sm border border-brand-100">
@@ -370,9 +336,9 @@ function LegacyCaseFeedback({
                 <div className="flex items-start gap-2.5">
                   <AlertTriangle className="w-4 h-4 text-enc-crit shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-semibold text-enc-ink mb-0.5 text-sm">Safety Penalty Applied</h4>
+                    <h4 className="font-semibold text-enc-ink mb-0.5 text-sm">Safety penalty</h4>
                     <p className="text-sm text-enc-ink-2 leading-relaxed mb-2.5">
-                      You failed to ask about critical "red flag" symptoms that were essential to rule out life-threatening conditions. A 5-point penalty was applied for each missed flag.
+                      You did not ask about these red flags, and they are how the life-threatening causes are ruled out. Each one missed costs 5 points.
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {feedback.missedRedFlags.map((flag: string, i: number) => (
@@ -396,7 +362,7 @@ function LegacyCaseFeedback({
     {
       id: "takeaway",
       icon: BookOpen,
-      title: "Clinical Takeaway",
+      title: "Clinical takeaway",
       teaser: "Key points to remember from this case",
       content: (
         <div className="space-y-4">
@@ -426,90 +392,44 @@ function LegacyCaseFeedback({
 
   const performanceSummaryContent = (
     <div className="space-y-5">
-      {/* Scores — always shown inline, never collapsed */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-enc-desk p-4 rounded-xl border border-enc-line flex flex-col items-center text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-2 opacity-5">
-            <Award className="w-12 h-12 text-enc-ink" />
-          </div>
-          <span className="text-enc-ink-3 text-[10px] font-bold uppercase tracking-widest mb-1.5">Total Score</span>
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-4xl font-bold text-enc-ink tracking-tighter">{feedback.score}</span>
-            <span className="text-enc-ink-3 text-base font-medium">/100</span>
-          </div>
+      {/* The total leads; XP is the smaller, secondary number beside it. */}
+      <div className="flex items-end justify-between gap-4 rounded-xl border border-enc-line bg-enc-desk px-5 py-4">
+        <div>
+          <Kicker>Total score</Kicker>
+          <p className="flex items-baseline gap-1">
+            <span className="text-5xl font-bold tracking-tighter text-enc-ink tabular-nums">{feedback.score}</span>
+            <span className="text-base font-medium text-enc-ink-3">/ 100</span>
+          </p>
         </div>
-        <div className="bg-brand-600 p-4 rounded-xl flex flex-col items-center text-center relative overflow-hidden shadow-md shadow-brand-600/20">
-           <div className="absolute top-0 right-0 p-2 opacity-10 text-white">
-            <Activity className="w-12 h-12" />
-          </div>
-          <span className="text-brand-200 text-[10px] font-bold uppercase tracking-widest mb-1.5">XP Gained</span>
-          <span className="text-4xl font-bold text-white tracking-tighter">
-            +{feedback.xpEarned !== undefined ? feedback.xpEarned : (feedback.isCorrect ? (caseData.xpReward || 50) : Math.floor((caseData.xpReward || 50) * 0.2))}
-          </span>
-        </div>
+        <p className="rounded-lg bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-700 tabular-nums">
+          +{feedback.xpEarned !== undefined ? feedback.xpEarned : (feedback.isCorrect ? (caseData.xpReward || 50) : Math.floor((caseData.xpReward || 50) * 0.2))} XP
+        </p>
       </div>
 
       {/* A live case: what was given at the bedside, and when */}
       {simulation?.bedside && <BedsideSummary bedside={simulation.bedside} total={feedback.score} />}
 
-      {/* Score Breakdown Table */}
-      <div className="bg-enc-desk rounded-xl border border-enc-line overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-enc-line bg-enc-sheet">
-          <h4 className="text-[10px] font-bold text-enc-ink-3 uppercase tracking-widest">Performance Metrics</h4>
-        </div>
-        <div className="p-1.5 space-y-0.5">
-          {[
-            { label: "Clinical Reasoning", score: feedback.reasoningScore, max: 30, icon: Brain, bg: "bg-blue-50", text: "text-blue-700" },
-            { label: "History Taking", score: feedback.historyScore, max: 25, icon: MessageSquare, bg: "bg-amber-50", text: "text-amber-700" },
-            { label: "Diagnostic Accuracy", score: feedback.diagnosisScore, max: 15, icon: Stethoscope, bg: "bg-emerald-50", text: "text-emerald-700" },
-            { label: "Test Strategy", score: feedback.testingScore, max: 20, icon: FlaskConical, bg: "bg-violet-50", text: "text-violet-700" },
-            { label: "Management Plan", score: feedback.managementScore, max: 10, icon: Pill, bg: "bg-indigo-50", text: "text-indigo-700" },
-          ].map((m, i) => (
-            <div key={i} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-enc-sheet transition-colors">
-              <div className="flex items-center gap-2.5">
-                <div className={`p-1 rounded-md ${m.bg} ${m.text}`}>
-                  <m.icon className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-sm font-medium text-enc-ink-2">{m.label}</span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="font-bold text-enc-ink text-sm">{m.score}</span>
-                <span className="text-[10px] text-enc-ink-3 font-medium uppercase">/ {m.max}</span>
-              </div>
-            </div>
-          ))}
-
+      {/* Where the points came from */}
+      <div className="overflow-hidden rounded-xl border border-enc-line bg-enc-sheet">
+        <h4 className="border-b border-enc-line bg-enc-desk px-4 py-2.5 text-[13px] font-semibold text-enc-ink">Score by area</h4>
+        <div className="divide-y divide-enc-line">
+          <ScoreRow label="Clinical reasoning" icon={Brain} score={feedback.reasoningScore} max={30} />
+          <ScoreRow label="History taking" icon={MessageSquare} score={feedback.historyScore} max={25} />
+          <ScoreRow label="Diagnosis" icon={Stethoscope} score={feedback.diagnosisScore} max={15} />
+          <ScoreRow label="Choice of tests" icon={FlaskConical} score={feedback.testingScore} max={20} />
+          <ScoreRow label="Management plan" icon={Pill} score={feedback.managementScore} max={10} />
           {feedback.safetyPenalty > 0 && (
-            <div className="mt-1 p-2.5 rounded-lg bg-enc-crit-soft flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1 rounded-md bg-enc-sheet text-enc-crit">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-sm font-bold text-enc-crit">Safety Penalties</span>
-              </div>
-              <span className="font-black text-enc-crit">-{feedback.safetyPenalty}</span>
+            <div className="flex items-center justify-between bg-enc-crit-soft px-4 py-3">
+              <span className="flex items-center gap-2.5 text-sm font-semibold text-enc-crit">
+                <AlertTriangle className="h-4 w-4" /> Safety penalties
+              </span>
+              <span className="font-bold text-enc-crit tabular-nums">−{feedback.safetyPenalty}</span>
             </div>
           )}
         </div>
-      </div>
-
-      <div className="px-1 space-y-1.5">
-        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-enc-ink-3">
-          <span>Investigation Accuracy</span>
-          <span className="text-enc-ink-2">
-            {feedback.feedback.testingEfficiency.appropriateTests} Hit / {feedback.feedback.testingEfficiency.unnecessaryTests} Miss
-          </span>
-        </div>
-        <div className="h-1 rounded-full bg-enc-line overflow-hidden flex">
-          <div
-            className="h-full bg-enc-ok"
-            style={{ width: `${(feedback.feedback.testingEfficiency.appropriateTests / (feedback.feedback.testingEfficiency.appropriateTests + feedback.feedback.testingEfficiency.unnecessaryTests + 0.1)) * 100}%` }}
-          />
-          <div
-            className="h-full bg-enc-crit"
-            style={{ width: `${(feedback.feedback.testingEfficiency.unnecessaryTests / (feedback.feedback.testingEfficiency.appropriateTests + feedback.feedback.testingEfficiency.unnecessaryTests + 0.1)) * 100}%` }}
-          />
-        </div>
+        <p className="border-t border-enc-line px-4 py-2.5 text-[12px] text-enc-ink-3">
+          Tests: {feedback.feedback.testingEfficiency.appropriateTests} useful, {feedback.feedback.testingEfficiency.unnecessaryTests} not needed.
+        </p>
       </div>
 
       {/* References Section */}
@@ -540,7 +460,7 @@ function LegacyCaseFeedback({
     const cost: number = simulation.assistanceCost ?? 0;
     if (cost > 0 && simulation.assistance?.length > 0) {
       steps.push({
-        title: "Why the Difference?",
+        title: "Why the two scores differ",
         icon: Scale,
         content: (
           <AssistanceAudit
@@ -568,7 +488,7 @@ function LegacyCaseFeedback({
   // step opens on the numbers, not a wall of authored text.
   if (reviewContent || caseData.walkthrough) {
     steps.push({
-      title: reviewContent ? "Review the Encounter" : "Expert Walkthrough",
+      title: reviewContent ? "Review the encounter" : "Expert walkthrough",
       icon: reviewContent ? Clock : Brain,
       content: (
         <div className="space-y-5">
@@ -582,7 +502,7 @@ function LegacyCaseFeedback({
                       <BookOpen className="h-3.5 w-3.5" />
                     </span>
                     <div>
-                      <p className="text-sm font-semibold text-enc-ink">Expert Walkthrough</p>
+                      <p className="text-sm font-semibold text-enc-ink">Expert walkthrough</p>
                       <p className="text-xs font-normal text-enc-ink-3">How an expert would approach this case</p>
                     </div>
                   </div>
@@ -602,7 +522,7 @@ function LegacyCaseFeedback({
 
   // Performance Summary — always shown inline; only Clinical Takeaway inside it collapses.
   steps.push({
-    title: "Performance Summary",
+    title: "Performance summary",
     icon: Award,
     content: performanceSummaryContent,
   });

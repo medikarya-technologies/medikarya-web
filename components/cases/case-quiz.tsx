@@ -400,7 +400,7 @@ export function CaseQuiz({
                     </h2>
                     <p className="text-slate-500 text-sm leading-relaxed mb-8 max-w-sm">
                       We couldn&apos;t generate personalized questions right now.
-                      Don&apos;t worry — your case evaluation has been saved.
+                      Don&apos;t worry, your case evaluation has been saved.
                     </p>
                     <Button
                       onClick={onSkip}
@@ -920,7 +920,7 @@ export function CaseQuiz({
                         size="sm"
                         className="rounded-full bg-violet-600 hover:bg-violet-700 text-white px-5 flex-shrink-0 shadow-sm"
                       >
-                        <Link href="/signup">Create Free Account</Link>
+                        <Link href="/signup">Create a free account</Link>
                       </Button>
                     </div>
                   )}

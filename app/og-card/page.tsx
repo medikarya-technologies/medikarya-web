@@ -22,7 +22,7 @@ const FREE_CASE = { id: "2-year-old-boy-with-vomiting-and-watery-diarrhea", age:
 
 const EXCHANGE: Array<{ from: "patient" | "student"; text: string }> = [
   { from: "student", text: "How long has he been vomiting?" },
-  { from: "patient", text: "Since yesterday afternoon — no blood, just everything he's eaten." },
+  { from: "patient", text: "Since yesterday afternoon. No blood, just everything he's eaten." },
 ]
 
 function Bubble({ from, text }: { from: "patient" | "student"; text: string }) {

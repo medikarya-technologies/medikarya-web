@@ -173,7 +173,7 @@ export function EmergencyInterveneModal({ open, onOpenChange }: Props) {
             Emergency interventions
           </DialogTitle>
           <DialogDescription className="text-xs text-enc-ink-2">
-            Actions take effect immediately. Read what happens — every drug has a context.
+            Actions take effect immediately. Read what happens: every drug has a context.
           </DialogDescription>
         </DialogHeader>
 

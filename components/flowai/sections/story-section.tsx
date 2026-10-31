@@ -34,9 +34,9 @@ export default function StorySection() {
 
   return (
     <section id="story" className="bg-brand-50 py-24 sm:py-32" ref={ref}>
-      <div className="mx-auto max-w-5xl space-y-20 px-4 sm:space-y-28">
+      <div className="mx-auto max-w-6xl space-y-20 px-4 sm:space-y-28">
         <Moment n="01" label="History" title="You don't get the diagnosis." text="You ask. The patient answers in their own words, and the story shifts with every question." reverse={false} visible={isVisible} delay={0} accentClassName="text-brand-600">
-          <Screenshot src="/screens/encounter-mother-rohan.png" alt="Real encounter chat: a worried mother describing her son's three days of vomiting to the student doctor" />
+          <Screenshot src="/screens/encounter-history.png" alt="A real encounter: the student asks about the vomiting and the urine, and the boy's mother answers in her own words" />
         </Moment>
 
         <Moment
@@ -49,7 +49,7 @@ export default function StorySection() {
           delay={120}
           accentClassName="text-[#4b8f74]"
         >
-          <Screenshot src="/screens/investigations-tabs.png" alt="Real investigations screen: category tabs and two test rows, one ordered, one still pending" />
+          <Screenshot src="/screens/investigations-ordered.png" alt="The investigations screen: three tests ordered from the full list, and their results back in the worklist, not yet interpreted" />
         </Moment>
       </div>
     </section>

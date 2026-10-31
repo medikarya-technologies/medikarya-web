@@ -15,7 +15,9 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, Brain, Flag, RotateCcw, Home, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowLeft, Brain, CheckCircle2, CircleAlert, Flag, RotateCcw, Home } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { scoreBand } from "@/lib/library/case-library";
 
 // ─── Lightweight markdown renderer for walkthrough text ──────────────────────
 // Handles: ### headings, **bold**, * bullet lists, blank-line paragraphs
@@ -122,7 +124,7 @@ export function ProgressHeader({ step, total, onReport }: { step: number; total:
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-3 text-sm font-medium text-enc-ink-3">
-        <span>Clinical Reasoning Replay</span>
+        <span>Debrief</span>
         <span className="flex items-center gap-3">
           <span>Step {step + 1} of {total}</span>
           {onReport && (
@@ -137,7 +139,7 @@ export function ProgressHeader({ step, total, onReport }: { step: number; total:
           )}
         </span>
       </div>
-      <div className="h-2.5 w-full rounded-full bg-enc-line overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-enc-line overflow-hidden">
         <motion.div
           className="h-full bg-brand-600"
           initial={{ width: 0 }}
@@ -160,74 +162,79 @@ export function Nav({ onPrev, onNext, isFirst, isLast, onExit, onReset, onQuizSt
   mode?: 'live' | 'history';
   guestMode?: boolean;
 }) {
-  return (
-    <div className="flex items-center justify-between mt-10">
-      <Button
-        variant="outline"
-        onClick={onPrev}
-        disabled={isFirst}
-        className="gap-2 border-enc-line-strong text-enc-ink-2 hover:bg-enc-desk"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back
-      </Button>
+  const back = (
+    <Button
+      variant="outline"
+      onClick={onPrev}
+      disabled={isFirst}
+      className="gap-2 border-enc-line-strong text-enc-ink-2 hover:bg-enc-desk"
+    >
+      <ArrowLeft className="w-4 h-4" /> Back
+    </Button>
+  );
 
-      {isLast ? (
-        <div className="flex flex-col gap-3 items-end">
-          {/* Quiz CTA — the single most prominent thing on this step, on purpose: it's the
-              one action here worth taking before you leave. */}
-          {onQuizStart && mode !== 'history' && (
-            <div className="relative w-full overflow-hidden rounded-2xl border border-brand-500/60 bg-gradient-to-br from-brand-600 to-brand-700 p-5 shadow-enc-lift sm:p-6">
-              <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-              <div className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3.5">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                    <Brain className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-brand-100">
-                      <Sparkles className="h-3 w-3" /> Next up
-                    </p>
-                    <p className="mt-1 text-lg font-bold leading-tight text-white">Strengthen your weak areas</p>
-                    <p className="mt-0.5 text-sm text-brand-100/90">5 personalised NEET PG questions targeting your knowledge gaps</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={onQuizStart}
-                  size="lg"
-                  className="w-full shrink-0 gap-1.5 rounded-full bg-white px-6 font-bold text-brand-700 shadow-lg hover:bg-brand-50 sm:w-auto"
-                >
-                  Start Quiz <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-          {guestMode && (
-            <div className="w-full p-4 rounded-xl bg-brand-50 border border-brand-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-enc-ink">Enjoyed this case?</p>
-                <p className="text-xs text-enc-ink-2">Create a free account to access all cases, track your progress, and earn XP.</p>
-              </div>
-              <Button asChild size="sm" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-5 flex-shrink-0 shadow-sm">
-                <Link href="/signup">Create Free Account</Link>
-              </Button>
-            </div>
-          )}
-          <div className="flex gap-2">
-            {!guestMode && (
-              <Button variant="ghost" onClick={onExit} className="gap-2 text-enc-ink-2 hover:bg-enc-desk hover:text-enc-ink">
-                <Home className="w-4 h-4" /> Dashboard
-              </Button>
-            )}
-            <Button onClick={onReset || (() => window.location.reload())} className="gap-2 bg-brand-600 hover:bg-brand-700 text-white">
-              <RotateCcw className="w-4 h-4" /> {mode === 'history' ? 'Re-attempt Case' : 'Try Again'}
-            </Button>
-          </div>
-        </div>
-      ) : (
+  if (!isLast) {
+    return (
+      <div className="flex items-center justify-between mt-10">
+        {back}
         <Button onClick={onNext} className="gap-2 bg-brand-600 hover:bg-brand-700 text-white">
           Next <ArrowRight className="w-4 h-4" />
         </Button>
+      </div>
+    );
+  }
+
+  // The last step: the offers stack full width first, then one row with Back on the left and the ways out on the
+  // right. (They used to share a row with Back, which pushed Back halfway down the quiz card.)
+  return (
+    <div className="mt-10 space-y-4">
+      {/* The quiz is the one thing on this step worth doing before you leave, so it is the boldest thing here. */}
+      {onQuizStart && mode !== 'history' && (
+        <div className="rounded-2xl bg-brand-600 p-5 shadow-enc-lift sm:p-6">
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3.5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
+                <Brain className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-lg font-bold leading-tight text-white">Five questions from this case</p>
+                <p className="mt-1 text-sm text-brand-100">NEET PG style, aimed at where this attempt was weakest.</p>
+              </div>
+            </div>
+            <Button
+              onClick={onQuizStart}
+              size="lg"
+              className="w-full shrink-0 gap-1.5 rounded-full bg-white px-6 font-bold text-brand-700 hover:bg-brand-50 sm:w-auto"
+            >
+              Start the quiz <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       )}
+      {guestMode && (
+        <div className="p-4 rounded-xl bg-brand-50 border border-brand-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-enc-ink">Enjoyed this case?</p>
+            <p className="text-xs text-enc-ink-2">Create a free account to open more cases, track your progress and earn XP.</p>
+          </div>
+          <Button asChild size="sm" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-5 flex-shrink-0 shadow-sm">
+            <Link href="/signup">Create a free account</Link>
+          </Button>
+        </div>
+      )}
+      <div className="flex items-center justify-between gap-2 pt-2">
+        {back}
+        <div className="flex gap-2">
+          {!guestMode && (
+            <Button variant="ghost" onClick={onExit} className="gap-2 text-enc-ink-2 hover:bg-enc-desk hover:text-enc-ink">
+              <Home className="w-4 h-4" /> Dashboard
+            </Button>
+          )}
+          <Button onClick={onReset || (() => window.location.reload())} className="gap-2 bg-brand-600 hover:bg-brand-700 text-white">
+            <RotateCcw className="w-4 h-4" /> {mode === 'history' ? 'Try the case again' : 'Try again'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -245,6 +252,77 @@ export function Section({ icon: Icon, title, children }: { icon: any; title: str
         <div className="text-enc-ink-2 leading-relaxed text-[14px]">
           {children}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Pieces both debriefs use ─────────────────────────────────────────────────
+// Labels are sentence case at reading size, not tracked capitals: the rest of the app (the encounter, the diagnosis
+// form, the library) labels things that way, and a screen of small capitals reads as a template, not as this product.
+
+/** A small label above a value or a list. */
+export function Kicker({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <p className={cn("mb-1 text-[12px] font-semibold text-enc-ink-3", className)}>{children}</p>;
+}
+
+/** A sub-section inside a step, set off by a rule. */
+export function SubHeading({ children, icon: Icon, tone = "text-enc-ink" }: { children: React.ReactNode; icon: React.ElementType; tone?: string }) {
+  return (
+    <h3 className={cn("mb-3 mt-6 flex items-center gap-2 border-t border-enc-line pt-6 text-[14px] font-semibold", tone)}>
+      <Icon className="h-4 w-4 shrink-0" /> {children}
+    </h3>
+  );
+}
+
+/** Step one: the student's diagnosis against the case's, with the verdict said in words as well as colour. */
+export function DiagnosisCompare({ yours, actual, correct }: { yours?: string; actual: string; correct: boolean }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-enc-line">
+      <div className="bg-enc-desk p-4">
+        <Kicker>Your diagnosis</Kicker>
+        <p className={cn("text-base font-medium", yours ? "text-enc-ink" : "text-enc-ink-3")}>{yours || "No diagnosis given"}</p>
+      </div>
+      <div className="border-t border-enc-line bg-enc-sheet p-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <Kicker className="mb-0">The diagnosis</Kicker>
+          {correct ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-enc-ok-soft px-2 py-0.5 text-[12px] font-semibold text-enc-ok">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Correct
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-enc-warn-soft px-2 py-0.5 text-[12px] font-semibold text-enc-warn">
+              <CircleAlert className="h-3.5 w-3.5" /> Not a match
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-base font-semibold text-enc-ink">{actual}</p>
+      </div>
+    </div>
+  );
+}
+
+const BAND_BAR: Record<string, string> = { ok: "bg-enc-ok", warn: "bg-enc-warn", crit: "bg-enc-crit" };
+
+/** One scored area: its name, the points, and a bar coloured by the same bands the library uses. */
+export function ScoreRow({ label, icon: Icon, score, max }: { label: string; icon: React.ElementType; score: number; max: number }) {
+  const value = Number.isFinite(score) ? score : 0;
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  // Areas are worth different points (history 25, management 10), so a whole number reads cleaner where it is one.
+  const shown = Number.isInteger(value) ? value : value.toFixed(1);
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2.5 text-sm font-medium text-enc-ink-2">
+          <Icon className="h-4 w-4 shrink-0 text-enc-ink-3" /> {label}
+        </span>
+        <span className="text-sm tabular-nums">
+          <span className="font-bold text-enc-ink">{shown}</span>
+          <span className="text-enc-ink-3"> / {max}</span>
+        </span>
+      </div>
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-enc-line">
+        <div className={cn("h-full rounded-full", BAND_BAR[scoreBand(pct)])} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

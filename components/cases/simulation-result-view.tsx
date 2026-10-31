@@ -135,7 +135,7 @@ function ImagingPanel({ result }: { result: ResolvedResult }) {
           <div className="flex flex-col items-center gap-1.5 px-4 py-8 text-center">
             <ScanSearch className="h-8 w-8 text-enc-ink-3" />
             <p className="text-sm font-medium text-enc-ink-2">Report only</p>
-            <p className="max-w-xs text-xs text-enc-ink-3">No image is attached to this study in this build — the radiologist&apos;s findings are below.</p>
+            <p className="max-w-xs text-xs text-enc-ink-3">No image is attached to this study yet. The radiologist&apos;s findings are below.</p>
           </div>
         )}
       </div>
@@ -211,7 +211,7 @@ export function SimulationResultView({ order, open, onClose }: SimulationResultV
 
   const save = () => {
     actions.interpretResult(order, draft.trim())
-    toast({ title: "Interpretation recorded", description: `${order.testName} — ${formatClock(now)}`, duration: 2500 })
+    toast({ title: "Interpretation recorded", description: `${order.testName}, at ${formatClock(now)}`, duration: 2500 })
   }
 
   const reveal = () => {
@@ -250,7 +250,7 @@ export function SimulationResultView({ order, open, onClose }: SimulationResultV
                 <div>
                   <p className="text-sm font-semibold text-enc-ink">Result pending</p>
                   <p className="text-xs text-enc-ink-2">
-                    Ready in <span className="font-mono font-semibold tabular-nums">{formatClock(secondsLeft)}</span> — you can keep working the case.
+                    Ready in <span className="font-mono font-semibold tabular-nums">{formatClock(secondsLeft)}</span>. You can keep working the case.
                   </p>
                 </div>
                 <div className="h-1.5 w-56 overflow-hidden rounded-full bg-enc-console-hover">
@@ -310,7 +310,7 @@ export function SimulationResultView({ order, open, onClose }: SimulationResultV
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder={
                       kind === "ecg"
-                        ? "Rate, rhythm, axis, intervals — then the ST-T findings, lead by lead. What is your read?"
+                        ? "Rate, rhythm, axis, intervals, then the ST-T findings, lead by lead. What is your read?"
                         : kind === "imaging"
                           ? "What do the findings mean for this patient?"
                           : "What do these results tell you, and do they change what you do?"
