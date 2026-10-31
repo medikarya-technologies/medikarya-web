@@ -53,7 +53,7 @@ function CaseCard({ c }: { c: CaseMetadata }) {
     const free = GUEST_CASE_IDS.includes(c.id)
     const clock = c.live ? liveClockLabel(c) : null
     return (
-        <article className={cn("relative flex flex-col overflow-hidden rounded-xl border border-enc-line bg-enc-sheet p-5 shadow-enc-sheet", c.live && "pt-16")}>
+        <article className={cn("relative flex flex-col overflow-hidden rounded-xl border border-enc-line bg-enc-sheet p-4 shadow-enc-sheet sm:p-5", c.live && "pt-16 sm:pt-16")}>
             {c.live ? <MonitorStrip compact /> : <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", tone.band)} />}
             {c.live && (
                 <span className="absolute top-3 left-4 inline-flex items-center gap-1.5 rounded-md bg-enc-scope-raised px-1.5 py-0.5 text-[11px] leading-4 font-bold tracking-[0.12em] text-enc-scope-crit">
@@ -84,9 +84,9 @@ function CaseCard({ c }: { c: CaseMetadata }) {
                 </div>
             </div>
 
-            <p className="mt-3 line-clamp-3 text-[14px] leading-relaxed text-enc-ink-2">{c.displayDescription}</p>
+            <p className="mt-3 line-clamp-2 text-[14px] leading-relaxed text-enc-ink-2 sm:line-clamp-3">{c.displayDescription}</p>
 
-            <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-4">
+            <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-3 sm:pt-4">
                 {CASE_GUIDES[c.id] ? (
                     <Link href={`/case-studies/${c.id}`} className="text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline underline-offset-2">
                         How to approach it
@@ -196,7 +196,7 @@ export default async function CaseStudiesPage() {
                     </ul>
                 </nav>
 
-                <div className="space-y-12 py-10">
+                <div className="space-y-10 py-8 sm:space-y-12 sm:py-10">
                     {live.length > 0 && <Group id="live" title="Live emergencies" note="The patient gets worse until you act. Treat in time and they recover." cases={live} />}
                     {specialties.map((s) => (
                         <Group key={s.name} id={slug(s.name)} title={s.name} cases={s.cases} />

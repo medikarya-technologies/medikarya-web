@@ -106,14 +106,16 @@ export default function PricingSection() {
         </div>
       </div>
 
-      <div className="relative mx-auto mt-10 grid max-w-5xl gap-5 px-4 sm:grid-cols-3">
+      {/* On a phone the plans are a row to swipe through, the next one peeking in (three stacked cards ran to about
+          1,700 px); from sm up, three across. The top padding keeps the "Full simulation" badge inside the scroller. */}
+      <div className="relative mx-auto mt-6 flex max-w-5xl snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-4 pb-2 [scrollbar-width:none] sm:mt-10 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {TIERS.map((tier, i) => {
           const price = annual ? tier.annual : tier.monthly
           return (
             <div
               key={tier.name}
               className={cn(
-                "relative flex flex-col rounded-2xl border p-6 backdrop-blur-sm transition-all duration-500 ease-out",
+                "relative flex w-[85%] shrink-0 snap-center flex-col rounded-2xl border p-6 backdrop-blur-sm transition-all duration-500 ease-out sm:w-auto",
                 tier.highlight ? "border-brand-400/40 bg-white/[0.06] shadow-lg shadow-brand-500/10" : "border-white/10 bg-white/[0.03]",
                 isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
               )}
@@ -165,6 +167,7 @@ export default function PricingSection() {
           )
         })}
       </div>
+      <p className="mt-3 text-center text-[12.5px] text-white/50 sm:hidden">Swipe to compare the plans</p>
     </section>
   )
 }

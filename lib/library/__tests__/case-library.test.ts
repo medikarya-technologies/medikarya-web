@@ -385,14 +385,31 @@ describe("record: the dashboard numbers", () => {
         assert.equal(s.streakDays, 3);
     });
 
-    it("lists the latest five newest first, named by the library, with a readable duration", () => {
-        const rows = Array.from({ length: 8 }, (_, i) => row(i + 1, i % 2 ? "chb" : "unknown-case", 50 + i, 20, `2026-09-0${i + 1}T10:00:00Z`, 65 + i * 60));
+    it("lists the five cases done most recently, one row a case, named by the library, with a readable duration", () => {
+        const cases = ["chb", "unknown-case", "a", "b", "c", "d", "e"];
+        const rows = cases.map((c, i) => row(i + 1, c, 50 + i, 20, `2026-09-0${i + 1}T10:00:00Z`, 65 + i * 60));
         const s = buildDashboardStats(rows, title, 0);
-        assert.equal(s.recentCases.length, 5);
-        assert.deepEqual(s.recentCases.map((r) => r.id), [8, 7, 6, 5, 4]);
-        assert.equal(s.recentCases[0].title, "Complete heart block");
-        assert.equal(s.recentCases[1].title, "unknown-case", "a case the library does not know falls back to its id");
-        assert.equal(s.recentCases[0].timeTaken, "8m 5s");
+        assert.deepEqual(s.recentCases.map((r) => r.caseId), ["e", "d", "c", "b", "a"]);
+        const two = buildDashboardStats(rows.slice(0, 2), title, 0);
+        assert.equal(two.recentCases[1].title, "Complete heart block");
+        assert.equal(two.recentCases[0].title, "unknown-case", "a case the library does not know falls back to its id");
+        assert.equal(two.recentCases[1].timeTaken, "1m 5s");
+    });
+
+    it("folds repeat attempts at a case into one row: the latest, how many, and the score before it", () => {
+        const s = buildDashboardStats(
+            [row(1, "chb", 27, 14, "2026-09-01T10:00:00Z"), row(2, "chb", 41, 21, "2026-09-03T10:00:00Z"), row(3, "stemi", 74, 37, "2026-09-04T10:00:00Z"), row(4, "chb", 55, 28, "2026-09-05T10:00:00Z")],
+            title,
+            0
+        );
+        assert.deepEqual(
+            s.recentCases.map((r) => [r.caseId, r.id, r.score, r.attemptsOnCase, r.previousScore]),
+            [
+                ["chb", 4, 55, 3, 41],
+                ["stemi", 3, 74, 1, undefined],
+            ]
+        );
+        assert.equal(s.attempts, 4, "every attempt still counts in the totals");
     });
 
     it("keeps the latest thirty, oldest first, for the trend lines", () => {

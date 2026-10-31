@@ -396,6 +396,10 @@ export interface RecentAttempt {
     xpEarned: number;
     timeTaken: string;
     createdAt?: string;
+    /** How many times the student has done this case. */
+    attemptsOnCase?: number;
+    /** The score of the attempt before this one on the same case, if there was one. */
+    previousScore?: number;
 }
 
 export interface DashboardStats {
@@ -406,7 +410,7 @@ export interface DashboardStats {
     /** The mean score over every attempt, or null before the first. */
     averageScore: number | null;
     attempts: number;
-    /** The latest five, newest first. */
+    /** The five cases done most recently, newest first: each one's latest attempt, with how many there were and the score before it. */
     recentCases: RecentAttempt[];
     /** The latest thirty, oldest first, for the trend lines. */
     history: AttemptPoint[];
@@ -447,15 +451,22 @@ export function buildDashboardStats(rows: readonly AttemptRecord[], titleOf: (ca
         streakDays: Math.max(0, num(streakDays)),
         averageScore: Math.round(totalScore / valid.length),
         attempts: valid.length,
-        recentCases: newestFirst.slice(0, 5).map((r) => ({
-            id: r.id,
-            caseId: r.case_id,
-            title: titleOf(r.case_id) || r.case_id,
-            score: num(r.score),
-            xpEarned: num(r.xp_earned),
-            timeTaken: formatDuration(r.time_taken),
-            createdAt: r.created_at,
-        })),
+        // One row a case: three attempts at the same case are one case done three times, not three cases.
+        recentCases: [...new Set(newestFirst.map((r) => r.case_id))].slice(0, 5).map((caseId) => {
+            const onCase = newestFirst.filter((r) => r.case_id === caseId);
+            const [r, before] = onCase;
+            return {
+                id: r.id,
+                caseId,
+                title: titleOf(caseId) || caseId,
+                score: num(r.score),
+                xpEarned: num(r.xp_earned),
+                timeTaken: formatDuration(r.time_taken),
+                createdAt: r.created_at,
+                attemptsOnCase: onCase.length,
+                ...(before ? { previousScore: num(before.score) } : {}),
+            };
+        }),
         history: newestFirst
             .slice(0, 30)
             .reverse()

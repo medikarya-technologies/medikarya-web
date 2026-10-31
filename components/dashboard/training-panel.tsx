@@ -16,7 +16,7 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { ClipboardCheck, Flame, Gauge, Zap, type LucideIcon } from "lucide-react"
+import { ArrowRight, ClipboardCheck, Flame, Gauge, Zap, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   cumulative,
@@ -165,6 +165,9 @@ function Ledger({ ledger }: { ledger: LedgerEntry[] }) {
   const scale = Math.max(50, ...ledger.map((e) => e.max))
   const earned = ledger.reduce((n, e) => n + e.earned, 0)
   const worth = ledger.reduce((n, e) => n + e.max, 0)
+  const tried = ledger.filter((e) => e.attempts > 0)
+  const untried = ledger.filter((e) => e.attempts === 0)
+  const untriedWorth = untried.reduce((n, e) => n + e.max, 0)
   return (
     <Paper className="mt-3">
       <div className="flex items-baseline justify-between gap-3 px-4 pt-3.5 sm:px-5">
@@ -174,10 +177,28 @@ function Ledger({ ledger }: { ledger: LedgerEntry[] }) {
         </span>
       </div>
       <div className="px-4 pt-4 pb-3.5 sm:px-5">
-        <div className="grid auto-cols-fr grid-flow-col gap-1 sm:gap-2">
-          {ledger.map((entry, i) => (
-            <Column key={entry.id} entry={entry} scale={scale} index={i} count={ledger.length} />
-          ))}
+        {/* A column for each case tried; the ones not tried yet are one line beside them, not a row of empty columns. */}
+        <div className="flex items-end gap-4">
+          {tried.length > 0 && (
+            <div className="-mb-1 flex min-w-0 gap-1 overflow-x-auto pb-1 sm:gap-2 [scrollbar-width:thin]">
+              {tried.map((entry, i) => (
+                <div key={entry.id} className="w-[34px] shrink-0 sm:w-[40px]">
+                  <Column entry={entry} scale={scale} index={i} count={tried.length} />
+                </div>
+              ))}
+            </div>
+          )}
+          {untried.length > 0 && (
+            <Link href="/dashboard/cases" className="group mb-1 flex min-w-[150px] flex-1 flex-col justify-end rounded-lg border border-dashed border-enc-line-strong px-3.5 py-3 outline-none transition-colors hover:border-enc-ink-3 hover:bg-enc-desk focus-visible:ring-2 focus-visible:ring-brand-300" style={{ minHeight: BAR_AREA }}>
+              <span className="text-[14px] font-semibold text-enc-ink">
+                {untried.length} {untried.length === 1 ? "case" : "cases"} not tried yet
+              </span>
+              <span className="mt-0.5 font-mono text-[12px] text-enc-ink-3 tabular-nums">up to {untriedWorth.toLocaleString("en-US")} XP more</span>
+              <span className="mt-1.5 inline-flex items-center gap-1 text-[12.5px] font-medium text-brand-700 group-hover:text-brand-800">
+                Open the library <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </Link>
+          )}
         </div>
         <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-enc-line pt-3 text-[12px] text-enc-ink-3">
           <Key swatch="bg-enc-ok">90 and over</Key>
