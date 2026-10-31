@@ -6,6 +6,8 @@ export interface AttemptRow {
   case_id: string;
   score: number | null;
   created_at: string;
+  /** scoringVersion.history of the attempt: 2 for history scoring version 2, missing (1) before it. */
+  history_version?: unknown;
 }
 
 /** Which attempt counts: the first one (fair for prizes: retrying cannot help) or the best one. */
@@ -42,6 +44,22 @@ export function rankByCase(rows: readonly AttemptRow[], count: Count): Map<strin
     out.set(caseId, [...students.values()].sort((a, b) => b.score - a.score || a.at.localeCompare(b.at)));
   }
   return out;
+}
+
+/**
+ * Cases whose counted rows were marked by more than one history scorer (version 2 gives a strong history far more
+ * than version 1 did), so their totals are not comparable: the Top scores page says so instead of ranking silently.
+ */
+export function mixedScoring(rows: readonly AttemptRow[]): Set<string> {
+  const versions = new Map<string, Set<number>>();
+  for (const r of rows) {
+    if (typeof r.score !== "number") continue;
+    const v = Number(r.history_version) === 2 ? 2 : 1;
+    const set = versions.get(r.case_id) ?? new Set<number>();
+    set.add(v);
+    versions.set(r.case_id, set);
+  }
+  return new Set([...versions].filter(([, v]) => v.size > 1).map(([caseId]) => caseId));
 }
 
 /** Positions with ties shared: scores 90, 90, 85 are places 1, 1, 3. Ties are still listed in finishing order. */

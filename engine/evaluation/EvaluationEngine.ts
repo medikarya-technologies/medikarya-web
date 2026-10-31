@@ -14,6 +14,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { IntentExtractor } from "./IntentExtractor";
 import { DeterministicScorer } from "./DeterministicScorer";
 import { ReasoningPromptBuilder } from "./ReasoningPromptBuilder";
+import { historyReview, historyScoringMode, scoreHistory, type HistoryV2 } from "./historyCoverage";
 import {
     FinalEvaluationResult,
     LLMReasoningResult,
@@ -81,13 +82,16 @@ export class EvaluationEngine {
             };
         }
 
-        // ── Layer 2b: History Coverage Score (deterministic, 70%) ────────────
-        console.log("EvaluationEngine: Layer 2 — scoring history coverage...");
+        // ── Layer 2b: History ─────────────────────────────────────────────────
+        // Two versions (EVALUATION_ENGINE.md, "History, version 2"). Version 1 is worked out here as before; version
+        // 2 needs the examiner's coverage answer, so it is worked out after Layer 3. HISTORY_SCORING decides which
+        // one the student sees ("shadow", the default: version 1, with version 2 stored beside it).
+        const historyMode = historyScoringMode(process.env.HISTORY_SCORING);
+        console.log(`EvaluationEngine: Layer 2 — scoring history coverage (mode ${historyMode})...`);
         const coverageResult = evalConfig
             ? DeterministicScorer.scoreCoverage(extracted, evalConfig)
             : { structuredHistoryScore: 10, needsLLMHistoryScore: true, matrix: [] };
 
-        const coverageGaps = coverageResult.matrix.filter(e => !e.covered);
 
         // ── Layer 3: LLM Scoring ──────────────────────────────────────────────
         console.log(
@@ -96,6 +100,9 @@ export class EvaluationEngine {
         );
 
         let llmResult: LLMReasoningResult;
+        // The examiner's raw history answers, for version 2 (checked there, not trusted). Undefined if the call failed.
+        let aiHistoryCoverage: unknown = undefined;
+        let aiHistoryQuality: unknown = undefined;
         try {
             const apiKey = process.env.GEMINI_API_KEY;
             if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
@@ -114,21 +121,21 @@ export class EvaluationEngine {
                 diagnosis: primaryDiagnosis,
                 management,
                 criticalRedFlags,
-                coverageGaps,
-                needsHistoryScore: coverageResult.needsLLMHistoryScore,
                 coreManagementSteps: evalConfig?.management?.core_steps ?? [],
                 dangerousManagementSteps: evalConfig?.management?.dangerous_steps ?? [],
                 caseData,
             });
 
             const result = await model.generateContent(
-                `${systemPrompt}\n\nEvaluate this student's performance. Return a JSON object with keys: reasoningScore, historyQualityScore, diagnosisScore, managementScore, missedRedFlags (array), feedback (object with strengths and improvements arrays).`
+                `${systemPrompt}\n\nEvaluate this student's performance. Return a JSON object with keys: reasoningScore, historyQualityScore, historyCoverage (array, one entry per required history item), diagnosisScore, managementScore, missedRedFlags (array), feedback (object with strengths and improvements arrays).`
             );
 
             const content = result.response.text();
             if (!content) throw new Error("Empty LLM response");
 
             const parsed = JSON.parse(content) as any;
+            aiHistoryCoverage = parsed.historyCoverage;
+            aiHistoryQuality = parsed.historyQualityScore;
 
             llmResult = {
                 reasoningScore:      Math.min(30,  Math.max(0, Number(parsed.reasoningScore)      || 0)),
@@ -142,7 +149,7 @@ export class EvaluationEngine {
                 },
             };
 
-            // If LLM history score wasn't needed, zero it out regardless of LLM response
+            // Version 1 used the quality score only in its 8-14 band (version 2 always uses it).
             if (!coverageResult.needsLLMHistoryScore) {
                 llmResult.historyQualityScore = 0;
             }
@@ -189,9 +196,21 @@ export class EvaluationEngine {
 
         // ── Aggregate scores ──────────────────────────────────────────────────
         // Round to avoid floating-point display artifacts (e.g. 7.6999999999)
-        const historyScore = Math.round(
+        const historyV1 = Math.round(
             Math.min(25, coverageResult.structuredHistoryScore + llmResult.historyQualityScore) * 10
         ) / 10;
+        const historyV2: HistoryV2 = scoreHistory({
+            required: evalConfig?.history?.required_questions ?? [],
+            questions: extracted.doctorQuestions.map(q => q.text),
+            aiCoverage: aiHistoryCoverage,
+            aiQuality: aiHistoryQuality,
+        });
+        const historyScore = historyMode === "v2" ? historyV2.total : historyV1;
+        console.log(
+            `EvaluationEngine: history v1=${historyV1}, v2=${historyV2.total} ` +
+            `(asked ${historyV2.asked}/${historyV2.of} by ${historyV2.coverageBy}, quality ${historyV2.quality} by ${historyV2.qualityBy}), ` +
+            `showing ${historyMode === "v2" ? "v2" : "v1"}`
+        );
 
         const baseScore =
             llmResult.reasoningScore +
@@ -251,6 +270,14 @@ export class EvaluationEngine {
                 .filter(r => r.penaltyLevel !== "none")
                 .map(r => r.intent),
             redFlagResolutions,
+
+            // Which history scorer marked this attempt, so trends, skills and workshop ranks never mix the two silently.
+            scoringVersion: { history: historyMode === "v2" ? 2 : 1 },
+            // Both versions, always: the comparison behind the switch, and the way back if it is ever switched off.
+            historyScoring: { mode: historyMode, v1: historyV1, v2: historyV2 },
+            // What the debrief lists ("You did not ask about: ..."), from the version the student sees. Version 1's
+            // list was often wrong, so it is only given with version 2.
+            ...(historyMode === "v2" ? { historyReview: historyReview(historyV2) } : {}),
 
             feedback: {
                 strengths:    llmResult.feedback.strengths,

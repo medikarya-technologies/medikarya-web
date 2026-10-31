@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdminUser } from "../actions"
+import { HEALTH_HIGH, HEALTH_LOW, scoreHealth } from "@/lib/admin/score-health"
 import {
     Clock, ShieldCheck, Users,
     AlertCircle, ChevronRight, Activity, Calendar, Trophy, Timer, ChevronLeft
@@ -90,6 +91,8 @@ export default async function AdminAttemptsPage() {
     })
 
     const totalAttempts = attempts.length
+    // Attempts come newest first, so this is the most recent 50 scored by the classic evaluator.
+    const health = scoreHealth(attempts)
     const uniqueUsers = sortedUserIds.length
 
     return (
@@ -128,6 +131,34 @@ export default async function AdminAttemptsPage() {
                          </div>
                     </div>
                 </div>
+
+                {/* ── Score health: a part of the score stuck near 0% or 100% for everyone is a scoring fault, not a cohort ── */}
+                {health.attempts > 0 && (
+                    <section className="bg-white rounded-3xl border border-slate-200/80 shadow-sm px-6 py-5">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <h2 className="font-bold text-slate-900">Score health</h2>
+                            <p className="text-xs text-slate-500">
+                                Last {health.attempts} classic attempts · history marked by version 2 in {health.historyV2}
+                            </p>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                            {health.parts.map((p) => (
+                                <div
+                                    key={p.id}
+                                    className={`rounded-2xl border px-4 py-3 ${p.flag ? "border-amber-300 bg-amber-50" : "border-slate-100 bg-slate-50/60"}`}
+                                >
+                                    <p className="text-xs font-semibold text-slate-500">{p.label}</p>
+                                    <p className={`text-2xl font-black tabular-nums ${p.flag ? "text-amber-700" : "text-slate-900"}`}>{p.average}%</p>
+                                    <p className="text-[11px] text-slate-500">{p.flag === "low" ? "Too low for everyone: check the scoring" : p.flag === "high" ? "Too high for everyone: check the scoring" : "of its maximum, on average"}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="mt-3 text-xs text-slate-500">
+                            A part averaging under {HEALTH_LOW}% or over {HEALTH_HIGH}% of its maximum across students is more likely a scoring fault than the cohort.
+                            To check the history scoring against real attempts, run scripts/check-history-scoring.ts (see EVALUATION_ENGINE.md).
+                        </p>
+                    </section>
+                )}
 
                 {/* ── Error Notification ── */}
                 {(attemptsRes.error || usersRes.error) && (

@@ -45,6 +45,8 @@ export interface AttemptFeedback {
     case_id: string;
     created_at: string;
     historyScore?: unknown;
+    /** scoringVersion.history: 2 for history scoring version 2, missing (1) before it. */
+    historyVersion?: unknown;
     testingScore?: unknown;
     reasoningScore?: unknown;
     diagnosisScore?: unknown;
@@ -117,6 +119,10 @@ export function buildSkillProfile(rows: readonly AttemptFeedback[], gapLimit = 6
 
     const gaps = new Map<string, { label: string; count: number; last: string; cases: Set<string> }>();
     let helpTotal = 0;
+    // History was marked by two scorers: version 1 gave even a strong history about a fifth of its marks. Once a
+    // student has attempts marked by version 2, only those count for history, so the old marks neither drag the
+    // average down nor make a jump look like progress.
+    const historyV2 = rows.some((r) => r && num(r.historyVersion) === 2);
     let helpN = 0;
     let used = 0;
 
@@ -135,7 +141,7 @@ export function buildSkillProfile(rows: readonly AttemptFeedback[], gapLimit = 6
             const c = { history: num(row.historyScore), investigations: num(row.testingScore), reasoning: num(row.reasoningScore), diagnosis: num(row.diagnosisScore), management: num(row.managementScore) };
             if (Object.values(c).some((v) => v !== undefined)) {
                 for (const id of Object.keys(CLASSIC_MAX) as Array<keyof typeof CLASSIC_MAX>) {
-                    const v = c[id];
+                    const v = id === "history" && historyV2 && num(row.historyVersion) !== 2 ? undefined : c[id];
                     add(id, v === undefined ? undefined : (v / CLASSIC_MAX[id]) * 100);
                 }
             }

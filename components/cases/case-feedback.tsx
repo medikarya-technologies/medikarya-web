@@ -214,8 +214,29 @@ function LegacyCaseFeedback({
        })
     }
 
-    // History Quality
-    if (feedback.historyScore >= 20) {
+    // History. With history scoring version 2 the debrief knows which required questions were not asked, and says
+    // so by name; it calls the history thorough only when nothing was missed. Version 1's list was unreliable, so
+    // its attempts keep the old score bands.
+    const review = feedback.historyReview as { asked: number; of: number; missed: string[] } | undefined;
+    if (review && Array.isArray(review.missed)) {
+      const shown = review.missed.slice(0, 4);
+      const more = review.missed.length - shown.length;
+      if (review.missed.length === 0) {
+        consequenceChain.push({
+          action: "Took a thorough history",
+          effect: "You asked about everything this case needed before moving on.",
+          outcome: `History ${pts(feedback.historyScore)} of 25`,
+          type: "success"
+        });
+      } else {
+        consequenceChain.push({
+          action: review.missed.length === 1 ? "The history missed one thing" : `The history missed ${review.missed.length} things`,
+          effect: `You did not ask about: ${shown.join("; ")}${more > 0 ? `; and ${more} more` : ""}.`,
+          outcome: `History ${pts(feedback.historyScore)} of 25`,
+          type: review.asked >= review.of / 2 ? "warning" : "danger"
+        });
+      }
+    } else if (feedback.historyScore >= 20) {
       consequenceChain.push({
         action: "Took a thorough history",
         effect: "You had most of the story before ordering anything.",

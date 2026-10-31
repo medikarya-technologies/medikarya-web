@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { certificateProblem, finishedAll, places, printableName, rankByCase, shortName, workshopDetail, type AttemptRow } from "../rank";
+import { certificateProblem, finishedAll, mixedScoring, places, printableName, rankByCase, shortName, workshopDetail, type AttemptRow } from "../rank";
 
 const at = (minute: number) => `2026-10-24T05:${String(minute).padStart(2, "0")}:00.000Z`;
 const row = (user_id: string, case_id: string, score: number | null, minute: number): AttemptRow => ({ user_id, case_id, score, created_at: at(minute) });
@@ -87,5 +87,19 @@ describe("certificate wording", () => {
     assert.equal(printableName("ab"), null);
     assert.equal(printableName("12345"), null);
     assert.equal(printableName("Ananya Iyer"), "Ananya Iyer");
+  });
+});
+
+describe("mixedScoring", () => {
+  it("flags a case whose attempts were marked by both history scorers, and only that case", () => {
+    const rows: AttemptRow[] = [
+      { ...row("asha", "stemi", 70, 10) },
+      { ...row("ravi", "stemi", 80, 12), history_version: 2 },
+      { ...row("neha", "diarrhoea", 60, 2), history_version: 2 },
+      { ...row("kabir", "diarrhoea", 65, 3), history_version: "2" },
+      { ...row("tara", "malaria", null, 4), history_version: 2 },
+      { ...row("tara", "malaria", 50, 5) },
+    ];
+    assert.deepEqual([...mixedScoring(rows)], ["stemi"]);
   });
 });

@@ -11,6 +11,7 @@
 //  - Constrained rubric with hard max_score ceiling
 
 import { ExtractedConsultation, RedFlag, CoverageEntry } from "./types";
+import { historyPromptSection } from "./historyCoverage";
 
 interface PromptOptions {
     /** Pre-extracted consultation data from IntentExtractor */
@@ -21,10 +22,11 @@ interface PromptOptions {
     management: string[];
     /** Critical red flags from evaluation_config.red_flags */
     criticalRedFlags: RedFlag[];
-    /** Coverage matrix from DeterministicScorer (gaps only passed, no score) */
-    coverageGaps: CoverageEntry[];      // entries where covered === false
-    /** Whether to request historyQualityScore from LLM */
-    needsHistoryScore: boolean;
+    /** No longer sent: version 1's keyword gaps were often wrong ("not asked" when it was), and the examiner now
+     *  judges coverage itself (historyCoverage.ts). Kept so older callers still compile. */
+    coverageGaps?: CoverageEntry[];
+    /** No longer used: the quality score is always requested (version 2). */
+    needsHistoryScore?: boolean;
     /** Core management steps expected */
     coreManagementSteps: string[];
     /** Dangerous management steps to penalise */
@@ -40,8 +42,6 @@ export class ReasoningPromptBuilder {
             diagnosis,
             management,
             criticalRedFlags,
-            coverageGaps,
-            needsHistoryScore,
             coreManagementSteps,
             dangerousManagementSteps,
             caseData,
@@ -56,10 +56,9 @@ export class ReasoningPromptBuilder {
             ?? "N/A";
         const keywords: string = evalConfig?.diagnosis?.must_include_keywords?.join(", ") ?? "";
 
-        // ── Format coverage gaps (NO numeric score) ──────────────────────────
-        const gapText = coverageGaps.length > 0
-            ? coverageGaps.map(g => `- ${g.requiredQuestion}`).join("\n")
-            : "None — all required history areas were covered.";
+        // ── History: coverage by message number, and quality (always) ────────
+        const requiredQuestions: string[] = (evalConfig?.history?.required_questions ?? []).filter((q: unknown) => typeof q === "string");
+        const historySection = historyPromptSection(requiredQuestions, extracted.doctorQuestions.map(q => q.text));
 
         // ── Format red flags WITH descriptions ───────────────────────────────
         const redFlagLines = criticalRedFlags
@@ -82,21 +81,11 @@ export class ReasoningPromptBuilder {
             ? management.join(", ")
             : "None provided";
 
-        // ── History quality rubric (only when needed) ─────────────────────────
-        const historyRubricSection = needsHistoryScore ? `
-HISTORY QUALITY SCORING (0–7.5):
-Score ONLY the qualitative depth of history taking. Do NOT consider coverage — coverage is already scored separately.
-Rubric:
-  - relevance (0–2.5): Did questions target the chief complaint, or was it a generic checklist?
-  - depth     (0–2.5): Were follow-up questions asked after the patient revealed key findings?
-  - focus     (0–2.5): Did the student avoid redundant questioning on the same topic?
-Hard ceiling: historyQualityScore MUST NOT exceed 7.5. Exceeding this is a grading error.` : `
-HISTORY QUALITY SCORING: SKIP — output historyQualityScore: 0`;
-
         // ── Build JSON schema ─────────────────────────────────────────────────
         const jsonSchema = `{
   "reasoningScore":      <number 0–30>,
   "historyQualityScore": <number 0–7.5>,
+  "historyCoverage":     [{ "item": <required item number>, "asked": <true|false>, "message": <student message number or null> }, ... one per required item],
   "diagnosisScore":      <number 0–15>,
   "managementScore":     <number 0–10>,
   "missedRedFlags":      [<intent slugs where student failed to address the flag semantically>],
@@ -117,9 +106,6 @@ Correct Diagnosis: ${caseData.patient?.final_diagnosis}
 CONSULTATION TRANSCRIPT (Doctor ↔ Patient):
 ${extracted.transcript}
 
-PRE-EXTRACTED SIGNALS:
-Coverage gaps (history areas NOT addressed by the student):
-${gapText}
 ${ignoredFlagText}
 
 STUDENT PERFORMANCE:
@@ -149,7 +135,7 @@ SCORING GUIDE:
 ${redFlagLines || "  (none with present_in_case = true)"}
 ]
 
-${historyRubricSection}
+${historySection}
 
 OUTPUT:
 Return STRICTLY valid JSON — no markdown, no extra text, no explanation:

@@ -81,7 +81,7 @@ The total score is out of **100 marks**, divided across five clinical competency
 | Domain | Max Marks | Who Scores It |
 |---|---|---|
 | **Clinical Reasoning** | 30 | LLM (Groq / Llama-3.3-70b-versatile) |
-| **History Taking** | 25 | Hybrid: 17.5 algorithmic + up to 7.5 LLM (conditional) |
+| **History Taking** | 25 | Version 2 (see "History, version 2" below): 17.5 coverage judged by the LLM and checked in code, + 7.5 quality, always. Version 1: 17.5 algorithmic + up to 7.5 LLM (conditional) |
 | **Diagnostic Accuracy** | 15 | LLM |
 | **Test Ordering** | 20 | Algorithmic (rule-based) |
 | **Management Plan** | 10 | LLM |
@@ -167,7 +167,51 @@ The raw score is clamped to **[0, 20]**.
 - If the case doesn't require tests and the student ordered nothing → **20 pts** (correct clinical restraint)
 - If the case doesn't require tests but the student ordered anyway → `max(0, 20 − count × 3)`
 
-### 6b. History Coverage Score (Deterministic 70%, 0–17.5 pts)
+### History, version 2 (from 2026-10-31)
+
+**The rule, in one sentence:** history (25) = how much of what this case needs the student asked (17.5) + how well
+they asked it (7.5). Every part of the code serves that sentence. Source: `engine/evaluation/historyCoverage.ts`.
+
+**Coverage (0 to 17.5).** Each of the case's `required_questions` is asked or not, and each is worth the same:
+coverage = 17.5 × asked ÷ required. No multiplier for how "specific" a question looks, no penalty for when it was
+asked. The examiner AI judges "asked" by meaning (lay words, typos, several questions in one message all count; the
+patient volunteering something does not) and must cite the number of the student's message that asked it. The code
+accepts a citation only if that message exists and asks something; an item without a valid answer is decided by the
+keyword matcher, and if more than half the AI's answer is unusable the keyword matcher decides everything. The
+keyword matcher compares stemmed topic words (British and American spellings meet, one-letter typos in long words
+pass) and specific topics, using only what sets a required question apart from the case's others.
+
+**Quality (0 to 7.5).** Always asked of the AI: relevance, depth (were positives followed up) and focus. It can
+never be worth more than the coverage supports: at most 7.5 × coverage share, so its share of the marks is never
+bigger than coverage's. With no AI answer, it is estimated as two-thirds of that cap.
+
+**Invariants** (each one a test in `engine/evaluation/__tests__/historyCoverage.test.ts`):
+- 0 ≤ coverage ≤ 17.5, 0 ≤ quality ≤ 7.5, total ≤ 25.
+- Asking one more question never lowers the score.
+- The same questions in another order score the same.
+- A short and a long way of asking the same thing count the same.
+- More coverage never scores less at any quality: no band switches quality on or off.
+- Quality's share of its 7.5 never exceeds the coverage share.
+- Calibration: on the made-up calibration cases a strong history scores 20 or more, a partial one 8 to 15, a poor
+  one 6 or less, with the keyword matcher alone.
+
+**The switch.** `HISTORY_SCORING` in the environment: `v1` (old score only), `shadow` (the default: students see
+version 1, version 2 is worked out and stored beside it in `historyScoring`), `v2` (students see version 2). Every
+attempt stores `scoringVersion.history`, so scores from the two versions are never mixed without notice.
+
+**Checking it.** `scripts/check-history-scoring.ts` replays real attempts from the database (their questions are
+stored as HISTORY_TAKEN events) through both versions and prints the comparison; `--ai` runs the real examiner.
+Admin → Attempts shows each part of the score as a share of its maximum over the last 50 attempts, and flags a
+part that averages below 15% or above 90%.
+
+**Why version 1 was replaced.** A strong history scored 3 to 6 of 25, and real students averaged 1.8 of 25
+(7%). Each question's credit was multiplied by a specificity score that short, good questions never reach, and
+by a timing weight that took 60% off anything in the last third of the history (where social history belongs);
+coverage counted only questions that matched a fixed intent list; and the AI quality score was added only between
+8 and 14, so a perfect history was capped at 17.5 and scored below a middling one. The sections below describe
+version 1, which still runs while the switch allows it.
+
+### 6b. History Coverage Score, version 1 (Deterministic 70%, 0–17.5 pts)
 
 This layer produces a structured score out of **17.5 marks**, representing the algorithmic portion of the history-taking domain.
 
@@ -444,7 +488,8 @@ The feedback messages inform the student that evaluation was incomplete due to a
 - It does **not assess communication style**, empathy, or bedside manner — only clinical content.
 - LLM scoring (30+15+10 = 55 marks) introduces **some variability** — the same answers may score slightly differently on repeat runs. Temperature is set to 0.1 to minimise this, but it cannot be eliminated entirely.
 
-### Why timing weights exist
+### Why timing weights existed (version 1 only; removed in version 2)
+Version 2 dropped this: it took 60% off social and family history, which a proper history asks last. Version 1's reasoning was:
 Medicine is not a checklist. A student who asks "any family history?" only because they ran out of other questions has not demonstrated the same clinical reasoning as one who opens the consultation with a systematic history. Timing pressure forces students to develop and demonstrate a **mental framework** before they begin — not after.
 
 ### Why the LLM doesn't score everything
@@ -456,7 +501,8 @@ Pure LLM scoring is inconsistent and expensive. Pure rule-based scoring is rigid
 ### On fairness and language
 Students in Indian medical education often communicate in mixed Hindi-English, regional terminology, or lay patient language. The semantic pattern system is specifically designed to accommodate this. A student who asks *"koi pet mein dard toh nahi?"* or *"any stomach pain?"* should receive the same clinical credit as one who asks *"any abdominal pain?"*.
 
-### The borderline LLM history check
+### The borderline LLM history check (version 1 only)
+In version 2 the quality score is always requested in the same call, at no extra cost: the band made a perfect history score below a middling one. Version 1's reasoning was:
 Calling the LLM on every history evaluation would add cost and noise. Calling it only in the 8–14 range means it acts as a "second opinion" precisely where the algorithmic score is most uncertain — not to override clear results, but to add nuance where the rule-based system cannot.
 
 ---

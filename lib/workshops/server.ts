@@ -3,7 +3,7 @@ import "server-only";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getCases } from "@/data/cases";
 import type { PassBatch } from "@/lib/plans/pass-batches";
-import { places, rankByCase, type AttemptRow, type Count, type Ranked } from "./rank";
+import { mixedScoring, places, rankByCase, type AttemptRow, type Count, type Ranked } from "./rank";
 
 // Reading what a workshop's students did, for Admin → Top scores and the participation certificates.
 
@@ -46,7 +46,7 @@ export async function attemptsOf(userIds: readonly string[], from: Date, to: Dat
       ...(await everyRow<AttemptRow>((a, b) =>
         supabaseServer
           .from("case_attempts")
-          .select("user_id, case_id, score, created_at")
+          .select("user_id, case_id, score, created_at, history_version:feedback_json->scoringVersion->history")
           .in("user_id", ids)
           .gte("created_at", from.toISOString())
           .lt("created_at", to.toISOString())
@@ -62,7 +62,7 @@ export async function attemptsOf(userIds: readonly string[], from: Date, to: Dat
 async function everyonesAttempts(from: Date, to: Date): Promise<{ rows: AttemptRow[]; names: Map<string, string | null> }> {
   const rows = (
     await everyRow<AttemptRow>((a, b) =>
-      supabaseServer.from("case_attempts").select("user_id, case_id, score, created_at").gte("created_at", from.toISOString()).lt("created_at", to.toISOString()).order("created_at").range(a, b)
+      supabaseServer.from("case_attempts").select("user_id, case_id, score, created_at, history_version:feedback_json->scoringVersion->history").gte("created_at", from.toISOString()).lt("created_at", to.toISOString()).order("created_at").range(a, b)
     )
   ).filter((r) => r.user_id && !r.user_id.startsWith("advisor:") && !r.user_id.startsWith("guest:"));
   const ids = [...new Set(rows.map((r) => r.user_id))];
@@ -85,6 +85,8 @@ export interface CaseScores {
   title: string;
   players: number;
   top: Array<Ranked & { name: string | null; place: number }>;
+  /** Attempts in the window were marked by two history scorers, so these totals are not comparable. */
+  mixedScoring: boolean;
 }
 
 /** Each case played in the window, most played first, with its top `limit` students. */
@@ -104,6 +106,7 @@ export async function topScores(opts: { from: Date; to: Date; batch: PassBatch |
   }
 
   const titles = new Map((await getCases()).map((c) => [c.id, c.displayTitle]));
+  const mixed = mixedScoring(rows);
   return [...rankByCase(rows, opts.count).entries()]
     .map(([caseId, ranked]) => {
       const place = places(ranked);
@@ -112,6 +115,7 @@ export async function topScores(opts: { from: Date; to: Date; batch: PassBatch |
         title: titles.get(caseId) ?? "A case no longer in the library",
         players: ranked.length,
         top: ranked.slice(0, opts.limit).map((r, i) => ({ ...r, name: names.get(r.userId) ?? null, place: place[i] })),
+        mixedScoring: mixed.has(caseId),
       };
     })
     .sort((a, b) => b.players - a.players || a.title.localeCompare(b.title));

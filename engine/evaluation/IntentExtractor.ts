@@ -19,7 +19,7 @@ import {
 // Maps intent slug → patterns to scan for in the question text.
 // Confidence = how many pattern groups match / total groups.
 
-const INTENT_CATALOGUE: Record<string, string[][]> = {
+export const INTENT_CATALOGUE: Record<string, string[][]> = {
     // ── History of present illness (universal) ────────────────────────────────
     duration_of_symptoms:    [["how long", "since when", "duration", "days", "weeks", "started", "onset"]],
     onset_character:         [["sudden", "gradual", "onset", "started", "began", "acute", "chronic"]],
@@ -84,7 +84,8 @@ const INTENT_CATALOGUE: Record<string, string[][]> = {
     severe_dehydration:     [["no urine", "sunken", "turgor", "passing urine", "not peeing", "wet diaper", "fontanelle"]],
 
     // ── Universal systemic ────────────────────────────────────────────────────
-    fever:                  [["fever", "temperature", "pyrexia", "febrile", "hot", "chills", "rigors", "sweat"]],
+    fever:                  [["fever", "temperature", "pyrexia", "febrile", "hot", "chills", "rigors"]],
+    night_sweats:           [["sweat", "night sweats", "drenched"]],
     weight_change:          [["weight", "loss", "gain", "losing", "thin", "wasting", "gained weight"]],
     fatigue:                [["tired", "fatigue", "weakness", "lethargy", "energy", "exhausted"]],
 
@@ -104,7 +105,7 @@ const INTENT_CATALOGUE: Record<string, string[][]> = {
 };
 
 // ── Vague catch-all phrases (score near zero) ─────────────────────────────────
-const VAGUE_PHRASES = [
+export const VAGUE_PHRASES = [
     "anything else", "other issues", "other symptoms", "any other",
     "something else", "more to add", "what else", "other complaints",
     "tell me more", "go on", "continue",
