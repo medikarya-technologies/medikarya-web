@@ -119,6 +119,13 @@ export function BedsideSummary({ bedside, total }: { bedside: Bedside; total: nu
       </div>
       <div className="space-y-2.5 p-3">
         <p className="text-sm font-medium text-enc-ink">{ending}</p>
+        {outcome.settled_worse && (
+          <p className="text-xs text-enc-warn">
+            They settled less well than a patient treated in time
+            {outcome.settled_worse.late_after ? `, because they had already reached "${outcome.settled_worse.late_after}"` : ""}
+            {outcome.settled_worse.harms ? `${outcome.settled_worse.late_after ? " and" : ","} because of what was given: ${outcome.settled_worse.harms.join(", ")}` : ""}.
+          </p>
+        )}
         {bedside.capped && (
           <p className="text-xs text-enc-crit">
             Your patient was never stabilised, so the bedside score is held at {bedside.capped.at} (it would have been {bedside.capped.from}), whatever else was given in time.

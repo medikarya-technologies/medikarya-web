@@ -1,6 +1,6 @@
 {
   "plan_sha": "1c5fb24119c8f35e90dc9eb39ccb2760e5bf5043fdf8374f3625d26fc63b75a9",
-  "compiled_sha": "279f3adc0f43dca11101c8eb0ea8a569159afa44778531b0432f5333f8f877d0",
+  "compiled_sha": "ef48ba9ba078dc6999572020d7b27f1fa8751864dceb89faae9c77b00b901b9c",
   "playthroughs": {
     "untreated": {
       "score": 0,
@@ -62,7 +62,7 @@
         "stability": "stable",
         "rhythm": "sinus_tachycardia"
       },
-      "events_sha": "cea74167abbc9d1ca83b65fca1fe686b3c4f77ef9fa472d06e828120726846ec"
+      "events_sha": "c133c499e54d46bf1eeaf0c56d849176cef6c6768545f6f6dec65e685774ec0d"
     },
     "harmful": {
       "score": 85,
@@ -82,12 +82,17 @@
       "outcome": {
         "stabilised": true,
         "recovered": true,
+        "settled_worse": {
+          "harms": [
+            "Furosemide IV"
+          ]
+        },
         "worst_stage": null
       },
       "final": {
-        "hr": 126,
-        "sbp": 94,
-        "dbp": 58,
+        "hr": 130,
+        "sbp": 89,
+        "dbp": 55,
         "spo2": 99,
         "rr": 30,
         "temp": 37.9,
@@ -95,7 +100,7 @@
         "stability": "stable",
         "rhythm": "sinus_tachycardia"
       },
-      "events_sha": "ccce562fa4dab666fe91ab5864a898a8ab4932b658a0bea3359ab8b30688d9c1"
+      "events_sha": "ee16aff1c0673985f4a11bf133bcc00c6ac2508eb370e7040e00339564da69ba"
     },
     "late": {
       "score": 50,
@@ -126,7 +131,7 @@
         "stability": "stable",
         "rhythm": "sinus_tachycardia"
       },
-      "events_sha": "e0e2895be86e9b3b96e21e51aaeea19b84f1924649107adb870bffed79a5255c"
+      "events_sha": "70117b1f5a6fbe612f4a7b6445a0a3f1898d490b8bbc1c713bba8291e8d50dda"
     }
   }
 }

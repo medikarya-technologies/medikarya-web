@@ -154,8 +154,10 @@ describe("state: reading and checking the plan", () => {
 
     it("adds no state flags or rules to a plan that does not use the state fields", () => {
         const c = compileLivePlan(base(), goldenFixturePlan as unknown as LivePlan);
-        assert.equal(Object.keys(c.initial_state.flags ?? {}).some((f) => /^(available|required|reached|finding|indicated|notneeded)_/.test(f)), false);
-        assert.equal(c.event_rules.some((r) => r.keeps_state), false);
+        assert.equal(Object.keys(c.initial_state.flags ?? {}).some((f) => /^(available|required|finding|indicated|notneeded)_/.test(f)), false);
+        // The course after treatment (a late recovery, lasting harm) is every plan's, not a state field's.
+        assert.deepEqual(Object.keys(c.initial_state.flags ?? {}).filter((f) => f.startsWith("reached_")), ["reached_decompensated"]);
+        assert.deepEqual(c.event_rules.filter((r) => r.keeps_state).map((r) => r.id), ["live_lasting_furosemide_iv", "live_settled_recovery"]);
     });
 });
 

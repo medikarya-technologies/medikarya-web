@@ -1,6 +1,7 @@
-// Backward compatibility of the live-plan compiler. The golden files were recorded with the compiler as it was before
-// repeat doses existed (scripts/record-live-plan-golden.ts). A plan that does not use the new fields must compile to
-// exactly the same engine rules and play exactly the same: untreated, correct, with harmful treatments, and late.
+// Backward compatibility of the live-plan compiler (scripts/record-live-plan-golden.ts). A plan that does not use a new
+// field must compile to exactly the same engine rules and play exactly the same: untreated, correct, with harmful
+// treatments, and late. Re-recorded on purpose on 2026-10-31, when every plan gained the course after treatment
+// (a late recovery and lasting harm, lateRecoveries and lastingEffect in live-plan.ts).
 //
 // The synthetic fixture is committed in full and runs everywhere. The real plans (data/cases, not in git) are checked
 // wherever they are present, and only while the plan itself is unchanged: an edited plan is re-recorded on purpose.
