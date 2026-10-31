@@ -35,19 +35,20 @@ export function Navbar() {
           <span className="font-semibold text-enc-ink">MediKarya</span>
         </div>
 
+        {/* Links that work from any page (the case library uses this bar too): "/#story", not "#story". */}
         <ul className="hidden items-center gap-6 text-sm text-enc-ink-2 md:flex">
           <li>
-            <Link href="/try" className="transition-colors hover:text-enc-ink">
+            <Link href="/case-studies" className="transition-colors hover:text-enc-ink">
               Cases
             </Link>
           </li>
           <li>
-            <Link href="#story" className="transition-colors hover:text-enc-ink">
+            <Link href="/#story" className="transition-colors hover:text-enc-ink">
               How it works
             </Link>
           </li>
           <li>
-            <Link href="#pricing" className="transition-colors hover:text-enc-ink">
+            <Link href="/#pricing" className="transition-colors hover:text-enc-ink">
               Pricing
             </Link>
           </li>
@@ -112,17 +113,17 @@ export function Navbar() {
         <div className="border-t border-enc-line bg-enc-sheet px-4 py-3 md:hidden">
           <ul className="space-y-1 text-[15px] text-enc-ink-2">
             <li>
-              <Link href="/try" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
+              <Link href="/case-studies" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
                 Cases
               </Link>
             </li>
             <li>
-              <Link href="#story" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
+              <Link href="/#story" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
                 How it works
               </Link>
             </li>
             <li>
-              <Link href="#pricing" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
+              <Link href="/#pricing" onClick={() => setOpen(false)} className="block rounded-lg px-2 py-2.5 hover:bg-enc-desk hover:text-enc-ink">
                 Pricing
               </Link>
             </li>

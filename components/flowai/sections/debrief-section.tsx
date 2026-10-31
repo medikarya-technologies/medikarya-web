@@ -25,6 +25,11 @@
 // hit / 1 miss," and the real reinforcement question is specifically about the stool-routine test that miss
 // refers to (its own explanation text says so) — so 04's copy ("pulled from exactly what you missed") was
 // already accurate and needed no rewrite once the real images made it literally true instead of illustrative.
+// Changed in round 4 of the design review (2026-10-31): the 5/100 image was swapped for the best real attempt on the
+// same case (77/100, from the MAMC pilot in May 2026, rendered in the current debrief component from its saved
+// result), because a near-zero score undersold what the debrief shows. Choosing the best attempt is a choice, so the
+// caption now says what it is ("a real attempt from the pilot") instead of "not curated"; and as that attempt is not
+// the one whose missed stool test produced the 04 question, 04's caption no longer says "that exact miss".
 // Captions under each image are the "anchor" this section was missing — a plain, honest line that pins each
 // screenshot to being a real, specific moment rather than a floating example, the same fix that already worked
 // for reviews-section.tsx's real submission timestamps this session. No date is claimed for either capture (no
@@ -50,7 +55,7 @@ export default function DebriefSection() {
           delay={0}
           accentClassName="text-brand-600"
         >
-          <Screenshot src="/screens/debrief-performance-real.png" alt="Real performance summary from an actual case attempt, scored across five clinical skill areas" caption="A real result. Not rounded up, not curated." />
+          <Screenshot src="/screens/debrief-performance-pilot.png" alt="Performance summary of a real attempt from the MAMC pilot: 77 out of 100, scored across five clinical skill areas" caption="A real attempt from the MAMC pilot, May 2026, as it was scored." />
         </Moment>
 
         <Moment
@@ -63,7 +68,7 @@ export default function DebriefSection() {
           delay={120}
           accentClassName="text-[#4b8f74]"
         >
-          <Screenshot src="/screens/reinforcement-quiz-real.png" alt="Real reinforcement question generated from a missed investigation, with the answer revealed and explained" caption="The question that exact miss generated." />
+          <Screenshot src="/screens/reinforcement-quiz-real.png" alt="Real reinforcement question generated from a missed investigation, with the answer revealed and explained" caption="A real question from the same case, drawn from what an attempt missed." />
         </Moment>
       </div>
     </section>

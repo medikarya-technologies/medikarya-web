@@ -19,14 +19,19 @@ function Attempt({ a, patient }: { a: RecentAttempt; patient?: LibraryCase }) {
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[14.5px] leading-snug font-medium text-enc-ink">{a.title}</p>
         <p className="mt-0.5 truncate text-[12.5px] text-enc-ink-3" suppressHydrationWarning>
-          {[a.timeTaken, when].filter(Boolean).join(" · ")}
+          {[(a.attemptsOnCase ?? 1) > 1 ? `${a.attemptsOnCase} attempts` : null, a.timeTaken, when].filter(Boolean).join(" · ")}
         </p>
       </div>
       <div className="flex shrink-0 items-baseline gap-4">
         <span className="hidden font-mono text-[12.5px] text-enc-ink-2 tabular-nums sm:inline">+{a.xpEarned} XP</span>
-        <span className="w-10 text-right">
+        <span className="w-12 text-right">
           <ScoreValue score={a.score} className="text-[20px] leading-none" />
           <span className="text-[12px] text-enc-ink-3">%</span>
+          {a.previousScore !== undefined && a.previousScore !== a.score && (
+            <span className={cn("block font-mono text-[11px] tabular-nums", a.score > a.previousScore ? "text-enc-ok" : "text-enc-crit")}>
+              {a.score > a.previousScore ? "▲" : "▼"} from {a.previousScore}
+            </span>
+          )}
         </span>
       </div>
     </>
@@ -50,7 +55,7 @@ export function RecentAttempts({ attempts, byId }: { attempts: RecentAttempt[]; 
     <Paper className="overflow-hidden">
       <PaperHeader
         title="Recent attempts"
-        description="Your last five. Open one to review your feedback."
+        description="The cases you did last. Open one to review your latest feedback."
         actions={
           <Link href="/dashboard/cases" className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800">
             Library <ArrowRight className="h-3.5 w-3.5" />
