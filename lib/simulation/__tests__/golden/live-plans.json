@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
-    "plan_sha": "b6a01f2dc6e21fad9c30c08dfbc08c2f81dcdba951a8c6924ad84b3d6919292e",
-    "compiled_sha": "c1c34785bef6412a79639a1d8afb6c0372bc4638b1367f62764d39c10fd409bb",
+    "plan_sha": "d8e7305e9a4040b9415f2c3eed5d35a9b591405819e61e54d7fabab02618be21",
+    "compiled_sha": "7967da7aa40620fe14a396cee0acc7d3afb9cd066205526a4df53c7117bb47c5",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -825,8 +825,8 @@
     }
   },
   "32-year-old-man-brought-in-fitting": {
-    "plan_sha": "12dda86824d12952bcc7ef143a55978357f8a83889fe09ddc1bc71987f3a0d10",
-    "compiled_sha": "1e1ded10d0b1190b568dc73362b77a03e2c62d6abe5640889d314cf54131d172",
+    "plan_sha": "eaa40c4f603d9e2ab74cd02e50201694b0336bc6bf8f765560fc14822b69e2e5",
+    "compiled_sha": "c00752da9b5be81686b5a5eafc0d2864bf360578819ee6ddaaa374a27d8069b8",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1060,8 +1060,8 @@
     }
   },
   "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing": {
-    "plan_sha": "1037584b25ed590aca191d1dc283fd48eea303e7ee8de878d6f338576030fe69",
-    "compiled_sha": "4cf367f93f03ee52dfe816030a2e8cc095e7ef0ef09794b6438c218a787f1822",
+    "plan_sha": "07a2a16a6aa15f101e4a8fc761d3b4a1667c4ab8c0641f8cf6a3d6b8553e7cc6",
+    "compiled_sha": "40ba012ba283925a535824a2715e158107324e450c674a4e5f21319a1eac0dab",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1221,8 +1221,8 @@
     }
   },
   "36-year-old-man-with-sudden-breathlessness": {
-    "plan_sha": "9f7de1fac4d02c875b9c2cc8707abadb246571cc0c9d62fe62c57a4cb5d7ea78",
-    "compiled_sha": "fc60bc43783b7dd400474387af0e03710c874f81a6f70eafb15f7a5b56a84583",
+    "plan_sha": "9cd2319ead0789e3da713db40284d19d22d7a9a2549946759c5ca7725dcddb8d",
+    "compiled_sha": "8626ca25f5bffcbb927ee271643ff18dc9116aab71c6dde926164c7a10e5a291",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1507,14 +1507,18 @@
     }
   },
   "40-year-old-man-found-unconscious-at-home": {
-    "plan_sha": "8eb9dce45f9c6d413f7507eedb0dcbb9d1828dce26a0edac772cad6cd260632e",
-    "compiled_sha": "a77c58ffdc8222022c76e3e7848dbb8a805e812434d44b752a82ef674539bd94",
+    "plan_sha": "9f2c36601f597be1e34005971156952f4a99856103c255788c0d86c1813f94fb",
+    "compiled_sha": "2e33bb0a91f782e8e590c2a21a6bc5e67064e21671990ab24a1cbb1cf0eada02",
     "playthroughs": {
       "untreated": {
         "score": 0,
         "items": [
           [
             "iv_access",
+            "missed"
+          ],
+          [
+            "saline_bolus_500",
             "missed"
           ],
           [
@@ -1551,7 +1555,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "b306d412cd1954e6f95c1ced0fb15ba3ded3eb5a4c47c8be6898bab9630c2912"
+        "events_sha": "3d439311cc67d1412423f67304366c3ff320641c78a346177a550b4a987651a1"
       },
       "correct": {
         "score": 100,
@@ -1561,7 +1565,15 @@
             "on_time"
           ],
           [
+            "saline_bolus_500",
+            "not_needed"
+          ],
+          [
             "normal_saline_first_litre",
+            "on_time"
+          ],
+          [
+            "normal_saline_first_litre:rate",
             "on_time"
           ],
           [
@@ -1594,7 +1606,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "e442ce8a9f704be2a3dd2c077659263d23dc274fce0156bc6de78a94846ad493"
+        "events_sha": "27842b4890832d0c2aa7b3b370af8cd6089dee7fdb27a5f1f1d3c8f1959b3919"
       },
       "harmful": {
         "score": 55,
@@ -1604,7 +1616,15 @@
             "on_time"
           ],
           [
+            "saline_bolus_500",
+            "not_needed"
+          ],
+          [
             "normal_saline_first_litre",
+            "on_time"
+          ],
+          [
+            "normal_saline_first_litre:rate",
             "on_time"
           ],
           [
@@ -1648,18 +1668,73 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "506a5f2ffd96cdf7536a087a0e4815caeb0d123469d86d7547505a987d94163d"
+        "events_sha": "46b0e7e2639e08817de15d04b14ad5f2ce99476c409e74236f9fe6f210deeb5e"
       },
       "late": {
-        "score": 60,
+        "score": 25,
         "items": [
           [
             "iv_access",
             "late"
           ],
           [
+            "saline_bolus_500",
+            "missed"
+          ],
+          [
             "normal_saline_first_litre",
+            "missed"
+          ],
+          [
+            "insulin_infusion",
             "late"
+          ],
+          [
+            "potassium_plan",
+            "late"
+          ],
+          [
+            "iv_antibiotics",
+            "on_time"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Shock with deepening coma"
+        },
+        "final": {
+          "hr": 140,
+          "sbp": 76,
+          "dbp": 50,
+          "spo2": 98,
+          "rr": 38,
+          "temp": 37.9,
+          "consciousness": "unresponsive",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "97dfa21965e3e897155ba553cdfa60e872dcc209bc7fd825bfad281553ffcb8f"
+      },
+      "rescue": {
+        "score": 75,
+        "items": [
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "saline_bolus_500",
+            "not_needed"
+          ],
+          [
+            "normal_saline_first_litre",
+            "on_time"
+          ],
+          [
+            "normal_saline_first_litre:rate",
+            "on_time"
           ],
           [
             "insulin_infusion",
@@ -1694,13 +1769,13 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "333a776d1c7d04afe62d4515167833cfc9c337e569335778499f7754078655d7"
+        "events_sha": "390128f75c57bc01be440e010d8b8c2b55aca573548abad3c1fcd546de297667"
       }
     }
   },
   "45-year-old-woman-with-fever-who-has-become-confused": {
-    "plan_sha": "86c2a9d68d5aa3232889884d20616e0ea3e395c1dde700f6dbc2369b97789123",
-    "compiled_sha": "8c027503a24eddd1b51e97fb8671a0d7c62f3a25cb84461d92499cb8c21ec2ac",
+    "plan_sha": "0a767527c0859d9a4dc82054e1e1efc6630533ec84494f63b6da3fcecae2744b",
+    "compiled_sha": "e20f35e903e9b2d861a27c08dff0f3bc163af3487925b2749e0f3305ea963a99",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1781,7 +1856,7 @@
         "outcome": {
           "stabilised": true,
           "recovered": true,
-          "worst_stage": "Worsening hypotension"
+          "worst_stage": null
         },
         "final": {
           "hr": 108,
@@ -1794,7 +1869,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "f2b1185910d688a60bf4f63acc13fc01d7151fc8c470d3f61535a30a17ee8128"
+        "events_sha": "3b33880acb2bcd9838de1a46b7f24ddb1f0ec7e6f5c4b31fb239e1adb05ed872"
       },
       "harmful": {
         "score": 55,
@@ -1838,7 +1913,7 @@
               "Furosemide IV"
             ]
           },
-          "worst_stage": "Worsening hypotension"
+          "worst_stage": null
         },
         "final": {
           "hr": 120,
@@ -1851,10 +1926,10 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "c6520cc3debedb80fb0c4a5bba8f10c48eda9b4a8d72ef4e97a0adc05b07f2c2"
+        "events_sha": "00c3e9c08a7f801e9eacbd57cfae602ee2d91fe5f5b380ad78a0be10c7f7166e"
       },
       "late": {
-        "score": 50,
+        "score": 25,
         "items": [
           [
             "iv_access",
@@ -1866,7 +1941,54 @@
           ],
           [
             "ringer_lactate_boluses",
+            "missed"
+          ],
+          [
+            "meropenem_iv",
             "late"
+          ],
+          [
+            "norepinephrine_infusion",
+            "late"
+          ],
+          [
+            "urology_decompression",
+            "late"
+          ]
+        ],
+        "harmful": [],
+        "outcome": {
+          "stabilised": false,
+          "recovered": false,
+          "worst_stage": "Profound hypotension with multi-organ hypoperfusion"
+        },
+        "final": {
+          "hr": 142,
+          "sbp": 78,
+          "dbp": 44,
+          "spo2": 92,
+          "rr": 34,
+          "temp": 39.2,
+          "consciousness": "altered",
+          "stability": "critical",
+          "rhythm": "sinus_tachycardia"
+        },
+        "events_sha": "8c5b2601803cacc0e45ad646f698ecfe2efaa8991a9481858c6c98fdc234d6c5"
+      },
+      "rescue": {
+        "score": 58,
+        "items": [
+          [
+            "iv_access",
+            "late"
+          ],
+          [
+            "blood_cultures_before_antibiotics",
+            "late"
+          ],
+          [
+            "ringer_lactate_boluses",
+            "on_time"
           ],
           [
             "meropenem_iv",
@@ -1888,9 +2010,9 @@
           "worst_stage": "Decompensated septic shock"
         },
         "final": {
-          "hr": 130,
-          "sbp": 92,
-          "dbp": 52,
+          "hr": 126,
+          "sbp": 98,
+          "dbp": 55,
           "spo2": 94,
           "rr": 32,
           "temp": 39.2,
@@ -1898,7 +2020,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-        "events_sha": "c63b6d4bdf8268eeb9e33bc30b06a91244b9a4aebe9119229ad2f023a7f3fbe0"
+        "events_sha": "66d0e1f1703876924cb22d810e41570fe3c67a49a55c5af6295cb29edac9d200"
       }
     }
   },
@@ -2960,8 +3082,8 @@
     }
   },
   "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
-    "plan_sha": "8f5dd205b2d217397aa88b2f822967a09e0c3731248faa5b7851e91df183f3f3",
-    "compiled_sha": "625e23f0bcfa51a48c7df065293885ea31508ace8dbf1c9b60175ada4dad7628",
+    "plan_sha": "c2d1ca6956296bc9e91b0e68e71d219b6e44a42eed7e6da1f5bae2a6e9c1f9f7",
+    "compiled_sha": "83aecbff4de4b5c25f70bba97009ef783832fa71d2dc40e196f1ff8bf99e6758",
     "playthroughs": {
       "untreated": {
         "score": 0,

@@ -236,3 +236,85 @@ describe("anaphylaxis: IM adrenaline while ABC problems persist, and the refract
         assert.deepEqual(score.refused?.map((r) => r.reason), ["not_indicated"], "no IM dose once the infusion is running");
     });
 });
+
+const SEPSIS = "45-year-old-woman-with-fever-who-has-become-confused";
+describe("septic shock: Ringer's lactate in boluses, given by response", { skip: SEPSIS && SKIP(SEPSIS) }, () => {
+    const care: Array<[string, number]> = [["iv_access", 1], ["ringer_lactate_boluses", 2], ["blood_cultures_before_antibiotics", 3], ["meropenem_iv", 4], ["reassess_patient", 5], ["ringer_lactate_boluses", 5], ["norepinephrine_infusion", 6], ["urology_decompression", 10]];
+
+    it("is still proposed, and passes the check", () => {
+        const { base, plan } = load(SEPSIS);
+        assert.equal(plan.status, "proposed");
+        assert.deepEqual(checkLivePlan(plan, measuredOnArrival(base)), { errors: [], warnings: [] });
+    });
+
+    it("correct care: a bolus, a reassessment showing her MAP still low, a second bolus and noradrenaline settle her", () => {
+        const { results, score } = run(SEPSIS, care);
+        assert.match(results[4].consequence, /Systolic is still under 90/);
+        assert.equal(score.score, 100);
+        assert.deepEqual(item(score, "ringer_lactate_boluses").doses?.map((d) => d.status), ["on_time", "on_time"]);
+    });
+
+    it("a further bolus needs a reassessment, and once the systolic is 90 or more it is refused as not indicated", () => {
+        const skipped = run(SEPSIS, [["iv_access", 1], ["ringer_lactate_boluses", 2], ["ringer_lactate_boluses", 6]]);
+        assert.deepEqual(skipped.score.refused?.map((r) => r.reason), ["not_reassessed"]);
+        const met = run(SEPSIS, [...care, ["reassess_patient", 9], ["ringer_lactate_boluses", 9]]);
+        assert.match(met.results[8].consequence, /Systolic is 90 or more/);
+        assert.deepEqual(met.score.refused?.map((r) => r.reason), ["not_indicated"]);
+        assert.equal(met.score.score, 100, "a refused bolus costs nothing");
+    });
+
+    it("fluid alone does not reverse the shock: four boluses without noradrenaline leave her unstabilised, and a fifth is refused", () => {
+        // A bolus offered after every reassessment, every 3 minutes: given only while she is hypotensive, four at most.
+        const steps: Array<[string, number]> = [["iv_access", 1], ["ringer_lactate_boluses", 2]];
+        for (let m = 5; m <= 23; m += 3) steps.push(["reassess_patient", m], ["ringer_lactate_boluses", m]);
+        const { engine, score } = run(SEPSIS, steps);
+        assert.equal(score.outcome.stabilised, false);
+        assert.equal(engine.state.flags[doseFlag("ringer_lactate_boluses", 4)], true, "four boluses went in");
+        assert.ok(score.refused?.some((r) => r.reason === "limit"), "the fifth is refused at the limit");
+    });
+});
+
+const DKA = "40-year-old-man-found-unconscious-at-home";
+describe("DKA: saline on a pump at the JBDS rates, and a bolus only when the systolic is under 90", { skip: DKA && SKIP(DKA) }, () => {
+    const NS = "normal_saline_first_litre";
+    const care: Array<[string, number]> = [["iv_access", 1], [`${NS}@r1000`, 2], ["insulin_infusion", 3], ["potassium_plan", 4], ["iv_antibiotics", 5]];
+
+    it("is still proposed, and passes the check (the step-downs fall after the encounter, so they are not scored)", () => {
+        const { base, plan } = load(DKA);
+        assert.equal(plan.status, "proposed");
+        const check = checkLivePlan(plan, measuredOnArrival(base));
+        assert.deepEqual(check.errors, []);
+        assert.ok(check.warnings.every((w) => /no hold_minutes, so when it is stepped down is not scored/.test(w)), check.warnings.join(" | "));
+    });
+
+    it("correct care: 1 L over the first hour; the bolus is never needed while the systolic stays 90 or more", () => {
+        const { score } = run(DKA, care);
+        assert.equal(score.score, 100);
+        assert.equal(item(score, "saline_bolus_500").status, "not_needed");
+        assert.equal(item(score, `${NS}:rate`).status, "on_time");
+    });
+
+    it("a slow drip does not stop the decline and its starting rate is wrong; restarted at 1 L over an hour, it does", () => {
+        const slow = run(DKA, [["iv_access", 1], [`${NS}@r250`, 2]]);
+        assert.equal(slow.score.outcome.stabilised, false);
+        assert.equal(item(slow.score, `${NS}:rate`).fluid_steps?.[0].status, "wrong");
+        const fixed = run(DKA, [["iv_access", 1], [`${NS}@r250`, 2], [`${NS}@stop`, 4], [`${NS}@r1000`, 4]]);
+        assert.equal(fixed.score.outcome.stabilised, true);
+    });
+
+    it("the bolus is on the tray only under a systolic of 90; a late student who gives it is on time, and a repeat once the BP is up is refused", () => {
+        const early = run(DKA, [["iv_access", 1], ["saline_bolus_500", 2]]);
+        assert.match(early.results[1].consequence, /^Not given:/);
+        const late = run(DKA, [["iv_access", 9], ["saline_bolus_500", 11], [`${NS}@r1000`, 12], ["reassess_patient", 14], ["saline_bolus_500", 14]]);
+        assert.equal(item(late.score, "saline_bolus_500").status, "on_time");
+        assert.deepEqual(late.score.refused?.map((r) => r.reason), ["not_indicated"]);
+        assert.equal(late.score.outcome.stabilised, true);
+        assert.ok(late.score.outcome.settled_worse?.late_after, "he settles worse than with care on time");
+    });
+
+    it("the litre started under a systolic of 90 says a bolus comes first, and the missing bolus is scored", () => {
+        const { results, score } = run(DKA, [["iv_access", 9], [`${NS}@r1000`, 11]]);
+        assert.match(results[1].consequence, /JBDS gives 500 mL over 10 to 15 minutes first/);
+        assert.equal(item(score, "saline_bolus_500").status, "missed");
+    });
+});
