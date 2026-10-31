@@ -62,6 +62,13 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  // Search Console and Bing Webmaster Tools ownership tags, from Vercel's environment variables (the codes are not
+  // secrets, but this way they change without a code change). Unset, no tag is printed. A Domain property verified by
+  // DNS needs neither.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+  },
   // app/favicon.ico is added by Next on its own. Listing icons here replaces app/icon.svg's automatic tag, so it is
   // named again; the PNG is for search results and home screens that want a bitmap of at least 48px.
   icons: {

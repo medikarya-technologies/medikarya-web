@@ -6,6 +6,15 @@ export type BodyBlock =
     | { type: "paragraph"; text: string }
     | { type: "callout"; text: string; href: string; linkLabel: string }
 
+/** A real, named person. Fill these only with the person's agreement and their real role. */
+export interface ArticlePerson {
+    name: string
+    /** As it should be printed: "MBBS student, Maulana Azad Medical College", "Consultant physician" */
+    role: string
+    /** Their profile page, if they have one (LinkedIn, an institution page) */
+    url?: string
+}
+
 export interface Article {
     title: string
     category: string
@@ -13,6 +22,13 @@ export interface Article {
     date: string
     isoDate: string
     author: string
+    /**
+     * The person who wrote it, when the article is signed by someone rather than the team. Shown under the title and
+     * used as the article's author in its structured data (a named author is a trust signal for health content).
+     */
+    byline?: ArticlePerson
+    /** A doctor who checked the clinical content: printed as "Clinically reviewed by" and given as reviewedBy. */
+    reviewedBy?: ArticlePerson
     readTime: string
     /** Last real edit, if after isoDate (dateModified in the structured data). */
     updatedIsoDate?: string

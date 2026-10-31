@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             type: "article",
             publishedTime: article.isoDate,
             ...(article.updatedIsoDate ? { modifiedTime: article.updatedIsoDate } : {}),
-            authors: [article.author],
+            authors: [article.byline?.name ?? article.author],
             url: `${BASE_URL}/blog/${slug}`,
             siteName: "MediKarya",
             locale: "en_IN",
@@ -71,12 +71,10 @@ export default async function BlogArticlePage({ params }: Props) {
         "articleSection": article.category,
         "inLanguage": "en-IN",
         "genre": "Medical Education",
-        // The articles are signed by the team, not a named person, so the author is the organisation.
-        "author": {
-            "@type": "Organization",
-            "name": article.author,
-            "url": `${BASE_URL}/about`,
-        },
+        // A named writer when the article has one (lib/blog/articles.ts, byline); otherwise the team, as an organisation.
+        "author": article.byline
+            ? { "@type": "Person", "name": article.byline.name, "jobTitle": article.byline.role, ...(article.byline.url ? { "url": article.byline.url, "sameAs": [article.byline.url] } : {}) }
+            : { "@type": "Organization", "name": article.author, "url": `${BASE_URL}/about` },
         "publisher": {
             "@type": "Organization",
             "name": "MediKarya",
@@ -100,7 +98,10 @@ export default async function BlogArticlePage({ params }: Props) {
         "wordCount": article.wordCount ?? 800,
         "mainEntityOfPage": {
             "@type": "WebPage",
-            "@id": `${BASE_URL}/blog/${slug}`
+            "@id": `${BASE_URL}/blog/${slug}`,
+            ...(article.reviewedBy
+                ? { "reviewedBy": { "@type": "Person", "name": article.reviewedBy.name, "jobTitle": article.reviewedBy.role, ...(article.reviewedBy.url ? { "url": article.reviewedBy.url } : {}) } }
+                : {}),
         },
         "isPartOf": {
             "@type": "Blog",
@@ -167,10 +168,21 @@ export default async function BlogArticlePage({ params }: Props) {
                             {article.title}
                         </h1>
                         <div className="flex items-center gap-4 text-sm text-slate-400">
-                            <span className="flex items-center gap-1.5"><User className="w-4 h-4" />{article.author}</span>
+                            <span className="flex items-center gap-1.5"><User className="w-4 h-4" />{article.byline ? `${article.byline.name}, ${article.byline.role}` : article.author}</span>
                             <span>{article.date}</span>
                             <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />{article.readTime}</span>
                         </div>
+                        {article.reviewedBy && (
+                            <p className="text-sm text-slate-500">
+                                Clinically reviewed by{" "}
+                                {article.reviewedBy.url ? (
+                                    <a href={article.reviewedBy.url} className="underline underline-offset-2" rel="noopener" target="_blank">{article.reviewedBy.name}</a>
+                                ) : (
+                                    article.reviewedBy.name
+                                )}
+                                , {article.reviewedBy.role}
+                            </p>
+                        )}
                     </header>
 
                     {/* Article body */}

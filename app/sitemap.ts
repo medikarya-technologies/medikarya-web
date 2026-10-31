@@ -24,7 +24,7 @@ const staticRoutes: { path: string; lastModified: string; priority: number }[] =
     { path: '/colleges',     lastModified: '2026-10-31', priority: 0.7 },
 ]
 
-/** The day the case study guides (lib/seo/case-guides.ts) last changed. */
+/** The day the case study guides (lib/seo/case-guides.ts) last changed: bump it when a guide's pendingCheck line goes. */
 const CASE_GUIDES_UPDATED = '2026-10-09'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
