@@ -33,7 +33,7 @@
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 import { Eyebrow } from "@/components/cases/encounter-ui"
-import { Quote } from "lucide-react"
+import { Quote, Star } from "lucide-react"
 
 const PHOTOS = [
   { file: "mamc-5.jpg", rotate: "-rotate-4", z: "z-20", pos: "left-0 top-[6%]" },
@@ -41,13 +41,37 @@ const PHOTOS = [
   { file: "mamc-4.jpg", rotate: "-rotate-2", z: "z-15", pos: "left-[16%] top-[42%]" },
 ]
 
+// The pilot survey's answers, as they came back (4 of 9). They used to be a section of their own after this one, with
+// its own heading saying the same thing ("What the pilot batch said"); they now sit under the quote, so the page tells
+// the pilot once.
+const REVIEWS = [
+  { stars: 5, quote: "Simulation strategy for clinical experience.", time: "13:32" },
+  { stars: 5, quote: "Feedback at the end.", time: "13:33" },
+  { stars: 5, quote: "Simulation of a real life case scenario and simultaneously correcting the mistake.", time: "13:35" },
+  { stars: 4, quote: "I liked the tests for diagnosis part of the app, it was clear and to the point.", time: "13:37" },
+]
+
+function Stars({ count }: { count: number }) {
+  return (
+    <div className="flex shrink-0 gap-0.5" aria-label={`${count} of 5 stars`}>
+      {Array.from({ length: 5 }).map((_, i) =>
+        i < count ? (
+          <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
+        ) : (
+          <Star key={i} className="h-3.5 w-3.5 fill-none text-enc-line-strong" strokeWidth={1.5} aria-hidden />
+        )
+      )}
+    </div>
+  )
+}
+
 export default function PilotProofSection() {
   const { ref, isVisible } = useScrollAnimation(0.15)
 
   return (
     <section className="bg-brand-50 py-20 sm:py-28" ref={ref}>
       <div className="mx-auto max-w-5xl px-4">
-        <div className="grid items-center gap-16 sm:grid-cols-2 sm:gap-14">
+        <div className="grid items-center gap-12 sm:grid-cols-2 sm:gap-14">
           {/* Photo cluster — close, slightly overlapping, slightly rotated, not a uniform strip */}
           <div
             className={cn("relative mx-auto h-[240px] w-full max-w-[300px] transition-all duration-700 ease-out sm:h-[300px]", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}
@@ -76,6 +100,23 @@ export default function PilotProofSection() {
                 <p className="text-[15px] leading-relaxed text-enc-ink italic">Interactive software and reasoning what I did wrong and right really makes sense.</p>
                 <p className="mt-2 text-[12.5px] text-enc-ink-3">4th-year MBBS student, MAMC pilot</p>
               </div>
+            </div>
+
+            {/* The survey's answers, not selected for being positive. */}
+            <div className="mt-7 overflow-hidden rounded-2xl border border-enc-line-strong bg-enc-sheet shadow-enc-lift">
+              <div className="flex items-center justify-between border-b border-enc-line bg-enc-console px-4 py-2.5">
+                <span className="text-[11px] font-semibold tracking-widest text-enc-ink-3 uppercase">Pilot survey · MAMC, 4th year</span>
+                <span className="text-[10.5px] text-enc-ink-3">4 of 9 answers</span>
+              </div>
+              <ul>
+                {REVIEWS.map((r, i) => (
+                  <li key={r.quote} className={cn("flex items-start gap-3 px-4 py-3", i !== REVIEWS.length - 1 && "border-b border-enc-line")}>
+                    <Stars count={r.stars} />
+                    <p className="flex-1 text-[13.5px] leading-relaxed text-enc-ink">{r.quote}</p>
+                    <span className="shrink-0 font-mono text-[11px] text-enc-ink-3">{r.time}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

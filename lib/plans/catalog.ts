@@ -24,7 +24,7 @@ export const PLAN_OFFERS: Record<Plan, PlanOffer> = {
     tagline: "A simple way to experience MediKarya.",
     monthly: 0,
     yearly: 0,
-    features: ["2 cases a day, Beginner difficulty", "One live emergency case, free to try", "No account needed"],
+    features: ["2 cases a day, Beginner difficulty", "One live emergency case, free to try", "One case to try without an account"],
   },
   intern: {
     plan: "intern",
