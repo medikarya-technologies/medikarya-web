@@ -1,6 +1,6 @@
 {
   "plan_sha": "1c5fb24119c8f35e90dc9eb39ccb2760e5bf5043fdf8374f3625d26fc63b75a9",
-  "compiled_sha": "ef48ba9ba078dc6999572020d7b27f1fa8751864dceb89faae9c77b00b901b9c",
+  "compiled_sha": "5de8160a8d93d09053c4331f8a41f923f4a044b77ba73a6120dad22b9bd437fd",
   "playthroughs": {
     "untreated": {
       "score": 0,
@@ -31,7 +31,7 @@
         "stability": "critical",
         "rhythm": "sinus_tachycardia"
       },
-      "events_sha": "5805016c3594186b80b5ad400d117216ee9903ce68d1f28ff5847ad127ac0a5f"
+      "events_sha": "4d052eafd2d917e6ef2417c456d638cb4a7a236cb42a34bf5511035b6dfa9470"
     },
     "correct": {
       "score": 100,
@@ -118,20 +118,23 @@
       "outcome": {
         "stabilised": true,
         "recovered": true,
+        "settled_worse": {
+          "late_after": "Compensated shock"
+        },
         "worst_stage": "Compensated shock"
       },
       "final": {
-        "hr": 126,
-        "sbp": 94,
-        "dbp": 58,
+        "hr": 136,
+        "sbp": 91,
+        "dbp": 56,
         "spo2": 99,
-        "rr": 30,
+        "rr": 33,
         "temp": 37.9,
-        "consciousness": "alert",
+        "consciousness": "anxious",
         "stability": "stable",
         "rhythm": "sinus_tachycardia"
       },
-      "events_sha": "70117b1f5a6fbe612f4a7b6445a0a3f1898d490b8bbc1c713bba8291e8d50dda"
+      "events_sha": "30412e3984102377d3c2e14bb8e749272d7165c718b36bec406664efbc1cc456"
     }
   }
 }

@@ -1167,7 +1167,7 @@ export function checkLivePlan(plan: LivePlan, measured: LiveVitals = {}, ageYear
 export function unmodelledCourse(plan: LivePlan): string[] {
     const out: string[] = [];
     if (!plan.recovery.after_stage?.length) {
-        out.push(`recovery.after_stage: not written, so a patient stabilised after a step past the last on-time minute (${onTimeBy(plan)} min) settles by the default: up to ${Math.round(LATE_RECOVERY_SHARE * 100)}% of the way back toward the worst step reached, ${LATE_RECOVERY_EXTRA_MINUTES} minutes slower per step. Write the case's own if a clinician can say better.`);
+        out.push(`recovery.after_stage: not written, so a patient stabilised after the last on-time minute (${onTimeBy(plan)} min) settles by the default: up to ${Math.round(LATE_RECOVERY_SHARE * 100)}% of the way back toward the worst step reached, ${LATE_RECOVERY_EXTRA_MINUTES} minutes slower per step. Write the case's own if a clinician can say better.`);
     }
     const defaulted = plan.treatments.filter((t) => t.role === "harmful" && !t.lasting && t.effect && !isNoChange(t.effect));
     if (defaulted.length > 0) out.push(`lasting: not written for ${defaulted.map((t) => t.id).join(", ")}, so ${Math.round(HARM_LASTING_SHARE * 100)}% of each one's effect stays after the recovery. Say what really lasts, or {} if it wears off.`);
@@ -1190,11 +1190,13 @@ const LATE_NURSE_SAYS = "The patient has stopped getting worse, but the delay ha
 
 /**
  * How a patient stabilised after each step of the untreated course settles: the plan's own after_stage if it has one;
- * otherwise, for every step that comes after care on time could have stopped the course (onTimeBy), the recovery moved part of the way back toward the
- * monitor at that step (LATE_RECOVERY_SHARE at the last step, in proportion before it), slower by
- * LATE_RECOVERY_EXTRA_MINUTES a step, and no more awake than one level better than the patient was at that step. A step
- * before then is part of the course even with care given on time, so it costs nothing. `arrival` is the monitor on
- * arrival (the case's and the plan's).
+ * otherwise, for every step, the recovery moved part of the way back toward the monitor at that step
+ * (LATE_RECOVERY_SHARE at the last step, in proportion before it), slower by LATE_RECOVERY_EXTRA_MINUTES a step, and no
+ * more awake than one level better than the patient was at that step. The derived entries apply only to a patient
+ * stabilised after the last on-time minute (onTimeBy; compiled as STABILISED_LATE): care on time costs nothing, however
+ * far the course got meanwhile, and care given late costs something at every step reached. (Until 2026-10-31 a step
+ * counted only if it came after the on-time minute, so in a plan whose repeated doses make that minute late, such as
+ * titrated atropine, a late rescue settled exactly like perfect care.) `arrival` is the monitor on arrival.
  */
 export function lateRecoveries(plan: LivePlan, arrival: LiveVitals = {}): LiveLateRecovery[] {
     if (plan.recovery.after_stage?.length) return plan.recovery.after_stage;
@@ -1206,7 +1208,6 @@ export function lateRecoveries(plan: LivePlan, arrival: LiveVitals = {}): LiveLa
     return plan.stages.flatMap((s, i) => {
         monitor = { ...monitor, ...s.vitals };
         if (s.consciousness) awake = s.consciousness;
-        if (s.at_minutes <= onTimeBy(plan)) return [];
         const share = (LATE_RECOVERY_SHARE * (i + 1)) / n;
         const vitals: LiveVitals = {};
         for (const k of ["hr", "sbp", "dbp", "spo2", "rr", "temp"] as const) {
@@ -1294,6 +1295,9 @@ const STABILISED = "live_stabilised";
 const RECOVERED = "live_recovered";
 /** Set just after the recovery's instant: harm given from then on acts on the monitor itself and must not be added again. */
 const SETTLED = "live_settled";
+/** Set when care was late (a stabilising treatment's first dose after its window, or no stabilisation a minute after
+ *  the last on-time minute, onTimeBy): the derived late recoveries (lateRecoveries) apply only then. */
+const STABILISED_LATE = "live_stabilised_late";
 const given = (treatmentId: string) => `given_${treatmentId}`;
 /** The flag set by a valid dose. Dose 1 keeps the single-dose flag, so everything that reads it is unchanged. */
 export const doseFlag = (treatmentId: string, dose: number) => (dose === 1 ? given(treatmentId) : `given_${treatmentId}_dose${dose}`);
@@ -1316,7 +1320,7 @@ const notNeededFlag = (treatmentId: string, dose: number) => `notneeded_${treatm
 const resolvedFlag = (treatmentId: string, dose: number) => `resolved_${treatmentId}_dose${dose}`;
 
 /** The ids of the record-only rules a plan adds, which the timeline does not show (the patient's state does not change). */
-const RECORD_ONLY_RULE = /^live_(available|required|indicated|notneeded|resolved|infusion|settled)_/;
+const RECORD_ONLY_RULE = /^live_(available|required|indicated|notneeded|resolved|infusion|settled|late)_/;
 export const isRecordOnlyRule = (ruleId: string) => RECORD_ONLY_RULE.test(ruleId);
 
 /** A treatment whose further doses depend on a condition on the patient, not just on the clock. */
@@ -1822,8 +1826,11 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
     for (const f of plan.findings ?? []) flags[findingFlag(f.id)] = f.present;
     // A late recovery needs to know how far the untreated course got (lateRecoveries: the plan's own, or derived).
     const late = lateRecoveries(plan, arrival);
+    // The engine's own late recoveries (not the plan's) cost something only when care came after the on-time minute.
+    const derivedLate = late.length > 0 && !plan.recovery.after_stage?.length;
     const referenced = new Set([...stagesReferenced(planConditions(plan)), ...late.map((a) => a.stage)]);
     for (const id of referenced) flags[reachedFlag(id)] = false;
+    if (derivedLate) flags[STABILISED_LATE] = false;
     const lasting = plan.treatments.flatMap((t) => {
         const l = lastingEffect(t);
         return l ? [{ t, l }] : [];
@@ -1886,11 +1893,26 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
         stability: unsafeReadings({ ...v, consciousness: consciousness ?? "alert" }, base.patient?.age).length > 0 ? "unstable" : "stable",
     });
     const recoverySets = { sets: { ...findingSets(r.findings), [RECOVERED]: true } };
+    // Care was late if the patient is still not stabilised a minute past the last on-time minute, or if a stabilising
+    // treatment's first dose missed its own window (a late first dose can be caught up with the repeats before that
+    // minute, and the patient has still gone further than care on time would let him). A treatment that falls due only
+    // in some states has its own clock, so only the overall minute judges it.
+    // Each threshold sits half a second past its minute: dose times are whole seconds, so a dose can never tie with it
+    // (at a tie the browser moves the clock first and the server's replay gives the dose first, and they would differ).
+    const HALF_SECOND = 1 / 120;
+    const lateCare: RuleCondition[] = [
+        { time_elapsed_gte_minutes: onTimeBy(plan) + 1 + HALF_SECOND },
+        ...plan.stabilised_by.flatMap((id) => {
+            const t = plan.treatments.find((x) => x.id === id);
+            if (!t || t.required_when || t.available_when || t.requires?.length) return [];
+            return [{ all: [{ time_elapsed_gte_minutes: (t.within_minutes ?? plan.critical_window_minutes) + HALF_SECOND }, { flag: given(t.id), is: false }] }];
+        }),
+    ];
     // A late patient: the furthest step reached decides, so each entry holds only while no later listed step was reached.
     const reachedNone = (stages: string[]): RuleCondition[] => stages.map((id) => ({ flag: reachedFlag(id), is: false }));
     const lateRules: EventRule[] = late.map((a, i) => ({
         id: `live_recovery_after_${a.stage}`,
-        when: { all: [{ minutes_since_flag: { flag: STABILISED, gte: a.after_minutes ?? r.after_minutes } }, { flag: reachedFlag(a.stage), is: true }, ...reachedNone(late.slice(i + 1).map((x) => x.stage))] },
+        when: { all: [{ minutes_since_flag: { flag: STABILISED, gte: a.after_minutes ?? r.after_minutes } }, { flag: reachedFlag(a.stage), is: true }, ...reachedNone(late.slice(i + 1).map((x) => x.stage)), ...(derivedLate ? [{ flag: STABILISED_LATE, is: true }] : [])] },
         transition: "recovering",
         physiological_changes: settleTo({ ...r.vitals, ...a.vitals }, a.rhythm ?? r.rhythm, a.consciousness ?? r.consciousness),
         narrative: a.nurse_says ?? r.nurse_says,
@@ -1915,11 +1937,17 @@ export function compileLivePlan<T extends SimulationCaseConfig>(base: T, plan: L
             sets: { [STABILISED]: true },
             narrative: null,
         },
+        // Care on time: still not stabilised a minute past the last on-time minute marks the patient as late.
+        ...(derivedLate
+            ? [{ id: "live_late_care", when: { all: [{ flag: STABILISED, is: false }, { any: lateCare }] }, transition: "unchanged", keeps_state: true, sets: { [STABILISED_LATE]: true }, narrative: null } as EventRule]
+            : []),
         {
             id: "live_recovery",
-            when: late.length > 0
-                ? { all: [{ minutes_since_flag: { flag: STABILISED, gte: r.after_minutes } }, ...reachedNone(late.map((a) => a.stage))] }
-                : { minutes_since_flag: { flag: STABILISED, gte: r.after_minutes } },
+            when: derivedLate
+                ? { all: [{ minutes_since_flag: { flag: STABILISED, gte: r.after_minutes } }, { any: [{ flag: STABILISED_LATE, is: false }, { all: reachedNone(late.map((a) => a.stage)) }] }] }
+                : late.length > 0
+                  ? { all: [{ minutes_since_flag: { flag: STABILISED, gte: r.after_minutes } }, ...reachedNone(late.map((a) => a.stage))] }
+                  : { minutes_since_flag: { flag: STABILISED, gte: r.after_minutes } },
             transition: "recovering",
             physiological_changes: settleTo(r.vitals, r.rhythm, r.consciousness),
             narrative: r.nurse_says,

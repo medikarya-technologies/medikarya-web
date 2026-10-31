@@ -130,21 +130,29 @@ describe("organophosphate: atropine doubled until the end points are met", { ski
         const three = run(OP, steps);
         assert.equal(three.score.outcome.stabilised, false);
         assert.ok(three.engine.state.rate <= 80, "HR is still at or below 80");
+        // The delay has carried him into respiratory muscle fatigue (13 minutes), so the fourth dose alone is not
+        // enough any more: from that stage he needs intubating as well (blocker op_endpoints_review).
         const four = run(OP, [...steps, ["reassess_patient", 17], ["atropine_iv_titrated", 18]]);
-        assert.equal(four.score.outcome.stabilised, true);
+        assert.equal(four.score.outcome.stabilised, false);
+        const tubed = run(OP, [...steps, ["intubation_rsi", 14], ["reassess_patient", 17], ["atropine_iv_titrated", 18]]);
+        assert.equal(tubed.score.outcome.stabilised, true);
     });
 
-    it("in respiratory failure, atropine alone no longer stabilises him; with intubation it does", () => {
+    it("from respiratory muscle fatigue, atropine alone no longer stabilises him; with intubation it does, and intubation is due within 3 minutes of that stage", () => {
         const late: Array<[string, number]> = [["iv_access", 8], ["high_flow_oxygen", 8], ["atropine_iv_titrated", 9], ["reassess_patient", 13], ["atropine_iv_titrated", 14], ["reassess_patient", 18], ["atropine_iv_titrated", 19], ["reassess_patient", 23], ["atropine_iv_titrated", 24]];
         const noTube = run(OP, late);
         assert.equal(noTube.score.outcome.stabilised, false);
         assert.equal(item(noTube.score, "intubation_rsi").status, "missed");
         // Steps go in time order: the engine never goes back in time.
-        const tube = run(OP, [...late.slice(0, 7), ["intubation_rsi", 19], ...late.slice(7)]);
+        const tube = run(OP, [...late.slice(0, 4), ["intubation_rsi", 14], ...late.slice(4)]);
         assert.equal(tube.score.outcome.stabilised, true);
         assert.equal(tube.score.outcome.path, "Atropine to end points, with intubation and ventilation");
         assert.equal(item(tube.score, "intubation_rsi").status, "on_time");
         assert.equal(item(tube.score, "atropine_infusion").status, "not_due", "atropinised at 24 with the encounter ending at 25");
+        // Fatigue starts at 13, so a tube at 19 still stabilises him but is late.
+        const lateTube = run(OP, [...late.slice(0, 7), ["intubation_rsi", 19], ...late.slice(7)]);
+        assert.equal(lateTube.score.outcome.stabilised, true);
+        assert.equal(item(lateTube.score, "intubation_rsi").status, "late");
     });
 
     it("intubation and the suxamethonium trap are not on the tray before the fatigue stage", () => {

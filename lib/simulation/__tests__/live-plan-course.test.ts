@@ -175,11 +175,29 @@ describe("course: the defaults, for a plan that says neither", () => {
 
     it("care on time, even past a step inside the window: the usual recovery", () => {
         assert.equal(onTimeBy(plan()), 8);
-        assert.deepEqual(lateRecoveries(plan(), measuredOnArrival(base())).map((a) => a.stage), ["decompensated"]);
-        const r = run(long(), [["iv_access", 7], ["fluid_bolus_20ml_kg", 8]]);
+        // every step has a late recovery; care given on time never uses one
+        assert.deepEqual(lateRecoveries(plan(), measuredOnArrival(base())).map((a) => a.stage), plan().stages.map((st) => st.id));
+        const r = run(long(), [["iv_access", 5], ["fluid_bolus_20ml_kg", 8]]);
         assert.equal(r.fired.has("live_recovery"), true);
+        assert.equal(r.fired.has("live_late_care"), false);
         assert.equal(r.score.outcome.settled_worse, undefined);
         assert.deepEqual([r.state.rate, r.state.systolic, r.state.diastolic], [126, 94, 58]);
+    });
+
+    it("a first dose after its own window is late care, even if the patient is stabilised inside the overall window", () => {
+        // Before 2026-10-31 this settled exactly like care on time: the step reached was inside the window.
+        const onTime = run(long(), [["iv_access", 5], ["fluid_bolus_20ml_kg", 8]]);
+        const late = run(long(), [["iv_access", 7], ["fluid_bolus_20ml_kg", 8]]);
+        assert.equal(late.score.items.find((i) => i.id === "iv_access")?.status, "late");
+        assert.equal(late.fired.has("live_late_care"), true);
+        assert.equal(late.fired.has("live_recovery"), false);
+        assert.ok(late.score.outcome.settled_worse?.late_after);
+        assert.notDeepEqual([late.state.rate, late.state.systolic], [onTime.state.rate, onTime.state.systolic]);
+    });
+
+    it("a dose given at its deadline is on time, and a second later is late, the same in the browser and on the server", () => {
+        assert.equal(run(long(), [["iv_access", 5], ["fluid_bolus_20ml_kg", 8]]).fired.has("live_late_care"), false);
+        assert.equal(run(long(), [["iv_access", 5 + 1 / 60], ["fluid_bolus_20ml_kg", 8]]).fired.has("live_late_care"), true);
     });
 
     it("late, after decompensated shock: half way back toward it, slower, drowsy, and not safe to call recovered", () => {

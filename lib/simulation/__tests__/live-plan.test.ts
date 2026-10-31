@@ -11,6 +11,7 @@ import { EncounterEngine } from "../encounter-engine";
 import { INTERVENTION_IDS, interventionLabel, interventionsForCase } from "../intervention-catalog";
 import { upgradeLegacyCase } from "../legacy-adapter";
 import {
+    isRecordOnlyRule,
     blendLiveScore,
     checkLivePlan,
     compileLivePlan,
@@ -243,7 +244,9 @@ describe("live plan: compiled into a case the engine runs", () => {
 describe("live plan: an untreated patient gets worse on schedule", () => {
     it("reaches each step at its minute, with the monitor the plan wrote", () => {
         const engine = new EncounterEngine(live());
-        assert.deepEqual(engine.advanceTo(5 * MIN + 59), [], "nothing before the first step");
+        // Record-only rules (here, care becoming late at the access window) change nothing on the monitor; the timeline hides them too.
+        const shown = (events: ReturnType<typeof engine.advanceTo>) => events.filter((e) => !(e.type === "STATE_TRANSITION" && isRecordOnlyRule(e.trigger)));
+        assert.deepEqual(shown(engine.advanceTo(5 * MIN + 59)), [], "nothing before the first step");
 
         const first = engine.advanceTo(6 * MIN);
         assert.equal(first.find((e) => e.type === "STATE_TRANSITION")!.timestamp, 6 * MIN);
@@ -355,7 +358,8 @@ describe("live plan: the bedside score", () => {
         });
         assert.equal(s.score, 75);
         assert.deepEqual(s.items.map((i) => i.status), ["on_time", "late"]);
-        assert.deepEqual(s.outcome, { stabilised: true, recovered: true, worst_stage: "Compensated shock" });
+        // The bolus came after its window, so the patient settles less well than with care on time (late care).
+        assert.deepEqual(s.outcome, { stabilised: true, recovered: true, settled_worse: { late_after: "Compensated shock" }, worst_stage: "Compensated shock" });
     });
 
     it("is zero when nothing essential was done", () => {
