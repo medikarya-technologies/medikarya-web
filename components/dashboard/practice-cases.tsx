@@ -1,26 +1,30 @@
 "use client"
 
-// The case library: a worklist of patients. Filters on the left (specialty, difficulty, progress), a
-// search and a sort above, one row per case. Everything it does to the list (what matches, what order,
+// The case library: a worklist of patients. Filters on the left (case type, specialty, difficulty, progress), a
+// search and a sort above, one card per case. On the library as it opens, the live emergencies come first, in a row
+// of their own, and the grid under it holds the rest. Everything it does to the list (what matches, what order,
 // what the counts beside each filter say) is in lib/library/case-library.ts and is tested there.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Bookmark, ChevronDown, Search, SearchX, X } from "lucide-react"
+import { ArrowRight, Bookmark, ChevronDown, Search, SearchX, Stethoscope, X } from "lucide-react"
 import type { CaseMetadata } from "@/data/cases"
 import { cn } from "@/lib/utils"
 import {
   activeFilterCount,
+  CASE_TYPE_LABEL,
   DIFFICULTY_LABEL,
   difficultyLevel,
   facetCounts,
   filterCases,
   isNewCase,
+  liveEmergencies,
   pinFirst,
   NO_FILTERS,
   SORT_LABEL,
   sortCases,
   summarise,
+  type CaseType,
   type DifficultyLevel,
   type Filters,
   type LibraryCase,
@@ -76,10 +80,38 @@ function Dots({ level }: { level: number }) {
   )
 }
 
+function LiveDot({ className }: { className?: string }) {
+  return (
+    <span aria-hidden className={cn("flex h-3.5 w-3.5 shrink-0 items-center justify-center", className)}>
+      <span className="enc-live-dot h-1.5 w-1.5 rounded-full bg-enc-crit" />
+    </span>
+  )
+}
+
+const TYPE_ICON: Record<Exclude<CaseType, "all">, React.ReactNode> = {
+  live: <LiveDot />,
+  bedside: <Stethoscope className="h-3.5 w-3.5 shrink-0 text-enc-ink-3" strokeWidth={1.8} />,
+}
+
+/** The case type only matters once there is more than one kind in the library. */
+const hasBothTypes = (facets: ReturnType<typeof facetCounts>, filters: Filters) => (facets.type.live > 0 && facets.type.bedside > 0) || (!!filters.type && filters.type !== "all")
+
 function FilterRail({ facets, filters, set, hasProgress, savedCount }: { facets: ReturnType<typeof facetCounts>; filters: Filters; set: (patch: Partial<Filters>) => void; hasProgress: boolean; savedCount: number }) {
   const total = facets.specialties.reduce((n, s) => n + s.count, 0)
+  const type = filters.type ?? "all"
   return (
     <div className="space-y-7">
+      {hasBothTypes(facets, filters) && (
+        <section aria-label="Case type">
+          <Eyebrow className="px-2.5">Case type</Eyebrow>
+          <div className="mt-2 space-y-0.5">
+            {(["all", "live", "bedside"] as CaseType[]).map((t) => (
+              <Option key={t} active={type === t} disabled={facets.type[t] === 0} onClick={() => set({ type: type === t ? "all" : t })} icon={t === "all" ? undefined : TYPE_ICON[t]} label={t === "all" ? "All cases" : CASE_TYPE_LABEL[t]} count={facets.type[t]} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section aria-label="Specialty">
         <Eyebrow className="px-2.5">Specialty</Eyebrow>
         <div className="mt-2 space-y-0.5">
@@ -151,6 +183,14 @@ function MobileFilters({ facets, filters, set, hasProgress, savedCount }: { face
         ))}
       </div>
       <div className={scroller}>
+        {hasBothTypes(facets, filters) &&
+          (["live", "bedside"] as const).map((t) => (
+            <Chip key={t} active={filters.type === t} onClick={() => set({ type: filters.type === t ? "all" : t })}>
+              {TYPE_ICON[t]}
+              {t === "live" ? "Live" : "Bedside"}
+              <span className="font-mono text-[11.5px] text-enc-ink-3">{facets.type[t]}</span>
+            </Chip>
+          ))}
         {([1, 2, 3] as DifficultyLevel[]).map((level) => (
           <Chip key={level} active={filters.difficulty === level} onClick={() => set({ difficulty: filters.difficulty === level ? 0 : level })}>
             <Dots level={level} />
@@ -172,6 +212,33 @@ function MobileFilters({ facets, filters, set, hasProgress, savedCount }: { face
         )}
       </div>
     </div>
+  )
+}
+
+// ── Live emergencies ────────────────────────────────────────────────────────
+
+/**
+ * The live cases, in a row of their own above the grid: on a wide screen as many as fit, on a narrow one a row that
+ * scrolls sideways. "See all" narrows the library to them.
+ */
+function LiveRow({ children, count, onSeeAll }: { children: React.ReactNode; count: number; onSeeAll: () => void }) {
+  return (
+    <section aria-labelledby="live-emergencies" className="mb-9">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="live-emergencies" className="flex items-center gap-2 text-[15px] font-semibold text-enc-ink">
+            <LiveDot />
+            Live emergencies
+            <span className="font-mono text-[12.5px] font-normal text-enc-ink-3 tabular-nums">{count}</span>
+          </h2>
+          <p className="mt-0.5 text-[13px] text-enc-ink-2">The patient gets worse until you act. Treat in time and they recover; wait and they do not.</p>
+        </div>
+        <button type="button" onClick={onSeeAll} className="inline-flex shrink-0 items-center gap-1 text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
+          See all <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+      </div>
+      <ul className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-1 pb-3 [scrollbar-width:thin] sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">{children}</ul>
+    </section>
   )
 }
 
@@ -280,7 +347,11 @@ export function PracticeCases({ initialCases, progress = {}, userId }: { initial
         : lockedFor(plan.plan, { live: !!c.live, difficulty: difficultyLevel(c.difficulty) }, plan.liveEver),
     [plan]
   )
-  const results = useMemo(() => (sort === "recommended" ? pinFirst(sorted, new Set(inProgress.keys())) : sorted), [sorted, sort, inProgress])
+  // On the library as it opens, the live cases have a row of their own (what was started first), and the grid holds
+  // the rest, so no case shows twice.
+  const liveRow = useMemo(() => pinFirst(liveEmergencies(cases, filters, progress), new Set(inProgress.keys())), [cases, filters, progress, inProgress])
+  const pinned = useMemo(() => (sort === "recommended" ? pinFirst(sorted, new Set(inProgress.keys())) : sorted), [sorted, sort, inProgress])
+  const results = useMemo(() => (liveRow.length > 0 ? pinned.filter((c) => !c.live) : pinned), [pinned, liveRow])
   const active = activeFilterCount(filters)
 
   if (loading) return <LibrarySkeleton />
@@ -375,8 +446,21 @@ export function PracticeCases({ initialCases, progress = {}, userId }: { initial
         </aside>
 
         <section aria-label="Cases" className="@container min-w-0">
+          {liveRow.length > 0 && (
+            <LiveRow count={liveRow.length} onSeeAll={() => set({ type: "live" })}>
+              {liveRow.map((c) => (
+                <CaseRow key={c.id} c={c} progress={progress[c.id]} inProgress={inProgress.get(c.id)} isNew={isNewCase(c, progress, now)} saved={saved.has(c.id)} onToggleSaved={toggleSaved} locked={lockOf(c)} className="w-[272px] shrink-0 snap-start sm:w-[296px]" />
+              ))}
+            </LiveRow>
+          )}
           <div className="mb-3 flex min-h-6 items-center justify-between gap-3">
-            <Eyebrow>{results.length === cases.length ? `${cases.length} ${cases.length === 1 ? "case" : "cases"}` : `${results.length} of ${cases.length} cases`}</Eyebrow>
+            <Eyebrow>
+              {liveRow.length > 0
+                ? `${results.length} bedside ${results.length === 1 ? "case" : "cases"}`
+                : results.length === cases.length
+                  ? `${cases.length} ${cases.length === 1 ? "case" : "cases"}`
+                  : `${results.length} of ${cases.length} cases`}
+            </Eyebrow>
             {active > 0 && (
               <button type="button" onClick={clear} className="text-[13px] font-medium text-brand-700 hover:text-brand-800 hover:underline">
                 Clear filters
