@@ -85,7 +85,7 @@ export class EvaluationEngine {
         // ── Layer 2b: History ─────────────────────────────────────────────────
         // Two versions (EVALUATION_ENGINE.md, "History, version 2"). Version 1 is worked out here as before; version
         // 2 needs the examiner's coverage answer, so it is worked out after Layer 3. HISTORY_SCORING decides which
-        // one the student sees ("shadow", the default: version 1, with version 2 stored beside it).
+        // one the student sees: version 2 by default; "v1" is the way back, "shadow" shows version 1 and stores both.
         const historyMode = historyScoringMode(process.env.HISTORY_SCORING);
         console.log(`EvaluationEngine: Layer 2 — scoring history coverage (mode ${historyMode})...`);
         const coverageResult = evalConfig

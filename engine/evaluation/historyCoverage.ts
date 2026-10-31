@@ -27,13 +27,16 @@ export const HISTORY_QUALITY_MAX = 7.5;
 export const HISTORY_MAX = HISTORY_COVERAGE_MAX + HISTORY_QUALITY_MAX;
 export const HISTORY_SCORING_VERSION = 2;
 
-/** Which history score the student sees. "shadow": version 1, with version 2 worked out and stored alongside. */
+/** Which history score the student sees. "shadow": version 1, with version 2 worked out and stored alongside. Both
+ *  versions are always worked out and stored, whichever is shown. */
 export type HistoryScoringMode = "v1" | "shadow" | "v2";
 
-/** HISTORY_SCORING in the environment. Anything unrecognised is "shadow", so a typo can never switch scoring over. */
+/** HISTORY_SCORING in the environment. Version 2 unless it says exactly "v1" (the way back) or "shadow" (show
+ *  version 1, keep version 2 beside it), so a typo can only ever leave the current scorer in place. Version 2 became
+ *  the default on 2026-10-31, after the replay of real attempts (EVALUATION_ENGINE.md, "History, version 2"). */
 export function historyScoringMode(value: string | undefined): HistoryScoringMode {
     const v = (value ?? "").trim().toLowerCase();
-    return v === "v1" || v === "v2" ? v : "shadow";
+    return v === "v1" || v === "shadow" ? v : "v2";
 }
 
 export interface HistoryItem {
@@ -86,13 +89,15 @@ const STOPWORDS = new Set(
         "problems issue issues thing things kind sort way whatever able does whether he history check checked present " +
         "happen happened happening come came going there here can cannot let say said see seen use used " +
         // catch-all words: "anything else?", "any other symptoms or complaints?", "tell me more", "go on"
-        "else symptom symptoms complaint complaints concern concerns continue mention add worry worried"
+        "else symptom symptoms complaint complaints concern concerns continue mention add worry worried " +
+        // words that only say "this kind of thing": the topic is elsewhere ("previous similar episodes")
+        "similar episode episodes again"
     ).split(/\s+/)
 );
 
 // Short words that do carry a topic.
 const SHORT_TERMS = new Set([
-    "tb", "hiv", "bp", "lmp", "ors", "uti", "ecg", "sti", "std", "gcs", "pee", "flu", "fit", "cut", "dog", "bite",
+    "tb", "hiv", "bp", "lmp", "ors", "uti", "ecg", "sti", "std", "gcs", "pee", "flu", "fit", "cut", "dog", "bite", "ate", "eat", "ill",
     // the body, in three letters
     "eye", "ear", "leg", "arm", "hip", "jaw", "gum", "lip", "toe", "rib", "gut", "fat",
 ]);
@@ -102,15 +107,30 @@ const SHORT_TERMS = new Set([
 export function stem(word: string): string {
     let w = word.toLowerCase().replace(/'s$/, "").replace(/ae/g, "e").replace(/oe/g, "e");
     if (w.endsWith("ies") && w.length > 4) return w.slice(0, -3) + "y";
-    for (const suffix of ["ations", "ation", "ments", "ment", "ness", "ings", "ing", "ful", "es", "ed", "er", "ly", "s", "e"]) {
+    for (const suffix of ["ations", "ation", "ments", "ment", "ness", "ings", "ing", "ful", "ary", "es", "ed", "er", "ly", "s", "e"]) {
         const min = suffix === "er" || suffix === "ly" ? 4 : 3;
         if (w.endsWith(suffix) && w.length - suffix.length >= min && !(suffix === "s" && w.endsWith("ss"))) {
             w = w.slice(0, -suffix.length);
             break;
         }
     }
+    // "dizzy" and "dizziness" (→ "dizzi") meet
+    if (w.endsWith("y") && w.length > 3) w = w.slice(0, -1) + "i";
     return w;
 }
+
+// Everyday words for one idea, so a student's plain word meets the case's ("what does he eat" and "dietary habits").
+// Applied after stemming. "previou" is weak: it counts only for a required question with no stronger word of its own
+// ("previous similar episodes"), never instead of one ("previous TB treatment" needs "TB").
+const CONCEPTS: Record<string, string> = {
+    // keys are stems: "before" → "befor", "earlier" → "earli"
+    befor: "previou", past: "previou", prior: "previou", earli: "previou", previou: "previou",
+    eat: "diet", ate: "diet", eaten: "diet", food: "diet", meal: "diet", diet: "diet", nutrition: "diet",
+    cardiac: "heart", heart: "heart",
+    radi: "spread", radiat: "spread", spread: "spread",
+    often: "frequency", frequenci: "frequency", frequent: "frequency",
+};
+const WEAK = new Set(["previou"]);
 
 export function contentTokens(text: string): string[] {
     return text
@@ -118,7 +138,8 @@ export function contentTokens(text: string): string[] {
         .split(/[^a-z0-9']+/)
         .map((t) => t.replace(/^'+|'+$/g, ""))
         .filter((t) => t && !STOPWORDS.has(t) && (t.length >= 4 || SHORT_TERMS.has(t)))
-        .map(stem);
+        .map(stem)
+        .map((t) => CONCEPTS[t] ?? t);
 }
 
 /** The same word: equal stems, one a longer form of the other ("diabet", "diabetic"; at least 5 letters shared),
@@ -157,7 +178,7 @@ function nearlyEqual(a: string, b: string): boolean {
 // Intents too broad to stand for one topic ("where", "before", "treatment", "work" would join unrelated questions).
 const BROAD_INTENTS = new Set([
     "symptom_severity", "symptom_progression", "aggravating_factors", "relieving_factors", "past_medical_history",
-    "medication_history", "social_history", "hygiene_habits", "photophobia_phonophobia", "fatigue",
+    "medication_history", "social_history", "hygiene_habits", "fatigue",
 ]);
 
 // Each pattern matches as a word start ("pregnan" finds "pregnant"), never inside another word (the old matcher
@@ -218,7 +239,9 @@ function keyCovers(key: RequiredKey, question: string): boolean {
     if (isCatchAll(question)) return false;
     const q = contentTokens(question);
     const has = (t: string) => q.some((b) => sameWord(t, b));
-    if (key.distinctTokens.some(has)) return true;
+    const strong = key.distinctTokens.filter((t) => !WEAK.has(t));
+    if (strong.some(has)) return true;
+    if (strong.length === 0 && key.distinctTokens.some(has)) return true;
     if (key.distinctIntents.size > 0) {
         for (const i of topicIntents(question)) if (key.distinctIntents.has(i)) return true;
     }

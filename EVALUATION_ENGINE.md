@@ -195,8 +195,9 @@ bigger than coverage's. With no AI answer, it is estimated as two-thirds of that
 - Calibration: on the made-up calibration cases a strong history scores 20 or more, a partial one 8 to 15, a poor
   one 6 or less, with the keyword matcher alone.
 
-**The switch.** `HISTORY_SCORING` in the environment: `v1` (old score only), `shadow` (the default: students see
-version 1, version 2 is worked out and stored beside it in `historyScoring`), `v2` (students see version 2). Every
+**The switch.** `HISTORY_SCORING` in the environment. Unset (the default since 2026-10-31) or anything else: students
+see version 2. `v1`: the way back to the old score. `shadow`: students see version 1, and version 2 is stored beside
+it. Both versions are worked out and stored in `historyScoring` on every attempt, whichever is shown, and every
 attempt stores `scoringVersion.history`, so scores from the two versions are never mixed without notice.
 
 **Checking it.** `scripts/check-history-scoring.ts` replays real attempts from the database (their questions are

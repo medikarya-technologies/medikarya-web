@@ -307,6 +307,17 @@ describe("keyword matching", () => {
         assert.equal(keywordCovers("previous similar headaches", "when did the headache start?", required), false);
     });
 
+    it("knows everyday words for the same idea", () => {
+        assert.equal(keywordCovers("dietary habits", "what do you usually eat?"), true);
+        assert.equal(keywordCovers("previous cardiac history", "any heart problems?"), true);
+        assert.equal(keywordCovers("previous similar episodes", "has this happened before?"), true);
+        assert.equal(keywordCovers("urinary symptoms", "any burning passing urine?"), true);
+        assert.equal(keywordCovers("photophobia or phonophobia", "does light or noise bother you?"), true);
+        assert.equal(keywordCovers("radiation of the pain", "does the pain spread anywhere?"), true);
+        assert.equal(keywordCovers("dizziness before the fall", "did you feel dizzy?"), true);
+        assert.equal(keywordCovers("frequency of episodes", "how often do you get them?"), true);
+    });
+
     it("does not join unrelated topics through broad words like 'before' or 'work'", () => {
         assert.equal(keywordCovers("previous TB treatment", "any illness before?"), false);
         assert.equal(keywordCovers("smoking and alcohol", "what work do you do?"), false);
@@ -314,10 +325,11 @@ describe("keyword matching", () => {
 });
 
 describe("the switch", () => {
-    it("is shadow unless it says v1 or v2 exactly, so a typo never changes what students see", () => {
-        assert.equal(historyScoringMode(undefined), "shadow");
-        assert.equal(historyScoringMode("V2 "), "v2");
-        assert.equal(historyScoringMode("v1"), "v1");
-        assert.equal(historyScoringMode("2"), "shadow");
+    it("is version 2 unless it says v1 or shadow exactly, so a typo can only leave the current scorer in place", () => {
+        assert.equal(historyScoringMode(undefined), "v2");
+        assert.equal(historyScoringMode(""), "v2");
+        assert.equal(historyScoringMode("V1 "), "v1");
+        assert.equal(historyScoringMode("shadow"), "shadow");
+        assert.equal(historyScoringMode("vl"), "v2");
     });
 });
