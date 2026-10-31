@@ -68,7 +68,11 @@ const INTENT_CATALOGUE: Record<string, string[][]> = {
 
     // ── Urological / gynaecological ───────────────────────────────────────────
     urine_symptoms:         [["urine", "urination", "dysuria", "burning urine", "frequency of urine", "haematuria", "blood in urine"]],
-    menstrual_history:      [["period", "menstrual", "menstruation", "cycle", "LMP", "last period", "irregular"]],
+    menstrual_history:      [["period", "menstrual", "menstruation", "cycle", "LMP", "last period", "irregular", "pregnan"]],
+    // Obstetric questions (added 2026-10-31 with the first obstetric emergency case): without them a student asking
+    // about the baby's movements, bleeding, leaking or contractions got no history credit at all.
+    fetal_movements:        [["baby moving", "baby's movements", "fetal movement", "foetal movement", "kicking", "baby move", "movements"]],
+    obstetric_symptoms:     [["vaginal bleeding", "bleeding", "leaking", "water broke", "fluid", "contraction", "labour pain", "labor pain", "pains"]],
 
     // ── Dermatological ────────────────────────────────────────────────────────
     skin_rash:              [["rash", "skin", "itching", "pruritus", "lesion", "eruption", "urticaria", "hives"]],
@@ -80,17 +84,17 @@ const INTENT_CATALOGUE: Record<string, string[][]> = {
     severe_dehydration:     [["no urine", "sunken", "turgor", "passing urine", "not peeing", "wet diaper", "fontanelle"]],
 
     // ── Universal systemic ────────────────────────────────────────────────────
-    fever:                  [["fever", "temperature", "pyrexia", "febrile", "hot", "chills", "rigors"]],
+    fever:                  [["fever", "temperature", "pyrexia", "febrile", "hot", "chills", "rigors", "sweat"]],
     weight_change:          [["weight", "loss", "gain", "losing", "thin", "wasting", "gained weight"]],
     fatigue:                [["tired", "fatigue", "weakness", "lethargy", "energy", "exhausted"]],
 
     // ── Past history & social (universal) ────────────────────────────────────
-    past_medical_history:   [["past", "history", "before", "previous", "ever had", "earlier illness", "medical history"]],
+    past_medical_history:   [["past", "history", "before", "previous", "ever had", "earlier illness", "medical history", "diabetes", "sugar", "hiv", "blood pressure", "kidney disease", "tested for"]],
     surgical_history:       [["surgery", "operation", "operated", "procedure", "surgical"]],
     medication_history:     [["medicine", "medication", "drug", "tablet", "syrup", "treatment", "currently on"]],
     allergy_history:        [["allergy", "allergic", "reaction", "intolerance"]],
     family_history:         [["family", "parent", "sibling", "relative", "household", "contact", "hereditary", "runs in family"]],
-    social_history:         [["smoking", "alcohol", "drink", "smoke", "occupation", "travel", "living"]],
+    social_history:         [["smoking", "alcohol", "drink", "smoke", "occupation", "travel", "living", "lives with", "live with", "at home with", "work", "job", "bidi"]],
     immunization_status:    [["vaccine", "vaccination", "immuniz", "immunis", "shot", "jab"]],
     hygiene_habits:         [["hygiene", "wash", "hand", "sanitation", "clean", "water source"]],
 
