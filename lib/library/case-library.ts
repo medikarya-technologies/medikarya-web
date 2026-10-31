@@ -32,6 +32,10 @@ export interface LibraryCase {
     patient?: { age?: number; gender?: string };
     /** An authored live simulation (treatments, a patient who changes) rather than a consultation. */
     live?: boolean;
+    /** For a live case: how long the encounter runs, in minutes on its own clock. */
+    liveMinutes?: number;
+    /** For a live case that runs for hours: tests take their real ward times and the student skips ahead to them. */
+    liveWardClock?: boolean;
 }
 
 /** What a student has done on one case. */
@@ -86,6 +90,8 @@ export const DIFFICULTY_LABEL: Record<DifficultyLevel, string> = { 1: "Beginner"
 
 export type SortKey = "recommended" | "shortest" | "easiest" | "hardest" | "newest";
 export type StatusFilter = "all" | "new" | "attempted";
+/** Live: the patient gets worse until the student acts. Bedside: a consultation, the patient stays as they arrived. */
+export type CaseType = "all" | "live" | "bedside";
 
 export interface Filters {
     query: string;
@@ -94,11 +100,15 @@ export interface Filters {
     /** 0 is any difficulty. */
     difficulty: 0 | DifficultyLevel;
     status: StatusFilter;
+    /** Live or bedside cases only. Absent: both. */
+    type?: CaseType;
     /** Only the cases the student has saved for later (which ones is passed to filterCases: it lives in the browser). */
     saved?: boolean;
 }
 
 export const NO_FILTERS: Filters = { query: "", specialty: "all", difficulty: 0, status: "all" };
+
+export const CASE_TYPE_LABEL: Record<CaseType, string> = { all: "All types", live: "Live emergencies", bedside: "Bedside cases" };
 
 export const SORT_LABEL: Record<SortKey, string> = {
     recommended: "Recommended",
@@ -129,12 +139,14 @@ export function matchesQuery(c: LibraryCase, query: string): boolean {
 const hasAttempts = (progress: ProgressMap, id: string): boolean => (progress[id]?.attempts ?? 0) > 0;
 
 export function activeFilterCount(f: Filters): number {
-    return (f.query.trim() ? 1 : 0) + (f.specialty !== "all" ? 1 : 0) + (f.difficulty !== 0 ? 1 : 0) + (f.status !== "all" ? 1 : 0) + (f.saved ? 1 : 0);
+    return (f.query.trim() ? 1 : 0) + (f.specialty !== "all" ? 1 : 0) + (f.difficulty !== 0 ? 1 : 0) + (f.status !== "all" ? 1 : 0) + (f.type && f.type !== "all" ? 1 : 0) + (f.saved ? 1 : 0);
 }
 
 export function filterCases<T extends LibraryCase>(cases: readonly T[], f: Filters, progress: ProgressMap = {}, saved: ReadonlySet<string> = new Set()): T[] {
     return cases.filter((c) => {
         if (f.saved && !saved.has(c.id)) return false;
+        if (f.type === "live" && !c.live) return false;
+        if (f.type === "bedside" && c.live) return false;
         if (f.specialty !== "all" && c.category !== f.specialty) return false;
         if (f.difficulty !== 0 && difficultyLevel(c.difficulty) !== f.difficulty) return false;
         if (f.status === "new" && hasAttempts(progress, c.id)) return false;
@@ -218,6 +230,7 @@ export interface FacetCounts {
     specialties: Specialty[];
     difficulty: Record<DifficultyLevel, number>;
     status: Record<StatusFilter, number>;
+    type: Record<CaseType, number>;
 }
 
 /**
@@ -230,11 +243,40 @@ export function facetCounts(cases: readonly LibraryCase[], f: Filters, progress:
     const shown = new Map(specialtiesOf(forSpecialties).map((s) => [s.name, s.count]));
     const specialties = specialtiesOf(cases).map((s) => ({ name: s.name, count: shown.get(s.name) ?? 0 }));
     const forStatus = filterCases(cases, { ...f, status: "all" }, progress, saved);
+    const forType = filterCases(cases, { ...f, type: "all" }, progress, saved);
     return {
         specialties,
         difficulty: countByDifficulty(filterCases(cases, { ...f, difficulty: 0 }, progress, saved)),
         status: { all: forStatus.length, new: forStatus.filter((c) => !hasAttempts(progress, c.id)).length, attempted: forStatus.filter((c) => hasAttempts(progress, c.id)).length },
+        type: { all: forType.length, live: forType.filter((c) => c.live).length, bedside: forType.filter((c) => !c.live).length },
     };
+}
+
+// ── Live emergencies ────────────────────────────────────────────────────────
+
+/**
+ * The row of live cases at the top of the library: only on the library as it opens (no filter on, so it never
+ * repeats a list the student has narrowed), and only beside other cases (a library of live cases alone is just the
+ * list). What the student has not tried comes first, easiest first, then the ones they did worst on: the same order
+ * as "recommended".
+ */
+export function liveEmergencies<T extends LibraryCase>(cases: readonly T[], f: Filters, progress: ProgressMap = {}): T[] {
+    if (activeFilterCount(f) > 0 || cases.every((c) => c.live)) return [];
+    return sortCases(
+        cases.filter((c) => c.live),
+        "recommended",
+        progress
+    );
+}
+
+/** How a live case's clock runs, for its card: "25 min in real time", or "48 h on the ward clock" for a case that skips ahead through hours. Null when unknown. */
+export function liveClockLabel(c: LibraryCase): string | null {
+    const m = c.liveMinutes;
+    if (!c.live || typeof m !== "number" || !Number.isFinite(m) || m <= 0) return null;
+    if (c.liveWardClock || m > 180) {
+        return `${Math.round(m / 60)} h on the ward clock`;
+    }
+    return `${Math.round(m)} min in real time`;
 }
 
 export interface LibrarySummary {

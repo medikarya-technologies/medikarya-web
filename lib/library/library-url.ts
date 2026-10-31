@@ -5,7 +5,7 @@
 // and a link to a filtered list can be sent to someone. Short, readable names, and only what differs from the
 // defaults: an unfiltered library is just /dashboard/cases.
 //
-//   ?q=chest+pain&specialty=Cardiology&level=2&status=new&saved=1&sort=shortest
+//   ?q=chest+pain&specialty=Cardiology&level=2&status=new&type=live&saved=1&sort=shortest
 //
 // Reading is forgiving (a stale or hand-edited link never breaks the page: an unknown value is ignored) and
 // writing is exact. Pure: no React and no `URLSearchParams`, so it runs anywhere.
@@ -46,11 +46,13 @@ export function viewFromParams(params: ParamsLike, specialties: readonly string[
     const sort = SORTS.find((key) => key === params.get("sort")) ?? "recommended";
 
     const filters: Filters = { query, specialty, difficulty, status };
+    const type = params.get("type");
+    if (type === "live" || type === "bedside") filters.type = type;
     if (params.get("saved") === "1") filters.saved = true;
     return { filters, sort };
 }
 
-const OWN = new Set(["q", "specialty", "level", "status", "saved", "sort"]);
+const OWN = new Set(["q", "specialty", "level", "status", "type", "saved", "sort"]);
 
 const decoded = (text: string): string => {
     try {
@@ -81,6 +83,7 @@ export function queryFromView(view: LibraryView): string {
     if (f.specialty !== "all") add("specialty", f.specialty);
     if (f.difficulty !== 0) add("level", String(f.difficulty));
     if (f.status !== "all") add("status", f.status);
+    if (f.type && f.type !== "all") add("type", f.type);
     if (f.saved) add("saved", "1");
     if (sort !== "recommended") add("sort", sort);
     return parts.join("&");
@@ -90,6 +93,11 @@ export function queryFromView(view: LibraryView): string {
 export function libraryHref(view: LibraryView = DEFAULT_VIEW): string {
     const query = queryFromView(view);
     return query ? `/dashboard/cases?${query}` : "/dashboard/cases";
+}
+
+/** The library showing live emergencies only. */
+export function liveCasesHref(): string {
+    return libraryHref({ filters: { ...NO_FILTERS, type: "live" }, sort: "recommended" });
 }
 
 /** The library filtered to one specialty. */

@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
     "plan_sha": "d1e1d07eb3685d123b4ede091395a85edc74e2ac3f37911e6aa74ec0a2e99156",
-    "compiled_sha": "b4802a986bfd69176c0c57837ea910da3608fc34ec43bc91cb7cba8b6363b317",
+    "compiled_sha": "ae6488ceb5c78616e14df7881735c2188bc85d89ea02b6984f46560b0277a434",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -91,7 +91,7 @@
         "events_sha": "c358da403f62028305aa5dbafcced03c6ce998f51d469764d3c47cae0db21fa5"
       },
       "harmful": {
-        "score": 55,
+        "score": 25,
         "items": [
           [
             "iv_access",
@@ -227,13 +227,8 @@
     }
   },
   "24-year-old-man-struggling-to-breathe-after-a-bike-accident": {
-<<<<<<< HEAD
     "plan_sha": "7fecac60fb427b7b63e2fdd9334c8a7f18d6041cec4cbe67f014f415024ef698",
     "compiled_sha": "2d72c127a010167da8e84a2c5732f6964933c98868cf6478dce037a883af8d3d",
-=======
-    "plan_sha": "696251ae48820c44a1b2df9e1c0a7d36b39522fb63b7f7b19316d58448a7c260",
-    "compiled_sha": "fab29ce0f12d9dcb10487a4d4775d69c734129d162d87cadc8402ba2c4b44224",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -340,7 +335,10 @@
         ],
         "outcome": {
           "stabilised": true,
-          "recovered": true,
+          "recovered": false,
+          "unsafe_at_end": [
+            "SpO₂ 84%"
+          ],
           "worst_stage": null
         },
         "final": {
@@ -398,13 +396,8 @@
     }
   },
   "26-year-old-woman-who-cannot-catch-her-breath": {
-<<<<<<< HEAD
     "plan_sha": "c684503c03de412333d5618d49a84a5d633c17428101d749690ea01e6f23107e",
     "compiled_sha": "1f527b1de67810bc234e9f2659670984051fe47c800f472d5d3e3d26dd962c27",
-=======
-    "plan_sha": "5c5943d9cf2e5223b55f72721f22b844cebbc85825d2567171570cea89960812",
-    "compiled_sha": "006f6ab96301c31569398d0328067759d21335ce41604f69da0f622f9d8eb251",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -584,13 +577,8 @@
     }
   },
   "29-year-old-man-with-belly-pain-as-his-fever-settles": {
-<<<<<<< HEAD
     "plan_sha": "127a366786179fc8a638de769adb1ddcd279606b33e72ca3c63d6cfc2140bbb4",
     "compiled_sha": "92fcc6d99f80afe5532d45001bfaf8ead9ba2ee8e30b2b8f5c61f1c192cba4af",
-=======
-    "plan_sha": "7fa1c41ad2580c0a48d5110c291284304311ea83002332c028bf43519d959475",
-    "compiled_sha": "80a0b6a2f635cad4cac3d66be25eb172d0d02c3c8e86d54ab38e8d807f425cd3",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -629,11 +617,7 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "74d57bf58992f83c34a448403b2a269085363905617367b11009a914e5ae821f"
-=======
-        "events_sha": "78fc712d089120e42db1a68300899381d42f8965b838bcee133016d29babb9ef"
->>>>>>> main-vr3hp8
       },
       "correct": {
         "score": 100,
@@ -647,13 +631,10 @@
             "on_time"
           ],
           [
-<<<<<<< HEAD
             "crystalloid_resuscitation_dengue:rate",
             "on_time"
           ],
           [
-=======
->>>>>>> main-vr3hp8
             "crystalloid_bolus_hypotensive",
             "not_needed"
           ],
@@ -680,11 +661,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "9a9dd15c40db5a83e2d7a90bc54de444804eacae0fc3c5b66f62a663d2093762"
-=======
-        "events_sha": "2fc8fea86468bcb3d8e37bf47c33166dc31d00c6794d3b3b5ebf449fb58b4308"
->>>>>>> main-vr3hp8
       },
       "harmful": {
         "score": 55,
@@ -698,13 +675,10 @@
             "on_time"
           ],
           [
-<<<<<<< HEAD
             "crystalloid_resuscitation_dengue:rate",
             "on_time"
           ],
           [
-=======
->>>>>>> main-vr3hp8
             "crystalloid_bolus_hypotensive",
             "not_needed"
           ],
@@ -735,11 +709,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "050c9e58397331907f95a6a23616a7582a338614f44315d5d43fe731302f2ce9"
-=======
-        "events_sha": "5dcc6a38547c48dbcedf34ffe02c2b8d07b30e89abcb749a7703e191adec6b17"
->>>>>>> main-vr3hp8
       },
       "late": {
         "score": 25,
@@ -778,17 +748,10 @@
           "stability": "critical",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "01c22a0ee63d68a9e5599f8b20c625ca76720770a2f2e06084fce31d5eefa094"
       },
       "rescue": {
         "score": 75,
-=======
-        "events_sha": "71906b28359c8b0fe3ca38bc8c60926c0ba56dfb535fc1692771234f748948e7"
-      },
-      "rescue": {
-        "score": 67,
->>>>>>> main-vr3hp8
         "items": [
           [
             "iv_access",
@@ -799,13 +762,10 @@
             "on_time"
           ],
           [
-<<<<<<< HEAD
             "crystalloid_resuscitation_dengue:rate",
             "on_time"
           ],
           [
-=======
->>>>>>> main-vr3hp8
             "crystalloid_bolus_hypotensive",
             "not_needed"
           ],
@@ -832,17 +792,13 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "2058f38333ac6983a51840a56c7b10775d5bd2b4a0e53bb3e83993acb855f6e8"
-=======
-        "events_sha": "842704dfe8ebd7cfa230f5d0bbafd1c4d68a8627de2391b84f32244dcf7ca6c3"
->>>>>>> main-vr3hp8
       }
     }
   },
   "32-year-old-man-brought-in-fitting": {
     "plan_sha": "12dda86824d12952bcc7ef143a55978357f8a83889fe09ddc1bc71987f3a0d10",
-    "compiled_sha": "eb1e309e4f9646a95c931792a5c1ca6dd9ebae5ae63c33361205d5361e0e6f28",
+    "compiled_sha": "331e01971886857d607e88fd6e42a220a705edf539c1dc3c96250d2ab39de409",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -978,7 +934,7 @@
         "events_sha": "1560e73848fc53d9f9f9c59e457d4b52345c06d0fa3ffbcbc9310051edd532d4"
       },
       "late": {
-        "score": 30,
+        "score": 25,
         "items": [
           [
             "high_flow_oxygen",
@@ -1067,7 +1023,7 @@
   },
   "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing": {
     "plan_sha": "1037584b25ed590aca191d1dc283fd48eea303e7ee8de878d6f338576030fe69",
-    "compiled_sha": "955d64708ecea68c2d2b6afc27aa1b1f39ead2421b6504527d3c85ebbc42f81e",
+    "compiled_sha": "234071bd9e101106922817d77d54946d690430ffb462434815015e42a1e73c48",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1218,7 +1174,7 @@
   },
   "36-year-old-man-with-sudden-breathlessness": {
     "plan_sha": "d0ecc1cd5d7c74458ea20e892b21a4f74a94294811703b7ea19a1f82c36f83f7",
-    "compiled_sha": "0b7bd668b6bcd4c78345bcf8968446cc938d03ba811875e97de806f5dac8a477",
+    "compiled_sha": "deb97b7f05d1cc0199f5b90550d846400c1c7518a600a7404c6f04e8a0419ef8",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1391,7 +1347,7 @@
         "events_sha": "8c070d6dfe5a37ddee3886515cfb73149475c889dbcb533d073c6de0d6d589ad"
       },
       "late": {
-        "score": 39,
+        "score": 25,
         "items": [
           [
             "im_adrenaline_0_5mg",
@@ -1446,7 +1402,7 @@
         "events_sha": "947fd9c658828b50f896c85191d9c77ce11446b82c8ce062c526b05bc8dd6cd7"
       },
       "rescue": {
-        "score": 66,
+        "score": 25,
         "items": [
           [
             "im_adrenaline_0_5mg",
@@ -1504,7 +1460,7 @@
   },
   "40-year-old-man-found-unconscious-at-home": {
     "plan_sha": "8eb9dce45f9c6d413f7507eedb0dcbb9d1828dce26a0edac772cad6cd260632e",
-    "compiled_sha": "a8ba2e3233ddee67d5200c4e7cd98abffa74964f2decb3d5cc19e008fb9b537d",
+    "compiled_sha": "24fd3edfc641eb8ed6055886a4c9eccfb9bfd6e610941e7206ea608470a8a155",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1686,7 +1642,7 @@
   },
   "45-year-old-woman-with-fever-who-has-become-confused": {
     "plan_sha": "86c2a9d68d5aa3232889884d20616e0ea3e395c1dde700f6dbc2369b97789123",
-    "compiled_sha": "d456bd8c3ecbc118ae618bf9481f3cf77da1904587fa7e4c68c6bf24424a2c62",
+    "compiled_sha": "65da2732d168686bd21bf710905da47baf6327953085d876afac8a24e773ecdd",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1883,13 +1839,8 @@
     }
   },
   "46-year-old-man-whose-legs-are-too-weak-to-stand": {
-<<<<<<< HEAD
     "plan_sha": "ad53cb676508f96962228e21ea71aa1f0869503a620dd1c7cdbe1468e6b2f44c",
     "compiled_sha": "e2e0a91daaa63c032a237673b0958574ece407485f0a0c5755791d59640e2dc0",
-=======
-    "plan_sha": "5a715fc25d2128498d085a7570227f9a6a8cee638ee5786337cec1d436b6ca6e",
-    "compiled_sha": "9483b5bebdb7ac6cd035c2643d3935df68d23220e913b0734f785048b00c82e6",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2132,13 +2083,8 @@
     }
   },
   "48-year-old-man-who-suddenly-could-not-breathe-and-fainted": {
-<<<<<<< HEAD
     "plan_sha": "8e2c1ab8eb326f973031c5f6a584222ae3c699a8aae38f33bdccb889aa90f129",
     "compiled_sha": "f23bea9499f6c4eb98794475c07b6f25bdbb09ad09395d739a237c1ea27987ac",
-=======
-    "plan_sha": "0d5b48ff937f286bdf7ce287a5504592879ece39b4c7250ea378a5927040859e",
-    "compiled_sha": "f70488d0d16ab8c561e47ed931dfd7bafab3066f99fd1915f7137509fc4b5f8c",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2216,11 +2162,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "ff72431344875ec7c3af0271337fe947562c4224268aa02ec8c4f61f0564da07"
-=======
-        "events_sha": "c93e894decb3000852cb2fa0b5b296cf45116e9d57c69bcd1259fe9104f600fb"
->>>>>>> main-vr3hp8
       },
       "harmful": {
         "score": 55,
@@ -2263,11 +2205,7 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "f95bb4caf1a7d05ee08d1244389997be159e71227d457024c8eb65dec38ea975"
-=======
-        "events_sha": "c75f5bfa10b63609a5ab3d59c6dd310fec88da46f0352e9214f349bb1603d28d"
->>>>>>> main-vr3hp8
       },
       "late": {
         "score": 25,
@@ -2281,11 +2219,7 @@
             "late"
           ],
           [
-<<<<<<< HEAD
             "anticoagulation_pe",
-=======
-            "heparin_ufh_bolus",
->>>>>>> main-vr3hp8
             "missed"
           ],
           [
@@ -2324,11 +2258,7 @@
             "late"
           ],
           [
-<<<<<<< HEAD
             "anticoagulation_pe",
-=======
-            "heparin_ufh_bolus",
->>>>>>> main-vr3hp8
             "on_time"
           ],
           [
@@ -2353,22 +2283,13 @@
           "stability": "stable",
           "rhythm": "sinus_tachycardia"
         },
-<<<<<<< HEAD
         "events_sha": "319a23b74f1a9a8dcc1b668b90e2e79590ecfcf5a87f1747dd5e4984cc49c85b"
-=======
-        "events_sha": "4d8b37336991d5e76cd973ec4b94d118436b6d2596706e7d56ca3c0a431c16f5"
->>>>>>> main-vr3hp8
       }
     }
   },
   "52-year-old-man-vomiting-blood-at-2-am": {
-<<<<<<< HEAD
     "plan_sha": "ed5410a232d9a770c6c6e477532c44ab9e734569e5105d0530c30fd7b85f1626",
     "compiled_sha": "7450847e53a4a58a4d6e731314434ac1268c279b93025ad0913c9f899e9db12f",
-=======
-    "plan_sha": "6dfc4a63ac5be7e573d4782ce6f36359cd8ecb374b97e189adddd579659b9e21",
-    "compiled_sha": "c1d5d53fb7263f0aacc981b70bd06bd4f8356b9c5b052dfd63eae3e62e65cfd4",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2547,13 +2468,8 @@
     }
   },
   "54-year-old-man-with-black-stools-who-vomited-blood": {
-<<<<<<< HEAD
     "plan_sha": "a844d1a4c010a189f06ebffe6a30378b6a933bfd89a98f37071ddf3c3eaaa804",
     "compiled_sha": "402706c690a3a33dbd7dea9110cf1debcdb55cb24b61e06eb3629619c38cc402",
-=======
-    "plan_sha": "83ec12e9e895d5b9f5dc6b32b28f2fc161bff0036a8b0856423572f8cf8a1be3",
-    "compiled_sha": "344e47397d5dcda0c0e50eab7ebb9e4632814742da886fca32337ce42a665867",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2718,13 +2634,8 @@
     }
   },
   "56-year-old-man-with-chest-pain-and-a-slow-pulse": {
-<<<<<<< HEAD
     "plan_sha": "7fba1403197f50149e9b3ab09bab8b97909097ce09d7928ca0366557031b193f",
     "compiled_sha": "2c634e1b3c8e9273097a8ccb648322123d97f7f78dd61b5f33d30eda324a1a26",
-=======
-    "plan_sha": "f00fe309459302090ef5728c82189d5cab20b298a8be054cc09e5f39e677f984",
-    "compiled_sha": "172e0bbb3775350bfa7d848052cdf8fb0b5e0a371310bcf8043dde61d63684cb",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2937,11 +2848,7 @@
   },
   "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
     "plan_sha": "8f5dd205b2d217397aa88b2f822967a09e0c3731248faa5b7851e91df183f3f3",
-<<<<<<< HEAD
-    "compiled_sha": "f79c77ff785c19c437cd05a287ee1a9ef24bca673163dfc076939e4574ca7a28",
-=======
-    "compiled_sha": "6c3b60a4dec291f85ad6dba246a6bb5c37831afe3bebfd86b8a0cb02453de9e9",
->>>>>>> main-vr3hp8
+    "compiled_sha": "89fee854c7419e023e2a1adebb67f880328384434e6f447869351a2d0e77369f",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -3076,7 +2983,7 @@
         "events_sha": "ef4c08df5130be0ac7c815ead5c8daf9400330eb098b7571689cd11c6ef4e9ac"
       },
       "late": {
-        "score": 40,
+        "score": 25,
         "items": [
           [
             "capillary_glucose_check",
@@ -3164,13 +3071,8 @@
     }
   },
   "58-year-old-woman-who-woke-up-gasping-for-breath": {
-<<<<<<< HEAD
     "plan_sha": "34f14fc125bcf45988da3004381524610022dddebe5e6751e46a7db29ae23d34",
     "compiled_sha": "e8ef08e36bc60624785c127d9e7e8bc301d20f0f634f1f398f248b4449035621",
-=======
-    "plan_sha": "91289ee222a52fec5c09d7730430a59c6715aae335e28b9964a150cbd414baaf",
-    "compiled_sha": "d0d7898bc265e12e13bfdc6db2b4a410ba43614e63f8f6098fc8831df1340f1d",
->>>>>>> main-vr3hp8
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -3318,7 +3220,7 @@
         "events_sha": "961f3791e95ca50bc79c8faf0dc701691f284f3fd33c9c144443ce3ffbac4380"
       },
       "late": {
-        "score": 42,
+        "score": 25,
         "items": [
           [
             "sit_upright",

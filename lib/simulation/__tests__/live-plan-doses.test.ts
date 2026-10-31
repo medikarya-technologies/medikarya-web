@@ -10,7 +10,7 @@ import type { SimulationCaseConfig } from "../case-schema";
 import { EncounterEngine } from "../encounter-engine";
 import { upgradeLegacyCase } from "../legacy-adapter";
 import { replayStudentEvents } from "../replay";
-import { blendLiveScore, checkLivePlan, compileLivePlan, doseFlag, measuredOnArrival, normaliseLivePlan, REFUSED, scoreBedside, type LivePlan } from "../live-plan";
+import { blendLiveScore, checkLivePlan, compileLivePlan, doseFlag, LEFT_DYING_CAP, measuredOnArrival, normaliseLivePlan, REFUSED, scoreBedside, type LivePlan } from "../live-plan";
 import { playthroughs } from "../live-plan-playthrough";
 import { goldenFixtureCase } from "./live-plan-golden-fixture";
 
@@ -156,7 +156,9 @@ describe("repeat doses: scoring by valid dose and its timing", () => {
         const { score } = run([["iv_access", 1], ["benzo_iv", 2], ["second_line_iv", 3], ["benzo_iv", 4]]);
         assert.deepEqual(benzoItem(score).doses, [{ dose: 1, at_minutes: 2, status: "on_time" }, { dose: 2, at_minutes: null, status: "missed" }]);
         assert.equal(benzoItem(score).status, "late");
-        assert.equal(score.score, Math.round((100 * (1 + 0.5 + 1)) / 3));
+        // never stabilised past the window: held at the cap, from what the doses earned
+        assert.deepEqual(score.capped, { at: LEFT_DYING_CAP, from: Math.round((100 * (1 + 0.5 + 1)) / 3) });
+        assert.equal(score.score, LEFT_DYING_CAP);
         assert.deepEqual(score.refused?.map((r) => [r.id, r.at_minutes, r.reason]), [["benzo_iv", 4, "too_soon"]]);
     });
 

@@ -18,6 +18,8 @@ import {
     filterCases,
     isNewCase,
     firstNameOf,
+    liveClockLabel,
+    liveEmergencies,
     greetingFor,
     matchesQuery,
     NO_FILTERS,
@@ -319,6 +321,50 @@ describe("library: the numbers beside each filter", () => {
         for (const status of ["all", "new", "attempted"] as const) {
             assert.equal(filterCases(LIBRARY, { ...start, status }, progress).length, count(start).status[status], status);
         }
+    });
+});
+
+describe("library: live emergencies and bedside cases", () => {
+    const bedside = LIBRARY.filter((c) => !c.live);
+    const mixed: LibraryCase[] = [
+        ...bedside,
+        make("tension", { displayTitle: "24-year-old man struggling to breathe after a bike accident", category: "Emergency Medicine", live: true, liveMinutes: 20, difficulty: "Intermediate" }),
+        make("asthma", { displayTitle: "26-year-old woman who cannot catch her breath", category: "Respiratory Medicine", live: true, liveMinutes: 25, difficulty: "Beginner" }),
+        make("dengue", { displayTitle: "29-year-old man with belly pain as his fever settles", category: "Infectious Disease", live: true, liveMinutes: 2880, liveWardClock: true }),
+    ];
+    const progress: ProgressMap = { tension: { attempts: 1, best: 60, last: "2026-10-01T00:00:00Z" } };
+
+    it("filters by case type, and counts each type under the other filters", () => {
+        assert.deepEqual(filterCases(mixed, { ...NO_FILTERS, type: "live" }).map((c) => c.id).sort(), ["asthma", "dengue", "tension"]);
+        assert.equal(filterCases(mixed, { ...NO_FILTERS, type: "bedside" }).length, bedside.length);
+        assert.equal(filterCases(mixed, { ...NO_FILTERS, type: "all" }).length, mixed.length);
+        assert.deepEqual(facetCounts(mixed, NO_FILTERS).type, { all: mixed.length, live: 3, bedside: bedside.length });
+        // choosing a specialty narrows the type counts, and choosing a type does not narrow its own counts
+        assert.deepEqual(facetCounts(mixed, { ...NO_FILTERS, specialty: "Respiratory Medicine" }).type, { all: 1, live: 1, bedside: 0 });
+        assert.deepEqual(facetCounts(mixed, { ...NO_FILTERS, type: "live" }).type, facetCounts(mixed, NO_FILTERS).type);
+        assert.equal(facetCounts(mixed, { ...NO_FILTERS, type: "live" }).specialties.find((s) => s.name === "Cardiology")?.count, 0);
+    });
+
+    it("counts a type as a filter only when it narrows the list", () => {
+        assert.equal(activeFilterCount({ ...NO_FILTERS, type: "all" }), 0);
+        assert.equal(activeFilterCount({ ...NO_FILTERS, type: "live" }), 1);
+    });
+
+    it("puts the live cases in a row of their own on the library as it opens, untried first and easiest first", () => {
+        assert.deepEqual(liveEmergencies(mixed, NO_FILTERS, progress).map((c) => c.id), ["asthma", "dengue", "tension"]);
+        assert.deepEqual(liveEmergencies(bedside, NO_FILTERS), [], "no live cases, no row");
+        assert.deepEqual(liveEmergencies(mixed.filter((c) => c.live), NO_FILTERS), [], "only live cases: the list is the row");
+        for (const f of [{ ...NO_FILTERS, type: "live" as const }, { ...NO_FILTERS, query: "breath" }, { ...NO_FILTERS, specialty: "Cardiology" }, { ...NO_FILTERS, saved: true }]) {
+            assert.deepEqual(liveEmergencies(mixed, f, progress), [], JSON.stringify(f));
+        }
+    });
+
+    it("says how a live case's clock runs, and nothing for a case that is not live or does not say", () => {
+        assert.equal(liveClockLabel(mixed.find((c) => c.id === "tension") as LibraryCase), "20 min in real time");
+        assert.equal(liveClockLabel(mixed.find((c) => c.id === "dengue") as LibraryCase), "48 h on the ward clock");
+        assert.equal(liveClockLabel(make("x", { live: true })), null);
+        assert.equal(liveClockLabel(make("x", { liveMinutes: 25 })), null, "not live");
+        assert.equal(liveClockLabel(make("x", { live: true, liveMinutes: Number.NaN })), null);
     });
 });
 

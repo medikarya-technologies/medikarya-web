@@ -26,6 +26,10 @@ export interface CaseMetadata {
   patient?: { age?: number; gender?: string };
   /** An authored live simulation (treatments, a patient who changes) rather than a consultation. */
   live?: boolean;
+  /** For a live case: how long the encounter runs, in minutes on its own clock. */
+  liveMinutes?: number;
+  /** For a live case that runs for hours: tests take their real ward times and the student skips ahead to them. */
+  liveWardClock?: boolean;
 }
 
 export interface CaseCardProps extends Omit<CaseMetadata, 'createdAt' | 'updatedAt'> {
@@ -83,7 +87,14 @@ function bundledMetadata(c: Record<string, any>): CaseMetadata {
     updatedAt: c.updatedAt || '2026-01-01T00:00:00.000Z',
     patient: patientBasics(c.patient),
     live: isSimulationCase(c),
+    ...liveClock(isSimulationCase(c), c.clinical_constraints?.hard_time_limit_minutes, c.clinical_constraints?.result_times),
   };
+}
+
+/** How a live case's clock runs, for its card. Only the length and the kind of clock: nothing about the patient. */
+function liveClock(live: boolean, minutes: unknown, resultTimes: unknown): Pick<CaseMetadata, 'liveMinutes' | 'liveWardClock'> {
+  if (!live || typeof minutes !== 'number' || !Number.isFinite(minutes) || minutes <= 0) return {};
+  return { liveMinutes: minutes, ...(resultTimes === 'real' ? { liveWardClock: true } : {}) };
 }
 
 /** Bundled cases the database doesn't already have (the database wins on a shared id). */
@@ -114,6 +125,11 @@ const CASE_LIST_COLUMNS = [
   'livePlanStatus:case_json->live_plan->>status',
   // an open release blocker keeps it from students all the same
   'livePlanBlockers:case_json->live_plan->release_blockers',
+  // how long a live case runs, for its card (the plan's own setting is not read: it can name the illness)
+  'livePlanMinutes:case_json->live_plan->time_limit_minutes',
+  'livePlanResultTimes:case_json->live_plan->>result_times',
+  'simulationMinutes:case_json->clinical_constraints->hard_time_limit_minutes',
+  'simulationResultTimes:case_json->clinical_constraints->>result_times',
 ].join(', ');
 
 interface CaseListRow {
@@ -139,6 +155,10 @@ interface CaseListRow {
   actionConsequences: unknown;
   livePlanStatus: string | null;
   livePlanBlockers: unknown;
+  livePlanMinutes: unknown;
+  livePlanResultTimes: string | null;
+  simulationMinutes: unknown;
+  simulationResultTimes: string | null;
 }
 
 function toMetadata(row: CaseListRow): CaseMetadata {
@@ -151,6 +171,8 @@ function toMetadata(row: CaseListRow): CaseMetadata {
   const displayTitle = row.displayTitle || 'Patient case';
   const displayDescription = row.displayDescription || `Practice your skills with this ${difficulty.toLowerCase()} case in ${row.category}.`;
   const displayTags = row.displayTags || [];
+  const authored = isSimulationCase({ initial_state: row.initialState, event_rules: row.eventRules, action_consequences: row.actionConsequences });
+  const planned = !authored && liveForStudents(row.livePlanStatus, row.livePlanBlockers);
   return {
     id: currentCaseId(row.id), // the patient-describing id, even before the rows are renamed (lib/cases/renamed-ids.ts)
     title: displayTitle,
@@ -167,7 +189,8 @@ function toMetadata(row: CaseListRow): CaseMetadata {
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
     patient: age === undefined && gender === undefined ? undefined : { age, gender },
-    live: isSimulationCase({ initial_state: row.initialState, event_rules: row.eventRules, action_consequences: row.actionConsequences }) || liveForStudents(row.livePlanStatus, row.livePlanBlockers),
+    live: authored || planned,
+    ...(authored ? liveClock(true, row.simulationMinutes, row.simulationResultTimes) : planned ? liveClock(true, row.livePlanMinutes, row.livePlanResultTimes) : {}),
   };
 }
 
@@ -185,7 +208,7 @@ const cachedCaseList = unstable_cache(
     if (error) throw error;
     return (data as unknown as CaseListRow[]).map(toMetadata);
   },
-  ['case-list-v6'],
+  ['case-list-v7'],
   { revalidate: 60, tags: ['cases'] }
 );
 

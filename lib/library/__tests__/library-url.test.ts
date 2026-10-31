@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 import { NO_FILTERS } from "../case-library";
-import { DEFAULT_VIEW, libraryHref, mergeQuery, queryFromView, specialtyHref, viewFromParams, type LibraryView } from "../library-url";
+import { DEFAULT_VIEW, libraryHref, liveCasesHref, mergeQuery, queryFromView, specialtyHref, viewFromParams, type LibraryView } from "../library-url";
 import { MAX_SAVED, parseSaved, readSaved, savedKeyFor, serialiseSaved, toggleSaved, writeSaved } from "../saved";
 
 /** A minimal stand-in for URLSearchParams, built from a query string. */
@@ -50,6 +50,18 @@ describe("library address: reading", () => {
                 }
             }
         }
+    });
+
+    it("reads and writes the case type, and ignores one that is not a choice", () => {
+        const view: LibraryView = { filters: { ...NO_FILTERS, type: "live" }, sort: "recommended" };
+        assert.equal(queryFromView(view), "type=live");
+        assert.deepEqual(viewFromParams(params("type=live")), view);
+        assert.deepEqual(viewFromParams(params("type=bedside")).filters.type, "bedside");
+        assert.deepEqual(viewFromParams(params("type=all")), DEFAULT_VIEW, "all is the default, so it is not written or kept");
+        assert.deepEqual(viewFromParams(params("type=stemi")), DEFAULT_VIEW);
+        assert.equal(queryFromView({ filters: { ...NO_FILTERS, type: "all" }, sort: "recommended" }), "");
+        assert.equal(liveCasesHref(), "/dashboard/cases?type=live");
+        assert.equal(mergeQuery("type=bedside&empty=1", "type=live"), "empty=1&type=live", "the old type is replaced, not repeated");
     });
 
     it("gives the default view for an empty address", () => {

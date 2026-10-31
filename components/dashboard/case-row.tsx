@@ -9,22 +9,27 @@
 // A case the student's plan does not include is drawn locked: faded, a lock over the patient, the plan that opens it
 // in the corner, and a click anywhere opens the upgrade dialog (components/plans/upgrade-dialog.tsx) instead of the case.
 //
-// (Not shown, on purpose: the case's tags, which can name the diagnosis, and a made-up XP figure. The XP is what a
-// perfect score earns, from the case itself.)
+// A live case (the patient gets worse until the student acts) wears a strip of patient monitor across its top: a
+// moving trace and LIVE. It is the only dark part of the card, as the monitor is the only dark part of the encounter,
+// so the two read as the same thing. Under its title it says how its clock runs instead of the usual minutes.
+//
+// (Not shown, on purpose: the case's tags, which can name the diagnosis, the live plan's setting, which can too ("in
+// the dengue season", "no cath lab"), and a made-up XP figure. The XP is what a perfect score earns, from the case
+// itself.)
 
 import { memo } from "react"
 import Link from "next/link"
 import { Bookmark, BookmarkCheck, Clock, Lock, Play, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/clarity"
-import { difficultyLevel, relativeDay, xpLabel, type CaseProgress, type LibraryCase } from "@/lib/library/case-library"
+import { difficultyLevel, liveClockLabel, relativeDay, xpLabel, type CaseProgress, type LibraryCase } from "@/lib/library/case-library"
 import { formatClock } from "@/lib/simulation/encounter-events"
 import type { InProgress } from "@/lib/simulation/resume"
 import { PLAN_NAME, type Plan } from "@/lib/plans/limits"
 import { PatientAvatar } from "@/components/cases/patient-avatar"
 import { useUpgrade } from "@/components/plans/upgrade-dialog"
 import { Eyebrow, StatusPill } from "@/components/cases/encounter-ui"
-import { DifficultyMeter, LivePill, ScoreValue } from "./dashboard-ui"
+import { DifficultyMeter, ScoreValue } from "./dashboard-ui"
 import { specialtyIcon } from "./specialty-icon"
 import { specialtyTone } from "./specialty-tone"
 
@@ -34,6 +39,27 @@ import { specialtyTone } from "./specialty-tone"
 const BUTTON = "pointer-events-none inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3.5 text-[13px] font-semibold transition"
 const PRIMARY = cn(BUTTON, "bg-brand-600 text-white group-hover:bg-brand-700")
 const SECONDARY = cn(BUTTON, "border border-enc-line-strong bg-enc-sheet text-enc-ink-2 group-hover:bg-enc-console group-hover:text-enc-ink")
+
+// One beat of the trace, 60 px wide; copies of it slide left by one beat forever (.enc-pulse-sweep), so the loop is
+// seamless. Still under prefers-reduced-motion.
+const BEAT = "M0,14 L16,14 L19,11 L22,14 L26,14 L28,17 L31,3 L34,22 L37,14 L44,14 L48,10 L53,14 L60,14"
+
+/** The live card's monitor strip: a moving trace, under the LIVE label. */
+function MonitorStrip({ locked }: { locked?: boolean }) {
+  return (
+    <div aria-hidden className={cn("absolute inset-x-0 top-0 h-[68px] overflow-hidden bg-enc-scope", locked && "opacity-60")}>
+      <svg className="absolute inset-x-0 bottom-1.5 h-7 w-full text-enc-ecg" preserveAspectRatio="xMinYMid slice" viewBox="0 0 480 28">
+        <g className={locked ? undefined : "enc-pulse-sweep"}>
+          {Array.from({ length: 9 }, (_, i) => (
+            <path key={i} d={BEAT} transform={`translate(${i * 60} 0)`} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          ))}
+        </g>
+      </svg>
+      {/* the trace fades in from the left, as a sweep does on a monitor */}
+      <span className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-enc-scope to-transparent" />
+    </div>
+  )
+}
 
 /** What the student has done here (left), and the way in (right). */
 function Footer({ c, progress, inProgress, locked }: { c: LibraryCase; progress?: CaseProgress; inProgress?: InProgress; locked?: Plan | null }) {
@@ -125,37 +151,57 @@ interface CaseRowProps {
   onToggleSaved?: (id: string) => void
   /** The plan this case needs, when the student's plan does not include it. */
   locked?: Plan | null
+  className?: string
 }
 
-export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, saved = false, onToggleSaved, locked }: CaseRowProps) {
+export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, saved = false, onToggleSaved, locked, className }: CaseRowProps) {
   const Icon = specialtyIcon(c.category)
   const tone = specialtyTone(c.category)
   const level = difficultyLevel(c.difficulty)
   const title = c.displayTitle || c.title
   const summary = c.displayDescription || ""
   const openUpgrade = useUpgrade()
+  const live = !!c.live
+  const clock = live ? liveClockLabel(c) : null
   // Whatever is on top of the card: the link into the case, or (locked) the button that opens the upgrade dialog.
   const stretched = "rounded-sm text-center outline-none after:absolute after:inset-0 after:rounded-xl focus-visible:after:ring-2 focus-visible:after:ring-brand-300 focus-visible:after:ring-inset"
 
   return (
-    <li className="group relative flex flex-col overflow-hidden rounded-xl border border-enc-line bg-enc-sheet p-4 pt-5 shadow-enc-sheet transition-[border-color,box-shadow,transform] sm:p-5 sm:pt-6 focus-within:border-enc-line-strong hover:-translate-y-0.5 hover:border-enc-line-strong hover:shadow-enc-lift">
-      {/* the specialty's colour, as one quiet cue (the strip and the label's icon), so cases tell themselves apart
-          at a glance without the page turning into a paint box (specialty-tone.ts) */}
-      <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", tone.band, locked && "opacity-40")} />
-      {locked ? (
-        <span className="absolute top-4 left-4">
-          <StatusPill tone="accent" icon={<Lock className="h-3 w-3" strokeWidth={2.2} />}>{PLAN_NAME[locked]}</StatusPill>
-        </span>
-      ) : (
-        isNew && (
-          <span className="absolute top-4 left-4">
-            <StatusPill tone="accent">New</StatusPill>
-          </span>
-        )
+    <li
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-xl border border-enc-line bg-enc-sheet p-4 pt-5 shadow-enc-sheet transition-[border-color,box-shadow,transform] sm:p-5 sm:pt-6 focus-within:border-enc-line-strong hover:-translate-y-0.5 hover:border-enc-line-strong hover:shadow-enc-lift",
+        live && "pt-10 sm:pt-10",
+        className
       )}
+    >
+      {live ? (
+        <MonitorStrip locked={!!locked} />
+      ) : (
+        // the specialty's colour, as one quiet cue (the strip and the label's icon), so cases tell themselves apart
+        // at a glance without the page turning into a paint box (specialty-tone.ts)
+        <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1", tone.band, locked && "opacity-40")} />
+      )}
+      <span className="absolute top-4 left-4 flex items-center gap-1.5">
+        {live && (
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-enc-scope-raised px-1.5 py-0.5 text-[11px] leading-4 font-bold tracking-[0.12em] text-enc-scope-crit">
+            <span className={cn("h-1.5 w-1.5 rounded-full bg-enc-scope-crit", !locked && "enc-live-dot")} />
+            LIVE
+          </span>
+        )}
+        {locked ? (
+          <StatusPill tone="accent" icon={<Lock className="h-3 w-3" strokeWidth={2.2} />}>{PLAN_NAME[locked]}</StatusPill>
+        ) : (
+          isNew && <StatusPill tone="accent">New</StatusPill>
+        )}
+      </span>
 
       <div className="relative mx-auto">
-        <PatientAvatar age={c.patient?.age} gender={c.patient?.gender} seed={c.id} className={cn("h-16 w-16 sm:h-20 sm:w-20", locked && "opacity-40 grayscale")} />
+        <PatientAvatar
+          age={c.patient?.age}
+          gender={c.patient?.gender}
+          seed={c.id}
+          className={cn("h-16 w-16 sm:h-20 sm:w-20", live && "rounded-full ring-4 ring-enc-sheet", locked && "opacity-40 grayscale")}
+        />
         {locked && (
           <span className="absolute inset-0 flex items-center justify-center" aria-hidden>
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-enc-ink text-enc-sheet shadow-md ring-4 ring-enc-sheet transition-transform group-hover:scale-110">
@@ -196,10 +242,10 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
         <DifficultyMeter level={level} />
         <span className="inline-flex items-center gap-1.5 font-mono tabular-nums">
           <Clock className="h-3.5 w-3.5" strokeWidth={1.8} />
-          {c.estimatedTime} min
+          {clock ?? `${c.estimatedTime} min`}
         </span>
-        {c.live && <LivePill />}
       </p>
+      {live && <p className="sr-only">Live emergency: the patient gets worse until you act.</p>}
 
       {summary && <p className={cn("mt-3 line-clamp-2 text-center text-[13.5px] leading-relaxed text-enc-ink-2", locked && "opacity-60")}>{summary}</p>}
 
@@ -219,7 +265,13 @@ export const CaseRow = memo(function CaseRow({ c, progress, inProgress, isNew, s
           title={saved ? "Saved. Click to remove." : "Save for later"}
           className={cn(
             "absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-lg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-300",
-            saved ? "text-brand-700 hover:bg-brand-50" : "text-enc-ink-3 hover:bg-enc-console hover:text-enc-ink"
+            live
+              ? saved
+                ? "text-enc-spo2 hover:bg-enc-scope-raised"
+                : "text-enc-scope-dim hover:bg-enc-scope-raised hover:text-enc-nibp"
+              : saved
+                ? "text-brand-700 hover:bg-brand-50"
+                : "text-enc-ink-3 hover:bg-enc-console hover:text-enc-ink"
           )}
         >
           {saved ? <BookmarkCheck className="h-[18px] w-[18px]" strokeWidth={1.9} /> : <Bookmark className="h-[18px] w-[18px]" strokeWidth={1.9} />}
