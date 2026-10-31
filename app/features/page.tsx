@@ -147,7 +147,7 @@ export default async function FeaturesPage() {
                     <section className="mb-20 bg-slate-900 rounded-2xl p-8 md:p-10 text-white">
                         <h2 className="text-xl font-bold mb-3">What's not built yet</h2>
                         <p className="text-slate-300 leading-relaxed">
-                            Real-time deterioration runs on {library ? `${library.live} of our ${library.patients} cases, the live emergencies` : "our live emergency cases"}. The rest of the library shares the same live monitor, ranked differential and dual scoring, but the patient doesn't deteriorate if mismanaged. We're building that out case by case with clinical review, not all at once.
+                            Real-time deterioration runs on {library ? `${library.live} of our ${library.patients} cases, the live emergencies` : "our live emergency cases"}. The rest of the library shares the same live monitor, ranked differential and dual scoring, but the patient doesn't deteriorate if mismanaged. We add live cases one at a time, each checked against current guidelines.
                         </p>
                     </section>
 

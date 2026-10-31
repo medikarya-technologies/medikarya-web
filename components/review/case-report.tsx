@@ -20,7 +20,7 @@ function lines(value: unknown, prefix = ""): Array<[string, string]> {
   if (typeof value === "string" || typeof value === "number") return [[prefix || "", String(value)]]
   if (Array.isArray(value)) return value.length ? [[prefix, value.map(String).join("; ")]] : []
   if (!isObj(value)) return []
-  return Object.entries(value).flatMap(([k, v]) => lines(v, prefix ? `${prefix} — ${human(k).toLowerCase()}` : human(k)))
+  return Object.entries(value).flatMap(([k, v]) => lines(v, prefix ? `${prefix}: ${human(k).toLowerCase()}` : human(k)))
 }
 
 function Origin({ origin }: { origin?: string }) {

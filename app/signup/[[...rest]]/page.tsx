@@ -3,7 +3,7 @@ import SignUpClient from "./SignUpClient"
 
 export const metadata: Metadata = {
     title: "Sign Up",
-    description: "Create your MediKarya account and start your AI-powered medical education journey.",
+    description: "Create a MediKarya account and start practising clinical cases.",
     robots: {
         index: false,
         follow: false,

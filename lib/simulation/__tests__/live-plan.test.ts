@@ -12,6 +12,7 @@ import { INTERVENTION_IDS, interventionLabel, interventionsForCase } from "../in
 import { upgradeLegacyCase } from "../legacy-adapter";
 import {
     isRecordOnlyRule,
+    shorten,
     blendLiveScore,
     checkLivePlan,
     compileLivePlan,
@@ -411,3 +412,29 @@ describe("live plan: the bedside score", () => {
         assert.equal(blendLiveScore(50, 75), 60);
     });
 });
+
+describe("text cut to fit a field", () => {
+    it("is left alone when it fits, and otherwise ends at a word with an ellipsis, never mid-word", () => {
+        assert.equal(shorten("Two large-bore cannulae", 140), "Two large-bore cannulae");
+        const cut = shorten("10 vials over 30 minutes; no test dose; adrenaline 0.5 mg IM drawn up at the bedside", 70);
+        assert.equal(cut, "10 vials over 30 minutes; no test dose; adrenaline 0.5 mg IM drawn…");
+        assert.ok(cut.length <= 70);
+        // A trailing comma or bracket goes with the cut.
+        assert.equal(shorten("Start at 0.5 to 1 mL/kg/hour, titrate to response", 32), "Start at 0.5 to 1 mL/kg/hour…");
+        // One long word is cut where it has to be.
+        assert.equal(shorten("a".repeat(20), 10), `${"a".repeat(9)}…`);
+    });
+
+    it("the normaliser uses it, so a drafted plan never shows a dose cut off mid-word", () => {
+        const raw = rawPlan() as { treatments: Array<{ id: string; detail: string }>; basis?: string[] };
+        // A treatment of the case's own keeps its own detail (one from the shared tray takes the tray's).
+        const own = raw.treatments.find((t) => normaliseLivePlan(raw, "ai").treatments.find((n) => n.id === t.id)?.detail === t.detail)!;
+        own.detail = `${"Given slowly with the monitor on, ".repeat(5)}then reassessed`;
+        raw.basis = [`${"A source line that runs on and on, ".repeat(14)}ending here.`];
+        const p = normaliseLivePlan(raw, "ai");
+        const detail = p.treatments.find((t) => t.id === own.id)!.detail;
+        assert.ok(detail.length <= 140 && detail.endsWith("…") && !detail.endsWith(" …"), detail);
+        assert.ok(p.basis![0].length <= 400 && p.basis![0].endsWith("…"));
+    });
+});
+

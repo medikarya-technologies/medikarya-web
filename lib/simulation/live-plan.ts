@@ -251,6 +251,11 @@ export interface LiveFluid {
     stop_says?: string;
     /** What the nurse says when the volume has run in. */
     completed_says?: string;
+    /**
+     * For a fluid that stops the deterioration: only a run that has gone at one of these rates counts (the guideline's
+     * rate, not a maintenance drip). Absent: starting it at any rate counts.
+     */
+    stabilises_at?: string[];
 }
 // A stopped fluid can be restarted (FLUID_RUNS runs in all); what a stop or restart does to the patient is not modelled.
 
@@ -468,14 +473,25 @@ const TRAY = new Map(INTERVENTIONS.map((i) => [i.id, i]));
 export const isSharedTreatment = (id: string) => TRAY.has(id);
 
 /**
+ * Text cut to fit its field. A cut ends at a word and says so ("…"): cut mid-word, a dose on the tray read as if it
+ * were complete ("adrenaline drawn up at the beds").
+ */
+export function shorten(s: string, max: number): string {
+    if (s.length <= max) return s;
+    const cut = s.slice(0, max - 1);
+    const space = cut.lastIndexOf(" ");
+    return `${(space >= max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.(\u2013-]+$/, "")}…`;
+}
+
+/**
  * Fills in what a plan may leave to the shared tray: a treatment taken from it carries the tray's own label, dose and
  * group (so a model cannot reword a dose), and everything is trimmed. Unknown keys are dropped. Call before checking.
  */
 export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): LivePlan {
     const p = (input && typeof input === "object" ? input : {}) as Record<string, any>;
-    const text = (v: unknown, max = 600) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max) : "");
+    const text = (v: unknown, max = 600) => (typeof v === "string" ? shorten(v.trim().replace(/\s+/g, " "), max) : "");
     const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
-    const slug = (v: unknown) => text(v, 60).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    const slug = (v: unknown) => (typeof v === "string" ? v.trim().slice(0, 60) : "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
     const oneOf = <T extends string>(v: unknown, allowed: readonly T[]) => (allowed.includes(v as T) ? (v as T) : undefined);
     const vitals = (v: unknown): LiveVitals => {
         const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
@@ -611,6 +627,7 @@ export function normaliseLivePlan(input: unknown, origin: LivePlan["origin"]): L
         ...(f.stop !== undefined ? { stop: minutesWindow(f.stop) } : {}),
         ...(text(f.stop_says) ? { stop_says: text(f.stop_says) } : {}),
         ...(text(f.completed_says) ? { completed_says: text(f.completed_says) } : {}),
+        ...(Array.isArray(f.stabilises_at) && f.stabilises_at.length > 0 ? { stabilises_at: f.stabilises_at.map((l: unknown) => slug(l)) } : {}),
     });
 
     // Repeat-dose fields are kept only when present, so a plan that does not use them reads exactly as before.
@@ -973,6 +990,8 @@ function checkFluid(t: LiveTreatment, f: LiveFluid, where: string, plan: LivePla
         if (f.volume_ml === undefined) errors.push(`${w}: completed_says only goes with volume_ml (a fluid without one never finishes by itself).`);
         else if (f.completed_says.length < 10) errors.push(`${w}: completed_says is what the nurse says when it has run in; write a sentence.`);
     }
+    for (const l of f.stabilises_at ?? []) if (!f.levels.some((x) => x.id === l)) errors.push(`${w}: stabilises_at names "${l}", which is not one of its rates.`);
+    if (f.stabilises_at && !plan.stabilised_by.includes(t.id) && !(plan.or_stabilised_by ?? []).some((p) => p.treatments.includes(t.id))) errors.push(`${w}: stabilises_at only goes on a fluid that stops the deterioration (in stabilised_by or a path).`);
     if (isRepeatable(t)) errors.push(`${w}: a fluid is started once and then stepped down; it cannot also have repeat doses.`);
     if (t.infusion) errors.push(`${w}: give the rate ladder or infusion, not both.`);
     if (t.effect) errors.push(`${w}: a fluid's effect is set per rate (levels[].effect), not on the treatment.`);
@@ -1396,6 +1415,11 @@ const findingSets = (f: Record<string, boolean> | undefined) => Object.fromEntri
  * atropine end points are reached). Giving the required number of doses is not enough on its own.
  */
 function stabilisingConditions(t: LiveTreatment | undefined, id: string): RuleCondition[] {
+    // A fluid counts once a run has gone at a rate that treats the problem; a run at a slower rate does not.
+    if (t?.fluid?.stabilises_at?.length) {
+        const rates = t.fluid.stabilises_at;
+        return [{ any: Array.from({ length: FLUID_RUNS }, (_, i) => rates.map((l) => ({ flag: fluidLevelFlag(id, l, i + 1), is: true }))).flat() }];
+    }
     if (!t || !isStateGated(t)) return [{ flag: stabilisingFlag(t, id), is: true }];
     return [{ flag: doseFlag(id, 1), is: true }, { not: compileCondition(t.repeat_only_while) }];
 }

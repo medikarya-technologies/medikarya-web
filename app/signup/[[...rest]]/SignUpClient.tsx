@@ -52,7 +52,7 @@ export default function SignUpClient() {
               <img src="https://www.medikarya.in/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Join MediKarya</h1>
-            <p className="text-sm sm:text-base text-slate-600">Start your journey in AI-powered medical education</p>
+            <p className="text-sm sm:text-base text-slate-600">Practise real cases before you meet real patients</p>
           </div>
 
           <label className="mb-5 flex items-start gap-2.5 text-left text-xs leading-relaxed text-slate-600">

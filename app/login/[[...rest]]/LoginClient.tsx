@@ -41,7 +41,7 @@ export default function LoginClient() {
               <img src="/medikarya.svg" alt="MediKarya Logo" className="h-full w-full object-contain" />
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Welcome back</h1>
-            <p className="text-sm sm:text-base text-slate-600">Sign in to continue your medical education journey</p>
+            <p className="text-sm sm:text-base text-slate-600">Sign in to pick up where you left off</p>
           </div>
 
           {/* Clerk SignIn Component */}

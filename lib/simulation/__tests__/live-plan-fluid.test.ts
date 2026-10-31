@@ -125,6 +125,31 @@ describe("rate-controlled fluid: the plan", () => {
     });
 });
 
+describe("rate-controlled fluid: stabilises_at", () => {
+    // The fixture's untreated course reaches its last stage at 12 minutes; a fluid that stops it is in stabilised_by.
+    it("only a run at a named rate stops the deterioration: a slower start does not, a restart at that rate does", () => {
+        const p = fluidPlan({ start: [{ level: "r20" }], stabilises_at: ["r20"] });
+        assert.equal(errorsOf(p), "");
+        assert.deepEqual(p.treatments.find((t) => t.id === F)!.fluid!.stabilises_at, ["r20"]);
+        const right = run(p, [["iv_access", 1], [at("r20"), 2]], 30);
+        assert.equal(right.score.outcome.stabilised, true);
+        const slow = run(p, [["iv_access", 1], [at("r5"), 2]], 30);
+        assert.equal(slow.score.outcome.stabilised, false, "a slow drip does not treat the shock");
+        const fixed = run(p, [["iv_access", 1], [at("r5"), 2], [STOP, 4], [at("r20"), 4]], 30);
+        assert.equal(fixed.score.outcome.stabilised, true, "restarted at the right rate, it does");
+        // Without stabilises_at, starting it at any rate counts, as before.
+        assert.equal(run(fluidPlan({ start: [{ level: "r20" }] }), [["iv_access", 1], [at("r5"), 2]], 30).score.outcome.stabilised, true);
+    });
+
+    it("names only its own rates, and only on a fluid that stops the deterioration", () => {
+        assert.match(errorsOf(fluidPlan({ stabilises_at: ["r99"] })), /stabilises_at names "r99", which is not one of its rates/);
+        const off = fluidRaw({ stabilises_at: ["r20"] });
+        off.stabilised_by = ["iv_access"];
+        off.or_stabilised_by = [];
+        assert.match(errorsOf(normaliseLivePlan(off, "ai")), /stabilises_at only goes on a fluid that stops the deterioration/);
+    });
+});
+
 describe("rate-controlled fluid: the tray", () => {
     it("is started at a rate, behind its prerequisite; the treatment itself has no plain Give", () => {
         const { said, engine } = run(fluidPlan(), [[at("r20"), 1], [F, 2], ["iv_access", 3], [at("r20"), 4]], 5);

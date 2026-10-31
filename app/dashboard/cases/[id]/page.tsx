@@ -210,8 +210,8 @@ export default function CasePage() {
   const handleReviewAttempt = (attempt: CaseAttempt) => {
     if (!attempt.feedback_json) {
       toast({
-        title: "History Unavailable 🏺",
-        description: "Detailed history is not available for this legacy attempt. Please attempt the case again to store your feedback replay.",
+        title: "No replay for this attempt",
+        description: "This attempt is from before replays were saved. Try the case again and your next attempt can be replayed.",
         variant: "destructive"
       })
       return
