@@ -66,7 +66,7 @@ const Footer = dynamic(() => import("@/components/flowai/footer").then((mod) => 
 
 export const metadata: Metadata = {
   title: "MediKarya: AI Patient Simulation for Medical Students",
-  description: "Practice clinical reasoning with AI-powered virtual patients. Order diagnostics, take a history, and see exactly where your reasoning held up.",
+  description: "Practise clinical reasoning on virtual patients who answer in their own words. Take a history, order tests, and see exactly where your reasoning held up.",
   alternates: {
     canonical: "https://www.medikarya.in/",
   },
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: "MediKarya: AI Patient Simulation for Medical Students",
-    description: "Practice clinical reasoning with AI-powered virtual patients. Order diagnostics, take a history, and see exactly where your reasoning held up.",
+    description: "Practise clinical reasoning on virtual patients who answer in their own words. Take a history, order tests, and see exactly where your reasoning held up.",
     url: "https://www.medikarya.in/",
     type: "website",
     images: [
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "MediKarya: AI Patient Simulation for Medical Students",
-    description: "Practice clinical reasoning with AI-powered virtual patients. Order diagnostics, take a history, and see exactly where your reasoning held up.",
+    description: "Practise clinical reasoning on virtual patients who answer in their own words. Take a history, order tests, and see exactly where your reasoning held up.",
     images: ["https://www.medikarya.in/og-image.png"],
   },
 }

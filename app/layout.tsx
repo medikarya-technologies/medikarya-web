@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   // No site-wide canonical here: every page would inherit it and tell Google it is a copy of the home page. Each
   // public page sets its own (alternates.canonical in its metadata).
   title: {
-    default: "MediKarya - AI-Powered Medical Education",
+    default: "MediKarya - Clinical Case Practice for Medical Students",
     template: "%s | MediKarya"
   },
   description: "Talk to a live AI patient with real-time vitals, rank your differential, order investigations, then see where your reasoning broke and practise what you missed, before your first real patient.",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MediKarya - AI-Powered Medical Education",
+    title: "MediKarya - Clinical Case Practice for Medical Students",
     description: "Talk to a live AI patient with real-time vitals and rank your differential, before your first real patient.",
     images: ["https://www.medikarya.in/og-image.png"],
     creator: "@medikarya", // Replace with actual handle
@@ -121,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "name": "MediKarya",
                   "url": "https://www.medikarya.in",
                   "logo": "https://www.medikarya.in/medikarya.svg",
-                  "description": "AI-powered clinical simulation platform helping medical students in India practice patient consultations, order diagnostics, and develop clinical reasoning skills.",
+                  "description": "Clinical case practice for medical students in India: take a history from a virtual patient, order tests, give a ranked differential and get a debrief on your reasoning.",
                   "foundingDate": "2026",
                   "areaServed": "IN",
                   "knowsAbout": [

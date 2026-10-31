@@ -7,7 +7,7 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
     alternates: { canonical: "https://www.medikarya.in/features" },
     title: "Features",
-    description: "A live bedside monitor, a ranked differential instead of one guess, dual Clinical and Independent scoring, and a real-time cardiac emergency: what's actually built into MediKarya.",
+    description: "A live bedside monitor, a ranked differential instead of one guess, dual Clinical and Independent scoring, and live emergencies that get worse if you wait: what's actually built into MediKarya.",
     openGraph: {
         title: "MediKarya Features: What's Actually Built",
         description: "A live bedside monitor, a ranked differential, dual scoring, and a real-time deteriorating patient. See what's actually in the platform.",
@@ -32,7 +32,7 @@ const features = [
         iconBg: "bg-blue-50",
         iconColor: "text-blue-500",
         title: "A ranked differential",
-        desc: "You commit to three things, in order: your working diagnosis, a real alternative, and the one you can't afford to miss. Not a single guess in a text box.",
+        desc: "You commit to three things, in order: your working diagnosis, a real alternative, and the one you can't afford to miss.",
     },
     {
         Icon: Scale,
@@ -46,14 +46,14 @@ const features = [
         iconBg: "bg-amber-50",
         iconColor: "text-amber-600",
         title: "A patient who can get worse",
-        desc: "In our real-time cardiac emergency case, the monitor doesn't wait for you: delay or mismanage it and the patient deteriorates, exactly like it would at the bedside.",
+        desc: "In the live emergency cases the monitor doesn't wait for you: delay or mismanage the treatment and the patient deteriorates, as at a real bedside.",
     },
     {
         Icon: FlaskConical,
         iconBg: "bg-emerald-50",
         iconColor: "text-emerald-500",
         title: "Investigations that take real time",
-        desc: "Order from a real test catalogue and results come back on a realistic delay, with their own 12-lead ECG interpretation view, not an instant answer key.",
+        desc: "Order from a real test catalogue and results come back on a realistic delay, and a 12-lead ECG gets its own interpretation view.",
     },
     {
         Icon: ClipboardCheck,
@@ -67,14 +67,14 @@ const features = [
         iconBg: "bg-cyan-50",
         iconColor: "text-cyan-600",
         title: "A quiz built from your own gaps",
-        desc: "Five questions generated from what this specific attempt showed you missed, not a static bank of generic questions everyone gets.",
+        desc: "Five questions built from what this attempt showed you missed, so the practice fits your gaps rather than a fixed bank.",
     },
     {
         Icon: Users,
         iconBg: "bg-pink-50",
         iconColor: "text-pink-500",
         title: "Patients who look like your patients",
-        desc: "Age-accurate portraits in Indian attire, drawn to match each case, not a stock photo or a cartoon avatar that could belong to any patient anywhere.",
+        desc: "Age-accurate portraits in Indian attire, drawn to match each case.",
     },
     {
         Icon: Unlock,
@@ -146,7 +146,7 @@ export default function FeaturesPage() {
                     <section className="mb-20 bg-slate-900 rounded-2xl p-8 md:p-10 text-white">
                         <h2 className="text-xl font-bold mb-3">What's not built yet</h2>
                         <p className="text-slate-300 leading-relaxed">
-                            Real-time deterioration currently runs on our cardiac emergency case only: the rest of the library shares the same live monitor, ranked differential and dual scoring, but doesn't yet deteriorate if mismanaged. We're building that out case by case with clinical review, not all at once.
+                            Nine cases run as live emergencies so far: tension pneumothorax, acute severe asthma, dengue shock, hyperkalaemia, pulmonary embolism, a variceal bleed, a bleeding ulcer, an inferior STEMI and acute pulmonary oedema. The rest of the library shares the same live monitor, ranked differential and dual scoring, but those patients don't get worse if mismanaged. We add live cases one at a time, each checked against current guidelines.
                         </p>
                     </section>
 

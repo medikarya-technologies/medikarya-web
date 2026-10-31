@@ -7,7 +7,7 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
     alternates: { canonical: "https://www.medikarya.in/about" },
     title: "About MediKarya",
-    description: "MediKarya is an AI-powered clinical simulation platform built for medical students in India. Learn about our mission, what we're building, and the problem we're solving.",
+    description: "MediKarya is clinical case practice for medical students in India. Why we built it, what is in it today, and the problem we are trying to solve.",
     robots: {
         index: true,
         follow: true,
@@ -142,7 +142,7 @@ export default function AboutPage() {
                     <section className="mb-20">
                         <h2 className="text-2xl font-bold text-slate-900 mb-3">Where we are right now</h2>
                         <p className="text-slate-600 leading-relaxed mb-4">
-                            MediKarya is in early development. We currently have 10 published clinical cases, including a real-time cardiac emergency that deteriorates based on how it's managed, and are actively building the case library and platform features. If you're a medical student, clinician, or educator who wants to help shape what this becomes: we'd genuinely like to hear from you.
+                            MediKarya is in early development. The library has more than 40 published cases across medicine, paediatrics, obstetrics and emergency care, and nine of them run as live emergencies, where the patient gets worse if you don't act in time. If you're a medical student, clinician, or educator who wants to help shape what this becomes: we'd genuinely like to hear from you.
                         </p>
                         <p className="text-slate-600 leading-relaxed">
                             We're based in India and building this for the Indian medical education context, with a longer-term goal of expanding to other LMIC settings where the same gap exists.

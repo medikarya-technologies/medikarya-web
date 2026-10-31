@@ -60,7 +60,7 @@ const steps = [
         step: "07",
         Icon: Brain,
         title: "Close the loop with a reinforcement quiz",
-        desc: "Five questions generated from the specific gaps this attempt actually showed, not a generic quiz bank. It's the same mistake, asked a different way, while it's still fresh.",
+        desc: "Five questions built from the gaps this attempt showed. It's the same mistake, asked a different way, while it's still fresh.",
     },
 ]
 
@@ -128,7 +128,7 @@ export default function HowItWorksPage() {
                     <section className="mb-20 bg-slate-900 rounded-2xl p-8 md:p-10 text-white">
                         <h2 className="text-xl font-bold mb-3">Worth knowing before you start</h2>
                         <p className="text-slate-300 leading-relaxed">
-                            Real-time deterioration, a patient who gets worse if you don't act in time, currently runs on our cardiac emergency case. The rest of the library uses the same live monitor, history, investigations, ranked differential and dual scoring, without that deterioration mechanic. We're building it out case by case, not claiming it everywhere at once.
+                            Real-time deterioration, a patient who gets worse if you don't act in time, runs on nine live emergency cases so far: tension pneumothorax, acute severe asthma, dengue shock, hyperkalaemia, pulmonary embolism, a variceal bleed, a bleeding ulcer, an inferior STEMI and acute pulmonary oedema. The rest of the library uses the same live monitor, history, investigations, ranked differential and dual scoring, without the deterioration. We add live cases one at a time.
                         </p>
                     </section>
 

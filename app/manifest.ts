@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
     return {
         name: 'MediKarya',
         short_name: 'MediKarya',
-        description: 'AI-Powered Medical Education Platform',
+        description: 'Clinical case practice for medical students',
         start_url: '/',
         display: 'standalone',
         background_color: '#0f172a',
