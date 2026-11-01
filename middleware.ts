@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
 const CANONICAL_HOST = "www.medikarya.in";
 
@@ -13,26 +13,37 @@ const isAuthRoute = createRouteMatcher([
     "/signup(.*)"
 ]);
 
-// Public routes that should NEVER trigger Clerk auth/redirects (important for SEO/Googlebot)
-const isPublicRoute = createRouteMatcher([
+// Pages anyone can read that never ask the server who is signed in (the navbar and hero read it in the browser with
+// useAuth). Loading one of these does not go through Clerk at all. Clerk's middleware otherwise "handshakes" a
+// returning visitor whose minute-long session token has lapsed: it bounces every page load, the home page included,
+// through clerk.medikarya.in/v1/client/handshake and back before showing anything. Only GET and HEAD skip it: a
+// server action on these pages (the /try case saving an attempt, say) is a POST and still gets Clerk's auth.
+const isPublicPage = createRouteMatcher([
     "/",
-    "/try(.*)",
-    "/contact(.*)",
     "/about(.*)",
+    "/features(.*)",
+    "/how-it-works(.*)",
+    "/try(.*)",
     "/blog(.*)",
     "/case-studies(.*)",
+    "/contact(.*)",
     "/contribute(.*)",
-    "/cookies(.*)",
+    "/contributors(.*)",
+    "/colleges(.*)",
+    "/tutorials(.*)",
     "/privacy(.*)",
     "/terms(.*)",
+    "/cookies(.*)",
     "/refund-policy(.*)",
+    "/verify(.*)",
+]);
+
+// Routes that go through Clerk but need no sign-in check here (token links, webhooks, and API routes that check the
+// viewer themselves).
+const isPublicRoute = createRouteMatcher([
     "/review(.*)",
     "/protocol-review(.*)",
     "/advisor(.*)",
-    "/contributors(.*)",
-    "/verify(.*)",
-    "/tutorials(.*)",
-    "/colleges(.*)",
     "/api-docs(.*)",
     "/api/webhook(.*)",
     "/api/clerk-webhook(.*)",
@@ -40,24 +51,16 @@ const isPublicRoute = createRouteMatcher([
     "/api/chat(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-    // Force a single canonical host so Search Console only sees one site variant.
-    if (req.nextUrl.protocol === "https:" && req.nextUrl.hostname === "medikarya.in") {
-        const canonicalUrl = req.nextUrl.clone();
-        canonicalUrl.hostname = CANONICAL_HOST;
-        return NextResponse.redirect(canonicalUrl, 308);
-    }
-
+const withClerk = clerkMiddleware(async (auth, req) => {
     // Don't redirect if this is a Clerk OAuth callback or internal route
     if (req.nextUrl.pathname.includes('/sso-callback') ||
         req.nextUrl.pathname.includes('/oauth') ||
-        req.nextUrl.pathname.startsWith('/_next/') ||
-        req.nextUrl.pathname.includes('.')) {
+        req.nextUrl.pathname.startsWith('/_next/')) {
         return;
     }
 
-    // Skip auth entirely for public routes — no Clerk call, no redirects, clean response for Googlebot
-    if (isPublicRoute(req)) {
+    // Public pages reached by POST (server actions) and the other public routes: Clerk has run, no sign-in needed
+    if (isPublicPage(req) || isPublicRoute(req)) {
         return;
     }
 
@@ -77,6 +80,23 @@ export default clerkMiddleware(async (auth, req) => {
         return NextResponse.redirect(dashboardUrl);
     }
 });
+
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
+    // Force a single canonical host so Search Console only sees one site variant.
+    if (req.nextUrl.protocol === "https:" && req.nextUrl.hostname === "medikarya.in") {
+        const canonicalUrl = req.nextUrl.clone();
+        canonicalUrl.hostname = CANONICAL_HOST;
+        return NextResponse.redirect(canonicalUrl, 308);
+    }
+
+    const read = req.method === "GET" || req.method === "HEAD";
+    // A public page, or a file such as /llms.txt or /blog/<slug>.md: served without Clerk
+    if (read && !req.nextUrl.pathname.startsWith("/api/") && (isPublicPage(req) || req.nextUrl.pathname.includes("."))) {
+        return NextResponse.next();
+    }
+
+    return withClerk(req, event);
+}
 
 export const config = {
     matcher: [
