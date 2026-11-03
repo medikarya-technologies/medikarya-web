@@ -25,7 +25,7 @@ const staticRoutes: { path: string; lastModified: string; priority: number }[] =
 ]
 
 /** The day the case study guides (lib/seo/case-guides.ts) last changed: bump it when a guide is added or edited. */
-const CASE_GUIDES_UPDATED = '2026-10-31'
+const CASE_GUIDES_UPDATED = '2026-11-01'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.medikarya.in'
