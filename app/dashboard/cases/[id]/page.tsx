@@ -7,11 +7,11 @@ import { FirstCaseWelcomeDialog } from "@/components/cases/first-case-welcome"
 import { markWelcomed } from "@/lib/library/first-case"
 import { CaseInteraction } from "@/components/cases/case-interaction"
 import { CaseFeedback } from "@/components/cases/case-feedback"
+import { CasePageSkeleton } from "@/components/cases/case-page-skeleton"
 import { FirstCaseConsentDialog, useFirstCaseConsent } from "@/components/cases/first-case-consent"
 import { Button } from "@/components/ui/button"
 import { 
   ArrowLeft, 
-  Loader2, 
   History,
   Award,
   Clock,
@@ -226,12 +226,7 @@ export default function CasePage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen space-y-3 bg-enc-desk">
-        <Loader2 className="h-7 w-7 animate-spin text-brand-600" />
-        <p className="text-[14px] font-medium text-enc-ink-2 animate-pulse">Preparing clinical environment...</p>
-      </div>
-    )
+    return <CasePageSkeleton />
   }
 
   if (!caseData) {

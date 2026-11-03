@@ -44,6 +44,28 @@ async function joinedCount(code: string): Promise<number> {
   return count ?? 0;
 }
 
+/** Counts joins for a list page in one query (per 1,000 rows), rather than one query per link. */
+async function joinedCounts(codes: string[]): Promise<Map<string, number>> {
+  const counts = new Map(codes.map((code) => [code, 0]));
+  if (codes.length === 0) return counts;
+
+  // Supabase/PostgREST caps responses at 1,000 rows by default. Page through the matching primary keys so large
+  // workshops still get accurate counts instead of silently stopping at that cap.
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabaseServer
+      .from("pass_code_joins")
+      .select("code")
+      .in("code", codes)
+      .order("code")
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    for (const row of data ?? []) counts.set(row.code, (counts.get(row.code) ?? 0) + 1);
+    if (!data || data.length < pageSize) break;
+  }
+  return counts;
+}
+
 function toLink(row: CodeRow, joined: number): JoinLink {
   const link = { active: row.active, opensAt: row.opens_at, closesAt: row.closes_at, maxJoins: row.max_joins };
   return {
@@ -70,8 +92,8 @@ export async function listJoinLinks(): Promise<{ available: boolean; links: Join
     return { available: false, links: [] };
   }
   const rows = (data ?? []) as CodeRow[];
-  const counts = await Promise.all(rows.map((r) => joinedCount(r.code)));
-  return { available: true, links: rows.map((r, i) => toLink(r, counts[i])) };
+  const counts = await joinedCounts(rows.map((r) => r.code));
+  return { available: true, links: rows.map((r) => toLink(r, counts.get(r.code) ?? 0)) };
 }
 
 /** One join link by its code, or null. */

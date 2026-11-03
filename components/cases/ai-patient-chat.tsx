@@ -53,6 +53,7 @@ const ICEBREAKERS = [
 
 export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, adaptiveNudge, variant = "classic", patientName = "Patient", patientAvatar, currentCondition }: AIPatientChatProps) {
   const [openingLoading, setOpeningLoading] = useState(true)
+  const openingRequested = useRef(false)
 
   const userMsgCount = (chatHistory || []).filter((m) => m.role === "user").length
   const showIcebreakers = userMsgCount === 0
@@ -87,10 +88,14 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
 
   // Fetch LLM-generated emotional opening on mount
   useEffect(() => {
+    // React replays effects in development. This endpoint calls the AI provider, so keep that replay
+    // from generating and billing for the same opening twice.
+    if (openingRequested.current) return
     if (chatHistory && chatHistory.length > 0) {
       setOpeningLoading(false)
       return
     }
+    openingRequested.current = true
     setOpeningLoading(true)
     fetch("/api/chat/patient/opening", {
       method: "POST",

@@ -19,6 +19,7 @@
 // this file's own background against its actual current neighbours before trusting the comment history alone.
 
 import { useState } from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 import { Play } from "lucide-react"
@@ -73,7 +74,7 @@ export function DashboardPreview() {
             />
           ) : (
             <>
-              <img src="/demo-thumbnail.jpg" alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <Image src="/demo-thumbnail.jpg" alt="" fill sizes="(max-width: 768px) 100vw, 820px" quality={85} className="object-cover transition-transform duration-700 group-hover:scale-105" />
               {/* The cover is pale, so only a breath of shade: enough to lift the play button, not enough to turn it grey. */}
               <div className="absolute inset-0 bg-slate-900/5 transition-colors group-hover:bg-transparent" />
               {/* lower left, so it never sits on the title the thumbnail itself carries */}

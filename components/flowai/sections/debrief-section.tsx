@@ -55,7 +55,7 @@ export default function DebriefSection() {
           delay={0}
           accentClassName="text-brand-600"
         >
-          <Screenshot src="/screens/debrief-performance-pilot.png" alt="Performance summary of a real attempt from the MAMC pilot: 77 out of 100, scored across five clinical skill areas" caption="A real attempt from the MAMC pilot, May 2026, as it was scored." />
+          <Screenshot src="/screens/debrief-performance-pilot.png" width={1340} height={1162} alt="Performance summary of a real attempt from the MAMC pilot: 77 out of 100, scored across five clinical skill areas" caption="A real attempt from the MAMC pilot, May 2026, as it was scored." />
         </Moment>
 
         <Moment
@@ -68,7 +68,7 @@ export default function DebriefSection() {
           delay={120}
           accentClassName="text-[#4b8f74]"
         >
-          <Screenshot src="/screens/reinforcement-quiz-real.png" alt="Real reinforcement question generated from a missed investigation, with the answer revealed and explained" caption="A real question from the same case, drawn from what an attempt missed." />
+          <Screenshot src="/screens/reinforcement-quiz-real.png" width={900} height={1002} alt="Real reinforcement question generated from a missed investigation, with the answer revealed and explained" caption="A real question from the same case, drawn from what an attempt missed." />
         </Moment>
       </div>
     </section>

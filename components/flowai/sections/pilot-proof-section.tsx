@@ -31,6 +31,7 @@
 // Quote and intro copy unchanged — same real May 2026 MAMC survey response.
 
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 import { Eyebrow } from "@/components/cases/encounter-ui"
 import { Quote, Star } from "lucide-react"
@@ -77,8 +78,8 @@ export default function PilotProofSection() {
             className={cn("relative mx-auto h-[240px] w-full max-w-[300px] transition-all duration-700 ease-out sm:h-[300px]", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}
           >
             {PHOTOS.map((p) => (
-              <div key={p.file} className={cn("absolute w-[54%] overflow-hidden rounded-xl border-4 border-enc-sheet shadow-enc-lift", p.rotate, p.z, p.pos)}>
-                <img src={`/pilot/${p.file}`} alt="4th-year MBBS students working through a case at Maulana Azad Medical College" className="aspect-[4/3] w-full object-cover" loading="lazy" decoding="async" />
+              <div key={p.file} className={cn("absolute aspect-[4/3] w-[54%] overflow-hidden rounded-xl border-4 border-enc-sheet shadow-enc-lift", p.rotate, p.z, p.pos)}>
+                <Image src={`/pilot/${p.file}`} alt="4th-year MBBS students working through a case at Maulana Azad Medical College" fill sizes="(max-width: 640px) 160px, 210px" quality={85} className="object-cover" />
               </div>
             ))}
           </div>

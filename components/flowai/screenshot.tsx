@@ -16,10 +16,11 @@
 // the enlarge mark is always shown, since that is where the image is smallest.
 
 import { useState } from "react"
+import Image from "next/image"
 import { Maximize2 } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 
-export function Screenshot({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
+export function Screenshot({ src, alt, caption, width, height }: { src: string; alt: string; caption?: string; width: number; height: number }) {
   const [open, setOpen] = useState(false)
   return (
     <figure className="w-full max-w-[640px]">
@@ -29,7 +30,7 @@ export function Screenshot({ src, alt, caption }: { src: string; alt: string; ca
         aria-label={`Enlarge: ${alt}`}
         className="group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-enc-line-strong bg-enc-sheet shadow-enc-lift outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
       >
-        <img src={src} alt={alt} className="w-full" loading="lazy" decoding="async" />
+        <Image src={src} alt={alt} width={width} height={height} sizes="(max-width: 672px) 92vw, 640px" quality={90} className="h-auto w-full" />
         <span className="absolute right-3 bottom-3 flex h-8 w-8 items-center justify-center rounded-full bg-enc-fill/75 text-white transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100" aria-hidden>
           <Maximize2 className="h-4 w-4" />
         </span>
@@ -38,7 +39,7 @@ export function Screenshot({ src, alt, caption }: { src: string; alt: string; ca
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92vh] w-[min(1200px,94vw)] max-w-none overflow-auto rounded-2xl border-0 bg-enc-sheet p-2 sm:max-w-none sm:p-3">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
-          <img src={src} alt={alt} className="w-full rounded-xl" />
+          <Image src={src} alt={alt} width={width} height={height} sizes="(max-width: 1200px) 94vw, 1200px" quality={90} className="h-auto w-full rounded-xl" />
           {caption && <p className="pb-1 text-center text-[13px] text-enc-ink-3">{caption}</p>}
         </DialogContent>
       </Dialog>
