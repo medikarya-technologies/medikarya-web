@@ -14,7 +14,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { IntentExtractor } from "./IntentExtractor";
 import { DeterministicScorer } from "./DeterministicScorer";
 import { ReasoningPromptBuilder } from "./ReasoningPromptBuilder";
-import { historyReview, historyScoringMode, scoreHistory, type HistoryV2 } from "./historyCoverage";
+import { hasCompleteAiCoverage, historyReview, historyScoringMode, scoreHistory, type HistoryV2 } from "./historyCoverage";
 import { DIAGNOSIS_CORRECT_FROM, diagnosisMatches } from "./diagnosisMatch";
 import {
     FinalEvaluationResult,
@@ -26,6 +26,13 @@ import {
     resolveRedFlagPenalties,
     totalRedFlagPenalty,
 } from "./red-flag-detector";
+
+function requiredScore(value: unknown, label: string, max: number): number {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > max) {
+        throw new Error(`Examiner returned an invalid ${label}`);
+    }
+    return value;
+}
 
 export class EvaluationEngine {
     static async evaluate(
@@ -138,15 +145,24 @@ export class EvaluationEngine {
             if (!content) throw new Error("Empty LLM response");
 
             const parsed = JSON.parse(content) as any;
+            const requiredQuestions: string[] = evalConfig?.history?.required_questions ?? [];
+            if (!Array.isArray(parsed.historyCoverage) || !hasCompleteAiCoverage(
+                parsed.historyCoverage,
+                requiredQuestions.length,
+                extracted.doctorQuestions.map((q) => q.text)
+            )) throw new Error("Examiner returned incomplete history coverage");
+            if (!Array.isArray(parsed.missedRedFlags) || parsed.missedRedFlags.some((flag: unknown) => typeof flag !== "string")) {
+                throw new Error("Examiner returned invalid red-flag results");
+            }
             aiHistoryCoverage = parsed.historyCoverage;
             aiHistoryQuality = parsed.historyQualityScore;
 
             llmResult = {
-                reasoningScore:      Math.min(30,  Math.max(0, Number(parsed.reasoningScore)      || 0)),
-                historyQualityScore: Math.min(7.5, Math.max(0, Number(parsed.historyQualityScore) || 0)),
-                diagnosisScore:      Math.min(15,  Math.max(0, Number(parsed.diagnosisScore)      || 0)),
-                managementScore:     Math.min(10,  Math.max(0, Number(parsed.managementScore)     || 0)),
-                missedRedFlags:      Array.isArray(parsed.missedRedFlags) ? parsed.missedRedFlags : [],
+                reasoningScore:      requiredScore(parsed.reasoningScore, "reasoning score", 30),
+                historyQualityScore: requiredScore(parsed.historyQualityScore, "history quality score", 7.5),
+                diagnosisScore:      requiredScore(parsed.diagnosisScore, "diagnosis score", 15),
+                managementScore:     requiredScore(parsed.managementScore, "management score", 10),
+                missedRedFlags:      parsed.missedRedFlags,
                 feedback: {
                     strengths:    Array.isArray(parsed.feedback?.strengths)    ? parsed.feedback.strengths    : ["Good effort evaluating the case."],
                     improvements: Array.isArray(parsed.feedback?.improvements) ? parsed.feedback.improvements : ["Review the case discussion for key takeaways."],

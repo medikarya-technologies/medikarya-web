@@ -37,12 +37,12 @@ export interface MilestoneNotice {
     detail: string;
 }
 
-type AttemptRow = { case_id: string; score: number | null; created_at: string };
+type AttemptRow = { case_id: string; score: number | null; created_at: string; provisional?: unknown };
 
 /** What the student had done before this attempt, or null when it cannot be read (then no milestone is announced). */
 async function attemptsBefore(userId: string): Promise<AttemptRow[] | null> {
     try {
-        const { data, error } = await supabaseServer.from("case_attempts").select("case_id, score, created_at").eq("user_id", userId);
+        const { data, error } = await supabaseServer.from("case_attempts").select("case_id, score, created_at, provisional:feedback_json->>provisional").eq("user_id", userId);
         return error ? null : ((data ?? []) as AttemptRow[]);
     } catch {
         return null;
@@ -110,7 +110,12 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
                 console.error("Supabase insert error:", dbError);
             } else {
                 console.log("Successfully saved case_attempt to Supabase for", userId ? `User: ${userId}` : `Guest: ${guestId}`, "Case:", caseId);
-                if (userId && before) milestones = await milestonesEarnedBy(before, { case_id: caseId, score: Math.round(score), created_at: new Date().toISOString() });
+                if (userId && before) milestones = await milestonesEarnedBy(before, {
+                    case_id: caseId,
+                    score: Math.round(score),
+                    created_at: new Date().toISOString(),
+                    provisional: feedbackJson.provisional,
+                });
             }
 
             // --- Streak Tracking Logic (only for authenticated users) ---

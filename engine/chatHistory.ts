@@ -22,6 +22,14 @@ export const HISTORY_LIMITS = {
   totalChars: 12_000,
 } as const;
 
+/** The visible stand-in shown when the patient service fails to reply. */
+export const UNANSWERED_PREFIX = "unanswered-";
+
+/** A stand-in prompt is UI feedback, not something the simulated patient said. */
+export function patientReplyForHistory(messageId: string, content: string): string {
+  return messageId.startsWith(UNANSWERED_PREFIX) ? "" : content;
+}
+
 /** The newest part of the conversation the browser sent, cleaned: oldest turns go first when it is too long. */
 export function cleanChatHistory(value: unknown): ChatTurn[] {
   if (!Array.isArray(value)) return [];

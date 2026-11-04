@@ -21,7 +21,7 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 
 import { evaluateSimulation } from "@/app/actions/evaluate"
-import { scoreEncounter } from "@/engine/evaluation/DualScorer"
+import { patientReplyForHistory } from "@/engine/chatHistory"
 import { selectReinforcement } from "@/lib/simulation/reinforcement"
 import { formatClock, type ClinicalEvent, type EventOf } from "@/lib/simulation/encounter-events"
 import type { SimulationCaseConfig } from "@/lib/simulation/case-schema"
@@ -90,6 +90,7 @@ interface UiSaved {
   chat: ChatMessage[]
   feedback: any | null
   showQuiz: boolean
+  assessmentDraft?: { slots: string[]; reasoning: string; management: string }
   /** Generated quiz for classically scored cases; rubric cases derive theirs from the result. */
   quizData?: any
 }
@@ -98,7 +99,17 @@ function readUi(key: string): UiSaved {
   try {
     const parsed = JSON.parse(localStorage.getItem(key) ?? "null")
     if (parsed && Array.isArray(parsed.chat)) {
-      return { chat: parsed.chat, feedback: parsed.feedback ?? null, showQuiz: !!parsed.showQuiz, quizData: parsed.quizData }
+      const draft = parsed.assessmentDraft
+      const assessmentDraft = draft && typeof draft === "object"
+        ? {
+            slots: Array.isArray(draft.slots)
+              ? [0, 1, 2].map((i) => typeof draft.slots[i] === "string" ? draft.slots[i] : "")
+              : ["", "", ""],
+            reasoning: typeof draft.reasoning === "string" ? draft.reasoning : "",
+            management: typeof draft.management === "string" ? draft.management : "",
+          }
+        : undefined
+      return { chat: parsed.chat, feedback: parsed.feedback ?? null, showQuiz: !!parsed.showQuiz, quizData: parsed.quizData, assessmentDraft }
     }
   } catch {
     /* fall through */
@@ -191,9 +202,25 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   // If the student types their differential, switches to History, then comes
   // back, their work must still be there. Keeping it in a child that
   // unmounts on every tab change loses it.
-  const [diagSlots, setDiagSlots] = useState<string[]>(["", "", ""])
-  const [diagReasoning, setDiagReasoning] = useState("")
-  const [diagManagement, setDiagManagement] = useState("")
+  const [diagSlots, setDiagSlots] = useState<string[]>(() => ui.assessmentDraft?.slots ?? ["", "", ""])
+  const [diagReasoning, setDiagReasoning] = useState(() => ui.assessmentDraft?.reasoning ?? "")
+  const [diagManagement, setDiagManagement] = useState(() => ui.assessmentDraft?.management ?? "")
+
+  // The response draft lives beside the event log so refreshes, network failures,
+  // and tab changes cannot make students re-enter a final assessment.
+  useEffect(() => {
+    setUi((prev) => {
+      const current = prev.assessmentDraft
+      if (
+        current &&
+        current.reasoning === diagReasoning &&
+        current.management === diagManagement &&
+        current.slots.length === diagSlots.length &&
+        current.slots.every((slot, i) => slot === diagSlots[i])
+      ) return prev
+      return { ...prev, assessmentDraft: { slots: diagSlots, reasoning: diagReasoning, management: diagManagement } }
+    })
+  }, [diagSlots, diagReasoning, diagManagement, setUi])
 
   // The LIVE encounter sizes itself to exactly `100dvh` and every panel scrolls internally —
   // the page itself is never meant to scroll there. Some browser/OS combinations compute
@@ -292,8 +319,9 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
       if (message.role === "user") {
         pendingQuestion.current = message.content
       } else if (message.id !== "welcome" && pendingQuestion.current !== null) {
-        // The information is obtained when the patient answers.
-        actions.takeHistory(pendingQuestion.current, message.content)
+        // A failed request shows a retry prompt in the chat. Keep the student's
+        // question for history scoring, but never store that prompt as patient evidence.
+        actions.takeHistory(pendingQuestion.current, patientReplyForHistory(message.id, message.content))
         pendingQuestion.current = null
       }
     },
@@ -312,41 +340,17 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
     try {
       result = await evaluateSimulation(finalEvents, caseData, timeTaken, guestId)
     } catch (error) {
-      if (isClassic) {
-        // The classic evaluator runs on the server only, so there is no honest local score to fall back to.
-        // The encounter is saved on this device: the student can simply submit again.
-        console.error("Server scoring failed", error)
-        toast({
-          title: "Couldn't score your encounter",
-          description: "Check your connection and submit again. Your progress is saved.",
-          variant: "destructive",
-          duration: 6000,
-        })
-        setEvaluating(false)
-        return
-      }
-      // Scoring on this device needs the case's rubric, which a first-time player's browser is not given
-      // (lib/cases/views.ts): then, as for a classic case, the student simply submits again.
-      if (!(config as any).scoring_rubric) {
-        console.error("Server scoring failed", error)
-        toast({
-          title: "Couldn't score your encounter",
-          description: "Check your connection and submit again. Your progress is saved.",
-          variant: "destructive",
-          duration: 6000,
-        })
-        setEvaluating(false)
-        return
-      }
-      // The server couldn't be reached: score locally so the student still gets their debrief.
-      console.error("Server scoring failed; scoring locally", error)
-      const scored = scoreEncounter(finalEvents, config)
-      result = {
-        score: scored.clinicalScore,
-        xpEarned: 0,
-        unsaved: true,
-        simulation: { version: 1, ...scored, events: finalEvents, timeTaken },
-      }
+      // A local phrase-based result can disagree with semantic examiner marking.
+      // Keep every encounter on this device so the student can retry once connected.
+      console.error("Server scoring failed", error)
+      toast({
+        title: "Couldn't score your encounter",
+        description: "Your work is saved on this device. Check your connection and submit again for examiner marking.",
+        variant: "destructive",
+        duration: 7000,
+      })
+      setEvaluating(false)
+      return
     }
     setUi((prev) => ({ ...prev, feedback: result }))
     setEvaluating(false)
@@ -456,11 +460,6 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
         {feedback.unsaved && (
           <div className="bg-amber-100 px-4 py-2 text-center text-xs font-medium text-amber-900">
             We couldn&apos;t reach the server, so this result was scored on your device and hasn&apos;t been saved.
-          </div>
-        )}
-        {!feedback.unsaved && feedback.provisional && (
-          <div className="bg-amber-100 px-4 py-2 text-center text-xs font-medium text-amber-900">
-            Our examiner couldn&apos;t be reached, so parts of this score are provisional. We&apos;ll mark your answers again and update it.
           </div>
         )}
         <CaseFeedback

@@ -13,7 +13,7 @@ export async function getCaseProgress(): Promise<Record<string, CaseProgress>> {
         const { userId } = await auth();
         if (!userId) return {};
 
-        const { data, error } = await supabaseServer.from("case_attempts").select("case_id, score, created_at").eq("user_id", userId);
+        const { data, error } = await supabaseServer.from("case_attempts").select("case_id, score, created_at, provisional:feedback_json->>provisional").eq("user_id", userId);
         if (error) {
             console.error("Error fetching case progress:", error);
             return {};

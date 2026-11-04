@@ -1,6 +1,8 @@
 // The arithmetic behind a workshop's top scores (Admin → Top scores) and its participation certificates (Admin →
 // Workshop passes → Certificates). Pure, so it is tested; lib/workshops/server.ts reads the rows.
 
+import { isProvisionalAttempt } from "../library/attempt-quality";
+
 export interface AttemptRow {
   user_id: string;
   case_id: string;
@@ -8,6 +10,7 @@ export interface AttemptRow {
   created_at: string;
   /** scoringVersion.history of the attempt: 2 for history scoring version 2, missing (1) before it. */
   history_version?: unknown;
+  provisional?: unknown;
 }
 
 /** Which attempt counts: the first one (fair for prizes: retrying cannot help) or the best one. */
@@ -28,7 +31,7 @@ export interface Ranked {
  */
 export function rankByCase(rows: readonly AttemptRow[], count: Count): Map<string, Ranked[]> {
   const byCase = new Map<string, Map<string, Ranked>>();
-  const sorted = rows.filter((r) => typeof r.score === "number").sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const sorted = rows.filter((r) => !isProvisionalAttempt(r) && typeof r.score === "number").sort((a, b) => a.created_at.localeCompare(b.created_at));
   for (const r of sorted) {
     const students = byCase.get(r.case_id) ?? new Map<string, Ranked>();
     byCase.set(r.case_id, students);
@@ -53,7 +56,7 @@ export function rankByCase(rows: readonly AttemptRow[], count: Count): Map<strin
 export function mixedScoring(rows: readonly AttemptRow[]): Set<string> {
   const versions = new Map<string, Set<number>>();
   for (const r of rows) {
-    if (typeof r.score !== "number") continue;
+    if (isProvisionalAttempt(r) || typeof r.score !== "number") continue;
     const v = Number(r.history_version) === 2 ? 2 : 1;
     const set = versions.get(r.case_id) ?? new Set<number>();
     set.add(v);

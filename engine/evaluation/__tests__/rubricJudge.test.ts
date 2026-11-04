@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "fs";
 import path from "path";
 
-import { collectTextChecks, judgePrompt } from "../rubricJudge";
+import { collectTextChecks, judgePrompt, parseTextJudgments } from "../rubricJudge";
 import { DIAGNOSIS_JUDGMENT, scoreEncounter, textCheckKey } from "../DualScorer";
 import type { ClinicalEvent } from "../../../lib/simulation/encounter-events";
 import type { SimulationCaseConfig } from "../../../lib/simulation/case-schema";
@@ -42,7 +42,24 @@ describe("rubric free-text checks", () => {
     it("the prompt names every check key", () => {
         const checks = collectTextChecks(config, events);
         const prompt = judgePrompt(config, checks);
-        for (const c of checks) assert.ok(prompt.includes(c.key));
+        const encodedChecks = prompt.split("Checks:\n")[1]?.split("\n\nReturn STRICTLY")[0];
+        assert.ok(encodedChecks, "the prompt contains its checks as structured data");
+        const promptedKeys = (JSON.parse(encodedChecks!) as Array<{ key: string }>).map((c) => c.key);
+        assert.deepEqual(promptedKeys, checks.map((c) => c.key));
+    });
+
+    it("does not accept a partial examiner reply as final", () => {
+        const checks = collectTextChecks(config, events);
+        const firstOnly = JSON.stringify({ verdicts: { [checks[0].key]: true } });
+        assert.equal(parseTextJudgments(checks, firstOnly), null);
+    });
+
+    it("accepts only a boolean verdict for every check", () => {
+        const checks = collectTextChecks(config, events);
+        const complete = Object.fromEntries(checks.map((c) => [c.key, true]));
+        assert.deepEqual(parseTextJudgments(checks, JSON.stringify({ verdicts: complete })), complete);
+        const malformed = { ...complete, [checks[0].key]: "true" };
+        assert.equal(parseTextJudgments(checks, JSON.stringify({ verdicts: malformed })), null);
     });
 
     it("the AI's verdicts decide; without them the phrases do", () => {

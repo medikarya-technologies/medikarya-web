@@ -260,6 +260,7 @@ describe("library: progress from the attempts table", () => {
             { case_id: "chb", score: 55, created_at: "2026-09-01T10:00:00Z" },
             { case_id: "chb", score: 80, created_at: "2026-09-10T10:00:00Z" },
             { case_id: "chb", score: 70, created_at: "2026-09-05T10:00:00Z" },
+            { case_id: "chb", score: 99, created_at: "2026-09-12T10:00:00Z", provisional: "true" },
             { case_id: "stemi", score: 90, created_at: "2026-09-02T10:00:00Z" },
         ]);
         assert.deepEqual(p.chb, { attempts: 3, best: 80, last: "2026-09-10T10:00:00Z" }, "the latest is the latest, whatever order the rows come in");
@@ -383,6 +384,17 @@ describe("record: the dashboard numbers", () => {
         assert.equal(s.averageScore, 40);
         assert.equal(s.attempts, 3);
         assert.equal(s.streakDays, 3);
+    });
+
+    it("does not include provisional marks or XP in dashboard records", () => {
+        const s = buildDashboardStats([
+            row(1, "chb", 60, 30, "2026-09-01T10:00:00Z"),
+            { ...row(2, "stemi", 99, 50, "2026-09-02T10:00:00Z"), provisional: true },
+        ], title, 1);
+        assert.equal(s.totalXP, 30);
+        assert.equal(s.casesSolved, 1);
+        assert.equal(s.averageScore, 60);
+        assert.equal(s.attempts, 1);
     });
 
     it("lists the five cases done most recently, one row a case, named by the library, with a readable duration", () => {

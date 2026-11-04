@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { DOCTOR_ENTERS, HISTORY_LIMITS, cleanChatHistory, toGeminiHistory, type ChatTurn } from "../chatHistory";
+import { DOCTOR_ENTERS, HISTORY_LIMITS, cleanChatHistory, patientReplyForHistory, toGeminiHistory, type ChatTurn } from "../chatHistory";
 
 const q = (content: string): ChatTurn => ({ role: "user", content });
 const a = (content: string): ChatTurn => ({ role: "assistant", content });
@@ -63,5 +63,12 @@ describe("toGeminiHistory", () => {
   it("adds nothing when the doctor spoke first, and nothing for an empty conversation", () => {
     assert.equal(toGeminiHistory([q("Hello"), a("Hi doctor.")])[0].parts[0].text, "Hello");
     assert.deepEqual(toGeminiHistory([]), []);
+  });
+});
+
+describe("patientReplyForHistory", () => {
+  it("does not turn the chat retry message into something the patient said", () => {
+    assert.equal(patientReplyForHistory("unanswered-123", "Sorry, could you ask me that again?"), "");
+    assert.equal(patientReplyForHistory("456", "No, I have not had a fever."), "No, I have not had a fever.");
   });
 });

@@ -87,6 +87,10 @@ function ConsequenceItem({ action, effect, outcome, type, isLast }: { action: st
  * bedside gets that same review with the encounter's own steps added.
  */
 export function CaseFeedback(props: CaseFeedbackProps) {
+  if (props.feedback?.provisional) {
+    return <ProvisionalCaseFeedback {...props} />;
+  }
+
   const simulation = props.feedback?.simulation
   if (simulation && simulation.scoring !== "classic") {
     return (
@@ -103,6 +107,43 @@ export function CaseFeedback(props: CaseFeedbackProps) {
     );
   }
   return <LegacyCaseFeedback {...props} simulation={simulation} />;
+}
+
+function ProvisionalCaseFeedback({
+  onExit,
+  onReset,
+  mode = "live",
+  guestMode = false,
+  onReport,
+}: CaseFeedbackProps) {
+  return (
+    <div className="min-h-screen bg-enc-desk flex flex-col items-center p-4 md:p-8">
+      <div className="w-full max-w-2xl pt-4 md:pt-8">
+        <ProgressHeader step={0} total={1} onReport={onReport} />
+        <Section icon={AlertTriangle} title="Feedback is pending">
+          <div className="space-y-4">
+            <p>Your attempt was saved, but the examiner response was incomplete. We can’t show a reliable score yet.</p>
+            <div className="rounded-lg bg-enc-desk p-4">
+              <Kicker>What happens next</Kicker>
+              <p className="text-sm text-enc-ink-2">
+                This attempt won’t count toward your progress or rankings until it is marked again.
+              </p>
+            </div>
+          </div>
+        </Section>
+        <Nav
+          onPrev={onExit}
+          onNext={onExit}
+          isFirst
+          isLast
+          onExit={onExit}
+          onReset={onReset}
+          mode={mode}
+          guestMode={guestMode}
+        />
+      </div>
+    </div>
+  );
 }
 
 function LegacyCaseFeedback({

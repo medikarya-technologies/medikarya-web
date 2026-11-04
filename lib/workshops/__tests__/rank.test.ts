@@ -38,6 +38,15 @@ describe("rankByCase", () => {
     assert.deepEqual([...ranked.keys()].sort(), ["diarrhoea", "stemi"]);
     assert.ok(!ranked.get("stemi")!.some((r) => r.userId === "kabir"));
   });
+
+  it("ignores provisional marks when choosing a student's first or best scored attempt", () => {
+    const attempts = [
+      { ...row("asha", "stemi", 99, 1), provisional: "true" },
+      row("asha", "stemi", 72, 2),
+    ];
+    assert.equal(rankByCase(attempts, "first").get("stemi")?.[0].score, 72);
+    assert.equal(rankByCase(attempts, "best").get("stemi")?.[0].score, 72);
+  });
 });
 
 describe("places", () => {

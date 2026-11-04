@@ -9,6 +9,7 @@ import { buildSkillProfile, NO_SKILLS, type AttemptFeedback, type SkillProfile }
 const COLUMNS = [
     "case_id",
     "created_at",
+    "provisional:feedback_json->>provisional",
     "historyScore:feedback_json->historyScore",
     "historyVersion:feedback_json->scoringVersion->history",
     "testingScore:feedback_json->testingScore",

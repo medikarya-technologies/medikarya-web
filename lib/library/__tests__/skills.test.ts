@@ -38,6 +38,18 @@ describe("skills: classic scoring", () => {
         );
     });
 
+    it("does not include provisional marks in skills averages", () => {
+        const p = buildSkillProfile([
+            classic(10, { historyScore: 0, testingScore: 0, reasoningScore: 0, provisional: true }),
+            classic(11, { historyScore: 25, testingScore: 20, reasoningScore: 30 }),
+        ]);
+        const by = Object.fromEntries(p.skills.map((s) => [s.id, s.average]));
+        assert.equal(by.history, 100);
+        assert.equal(by.investigations, 100);
+        assert.equal(by.reasoning, 100);
+        assert.equal(p.attempts, 1);
+    });
+
     it("keeps a value inside 0 to 100 however odd the stored number", () => {
         const p = buildSkillProfile([classic(10, { historyScore: 99, testingScore: -5 })]);
         const by = Object.fromEntries(p.skills.map((s) => [s.id, s.average]));

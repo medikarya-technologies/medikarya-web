@@ -13,12 +13,15 @@
 //
 // Pure: no React, no I/O, no `@/` imports.
 
+import { isProvisionalAttempt } from "./attempt-quality";
+
 export type MilestoneId = "first_case" | "streak_3" | "streak_7" | "score_90" | "specialty_complete" | "all_cases";
 
 export interface AttemptLike {
     case_id: string;
     score: number | null;
     created_at: string;
+    provisional?: unknown;
 }
 
 export interface CaseLike {
@@ -90,9 +93,10 @@ export function computeMilestones({ attempts: all, cases }: { attempts: readonly
     }
 
     // a score of 90 or more
-    const high = attempts.filter((a) => typeof a.score === "number" && a.score >= 90).map((a) => a.created_at);
-    const bestScore = attempts.reduce((m, a) => Math.max(m, typeof a.score === "number" ? a.score : 0), 0);
-    out.push({ id: "score_90", title: "A score of 90+", detail: "You scored 90 or more on a case.", earned: high.length > 0, earnedAt: earliest(high), progress: high.length === 0 ? (attempts.length ? `Best so far: ${Math.round(bestScore)}` : "Score 90 or more on any case") : undefined, fraction: high.length === 0 ? Math.min(1, bestScore / 90) : undefined });
+    const finalAttempts = attempts.filter((a) => !isProvisionalAttempt(a));
+    const high = finalAttempts.filter((a) => typeof a.score === "number" && a.score >= 90).map((a) => a.created_at);
+    const bestScore = finalAttempts.reduce((m, a) => Math.max(m, typeof a.score === "number" ? a.score : 0), 0);
+    out.push({ id: "score_90", title: "A score of 90+", detail: "You scored 90 or more on a case.", earned: high.length > 0, earnedAt: earliest(high), progress: high.length === 0 ? (finalAttempts.length ? `Best so far: ${Math.round(bestScore)}` : (attempts.length ? "Score pending review" : "Score 90 or more on any case")) : undefined, fraction: high.length === 0 ? Math.min(1, bestScore / 90) : undefined });
 
     // every case in a specialty, and every case
     const firstTried = new Map<string, string>();

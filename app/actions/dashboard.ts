@@ -45,7 +45,7 @@ export async function getDashboardData(): Promise<{ stats: DashboardStats; progr
         const [attemptsResult, profileResult, cases] = await Promise.all([
             supabaseServer
                 .from("case_attempts")
-                .select("id, case_id, score, xp_earned, time_taken, created_at")
+                .select("id, case_id, score, xp_earned, time_taken, created_at, provisional:feedback_json->>provisional")
                 .eq("user_id", userId)
                 .order("created_at", { ascending: false }),
             supabaseServer.from("user_profiles").select("current_streak").eq("clerk_user_id", userId).maybeSingle(),

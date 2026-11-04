@@ -15,6 +15,8 @@
 //
 // Pure: no React, no I/O, no `@/` imports.
 
+import { isProvisionalAttempt } from "./attempt-quality";
+
 export type SkillId = "history" | "investigations" | "reasoning" | "diagnosis" | "management" | "efficiency";
 
 export const SKILL_ORDER: readonly SkillId[] = ["history", "investigations", "reasoning", "diagnosis", "management", "efficiency"];
@@ -44,6 +46,7 @@ const CLASSIC_MAX = { history: 25, investigations: 20, reasoning: 30, diagnosis:
 export interface AttemptFeedback {
     case_id: string;
     created_at: string;
+    provisional?: unknown;
     historyScore?: unknown;
     /** scoringVersion.history: 2 for history scoring version 2, missing (1) before it. */
     historyVersion?: unknown;
@@ -122,11 +125,12 @@ export function buildSkillProfile(rows: readonly AttemptFeedback[], gapLimit = 6
     // History was marked by two scorers: version 1 gave even a strong history about a fifth of its marks. Once a
     // student has attempts marked by version 2, only those count for history, so the old marks neither drag the
     // average down nor make a jump look like progress.
-    const historyV2 = rows.some((r) => r && num(r.historyVersion) === 2);
+    const finalRows = rows.filter((r) => r && !isProvisionalAttempt(r));
+    const historyV2 = finalRows.some((r) => num(r.historyVersion) === 2);
     let helpN = 0;
     let used = 0;
 
-    for (const row of rows) {
+    for (const row of finalRows) {
         if (!row || typeof row.case_id !== "string" || Number.isNaN(Date.parse(row.created_at))) continue;
         used++;
 

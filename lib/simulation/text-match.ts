@@ -10,8 +10,10 @@
 
 /** Words that negate a phrase that follows them in the same clause. */
 const NEGATORS = new RegExp(
-    "\\b(?:no|not|without|absent|absence of|negative for|nor|never|denies|denied|unlikely|isn't|is not|doesn't|does not|don't|do not|wasn't|was not|neither)\\b"
+    "\\b(?:no|not(?!\\s+only\\b)|without|absent|absence of|negative for|nor|never|denies|denied|unlikely|isn't|is not|doesn't|does not|don't|do not|wasn't|was not|neither)\\b"
 );
+/** Negation can follow the finding too: "ST elevation is absent" or "not seen". */
+const POST_NEGATORS = /^\s*(?:(?:is|are|was|were|has been|have been|had been)\s+)?(?:absent|negative|unlikely|excluded|ruled\s+out|not\s+(?:present|seen|demonstrated|identified|evident|shown|detected|noted|found))\b/;
 
 /** Clause boundaries: punctuation, plus conjunctions that end a negation's scope. */
 const CLAUSE_SPLIT = /[.;,:\n]|\s(?:but|however|although|and|with|while|whereas)\s/;
@@ -67,6 +69,7 @@ export function textMatchesAny(text: string, phrases: readonly string[], options
             const at = indexOfPhrase(clause, needle);
             if (at < 0) continue;
             if (negationAware && NEGATORS.test(clause.slice(0, at))) continue;
+            if (negationAware && POST_NEGATORS.test(clause.slice(at + needle.length))) continue;
             return true;
         }
     }

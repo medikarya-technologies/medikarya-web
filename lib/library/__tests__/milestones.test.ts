@@ -124,6 +124,13 @@ describe("milestones: what one attempt earned", () => {
         assert.deepEqual(newlyEarned(before, after).map((m) => m.id).sort(), ["score_90", "streak_3"]);
     });
 
+    it("does not award a score milestone from provisional marks", () => {
+        const m = by([{ ...attempt("c1", 10, 99), provisional: true }]);
+        assert.equal(m.score_90.earned, false);
+        assert.equal(m.score_90.progress, "Score pending review");
+        assert.equal(m.first_case.earned, true, "participation still counts");
+    });
+
     it("reports the first case on the first attempt, and nothing when nothing changed", () => {
         assert.deepEqual(newlyEarned(state([]), state([attempt("c1", 10, 50)])).map((m) => m.id), ["first_case"]);
         assert.deepEqual(newlyEarned(state([attempt("c1", 10, 50)]), state([attempt("c1", 10, 50), attempt("c1", 10, 55)])), []);

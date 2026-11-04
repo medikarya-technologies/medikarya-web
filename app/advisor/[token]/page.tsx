@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import { getCaseById } from "@/data/cases"
 import { supabaseServer } from "@/lib/supabase/server"
+import { isProvisionalAttempt } from "@/lib/library/attempt-quality"
 import { INVITE_COOKIE, inviteForToken, inviteOpen } from "@/lib/advisors/invites"
 import { isDraft } from "@/lib/plans/access"
 import { caseKindOf } from "@/lib/plans/limits"
@@ -93,9 +94,15 @@ export default async function AdvisorPage({ params }: { params: Promise<{ token:
       live: caseKindOf(c).live,
     })
   }
-  const { data: attempts } = await supabaseServer.from("case_attempts").select("case_id, score").eq("guest_id", invite.id)
+  const { data: attempts } = await supabaseServer.from("case_attempts").select("case_id, score, provisional:feedback_json->>provisional").eq("guest_id", invite.id)
   const played: Record<string, number | null> = {}
-  for (const a of attempts ?? []) played[a.case_id] = Math.max(played[a.case_id] ?? 0, a.score ?? 0)
+  for (const a of attempts ?? []) {
+    if (isProvisionalAttempt(a)) {
+      if (!(a.case_id in played)) played[a.case_id] = null
+      continue
+    }
+    played[a.case_id] = Math.max(played[a.case_id] ?? 0, a.score ?? 0)
+  }
 
   return (
     <AdvisorCases

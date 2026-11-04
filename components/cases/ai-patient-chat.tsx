@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, Loader2, User, Mic, MicOff, Lightbulb, X, ArrowUpRight, CornerDownLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/clarity"
-import { HISTORY_LIMITS } from "@/engine/chatHistory"
+import { HISTORY_LIMITS, UNANSWERED_PREFIX } from "@/engine/chatHistory"
 
 interface Message {
   id: string
@@ -43,8 +43,6 @@ interface AIPatientChatProps {
 }
 
 /** The id prefix of a stand-in line shown when a reply failed: the patient never said it, so it is not sent back as conversation. */
-const UNANSWERED = "unanswered-"
-
 // Two icebreaker chips shown only before the student sends their first message
 const ICEBREAKERS = [
   "Tell me what's been bothering you.",
@@ -186,7 +184,7 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
     // The conversation so far goes with the question: the server keeps none, so whichever server answers knows
     // what was said (engine/chatHistory.ts). `messages` is still the list from before this question.
     const history = messages
-      .filter((m) => !m.id.startsWith(UNANSWERED))
+      .filter((m) => !m.id.startsWith(UNANSWERED_PREFIX))
       .slice(-HISTORY_LIMITS.turns)
       .map(({ role, content }) => ({ role, content }))
 
@@ -215,7 +213,7 @@ export function AIPatientChat({ caseData, onMessageSent, chatHistory, coverage, 
     } catch {
       // The reply failed (a network blip, or the AI busy): a line any patient or parent could say, asking again.
       const fallback: Message = {
-        id: `${UNANSWERED}${Date.now() + 1}`,
+        id: `${UNANSWERED_PREFIX}${Date.now() + 1}`,
         role: "assistant",
         content: "Sorry, doctor, could you ask me that again?",
         timestamp: new Date(),

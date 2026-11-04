@@ -18,12 +18,19 @@ describe("negation-aware text matching", () => {
         assert.equal(textMatchesAny("Not a STEMI", stemi), false);
         assert.equal(textMatchesAny("without ST elevation", stemi), false);
         assert.equal(textMatchesAny("absence of ST elevation", stemi), false);
+        assert.equal(textMatchesAny("ST elevation is absent", stemi), false);
+        assert.equal(textMatchesAny("ST elevation was not seen", stemi), false);
+        assert.equal(textMatchesAny("ST elevation not demonstrated", stemi), false);
     });
 
     it("a negation stops at the end of its clause", () => {
         assert.equal(textMatchesAny("No ST depression, ST elevation in V1-V4", stemi), true);
         assert.equal(textMatchesAny("No reciprocal changes and ST elevation in V2", stemi), true);
         assert.equal(textMatchesAny("Sinus tachycardia but ST elevation V1-V4", stemi), true);
+    });
+
+    it("does not treat 'not only' as a negation", () => {
+        assert.equal(textMatchesAny("Not only ST elevation but also reciprocal depression", stemi), true);
     });
 
     it("each clause is judged on its own", () => {

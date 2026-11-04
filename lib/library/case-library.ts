@@ -13,6 +13,8 @@
 //
 // Pure: no React, no I/O, no `@/` imports.
 
+import { isProvisionalAttempt } from "./attempt-quality";
+
 export interface LibraryCase {
     id: string;
     title: string;
@@ -54,13 +56,14 @@ export interface AttemptRow {
     case_id: string;
     score: number | null;
     created_at: string;
+    provisional?: unknown;
 }
 
 /** Attempts grouped by case: how many, the best score, and the latest. A missing score counts as 0. */
 export function summariseAttempts(rows: readonly AttemptRow[]): Record<string, CaseProgress> {
     const out: Record<string, CaseProgress> = {};
     for (const row of rows) {
-        if (!row || typeof row.case_id !== "string" || !row.case_id) continue;
+        if (!row || isProvisionalAttempt(row) || typeof row.case_id !== "string" || !row.case_id) continue;
         const score = typeof row.score === "number" && Number.isFinite(row.score) ? row.score : 0;
         const at = Date.parse(row.created_at);
         const seen = out[row.case_id];
@@ -439,7 +442,7 @@ const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v)
  * that is in the library but not the database still has a name. Order does not matter: it is sorted here.
  */
 export function buildDashboardStats(rows: readonly AttemptRecord[], titleOf: (caseId: string) => string | undefined, streakDays: number): DashboardStats {
-    const valid = rows.filter((r) => r && typeof r.case_id === "string" && r.case_id);
+    const valid = rows.filter((r) => r && !isProvisionalAttempt(r) && typeof r.case_id === "string" && r.case_id);
     if (valid.length === 0) return { ...NO_STATS, streakDays: Math.max(0, num(streakDays)) };
 
     const newestFirst = [...valid].sort((a, b) => (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0));

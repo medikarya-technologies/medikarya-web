@@ -138,13 +138,13 @@ export async function listInvites(): Promise<{ invites: InviteWithPlays[]; avail
   const invites = (data ?? []) as AdvisorInvite[];
   const ids = invites.map((i) => i.id);
   const { data: attempts } = ids.length
-    ? await supabaseServer.from("case_attempts").select("guest_id, case_id, score, completed_at").in("guest_id", ids).order("completed_at", { ascending: true })
+    ? await supabaseServer.from("case_attempts").select("guest_id, case_id, score, completed_at, provisional:feedback_json->>provisional").in("guest_id", ids).order("completed_at", { ascending: true })
     : { data: [] as any[] };
   return {
     available: true,
     invites: invites.map((i) => ({
       ...i,
-      plays: (attempts ?? []).filter((a) => a.guest_id === i.id).map((a) => ({ caseId: a.case_id, score: a.score, at: a.completed_at })),
+      plays: (attempts ?? []).filter((a) => a.guest_id === i.id).map((a) => ({ caseId: a.case_id, score: a.provisional === true || a.provisional === "true" ? null : a.score, at: a.completed_at })),
     })),
   };
 }
