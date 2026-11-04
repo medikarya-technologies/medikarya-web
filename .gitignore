@@ -34,6 +34,7 @@ scripts/migrate-cases.ts
 
 # Case Templates
 data/cases/*.json
+data/cases/*.bak
 
 # Serwist PWA
 public/sw.js
@@ -48,3 +49,8 @@ CLAUDE.local.md
 
 # Guideline PDFs downloaded to check cases against (copyrighted; kept local, never committed)
 /guidelines/
+
+# Private tools kept on this machine only (case generators, blocker-clearing scripts); this repo is public
+/private/
+scripts/clear-live-blockers*.sh
+*.zip
