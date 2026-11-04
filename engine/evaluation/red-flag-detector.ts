@@ -82,13 +82,14 @@ export function getRuleEngineMissedFlags(
         .map(f => f.intent);
 }
 
-// ── Tiered resolver: compute final red flag resolutions ──────────────────────
-// Called after both rule engine and LLM have produced their missed flag lists.
+// ── Resolver: compute final red flag resolutions ──────────────────────────────
+// The AI examiner reads the whole conversation, so its verdict decides: a student who asked in their own words
+// ("any red in the potty?") is not penalised because no keyword matched.
 //
-//  Rule missed + LLM missed → FULL penalty (-5 pts)
-//  Rule missed + LLM covered → PARTIAL penalty (-2 pts) [LLM may be generous]
-//  Rule covered + LLM missed → PARTIAL penalty (-2 pts) [LLM hallucination guard]
-//  Rule covered + LLM covered → NO penalty
+//  AI says missed    → FULL penalty (-5 pts)
+//  AI says asked     → NO penalty
+//  AI unavailable    → the keyword check alone, and only a PARTIAL penalty (-2 pts) when it finds nothing, since
+//                      keywords miss lay wording (the attempt is marked provisional and re-scored later)
 
 const PENALTY_POINTS: Record<PenaltyLevel, number> = {
     full:    5,
@@ -99,7 +100,8 @@ const PENALTY_POINTS: Record<PenaltyLevel, number> = {
 export function resolveRedFlagPenalties(
     llmMissed: string[],
     ruleMissed: string[],
-    caseData: any
+    caseData: any,
+    aiAvailable: boolean = true
 ): RedFlagResolution[] {
     const flags = getRedFlags(caseData).filter(
         f => f.critical && f.present_in_case
@@ -112,11 +114,9 @@ export function resolveRedFlagPenalties(
         const ruleEngineMissed = ruleSet.has(flag.intent);
         const llmMissedFlag    = llmSet.has(flag.intent);
 
-        let penaltyLevel: PenaltyLevel;
-        if (ruleEngineMissed && llmMissedFlag)   penaltyLevel = "full";
-        else if (ruleEngineMissed && !llmMissedFlag) penaltyLevel = "partial";
-        else if (!ruleEngineMissed && llmMissedFlag) penaltyLevel = "partial";
-        else penaltyLevel = "none";
+        const penaltyLevel: PenaltyLevel = aiAvailable
+            ? (llmMissedFlag ? "full" : "none")
+            : (ruleEngineMissed ? "partial" : "none");
 
         return {
             intent: flag.intent,
@@ -129,8 +129,12 @@ export function resolveRedFlagPenalties(
 }
 
 // ── Convenience: total penalty from resolutions ────────────────────────────────
+// Most red flags are also required history questions, so a missed one already costs history marks; the extra
+// penalty is capped so a thin history cannot be charged twice over.
+export const MAX_RED_FLAG_PENALTY = 10;
+
 export function totalRedFlagPenalty(resolutions: RedFlagResolution[]): number {
-    return resolutions.reduce((sum, r) => sum + r.penaltyPoints, 0);
+    return Math.min(MAX_RED_FLAG_PENALTY, resolutions.reduce((sum, r) => sum + r.penaltyPoints, 0));
 }
 
 // ── Convenience: did the student ask about at least ONE red flag? ─────────────

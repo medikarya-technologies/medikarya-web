@@ -1,7 +1,7 @@
 "use client"
 
 // The clinical debrief for simulation cases, in the classic step-by-step format:
-// one small card per idea, Back / Next, and the closing actions on the last step.
+// one focused section at a time, Back / Next, and the closing actions on the last step.
 // Two scores from one event log, a fully explained audit trail, and the learning
 // that follows from the mistake, but never all at once.
 //
@@ -160,20 +160,20 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
       icon: Scale,
       content: (
         <div>
-          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_1.6fr]">
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
             <div>
               <h3 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-enc-ok">
                 <CheckCircle2 className="h-4 w-4" /> What you did well
               </h3>
               {didWell.length > 0 ? (
-                <div className="space-y-2.5">
+                <ul className="divide-y divide-enc-line">
                   {didWell.map((text, i) => (
-                    <div key={i} className="flex items-start gap-2.5 rounded-xl bg-enc-ok-soft p-3.5">
-                      <CheckCircle2 className="w-4 h-4 text-enc-ok mt-0.5 shrink-0" />
+                    <li key={i} className="flex items-start gap-2.5 py-3 first:pt-0">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-enc-ok" />
                       <span className="text-sm text-enc-ink">{text}</span>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               ) : (
                 <p className="text-sm text-enc-ink-2">Nothing stood out as a strength this time.</p>
               )}
@@ -184,23 +184,21 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
                 <XCircle className="h-4 w-4" /> What you missed
               </h3>
               {missed.length > 0 ? (
-                <div className="space-y-2.5">
+                <ul className="divide-y divide-enc-line">
                   {missed.map((m, i) => (
-                    <div key={i} className={cn("rounded-xl p-3.5", m.critical ? "bg-enc-crit-soft" : "bg-enc-warn-soft")}>
-                      <div className="flex items-start gap-2.5">
-                        <XCircle className={cn("w-4 h-4 mt-0.5 shrink-0", m.critical ? "text-enc-crit" : "text-enc-warn")} />
-                        <span className={cn("text-sm", m.critical ? "text-enc-crit" : "text-enc-warn")}>
+                    <li key={i} className="flex items-start gap-2.5 py-3 first:pt-0">
+                      <XCircle className={cn("mt-0.5 h-4 w-4 shrink-0", m.critical ? "text-enc-crit" : "text-enc-warn")} />
+                      <span className="text-sm text-enc-ink">
                           {m.text}
                           {m.critical && (
-                            <span className="ml-2 rounded bg-enc-sheet px-1.5 py-0.5 align-middle text-[11px] font-semibold text-enc-crit">
+                            <span className="ml-2 rounded bg-enc-crit-soft px-1.5 py-0.5 align-middle text-[11px] font-semibold text-enc-crit">
                               critical
                             </span>
                           )}
-                        </span>
-                      </div>
-                    </div>
+                      </span>
+                    </li>
                   ))}
-                </div>
+                </ul>
               ) : (
                 <p className="flex items-start gap-2.5 text-sm text-enc-ok">
                   <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
@@ -213,19 +211,17 @@ export function SimulationDebrief({ feedback, caseData, onExit, onReset, onQuizS
           {sim.reasoningError && (
             <>
               <SubHeading icon={AlertTriangle} tone="text-enc-crit">Your reasoning error</SubHeading>
-              <div className="space-y-3">
-                <div className="p-3.5 rounded-xl bg-enc-crit-soft">
-                  <div className="flex items-start gap-2.5">
-                    <AlertTriangle className="w-4 h-4 text-enc-crit shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-enc-ink mb-0.5 text-sm">{sim.reasoningError.title}</h4>
-                      <p className="text-sm text-enc-ink-2 leading-relaxed">{sim.reasoningError.error}</p>
-                    </div>
+              <div className="rounded-xl bg-enc-crit-soft p-4">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-enc-crit" />
+                  <div>
+                    <h4 className="mb-0.5 text-sm font-semibold text-enc-ink">{sim.reasoningError.title}</h4>
+                    <p className="text-sm leading-relaxed text-enc-ink-2">{sim.reasoningError.error}</p>
                   </div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-enc-desk border border-enc-line">
+                <div className="mt-3 border-t border-enc-crit/20 pt-3">
                   <Kicker>Why it mattered</Kicker>
-                  <p className="text-enc-ink-2 leading-relaxed text-sm">{sim.reasoningError.whyItMattered}</p>
+                  <p className="text-sm leading-relaxed text-enc-ink-2">{sim.reasoningError.whyItMattered}</p>
                 </div>
                 {sim.otherErrors?.length > 0 && (
                   <div className="pt-1">

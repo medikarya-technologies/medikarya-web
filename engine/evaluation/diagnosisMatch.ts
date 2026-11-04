@@ -6,6 +6,9 @@
 // the same ("haemorrhage" and "hemorrhage", "oedema" and "edema"), because students type "Hypertension." or
 // "pre-eclampsia" as often as the case writer's exact form.
 
+/** The examiner's diagnosis mark (of 15) from which the answer counts as correct: right, even if a little vague. */
+export const DIAGNOSIS_CORRECT_FROM = 12;
+
 export function normaliseDiagnosis(text: string): string {
     return text
         .toLowerCase()

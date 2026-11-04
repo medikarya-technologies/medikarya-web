@@ -156,6 +156,11 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
           else for (const id of g) if (!testIds.has(id)) errors.push(`Core test "${id}" (in a group) has no result in tests[].`);
         }
         for (const id of t.core_tests) if (!testIds.has(id)) errors.push(`Core test "${id}" has no result in tests[].`);
+        // Each core test missed costs 5 of the 20 testing marks (engine/evaluation/DeterministicScorer.ts), so a long
+        // list scores a sensible work-up at 0. Core is what confirms the diagnosis; the rest is optional.
+        if (t.core_tests.length + groups.length > 5) {
+          warnings.push(`${t.core_tests.length + groups.length} core tests: a student who orders a sensible 3 would score near 0 for testing. Keep core to the tests that confirm the diagnosis (5 at most) and make the rest optional.`);
+        }
       }
       if (strArr(t.distractor_tests) && t.distractor_tests.length < 3) warnings.push("Fewer than 3 distractor tests: over-ordering will barely cost anything.");
     }

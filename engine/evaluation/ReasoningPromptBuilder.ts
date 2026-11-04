@@ -121,7 +121,10 @@ SCORING GUIDE:
 2. diagnosisScore (0–15):
    Accepted answers: ${acceptedDx}
    ${keywords ? `An answer is also correct if it contains all of these keywords: ${keywords}. They are a second way to be correct, not a requirement: an answer that matches or means the same as an accepted answer is correct without them.` : ""}
-   Ignore case, punctuation and abbreviations (e.g. "Hypertension." is "Hypertension"). Give full marks for a correct answer; partial marks for one that is right but less specific than the case needs.
+   Ignore case, punctuation, spelling slips and abbreviations (e.g. "Hypertension." is "Hypertension", "gastroentritis" is "gastroenteritis"). Judge the meaning, as a clinician would.
+   12–15: the right diagnosis (15 if as specific as the case needs, 12–14 if right but vaguer). A mark of 12 or more is shown to the student as correct.
+   5–11: partly right (the right system or a close neighbour, e.g. the right disease at the wrong severity).
+   0–4: wrong, or no diagnosis.
 
 3. managementScore (0–10):
    Core expected steps: ${coreManagementSteps.join(", ") || "N/A"}

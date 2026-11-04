@@ -15,7 +15,7 @@ import { IntentExtractor } from "./IntentExtractor";
 import { DeterministicScorer } from "./DeterministicScorer";
 import { ReasoningPromptBuilder } from "./ReasoningPromptBuilder";
 import { historyReview, historyScoringMode, scoreHistory, type HistoryV2 } from "./historyCoverage";
-import { diagnosisMatches } from "./diagnosisMatch";
+import { DIAGNOSIS_CORRECT_FROM, diagnosisMatches } from "./diagnosisMatch";
 import {
     FinalEvaluationResult,
     LLMReasoningResult,
@@ -101,6 +101,9 @@ export class EvaluationEngine {
         );
 
         let llmResult: LLMReasoningResult;
+        // False when the examiner call failed: the attempt is then scored by the deterministic checks alone and saved
+        // as provisional, so scripts/rescore-provisional.ts can mark it properly once the AI is back.
+        let aiOk = true;
         // The examiner's raw history answers, for version 2 (checked there, not trusted). Undefined if the call failed.
         let aiHistoryCoverage: unknown = undefined;
         let aiHistoryQuality: unknown = undefined;
@@ -163,15 +166,17 @@ export class EvaluationEngine {
             );
         } catch (err: any) {
             console.error("EvaluationEngine: LLM call failed, using fallback:", err.message);
+            aiOk = false;
+            const dxOk = diagnosisMatches(primaryDiagnosis, evalConfig?.diagnosis?.accepted_primary ?? [], evalConfig?.diagnosis?.must_include_keywords ?? []);
             llmResult = {
                 reasoningScore: 10,
                 historyQualityScore: coverageResult.needsLLMHistoryScore ? 3 : 0,
-                diagnosisScore: 5,
+                diagnosisScore: dxOk ? 15 : 0,
                 managementScore: 0,
                 missedRedFlags: [],
                 feedback: {
-                    strengths:    ["Evaluation could not be fully completed due to a connection error."],
-                    improvements: ["Ensure a stable connection for complete AI evaluation of your reasoning."],
+                    strengths:    ["Your attempt is saved. The examiner could not be reached, so this score is provisional."],
+                    improvements: ["Your reasoning and plan will be marked again shortly, and your score updated."],
                 },
             };
         }
@@ -182,7 +187,8 @@ export class EvaluationEngine {
         const redFlagResolutions = resolveRedFlagPenalties(
             llmResult.missedRedFlags,
             ruleMissed,
-            caseData
+            caseData,
+            aiOk
         );
         const redFlagPenalty = totalRedFlagPenalty(redFlagResolutions);
 
@@ -237,7 +243,12 @@ export class EvaluationEngine {
         const acceptedDx: string[] = evalConfig?.diagnosis?.accepted_primary ?? [];
         const keywords: string[] = evalConfig?.diagnosis?.must_include_keywords ?? [];
 
-        const isCorrect = diagnosisMatches(studentDx, acceptedDx, keywords);
+        // The examiner reads the answer the way a clinician would (typos, word order, abbreviations), so its mark
+        // decides: 12 of 15 or more is correct. An exact accepted wording always counts. Only without the examiner
+        // do the keywords decide.
+        const isCorrect = aiOk
+            ? llmResult.diagnosisScore >= DIAGNOSIS_CORRECT_FROM || diagnosisMatches(studentDx, acceptedDx, [])
+            : diagnosisMatches(studentDx, acceptedDx, keywords);
 
         // ── Build UI-compatible testingEfficiency ─────────────────────────────
         const bd = deterministic.breakdown;
@@ -268,7 +279,9 @@ export class EvaluationEngine {
             redFlagResolutions,
 
             // Which history scorer marked this attempt, so trends, skills and workshop ranks never mix the two silently.
-            scoringVersion: { history: historyMode === "v2" ? 2 : 1 },
+            scoringVersion: { history: historyMode === "v2" ? 2 : 1, diagnosis: 2 },
+            // Scored without the examiner (the AI call failed): re-scored later by scripts/rescore-provisional.ts.
+            ...(aiOk ? {} : { provisional: true }),
             // Both versions, always: the comparison behind the switch, and the way back if it is ever switched off.
             historyScoring: { mode: historyMode, v1: historyV1, v2: historyV2 },
             // What the debrief lists ("You did not ask about: ..."), from the version the student sees. Version 1's

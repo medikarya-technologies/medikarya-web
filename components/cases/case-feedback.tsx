@@ -51,9 +51,9 @@ interface CaseFeedbackProps {
 
 function ConsequenceItem({ action, effect, outcome, type, isLast }: { action: string, effect: string, outcome: string, type: 'success' | 'warning' | 'danger', isLast?: boolean }) {
   const colors = {
-    success: { bg: "bg-enc-ok-soft", text: "text-enc-ok", iconStr: "text-enc-ok", thread: "bg-enc-ok/30" },
-    warning: { bg: "bg-enc-warn-soft", text: "text-enc-warn", iconStr: "text-enc-warn", thread: "bg-enc-warn/30" },
-    danger: { bg: "bg-enc-crit-soft", text: "text-enc-crit", iconStr: "text-enc-crit", thread: "bg-enc-crit/30" },
+    success: { text: "text-enc-ok", iconStr: "text-enc-ok", thread: "bg-enc-ok/30" },
+    warning: { text: "text-enc-warn", iconStr: "text-enc-warn", thread: "bg-enc-warn/30" },
+    danger: { text: "text-enc-crit", iconStr: "text-enc-crit", thread: "bg-enc-crit/30" },
   }
   const c = colors[type];
 
@@ -69,11 +69,11 @@ function ConsequenceItem({ action, effect, outcome, type, isLast }: { action: st
         {!isLast && <div className={`w-0.5 flex-1 my-1 rounded-full ${c.thread}`} />}
       </div>
 
-      <div className={`flex-1 p-4 rounded-xl ${c.bg} flex flex-col gap-2 mb-4 last:mb-0`}>
+      <div className={`min-w-0 flex-1 flex flex-col gap-2 py-3 ${isLast ? "" : "border-b border-enc-line"}`}>
         <p className={`text-sm font-bold ${c.text} leading-snug`}>{action}</p>
 
         <p className="text-[13px] leading-normal text-enc-ink-2">{effect}</p>
-        <span className={`self-start rounded-md bg-enc-sheet px-2 py-0.5 text-[12px] font-semibold tabular-nums ${c.text}`}>{outcome}</span>
+        <span className={`self-start rounded-full bg-enc-desk px-2.5 py-1 text-[12px] font-semibold tabular-nums ${c.text}`}>{outcome}</span>
       </div>
     </div>
   )
@@ -301,20 +301,20 @@ function LegacyCaseFeedback({
       icon: Network,
       content: (
         <div>
-          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-[1fr_1.6fr]">
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
             <div>
               <h3 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-enc-ok">
                 <CheckCircle2 className="h-4 w-4" /> What you did well
               </h3>
               {feedback.feedback.strengths && feedback.feedback.strengths.length > 0 ? (
-                <div className="space-y-2.5">
+                <ul className="divide-y divide-enc-line">
                   {feedback.feedback.strengths.map((str: string, i: number) => (
-                    <div key={i} className="flex items-start gap-2.5 rounded-xl bg-enc-ok-soft p-3.5">
-                      <CheckCircle2 className="w-4 h-4 text-enc-ok mt-0.5 shrink-0" />
+                    <li key={i} className="flex items-start gap-2.5 py-3 first:pt-0">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-enc-ok" />
                       <span className="text-sm text-enc-ink">{str.replace(/✅/g, '').trim()}</span>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               ) : (
                 <p className="text-sm text-enc-ink-2">Nothing stood out as a strength this time. The choices on the right show where the points went.</p>
               )}

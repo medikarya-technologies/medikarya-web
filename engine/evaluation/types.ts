@@ -155,7 +155,9 @@ export interface FinalEvaluationResult {
     redFlagResolutions: RedFlagResolution[];  // full tiered breakdown for UI
 
     /** Which history scorer the student saw (EVALUATION_ENGINE.md, "History, version 2"). */
-    scoringVersion?: { history: 1 | 2 };
+    scoringVersion?: { history: 1 | 2; diagnosis?: 2 };
+    /** Scored without the AI examiner (its call failed); scripts/rescore-provisional.ts marks it again later. */
+    provisional?: boolean;
     /** Both history scores, and version 2's workings. */
     historyScoring?: { mode: "v1" | "shadow" | "v2"; v1: number; v2: import("./historyCoverage").HistoryV2 };
     /** With version 2: how many required history questions were asked, and which were not. */

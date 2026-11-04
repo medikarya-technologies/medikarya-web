@@ -458,6 +458,11 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
             We couldn&apos;t reach the server, so this result was scored on your device and hasn&apos;t been saved.
           </div>
         )}
+        {!feedback.unsaved && feedback.provisional && (
+          <div className="bg-amber-100 px-4 py-2 text-center text-xs font-medium text-amber-900">
+            Our examiner couldn&apos;t be reached, so parts of this score are provisional. We&apos;ll mark your answers again and update it.
+          </div>
+        )}
         <CaseFeedback
           feedback={feedback}
           caseData={debriefCase}

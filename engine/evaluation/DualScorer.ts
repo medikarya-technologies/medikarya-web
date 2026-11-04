@@ -120,6 +120,8 @@ const DEFAULT_SAFETY_PENALTY_POINTS = 15;
 
 interface EncounterContext {
     events: readonly ClinicalEvent[];
+    /** The AI's verdicts on the free-text checks (engine/evaluation/rubricJudge.ts), by textCheckKey. */
+    judgments?: TextJudgments;
     condition: ConditionContext;
     finalState: PatientState;
     recommendedActions: number;
@@ -134,12 +136,33 @@ function lastOf<T extends ClinicalEvent["type"]>(events: readonly ClinicalEvent[
     return undefined;
 }
 
+// ── Free-text checks ────────────────────────────────────────────────────────
+// What the student writes (an ECG reading, the reasoning, the plan, the differential, a question) is judged by the
+// AI on the server when it can be (rubricJudge.ts); its verdicts arrive here by key. Without one, the case's own
+// phrases decide (lib/simulation/text-match.ts), as they always did, so this module stays pure and repeatable.
+
+export type TextJudgments = Readonly<Record<string, boolean>>;
+
+const TEXT_PREDICATES = ["asked_about", "interpretation_mentions", "reasoning_mentions", "diagnosis_matches", "differential_slot", "differential_contains", "plan_mentions"] as const;
+
+/** The key of a free-text check, or null for every other predicate. */
+export function textCheckKey(p: ScoringPredicate): string | null {
+    const kind = TEXT_PREDICATES.find((k) => k in p);
+    return kind ? `${kind}:${JSON.stringify((p as Record<string, unknown>)[kind])}` : null;
+}
+
+/** The key of the overall diagnosis verdict. */
+export const DIAGNOSIS_JUDGMENT = "diagnosis";
+
 // ── Predicates ──────────────────────────────────────────────────────────────
 
 function evalPredicate(p: ScoringPredicate, ctx: EncounterContext): boolean {
     if ("all" in p) return p.all.every((c) => evalPredicate(c, ctx));
     if ("any" in p) return p.any.some((c) => evalPredicate(c, ctx));
     if ("not" in p) return !evalPredicate(p.not, ctx);
+
+    const key = textCheckKey(p);
+    if (key !== null && ctx.judgments && key in ctx.judgments) return ctx.judgments[key];
 
     if ("ordered" in p) {
         const wanted = ids(p.ordered);
@@ -322,7 +345,8 @@ export function computeAssistance(events: readonly ClinicalEvent[]): { total: nu
 
 export function evaluateClinicalPerformance(
     events: readonly ClinicalEvent[],
-    config: SimulationCaseConfig
+    config: SimulationCaseConfig,
+    judgments?: TextJudgments
 ): ClinicalPerformance {
     const rubric = config.scoring_rubric;
     if (!rubric) throw new Error(`Case "${config.id}" has no scoring_rubric and cannot be scored.`);
@@ -338,6 +362,7 @@ export function evaluateClinicalPerformance(
         condition: snapshotContext(finalState.snapshot(), Math.max(endedAt, finalState.lastEventTime)),
         recommendedActions,
         budgeted,
+        judgments,
     };
 
     // Items
@@ -417,7 +442,8 @@ export function evaluateClinicalPerformance(
     // Diagnosis
     const dx = lastOf(events, "DIAGNOSIS_SUBMITTED");
     const studentDiagnosis = dx?.primary ?? "";
-    const isCorrect = !!dx && textMatchesAny(dx.primary, rubric.diagnosis.accepted);
+    const judged = judgments?.[DIAGNOSIS_JUDGMENT];
+    const isCorrect = !!dx && (judged !== undefined ? judged : textMatchesAny(dx.primary, rubric.diagnosis.accepted));
 
     // Milestones (generic — the debrief chooses what to show)
     const firstOrderedAt: Record<string, number> = {};
@@ -456,9 +482,9 @@ export function evaluateClinicalPerformance(
 
 // ── Both tracks ─────────────────────────────────────────────────────────────
 
-export function scoreEncounter(events: readonly ClinicalEvent[], config: SimulationCaseConfig): DualScoreResult {
+export function scoreEncounter(events: readonly ClinicalEvent[], config: SimulationCaseConfig, judgments?: TextJudgments): DualScoreResult {
     // Both tracks consume the exact same event stream.
-    const clinical = evaluateClinicalPerformance(events, config);
+    const clinical = evaluateClinicalPerformance(events, config, judgments);
     const assistance = computeAssistance(events);
 
     const clinicalScore = clinical.score;
