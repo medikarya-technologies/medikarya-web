@@ -64,8 +64,11 @@ Scoring (evaluation_config)
 - testing: core_tests = what confirms the diagnosis (each must be in tests[]); optional_tests = reasonable extras;
   distractor_tests = 5–10 catalog ids that are low-value here; dangerous_tests = 1–4 catalog ids that are invasive or
   unsafe without indication. Every id must be in tests[] or the catalog.
-- diagnosis.accepted_primary: 3–5 wordings of the diagnosis; must_include_keywords: 1–2 words that EVERY correct
-  answer contains (all of them must appear in the student's answer, so never list alternatives like "tb", "koch").
+- diagnosis.accepted_primary: 3–5 wordings of the diagnosis, including the usual abbreviation ("AKI", "TIA");
+  must_include_keywords: 1–2 words that EVERY correct answer contains (all of them must appear in the student's
+  answer, so never list alternatives like "tb", "koch"). They must also be specific: an answer containing them must
+  be this diagnosis, never a different one ("hypothyroid" not "thyroid", "acute kidney" not "kidney", "postpartum
+  haemorrhage" not "postpartum").
 - management.core_steps (3–6) and dangerous_steps (1–4), fitting Indian practice.
 - red_flags: {intent, keywords[], present_in_case, critical}.
 

@@ -5,6 +5,7 @@
 // (worth a human look during the game check).
 
 import { contentTokens, requiredKeys, scoreHistory } from "../../engine/evaluation/historyCoverage";
+import { broadKeyword, keywordsMatch } from "../../engine/evaluation/diagnosisMatch";
 
 export interface CheckResult {
   errors: string[];
@@ -162,13 +163,17 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
     if (!isObj(d) || !strArr(d.accepted_primary) || d.accepted_primary.length === 0) errors.push("evaluation_config.diagnosis.accepted_primary is empty.");
     else {
       accepted = d.accepted_primary;
-      // The scorer counts an answer correct if it matches an accepted wording exactly OR contains EVERY keyword. One
-      // keyword ("copd") is a second route to correct; several that are really alternatives ("tb", "tuberculosis",
-      // "koch") can never all appear, so the keyword route would be dead. At least one accepted wording must
-      // contain them all.
+      // The scorer counts an answer correct if it matches an accepted wording OR contains EVERY keyword
+      // (engine/evaluation/diagnosisMatch.ts). One keyword ("copd") is a second route to correct; several that are
+      // really alternatives ("tb", "tuberculosis", "koch") can never all appear, so the keyword route would be dead.
+      // At least one accepted wording must contain them all. And the route must not let a different disease in.
       const kws = strArr(d.must_include_keywords) ? d.must_include_keywords : [];
-      if (kws.length > 1 && !d.accepted_primary.some((dx: string) => kws.every((k: string) => dx.toLowerCase().includes(k.toLowerCase())))) {
+      if (kws.length > 1 && !d.accepted_primary.some((dx: string) => keywordsMatch(dx, kws))) {
         errors.push(`diagnosis.must_include_keywords (${kws.join(", ")}) must ALL appear in a correct answer, but no accepted wording contains them all: they look like alternatives. Keep one, or only words every correct answer contains.`);
+      }
+      const broad = broadKeyword(kws);
+      if (broad) {
+        errors.push(`diagnosis.must_include_keywords is only "${broad}", which other diseases share: any answer containing it would score as correct. Use the word that tells this disease apart (e.g. "hypothyroid", not "thyroid"; "acute kidney", not "kidney").`);
       }
     }
     const m = ev.management;

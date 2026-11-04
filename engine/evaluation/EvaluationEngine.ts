@@ -15,6 +15,7 @@ import { IntentExtractor } from "./IntentExtractor";
 import { DeterministicScorer } from "./DeterministicScorer";
 import { ReasoningPromptBuilder } from "./ReasoningPromptBuilder";
 import { historyReview, historyScoringMode, scoreHistory, type HistoryV2 } from "./historyCoverage";
+import { diagnosisMatches } from "./diagnosisMatch";
 import {
     FinalEvaluationResult,
     LLMReasoningResult,
@@ -236,12 +237,7 @@ export class EvaluationEngine {
         const acceptedDx: string[] = evalConfig?.diagnosis?.accepted_primary ?? [];
         const keywords: string[] = evalConfig?.diagnosis?.must_include_keywords ?? [];
 
-        const normalise = (s: string) => s.toLowerCase().trim();
-        const isExactMatch = acceptedDx.some(dx => normalise(dx) === normalise(studentDx));
-        const isKeywordMatch =
-            keywords.length > 0 &&
-            keywords.every(kw => normalise(studentDx).includes(normalise(kw)));
-        const isCorrect = isExactMatch || isKeywordMatch;
+        const isCorrect = diagnosisMatches(studentDx, acceptedDx, keywords);
 
         // ── Build UI-compatible testingEfficiency ─────────────────────────────
         const bd = deterministic.breakdown;

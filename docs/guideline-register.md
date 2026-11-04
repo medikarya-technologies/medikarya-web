@@ -8,7 +8,7 @@ Status: **current** (the plan cites the latest edition and matches it), **update
 still matches or nearly), **fix** (the plan disagrees with the current guideline), **unread** (the source could not be
 opened from here; see "Needs a download" at the end).
 
-Last checked: 2026-10-29. **Fixes applied and saved to the main database on 2026-10-29** for all 8 cases below (the
+Last checked: 2026-11-04 (built-in STEMI case and the static cases, sections below). Live plans: 2026-10-29. **Fixes applied and saved to the main database on 2026-10-29** for all 8 cases below (the
 plans stay proposed with `clinical_review` open; nothing was switched on). What was done is listed under "Applied".
 
 ## Live cases
@@ -211,6 +211,55 @@ Findings (GINA 2026):
   enforces by cutting text silently. Also fixed details that were already cut mid-word (chest drain, calcium, red
   cells) and the dengue escalation detail.
 
+## Built-in trial case (acute anterior STEMI, `data/cases/simulation/acute-anterior-stemi.json`) · live
+
+| Source | Edition | Status | Local copy |
+|---|---|---|---|
+| ICMR Standard Treatment Workflow: STEMI (in the cardiology compilation) | May 2026 | current | `guidelines/icmr-2026-11/1793170714_cardiologyall.pdf` |
+| ESC Guidelines for acute coronary syndromes | 2023 | current | none on this machine |
+| ACC/AHA ACS guideline | 2025 | current (already cited) | none |
+
+Checked 2026-11-04. ECG within 10 minutes, primary PCI where available, lysis when PCI cannot be delivered within
+120 minutes, aspirin and P2Y12 loading (ticagrelor 180 mg; clopidogrel 300 mg with lysis), weight-adjusted heparin and
+tenecteplase, atorvastatin 80 mg, no nitrates or IV beta-blocker in a low-output state: all match ICMR and ESC.
+**Fixed:** oxygen was treated as reasonable below 94%; ICMR, ESC 2023 and ACC/AHA 2025 give it only below 90%. The
+thresholds and notes now use 90% (commit c7ad67c), and the scenario test checks it.
+
+## Static cases (checked 2026-11-04)
+
+The 21 static cases that had no guideline check. Each case now lists its sources in `discussion.references`; fixes
+were saved to the main database on 2026-11-04 (snapshots of the earlier versions kept locally). Listed by diagnosis
+only, so this public file does not pair case titles with their answers. PDFs in `guidelines/icmr-2026-11/`.
+
+| Diagnosis | Checked against | Result |
+|---|---|---|
+| Stevens-Johnson syndrome | ICMR STW cADR Part B (2022); BAD 2016 | **fix:** skin biopsy no longer a core test (ICMR: not usually needed); SCORTEN on ICMR thresholds, repeated day 3; early prednisolone 1-2 mg/kg 3-7 days or cyclosporine 3-5 mg/kg 10-14 days |
+| Spinal metastasis from breast cancer | NICE NG234 (2023); ICMR STW Breast Cancer (2020), Low Back Pain (2024) | **fix:** triple assessment, imaging before core biopsy (ICMR); mammogram or breast ultrasound now a core group |
+| Bile duct stones with cholangitis | ICMR STW CBD Stone, Gall Stone Disease (2022); Tokyo 2018; BSG 2017 | current (grade I cholangitis, ERCP, early cholecystectomy) |
+| Multiple sclerosis | NICE NG220 (2022); McDonald 2017 | current |
+| Primary spontaneous pneumothorax | BTS pleural guideline 2023; BTS air travel 2022 | current |
+| Delirium from a urinary infection | NICE CG103, NG111, NG51; ICMR STW UTI (2026) | current |
+| Pancreatic head cancer | NICE NG85; ESMO 2023; ICMR STW Jaundice (2020) | current |
+| Obstructive sleep apnoea | NICE NG202 (2021); INOSA 2014; NICE NG246 (2025) | current |
+| Empyema | BTS pleural guideline 2023; MIST2 | current |
+| Recurrent TIAs with atrial fibrillation | NICE NG128; ESC AF 2024; ICMR STW Stroke (2019) | current |
+| Guillain-Barre syndrome | EAN/PNS 2023; ICMR STW Acute Paralysis (2019) | current; ICMR referral criteria added |
+| Postural hypotension and falls | ESC syncope 2018; ICMR STW Hypertension (2026), Bradyarrhythmia (2025) | current; ICMR orthostatic BP from 65 added |
+| COPD with cor pulmonale | GOLD 2026; NICE NG115; ICMR STW COPD (2019) | current |
+| Type 2 diabetes found through neuropathy | ICMR STW T2DM, Diabetic Foot (2022); NICE NG19, CG173 | current |
+| Hypertension with LVH | ICMR STW Hypertension in Adults (May 2026); NICE NG136; ESH 2023; NICE NG238 | **fix:** at 160/100 or more one visit diagnoses (ICMR); start a two-drug single pill (RAAS blocker with CCB or thiazide-like); ABPM optional; both questions rewritten; never two RAAS blockers |
+| Infective endocarditis | ESC 2023 endocarditis; POET | current |
+| Non-toxic nodular goitre | ATA 2015 nodules; ATA 2014 goitre surgery | **fix:** management and teaching rewritten (TSH first, ultrasound, FNAC by Bethesda, laryngoscopy, surgery for compression; no TSH suppression) |
+| Complete heart block | ICMR STW Bradyarrhythmia (Jan 2025); ESC pacing 2021 | **fix:** reversible-cause tests (K, renal, glucose, TSH), dopamine or isoprenaline bridge to temporary pacing, echo before pacemaker, VVI acceptable |
+| Vitamin B12 deficiency (pernicious anaemia) | NICE NG239 (2024); BSH 2014 | current |
+| Malaria in a returning traveller | NVBDCP guidelines 2014; WHO malaria 2025 | **fix:** bivalent RDT accepted alongside the film (core group) |
+| ADPKD | KDIGO ADPKD 2025; Pei 2009 | **fix:** BP targets by KDIGO age and CKD bands; water at least 2-3 L/day while eGFR is 30 or more; tolvaptan at eGFR 25 or more with rapid progression |
+
+Scoring fix in three founding cases (heart block, malaria, ADPKD): red flags that are examination or laboratory
+findings (pulse of 36, low platelets, haemolysis, enlarged kidneys) were marked critical history questions, so a
+student lost marks for not asking about them. They are now non-critical. The seven cases whose scoring changed were
+played through again with the AI patient and the evaluator: 96 to 99, correct diagnosis.
+
 ## Needs a download (blocked here by the publisher's bot check)
 
 Nothing outstanding. Received 2026-10-29 from the user and filed: Baveno VIII (from the whole November 2026 Journal of
@@ -221,8 +270,7 @@ ATLS 11 is a paid manual: ask a doctor for the needle decompression site in one 
 
 ## Still to do
 
-- Live plans with their own blockers: snakebite (anti-snake venom dose), DKA, septic shock, status epilepticus,
-  hypoglycaemia (glucagon), anaphylaxis, organophosphate poisoning. Indian sources first: ICMR Standard Treatment
-  Workflows, the MoHFW national snakebite protocol, NCVBDC malaria guidelines.
-- The STEMI live case (acute anterior STEMI, bundled) against ESC 2023 and the Indian STEMI programme.
-- Static cases: about 30, against their own references.
+- Done 2026-11-04: the six blocked live plans (snakebite, DKA, septic shock, status epilepticus, hypoglycaemia,
+  organophosphate) were settled from published guidelines and switched on; the built-in STEMI case and the 21
+  unchecked static cases are above. The team-written cases from 2026-10-31 onwards were checked when written.
+- Anaphylaxis live plan: two questions for a doctor (SpO2 end point; airway support on the tray near arrest).

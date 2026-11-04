@@ -101,7 +101,7 @@ CASE:
 Title:    ${caseData.title ?? "Unknown"}
 Patient:  ${caseData.patient?.name}, ${caseData.patient?.age}y, ${caseData.patient?.gender}
 Complaint: ${caseData.patient?.chiefComplaint}
-Correct Diagnosis: ${caseData.patient?.final_diagnosis}
+Correct Diagnosis: ${caseData.patient?.final_diagnosis ?? evalConfig?.diagnosis?.accepted_primary?.[0] ?? caseData.title ?? "N/A"}
 
 CONSULTATION TRANSCRIPT (Doctor ↔ Patient):
 ${extracted.transcript}
@@ -120,7 +120,8 @@ SCORING GUIDE:
 
 2. diagnosisScore (0–15):
    Accepted answers: ${acceptedDx}
-   Must include keywords: ${keywords || "N/A"}
+   ${keywords ? `An answer is also correct if it contains all of these keywords: ${keywords}. They are a second way to be correct, not a requirement: an answer that matches or means the same as an accepted answer is correct without them.` : ""}
+   Ignore case, punctuation and abbreviations (e.g. "Hypertension." is "Hypertension"). Give full marks for a correct answer; partial marks for one that is right but less specific than the case needs.
 
 3. managementScore (0–10):
    Core expected steps: ${coreManagementSteps.join(", ") || "N/A"}
