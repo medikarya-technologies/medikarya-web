@@ -18,6 +18,9 @@
 import { useState } from "react"
 import Image from "next/image"
 import { Maximize2 } from "lucide-react"
+
+// The screenshots are served as they are (unoptimized): they are small PNGs full of small text, and resizing and
+// re-encoding them (AVIF, quality 90) blurred that text. width and height still reserve the space, so nothing jumps.
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 
 export function Screenshot({ src, alt, caption, width, height }: { src: string; alt: string; caption?: string; width: number; height: number }) {
@@ -30,7 +33,7 @@ export function Screenshot({ src, alt, caption, width, height }: { src: string; 
         aria-label={`Enlarge: ${alt}`}
         className="group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-enc-line-strong bg-enc-sheet shadow-enc-lift outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2"
       >
-        <Image src={src} alt={alt} width={width} height={height} sizes="(max-width: 672px) 92vw, 640px" quality={90} className="h-auto w-full" />
+        <Image src={src} alt={alt} width={width} height={height} unoptimized loading="lazy" className="h-auto w-full" />
         <span className="absolute right-3 bottom-3 flex h-8 w-8 items-center justify-center rounded-full bg-enc-fill/75 text-white transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-visible:opacity-100" aria-hidden>
           <Maximize2 className="h-4 w-4" />
         </span>
@@ -39,7 +42,7 @@ export function Screenshot({ src, alt, caption, width, height }: { src: string; 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[92vh] w-[min(1200px,94vw)] max-w-none overflow-auto rounded-2xl border-0 bg-enc-sheet p-2 sm:max-w-none sm:p-3">
           <DialogTitle className="sr-only">{alt}</DialogTitle>
-          <Image src={src} alt={alt} width={width} height={height} sizes="(max-width: 1200px) 94vw, 1200px" quality={90} className="h-auto w-full rounded-xl" />
+          <Image src={src} alt={alt} width={width} height={height} unoptimized className="h-auto w-full rounded-xl" />
           {caption && <p className="pb-1 text-center text-[13px] text-enc-ink-3">{caption}</p>}
         </DialogContent>
       </Dialog>

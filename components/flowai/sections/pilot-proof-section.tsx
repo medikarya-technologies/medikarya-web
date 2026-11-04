@@ -76,11 +76,11 @@ export default function PilotProofSection() {
         <div className="grid items-center gap-12 sm:grid-cols-2 sm:gap-14">
           {/* Photo cluster — close, slightly overlapping, slightly rotated, not a uniform strip */}
           <div
-            className={cn("relative mx-auto h-[240px] w-full max-w-[300px] transition-all duration-700 ease-out sm:h-[300px]", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}
+            className={cn("relative mx-auto h-[240px] w-full max-w-[300px] transition-all duration-700 ease-out sm:mr-0 sm:h-[340px] sm:max-w-[360px] lg:h-[430px] lg:max-w-[460px]", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}
           >
             {PHOTOS.map((p) => (
               <div key={p.file} className={cn("absolute aspect-[4/3] w-[54%] overflow-hidden rounded-xl border-4 border-enc-sheet shadow-enc-lift", p.rotate, p.z, p.pos)}>
-                <Image src={`/pilot/${p.file}`} alt="4th-year MBBS students working through a case at Maulana Azad Medical College" fill sizes="(max-width: 640px) 160px, 210px" quality={85} className="object-cover" />
+                <Image src={`/pilot/${p.file}`} alt="4th-year MBBS students working through a case at Maulana Azad Medical College" fill sizes="(max-width: 640px) 170px, (max-width: 1024px) 200px, 260px" quality={85} className="object-cover" />
               </div>
             ))}
           </div>
@@ -106,34 +106,43 @@ export default function PilotProofSection() {
                 <p className="mt-2 text-[12.5px] text-enc-ink-3">4th-year MBBS student, MAMC pilot</p>
               </div>
             </div>
-
-            {/* The survey's answers, not selected for being positive. */}
-            <div className="mt-7 overflow-hidden rounded-2xl border border-enc-line-strong bg-enc-sheet shadow-enc-lift">
-              <div className="flex items-center justify-between border-b border-enc-line bg-enc-console px-4 py-2.5">
-                <span className="text-[11px] font-semibold tracking-widest text-enc-ink-3 uppercase">Pilot survey · MAMC, 4th year</span>
-                <span className="text-[10.5px] text-enc-ink-3">4 of 9 answers</span>
-              </div>
-              <ul>
-                {REVIEWS.map((r, i) => (
-                  <li key={r.quote} className={cn("flex items-start gap-3 px-4 py-3", i !== REVIEWS.length - 1 && "border-b border-enc-line")}>
-                    <Stars count={r.stars} />
-                    <p className="flex-1 text-[13.5px] leading-relaxed text-enc-ink">{r.quote}</p>
-                    <span className="shrink-0 font-mono text-[11px] text-enc-ink-3">{r.time}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Early stage, and said so: the product is built with the students using it. */}
-            <div className="mt-6 rounded-2xl border border-brand-200 bg-enc-sheet px-5 py-4">
-              <p className="text-[14.5px] leading-relaxed text-enc-ink">
-                We're building MediKarya with medical students. Your feedback shapes the cases, the simulations and how the debrief teaches.
-              </p>
-              <Link href="/contact?topic=other" className="mt-2 inline-block text-[14px] font-semibold text-brand-600 hover:text-brand-700">
-                Tell us what to fix
-              </Link>
-            </div>
           </div>
+        </div>
+
+        {/* The survey's answers, not selected for being positive. Full width under the photos and the copy: beside the
+            copy it made that column twice the photos' height and left the left side empty on laptops. */}
+        <div className={cn("mt-12 overflow-hidden rounded-2xl border border-enc-line-strong bg-enc-sheet shadow-enc-lift transition-all duration-700 ease-out sm:mt-14", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")} style={{ transitionDelay: isVisible ? "200ms" : "0ms" }}>
+          <div className="flex items-center justify-between border-b border-enc-line bg-enc-console px-4 py-2.5">
+            <span className="text-[11px] font-semibold tracking-widest text-enc-ink-3 uppercase">Pilot survey · MAMC, 4th year</span>
+            <span className="text-[10.5px] text-enc-ink-3">4 of 9 answers</span>
+          </div>
+          <ul className="grid sm:grid-cols-2">
+            {REVIEWS.map((r, i) => (
+              <li
+                key={r.quote}
+                className={cn(
+                  "flex items-start gap-3 border-enc-line px-4 py-3",
+                  i < REVIEWS.length - 1 && "border-b",
+                  i >= REVIEWS.length - 2 && "sm:border-b-0",
+                  i % 2 === 0 && "sm:border-r"
+                )}
+              >
+                <Stars count={r.stars} />
+                <p className="flex-1 text-[13.5px] leading-relaxed text-enc-ink">{r.quote}</p>
+                <span className="shrink-0 font-mono text-[11px] text-enc-ink-3">{r.time}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Early stage, and said so: the product is built with the students using it. */}
+        <div className="mt-6 flex flex-col gap-2 rounded-2xl border border-brand-200 bg-enc-sheet px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <p className="text-[14.5px] leading-relaxed text-enc-ink">
+            We're building MediKarya with medical students. Your feedback shapes the cases, the simulations and how the debrief teaches.
+          </p>
+          <Link href="/contact?topic=other" className="shrink-0 text-[14px] font-semibold text-brand-600 hover:text-brand-700">
+            Tell us what to fix
+          </Link>
         </div>
       </div>
     </section>
