@@ -309,16 +309,16 @@
     },
     {
       "action": "oxygen_supplemental",
-      "when": { "parameter": "spo2", "lt": 94 },
+      "when": { "parameter": "spo2", "lt": 90 },
       "sets": { "oxygen_given": true },
       "physiological_changes": { "spo2_delta": "+4", "rr_delta": "-1" },
-      "trajectory_note": "Oxygen started; SpO₂ is improving. Reasonable here — oxygen is recommended when SpO₂ is below 90%, and he has pulmonary congestion."
+      "trajectory_note": "Oxygen started; SpO₂ is improving. Right here: oxygen is recommended when SpO₂ is below 90%."
     },
     {
       "action": "oxygen_supplemental",
-      "when": { "parameter": "spo2", "gte": 94 },
+      "when": { "parameter": "spo2", "gte": 90 },
       "sets": { "oxygen_given": true },
-      "trajectory_note": "Oxygen given, but his SpO₂ was already 94% or higher — routine oxygen is not recommended unless SpO₂ is below 90%."
+      "trajectory_note": "Oxygen given, but his SpO₂ was 90% or higher: routine oxygen is not recommended unless SpO₂ is below 90% (ESC 2023, ICMR STEMI workflow)."
     },
     {
       "action": "high_flow_oxygen",

@@ -169,14 +169,16 @@ describe("stemi: dangerous drugs and stabilisation", () => {
         assert.equal(result.safetyPenalty, true);
     });
 
-    it("oxygen only helps when SpO₂ is actually low", () => {
+    it("oxygen only helps when SpO₂ is below 90% (ESC 2023, ICMR)", () => {
         const engine = newEngine();
-        const low = engine.giveIntervention("oxygen_supplemental", 30);
-        assert.match(low.consequence, /SpO₂ is improving/);
-        assert.equal(engine.state.spo2, 95);
+        const atArrival = engine.giveIntervention("oxygen_supplemental", 30);
+        assert.match(atArrival.consequence, /not recommended unless SpO₂ is below 90%/);
+        assert.equal(engine.state.spo2, 91);
 
-        const again = engine.giveIntervention("oxygen_supplemental", 60);
-        assert.match(again.consequence, /not recommended unless SpO₂ is below 90%/);
+        engine.state.spo2 = 87;
+        const low = engine.giveIntervention("oxygen_supplemental", 60);
+        assert.match(low.consequence, /SpO₂ is improving/);
+        assert.equal(engine.state.spo2, 91);
     });
 });
 
