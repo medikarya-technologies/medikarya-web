@@ -29,6 +29,13 @@ describe("diagnosis matching", () => {
         assert.equal(diagnosisMatches("Iron deficiency anaemia", ["Iron deficiency anemia"], []), true);
     });
 
+    it("accepts a single obvious typo in a long word of an authored diagnosis", () => {
+        assert.equal(diagnosisMatches("Essential hypertenssion", ACCEPTED, []), true);
+        assert.equal(diagnosisMatches("Pre-eclampsia with severe featuers", ACCEPTED, []), true);
+        assert.equal(diagnosisMatches("Anxiety", ACCEPTED, []), false);
+        assert.equal(diagnosisMatches("Canker", ["Cancer"], []), false, "a short valid word must not fuzzy-match a different word");
+    });
+
     it("flags a single keyword that other diseases share", () => {
         assert.equal(broadKeyword(["kidney"]), "kidney");
         assert.equal(broadKeyword(["Thyroid"]), "thyroid");

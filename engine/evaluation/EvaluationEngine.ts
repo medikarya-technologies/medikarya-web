@@ -197,6 +197,12 @@ export class EvaluationEngine {
             };
         }
 
+        // A case-authored answer (or a one-letter slip in one long word) must not
+        // be scored below the correct-diagnosis threshold when the examiner misses it.
+        if (aiOk && diagnosisMatches(primaryDiagnosis, evalConfig?.diagnosis?.accepted_primary ?? [], [])) {
+            llmResult.diagnosisScore = Math.max(llmResult.diagnosisScore, DIAGNOSIS_CORRECT_FROM);
+        }
+
         // ── Layer 4: Tiered Red Flag Resolution ───────────────────────────────
         console.log("EvaluationEngine: Layer 4 — resolving red flag penalties...");
         const ruleMissed = getRuleEngineMissedFlags(extracted, caseData);

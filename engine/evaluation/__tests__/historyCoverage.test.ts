@@ -306,6 +306,7 @@ describe("keyword matching", () => {
     it("lets British and American spellings and small typos meet", () => {
         assert.deepEqual(contentTokens("diarrhoea oedema"), contentTokens("diarrhea edema"));
         assert.equal(keywordCovers("breathlessness", "any breathlesness?"), true);
+        assert.equal(topicIntents("any chest pane? ").has("chest_pain"), true);
     });
 
     it("a word every required question shares (the complaint itself) does not tick them all", () => {
@@ -325,6 +326,8 @@ describe("keyword matching", () => {
         assert.equal(keywordCovers("radiation of the pain", "does the pain spread anywhere?"), true);
         assert.equal(keywordCovers("dizziness before the fall", "did you feel dizzy?"), true);
         assert.equal(keywordCovers("frequency of episodes", "how often do you get them?"), true);
+        assert.equal(keywordCovers("pain", "does the pane spread to your arm?"), true);
+        assert.equal(keywordCovers("fever", "have you had a feaver?"), true);
     });
 
     it("does not join unrelated topics through broad words like 'before' or 'work'", () => {

@@ -9,6 +9,8 @@
 // recognising ST elevation. Deliberately small and predictable — no NLP.
 
 /** Words that negate a phrase that follows them in the same clause. */
+import { normaliseObviousClinicalTypos } from "../../engine/clinical-typos";
+
 const NEGATORS = new RegExp(
     "\\b(?:no|not(?!\\s+only\\b)|without|absent|absence of|negative for|nor|never|denies|denied|unlikely|isn't|is not|doesn't|does not|don't|do not|wasn't|was not|neither)\\b"
 );
@@ -20,7 +22,7 @@ const CLAUSE_SPLIT = /[.;,:\n]|\s(?:but|however|although|and|with|while|whereas)
 
 /** Lower-case, collapse whitespace, treat hyphens/underscores/slashes as spaces. */
 export function normalizeText(value: string): string {
-    return value
+    return normaliseObviousClinicalTypos(value)
         .toLowerCase()
         .replace(/[’‘]/g, "'")
         .replace(/[-_/]/g, " ")

@@ -14,6 +14,7 @@ import {
     ExtractedQuestion,
     MappedIntent,
 } from "./types";
+import { normaliseObviousClinicalTypos } from "../clinical-typos";
 
 // ── Intent catalogue ─────────────────────────────────────────────────────────
 // Maps intent slug → patterns to scan for in the question text.
@@ -204,7 +205,7 @@ function computeSpecificityScore(text: string): number {
 // ── Intent mapping ────────────────────────────────────────────────────────────
 
 function mapIntents(text: string): MappedIntent[] {
-    const lower = text.toLowerCase();
+    const lower = normaliseObviousClinicalTypos(text).toLowerCase();
     const results: MappedIntent[] = [];
 
     for (const [intent, patternGroups] of Object.entries(INTENT_CATALOGUE)) {

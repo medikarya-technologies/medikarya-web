@@ -21,6 +21,7 @@
 // Pure: no I/O, no AI calls. The AI's answer comes in as data.
 
 import { INTENT_CATALOGUE } from "./IntentExtractor";
+import { normaliseObviousClinicalTypos } from "../clinical-typos";
 
 export const HISTORY_COVERAGE_MAX = 17.5;
 export const HISTORY_QUALITY_MAX = 7.5;
@@ -133,13 +134,19 @@ const CONCEPTS: Record<string, string> = {
 const WEAK = new Set(["previou"]);
 
 export function contentTokens(text: string): string[] {
-    return text
+    return normaliseObviousClinicalTypos(text)
         .toLowerCase()
         .split(/[^a-z0-9']+/)
         .map((t) => t.replace(/^'+|'+$/g, ""))
         .filter((t) => t && !STOPWORDS.has(t) && (t.length >= 4 || SHORT_TERMS.has(t)))
-        .map(stem)
-        .map((t) => CONCEPTS[t] ?? t);
+        .map((t) => {
+            const current = stem(t);
+            if (CONCEPTS[current]) return CONCEPTS[current];
+            // If collapsing a doubled key yields a known concept, accept that spelling too.
+            // Leave ordinary words with legitimate doubled letters unchanged.
+            const collapsed = stem(t.replace(/([a-z])\1+/g, "$1"));
+            return CONCEPTS[collapsed] ?? current;
+        });
 }
 
 /** The same word: equal stems, one a longer form of the other ("diabet", "diabetic"; at least 5 letters shared),
@@ -154,7 +161,23 @@ function sameWord(a: string, b: string): boolean {
 /** Edit distance of at most one (a typo), for words long enough that this does not join two different words. */
 function nearlyEqual(a: string, b: string): boolean {
     if (a === b) return true;
-    if (Math.min(a.length, b.length) < 6 || Math.abs(a.length - b.length) > 1) return false;
+    if (Math.abs(a.length - b.length) > 1) return false;
+    // Stemming can shorten a long word ("smoking" → "smok"); still catch a doubled key
+    // or one extra/missing character after that step, without fuzzy-matching short substitutions.
+    if (Math.min(a.length, b.length) < 6) {
+        if (Math.min(a.length, b.length) < 4 || Math.abs(a.length - b.length) !== 1) return false;
+        const [short, long] = a.length < b.length ? [a, b] : [b, a];
+        return [...long].some((_, i) => long.slice(0, i) + long.slice(i + 1) === short);
+    }
+    if (a.length === b.length) {
+        const differences = [...a].flatMap((char, index) => char === b[index] ? [] : [index]);
+        if (
+            differences.length === 2 &&
+            differences[1] === differences[0] + 1 &&
+            a[differences[0]] === b[differences[1]] &&
+            a[differences[1]] === b[differences[0]]
+        ) return true;
+    }
     let i = 0;
     let j = 0;
     let edits = 0;
@@ -205,7 +228,7 @@ const ALL_INTENTS: RegExp[] = Object.values(INTENT_CATALOGUE).map((groups) => {
 
 /** The specific topics (intents) a text names. */
 export function topicIntents(text: string): Set<string> {
-    const lower = text.toLowerCase();
+    const lower = normaliseObviousClinicalTypos(text).toLowerCase();
     return new Set(COMPILED_INTENTS.filter(([, re]) => re.test(lower)).map(([intent]) => intent));
 }
 
