@@ -1,7 +1,7 @@
 {
   "24-year-old-man-brought-in-vomiting-and-drowsy": {
-    "plan_sha": "d8e7305e9a4040b9415f2c3eed5d35a9b591405819e61e54d7fabab02618be21",
-    "compiled_sha": "7967da7aa40620fe14a396cee0acc7d3afb9cd066205526a4df53c7117bb47c5",
+    "plan_sha": "75ba6e39e18612e3601e7e586bd611925d9bf589eefed1df074fe5e18666df87",
+    "compiled_sha": "bef2bfcaf8d38b442ce51e0e9bb60646291edf714323260419d4ec7d4687acfd",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -825,8 +825,8 @@
     }
   },
   "32-year-old-man-brought-in-fitting": {
-    "plan_sha": "eaa40c4f603d9e2ab74cd02e50201694b0336bc6bf8f765560fc14822b69e2e5",
-    "compiled_sha": "c00752da9b5be81686b5a5eafc0d2864bf360578819ee6ddaaa374a27d8069b8",
+    "plan_sha": "1a8a9fad60d6757ea7617bbdf946df41ff3ce4a2093726cba3fb5111a73731dd",
+    "compiled_sha": "eb5aa604b4945b2e3d3587220cf1dfc4dc58741c128425cfae68603458cb5371",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1060,8 +1060,8 @@
     }
   },
   "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing": {
-    "plan_sha": "07a2a16a6aa15f101e4a8fc761d3b4a1667c4ab8c0641f8cf6a3d6b8553e7cc6",
-    "compiled_sha": "40ba012ba283925a535824a2715e158107324e450c674a4e5f21319a1eac0dab",
+    "plan_sha": "e215a0ec05da346cf2454c53d32a656d1b992c9cdec0a723423b36465c62b4a1",
+    "compiled_sha": "fbfb2a35672c18ddca38f488cfd6ba9d5ea80a515c5f68619423955ca3bd6c03",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1222,7 +1222,7 @@
   },
   "36-year-old-man-with-sudden-breathlessness": {
     "plan_sha": "9cd2319ead0789e3da713db40284d19d22d7a9a2549946759c5ca7725dcddb8d",
-    "compiled_sha": "8626ca25f5bffcbb927ee271643ff18dc9116aab71c6dde926164c7a10e5a291",
+    "compiled_sha": "b22bf93c00eb3dda339fe1de1cdf02301e59d1ee0fae1d5c9a8047a29e596835",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1507,8 +1507,8 @@
     }
   },
   "40-year-old-man-found-unconscious-at-home": {
-    "plan_sha": "9f2c36601f597be1e34005971156952f4a99856103c255788c0d86c1813f94fb",
-    "compiled_sha": "2e33bb0a91f782e8e590c2a21a6bc5e67064e21671990ab24a1cbb1cf0eada02",
+    "plan_sha": "9ee87d43b81dd2cb0dd60a5f37dc484e1e58cddf76af32bda9224c016ef4d284",
+    "compiled_sha": "57ab753044a598125ef83599ff4a3783ba923d843acf42dc41c3722239165283",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1774,8 +1774,8 @@
     }
   },
   "45-year-old-woman-with-fever-who-has-become-confused": {
-    "plan_sha": "0a767527c0859d9a4dc82054e1e1efc6630533ec84494f63b6da3fcecae2744b",
-    "compiled_sha": "e20f35e903e9b2d861a27c08dff0f3bc163af3487925b2749e0f3305ea963a99",
+    "plan_sha": "00ac95b38e2cefd2e7050e052111bf9d7df7671f8356370bb4d3cab517c4ad0f",
+    "compiled_sha": "5adb8b4ab6268e0d2670a70c4da3b55b781a9dd5d603abc47ebe117165c866bd",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -3082,8 +3082,8 @@
     }
   },
   "58-year-old-man-who-is-sweaty-and-hard-to-wake": {
-    "plan_sha": "c2d1ca6956296bc9e91b0e68e71d219b6e44a42eed7e6da1f5bae2a6e9c1f9f7",
-    "compiled_sha": "83aecbff4de4b5c25f70bba97009ef783832fa71d2dc40e196f1ff8bf99e6758",
+    "plan_sha": "ab68cd44f0bc5d84a02f1408de3431bbcc057b6c1b8e7c29d4202601c7dbe934",
+    "compiled_sha": "5deba66b2c09111d2c6950d1c046664c608f0d2296145da2b651d77d86cdef9f",
     "playthroughs": {
       "untreated": {
         "score": 0,
