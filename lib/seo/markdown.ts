@@ -200,7 +200,7 @@ export function llmsTxt({ cases, guides, articles }: SiteIndexInput): string {
         `- Who it is for: MBBS students (and their colleges) in India.`,
         `- The library: ${s.patients} published patients across ${s.specialties} specialties; ${s.live} are live emergencies, where the patient gets worse until treated.`,
         "- In each case: history taking by conversation, a live bedside monitor (heart rate, blood pressure, oxygen saturation, ECG), investigations on a realistic delay, a ranked differential (working diagnosis, a real alternative, and the one you cannot afford to miss), a management plan, two scores (Clinical, and Independent of any paid help), a debrief, and a five-question quiz on what was missed.",
-        "- Who writes the cases: medical students write up patients they have seen, and a doctor checks each case before it is published. Writers and reviewers are named on the contributors page.",
+        "- Who writes the cases: medical students write up patients they have seen, and a doctor checks each of those before it is published; the rest are written by the MediKarya team from standard textbooks and current clinical guidelines. Writers and reviewers are named on the contributors page.",
         "- Tried with students: first piloted in May 2026 with 4th-year MBBS students at Maulana Azad Medical College, who worked cases on their own phones and tablets.",
         "- Price: one case is free with no account; the Student plan is free, and the paid plans are Intern and Resident (see the pricing section of the home page).",
         "- Not medical advice: MediKarya is an educational simulation and must not guide real patient care.",
