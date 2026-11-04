@@ -127,11 +127,12 @@ export default function DeteriorationSection() {
         className={cn("relative mx-auto mt-8 max-w-md text-center text-[13px] text-white/50 transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}
         style={{ transitionDelay: isVisible ? "220ms" : "0ms" }}
       >
-        Live emergencies like this one: one free on the Student plan, every day on{" "}
+        Only the live emergencies, marked Live in the library, change like this. In the other cases the monitor runs
+        too, but the patient stays as they came in. One live emergency is free on the Student plan;{" "}
         <Link href="#pricing" className="font-semibold text-brand-400 hover:text-brand-300">
           Intern and Resident
-        </Link>
-        .
+        </Link>{" "}
+        include more each day.
       </p>
     </section>
   )

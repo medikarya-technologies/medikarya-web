@@ -80,8 +80,8 @@ export default function PricingSection() {
 
       {/* No Eyebrow — heading alone */}
       <div className={cn("relative mx-auto max-w-2xl px-4 text-center transition-all duration-700 ease-out", isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0")}>
-        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Choose how you want to train.</h2>
-        <p className="mt-4 text-lg leading-relaxed text-white/60">Start free. Upgrade when you're ready for deeper simulation.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Free to start. Upgrading is optional.</h2>
+        <p className="mt-4 text-lg leading-relaxed text-white/60">The Student plan stays free and gives you the whole case: history, examination, tests, diagnosis and debrief. The paid plans are there if you want more cases a day, harder cases and more live emergencies.</p>
 
         {/* Toggle */}
         <div className="mt-7 inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
@@ -107,7 +107,7 @@ export default function PricingSection() {
       </div>
 
       {/* On a phone the plans are a row to swipe through, the next one peeking in (three stacked cards ran to about
-          1,700 px); from sm up, three across. The top padding keeps the "Full simulation" badge inside the scroller. */}
+          1,700 px); from sm up, three across. The top padding keeps the "Every case" badge inside the scroller. */}
       <div className="relative mx-auto mt-6 flex max-w-5xl snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-4 pb-2 [scrollbar-width:none] sm:mt-10 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {TIERS.map((tier, i) => {
           const price = annual ? tier.annual : tier.monthly
@@ -123,7 +123,7 @@ export default function PricingSection() {
             >
               {tier.highlight && (
                 <span className="absolute -top-3 left-6 rounded-full bg-brand-500 px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
-                  Full simulation
+                  Every case
                 </span>
               )}
               <div className="flex items-center gap-2">

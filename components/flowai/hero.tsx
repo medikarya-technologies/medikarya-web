@@ -101,7 +101,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-5 max-w-lg text-pretty text-lg leading-relaxed text-enc-ink-2">
-            Take the history, examine, order tests and decide what to do next. Then see exactly where your reasoning held and where it broke.
+            Practise taking a history, choosing investigations and defending your diagnosis, then see where your reasoning went wrong. A textbook case hands you the answer; here you have to find it.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">

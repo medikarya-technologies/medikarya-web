@@ -46,7 +46,7 @@ const features = [
         iconBg: "bg-amber-50",
         iconColor: "text-amber-600",
         title: "A patient who can get worse",
-        desc: "In the live emergency cases the monitor doesn't wait for you: delay or mismanage the patient and they deteriorate, exactly like they would at the bedside.",
+        desc: "Only in the live emergency cases, marked Live in the library: there the monitor doesn't wait for you, and if you delay or mismanage the patient they deteriorate, as at the bedside. In every other case the patient stays as they came in.",
     },
     {
         Icon: FlaskConical,

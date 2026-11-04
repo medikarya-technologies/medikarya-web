@@ -32,6 +32,7 @@
 
 import { cn } from "@/lib/utils"
 import Image from "next/image"
+import Link from "next/link"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 import { Eyebrow } from "@/components/cases/encounter-ui"
 import { Quote, Star } from "lucide-react"
@@ -94,6 +95,9 @@ export default function PilotProofSection() {
             <p className="mt-4 text-[15.5px] leading-relaxed text-enc-ink-2">
               In May 2026, a batch of 4th-year MBBS students at Maulana Azad Medical College worked cases on their own phones and tablets: the same interface shown throughout this page.
             </p>
+            <p className="mt-3 text-[14px] leading-relaxed text-enc-ink-3">
+              It was a feedback pilot, not a study. It tells us students found the cases useful, not yet whether they change exam or ward performance; we will measure that before we claim it.
+            </p>
 
             <div className="mt-6 flex gap-3 border-l-2 border-brand-300 pl-4">
               <Quote className="mt-0.5 h-4 w-4 shrink-0 text-brand-400" strokeWidth={2} />
@@ -118,6 +122,16 @@ export default function PilotProofSection() {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Early stage, and said so: the product is built with the students using it. */}
+            <div className="mt-6 rounded-2xl border border-brand-200 bg-enc-sheet px-5 py-4">
+              <p className="text-[14.5px] leading-relaxed text-enc-ink">
+                We're building MediKarya with medical students. Your feedback shapes the cases, the simulations and how the debrief teaches.
+              </p>
+              <Link href="/contact?topic=other" className="mt-2 inline-block text-[14px] font-semibold text-brand-600 hover:text-brand-700">
+                Tell us what to fix
+              </Link>
             </div>
           </div>
         </div>
