@@ -32,6 +32,8 @@ const nextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    // Every quality a page asks for must be listed (Next 16 refuses others): 75 is the default, 85 and 90 the screenshots.
+    qualities: [75, 85, 90],
     remotePatterns: [
       {
         protocol: "https",

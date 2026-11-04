@@ -57,7 +57,10 @@ async function joinedCounts(codes: string[]): Promise<Map<string, number>> {
       .from("pass_code_joins")
       .select("code")
       .in("code", codes)
+      // Order by the whole primary key: rows that share a code have no order of their own, so paging on code alone
+      // could count one join twice and skip another once a link passes 1,000 joins.
       .order("code")
+      .order("clerk_user_id")
       .range(from, from + pageSize - 1);
     if (error) throw error;
     for (const row of data ?? []) counts.set(row.code, (counts.get(row.code) ?? 0) + 1);
