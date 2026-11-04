@@ -41,9 +41,9 @@ const item = (s: ReturnType<typeof scoreBedside>, id: string) => s.items.find((i
 
 const SE = "32-year-old-man-brought-in-fitting";
 describe("status epilepticus: the second lorazepam dose depends on an explicit seizure finding", { skip: SE && SKIP(SE) }, () => {
-    it("is still proposed, and passes the check", () => {
+    it("is live (switched on 2026-11-04), and passes the check", () => {
         const { base, plan } = load(SE);
-        assert.equal(plan.status, "proposed");
+        assert.equal(plan.status, "approved");
         assert.deepEqual(checkLivePlan(plan, measuredOnArrival(base)), { errors: [], warnings: [] });
         assert.deepEqual(plan.treatments.find((t) => t.id === "lorazepam_iv")!.repeat_only_while, { finding: "seizing", is: true });
     });
@@ -98,9 +98,9 @@ const OP = "24-year-old-man-brought-in-vomiting-and-drowsy";
 describe("organophosphate: atropine doubled until the end points are met", { skip: OP && SKIP(OP) }, () => {
     const correct: Array<[string, number]> = [["iv_access", 1], ["high_flow_oxygen", 2], ["atropine_iv_titrated", 3], ["reassess_patient", 7], ["atropine_iv_titrated", 8], ["reassess_patient", 12], ["atropine_iv_titrated", 13], ["atropine_infusion", 14]];
 
-    it("is still proposed, and passes the check", () => {
+    it("is live (switched on 2026-11-04), and passes the check", () => {
         const { base, plan } = load(OP);
-        assert.equal(plan.status, "proposed");
+        assert.equal(plan.status, "approved");
         assert.deepEqual(checkLivePlan(plan, measuredOnArrival(base)), { errors: [], warnings: [] });
     });
 
@@ -241,9 +241,9 @@ const SEPSIS = "45-year-old-woman-with-fever-who-has-become-confused";
 describe("septic shock: Ringer's lactate in boluses, given by response", { skip: SEPSIS && SKIP(SEPSIS) }, () => {
     const care: Array<[string, number]> = [["iv_access", 1], ["ringer_lactate_boluses", 2], ["blood_cultures_before_antibiotics", 3], ["meropenem_iv", 4], ["reassess_patient", 5], ["ringer_lactate_boluses", 5], ["norepinephrine_infusion", 6], ["urology_decompression", 10]];
 
-    it("is still proposed, and passes the check", () => {
+    it("is live (switched on 2026-11-04), and passes the check", () => {
         const { base, plan } = load(SEPSIS);
-        assert.equal(plan.status, "proposed");
+        assert.equal(plan.status, "approved");
         assert.deepEqual(checkLivePlan(plan, measuredOnArrival(base)), { errors: [], warnings: [] });
     });
 
@@ -279,9 +279,9 @@ describe("DKA: saline on a pump at the JBDS rates, and a bolus only when the sys
     const NS = "normal_saline_first_litre";
     const care: Array<[string, number]> = [["iv_access", 1], [`${NS}@r1000`, 2], ["insulin_infusion", 3], ["potassium_plan", 4], ["iv_antibiotics", 5]];
 
-    it("is still proposed, and passes the check (the step-downs fall after the encounter, so they are not scored)", () => {
+    it("is live (switched on 2026-11-04), and passes the check (the step-downs fall after the encounter, so they are not scored)", () => {
         const { base, plan } = load(DKA);
-        assert.equal(plan.status, "proposed");
+        assert.equal(plan.status, "approved");
         const check = checkLivePlan(plan, measuredOnArrival(base));
         assert.deepEqual(check.errors, []);
         assert.ok(check.warnings.every((w) => /no hold_minutes, so when it is stepped down is not scored/.test(w)), check.warnings.join(" | "));
