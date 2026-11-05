@@ -3,6 +3,10 @@ import { auth } from "@clerk/nextjs/server";
 import { getRazorpay } from "@/lib/razorpay";
 import { TOTAL_COUNT, currentSubscription, isPaidTier, planIdFor, type BillingPeriod } from "@/lib/payments/subscriptions";
 
+// Limited time UPI subscription offer created in Razorpay Dashboard (expires 14 Nov 2026).
+const SUBSCRIPTION_COUPON_CODE = "MEDIKARYA10";
+const SUBSCRIPTION_OFFER_ID = "offer_Twbq5iwNC8NqBp";
+
 export async function POST(request: NextRequest) {
   const razorpay = getRazorpay();
   if (!razorpay) {
@@ -18,6 +22,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { tier } = body;
     const period: BillingPeriod = body.period === "yearly" ? "yearly" : "monthly";
+    const couponCode = typeof body.couponCode === "string" ? body.couponCode.trim().toUpperCase() : "";
+
+    if (couponCode && couponCode !== SUBSCRIPTION_COUPON_CODE) {
+      return NextResponse.json({ error: "That coupon code is not valid." }, { status: 400 });
+    }
 
     if (!isPaidTier(tier)) {
       return NextResponse.json({ error: `Unknown tier: ${tier}` }, { status: 400 });
@@ -41,6 +50,7 @@ export async function POST(request: NextRequest) {
       plan_id: planId,
       customer_notify: 1,
       total_count: TOTAL_COUNT[period],
+      ...(couponCode === SUBSCRIPTION_COUPON_CODE ? { offer_id: SUBSCRIPTION_OFFER_ID } : {}),
       notes: { userId, tier, period },
     });
 

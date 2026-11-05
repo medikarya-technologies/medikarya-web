@@ -4,11 +4,12 @@
 // payment and sets up the mandate for renewals) → verify-subscription, which checks the signature and saves it.
 // Signed-out visitors are sent to sign in first, since a subscription has to belong to an account.
 
-import { useState, type ReactNode } from "react"
+import { useId, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth, useUser } from "@clerk/nextjs"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { loadCheckoutScript } from "./razorpay-checkout-button"
 import { refreshPlan } from "@/components/plans/use-plan"
@@ -38,6 +39,8 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
   const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [couponCode, setCouponCode] = useState("")
+  const couponInputId = useId()
 
   const checkoutPlan = `${tier}_${period}`
   const fail = (description: string) => toast({ title: "Could not start your plan", description, variant: "destructive" })
@@ -58,7 +61,7 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
       const res = await fetch("/api/payments/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, period }),
+        body: JSON.stringify({ tier, period, couponCode }),
       })
       const created = await res.json()
       if (!res.ok) {
@@ -131,9 +134,27 @@ export function SubscribeButton({ tier, period, className, children, onSubscribe
   }
 
   return (
-    <Button type="button" onClick={handleClick} disabled={loading} className={className}>
-      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {children}
-    </Button>
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <label htmlFor={couponInputId} className="text-xs font-medium text-enc-ink-2">Coupon code <span className="font-normal text-enc-ink-3">(optional)</span></label>
+        <Input
+          id={couponInputId}
+          value={couponCode}
+          onChange={(event) => setCouponCode(event.target.value)}
+          placeholder="Enter coupon code"
+          autoCapitalize="characters"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          disabled={loading}
+          className="h-9 text-sm"
+        />
+        <p className="text-xs text-enc-ink-3">MEDIKARYA10: 10% off UPI payments, ₹100 minimum. Valid through 14 Nov.</p>
+      </div>
+      <Button type="button" onClick={handleClick} disabled={loading} className={className}>
+        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {children}
+      </Button>
+    </div>
   )
 }
