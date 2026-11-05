@@ -22,8 +22,9 @@ export function planIdFor(tier: PaidTier, period: BillingPeriod): string | null 
   return process.env[PLAN_ENV[tier][period]] || null;
 }
 
-// No true "forever" option in Razorpay (100-year max): a subscription ends by being cancelled, not by running out.
-export const TOTAL_COUNT: Record<BillingPeriod, number> = { monthly: 1200, yearly: 100 };
+// Cap every subscription at 25 years so the UPI mandate stays within Razorpay's duration limit.
+// total_count is measured in billing cycles: 300 monthly cycles or 25 yearly cycles.
+export const TOTAL_COUNT: Record<BillingPeriod, number> = { monthly: 300, yearly: 25 };
 
 
 /** The subset of Razorpay's subscription entity this app stores. */
