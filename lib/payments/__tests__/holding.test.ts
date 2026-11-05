@@ -19,10 +19,15 @@ describe("stillHolds", () => {
     assert.equal(stillHolds(row({ status: "pending" }), now), true);
   });
 
-  it("does not hold once cancelled, halted or created-but-unpaid", () => {
-    for (const status of ["cancelled", "halted", "completed", "expired", "created"]) {
+  it("keeps a cancelled mandate active through the paid period", () => {
+    for (const status of ["cancelled", "halted", "completed"]) {
+      assert.equal(stillHolds(row({ status }), now), true, status);
+    }
+    for (const status of ["expired", "created"]) {
       assert.equal(stillHolds(row({ status }), now), false, status);
     }
+    assert.equal(stillHolds(row({ status: "cancelled", current_end: null }), now), false);
+    assert.equal(stillHolds(row({ status: "cancelled", current_end: "2026-09-27T11:59:00Z" }), now), false);
   });
 
   it("holds until a scheduled cancellation, then stops, whatever the status says", () => {

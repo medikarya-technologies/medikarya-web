@@ -59,6 +59,19 @@ export async function saveSubscription(
   const { userId, tier } = subscriptionOwner(sub);
   if (!userId || !tier) return { error: `Subscription ${sub.id} has no userId/tier in notes`, unattributed: true };
 
+  // Some terminal lifecycle events omit current_end. Keep the last known paid-through date in that case,
+  // otherwise a mandate deleted in the UPI app could erase access to an already-paid billing period.
+  let currentEnd = sub.current_end == null ? null : new Date(sub.current_end * 1000).toISOString();
+  if (currentEnd == null) {
+    const { data, error } = await supabaseServer
+      .from("subscriptions")
+      .select("current_end")
+      .eq("razorpay_subscription_id", sub.id)
+      .maybeSingle();
+    if (error) return { error: error.message };
+    currentEnd = data?.current_end ?? null;
+  }
+
   const { error } = await supabaseServer.from("subscriptions").upsert(
     {
       clerk_user_id: userId,
@@ -67,7 +80,7 @@ export async function saveSubscription(
       tier,
       status: sub.status,
       current_start: sub.current_start ? new Date(sub.current_start * 1000).toISOString() : null,
-      current_end: sub.current_end ? new Date(sub.current_end * 1000).toISOString() : null,
+      current_end: currentEnd,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "razorpay_subscription_id" }

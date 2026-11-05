@@ -17,7 +17,7 @@ export async function GET() {
         period: periodOfPlan(sub.razorpay_plan_id),
         status: sub.status,
         currentEnd: sub.current_end,
-        cancelAt: sub.cancel_at ?? null,
+        cancelAt: sub.cancel_at ?? (["cancelled", "completed", "halted"].includes(sub.status) ? sub.current_end : null),
       },
     });
   } catch (error) {
