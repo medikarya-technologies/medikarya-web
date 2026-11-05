@@ -31,12 +31,13 @@ export async function POST() {
       cancelAt = at ? new Date(at * 1000).toISOString() : new Date().toISOString();
     } catch (error) {
       // Razorpay refuses cancel-at-cycle-end (400) in the last billing cycle and for a subscription that never got
-      // a billing cycle going; only then cancel now. Anything else (a network error) must not cost the student the
-      // rest of a period they paid for, so it fails instead.
+      // a billing cycle going; cancel the mandate now, but retain the paid-through date locally when one exists.
+      // Anything else (a network error) must not cost the student the rest of a period they paid for, so it fails instead.
       if ((error as { statusCode?: number })?.statusCode !== 400) throw error;
       console.warn("Cancel at cycle end refused, cancelling now:", error);
       await razorpay.subscriptions.cancel(sub.razorpay_subscription_id, false);
-      cancelAt = new Date().toISOString();
+      const paidThrough = sub.current_end && Date.parse(sub.current_end) > Date.now() ? sub.current_end : null;
+      cancelAt = paidThrough ?? new Date().toISOString();
     }
 
     const { error } = await supabaseServer
