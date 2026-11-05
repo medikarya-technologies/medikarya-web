@@ -1,7 +1,7 @@
 "use client"
 
-// The in-app way to buy a plan: Intern and Resident side by side, a Monthly/Yearly switch, and the checkout right
-// there, so a student who meets a lock never has to go back to the landing page. Any component under the dashboard
+// The in-app way to choose a plan: Intern and Resident side by side with a Monthly/Yearly switch. Checkout continues
+// on its own page, so a student who meets a lock never has to go back to the landing page. Any component under the dashboard
 // opens it with useUpgrade()({ highlight, reason }): the plan that would unlock what they tried, and why it did not
 // open. The plan (use-plan.ts) refreshes on success, so every lock and counter on the page updates in place.
 
@@ -154,8 +154,7 @@ function OfferCard({ offer, period, current, recommended, onDone }: { offer: Pla
           <SubscribeButton
             tier={offer.plan as "intern" | "resident"}
             period={period}
-            onCheckoutOpen={onDone}
-            onSubscribed={() => undefined}
+            onCheckoutNavigate={onDone}
             className={cn(
               "h-10 w-full rounded-lg text-[14px] font-semibold shadow-none",
               recommended ? "bg-brand-600 text-white hover:bg-brand-700" : "border border-enc-line-strong bg-enc-sheet text-enc-ink hover:bg-enc-console"
