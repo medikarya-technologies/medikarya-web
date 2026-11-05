@@ -9,7 +9,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
-import { CreditCard, LayoutDashboard, LifeBuoy, LogOut, Menu, Sparkles, Stethoscope, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react"
+import { CreditCard, LayoutDashboard, LifeBuoy, LogOut, Menu, Stethoscope, TrendingUp, UserRound, X, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Eyebrow } from "@/components/cases/encounter-ui"
@@ -110,15 +110,14 @@ function Person({ userName, plan }: { userName?: string; plan: Plan }) {
         className="-m-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1 outline-none transition-colors hover:bg-enc-console-hover focus-visible:ring-2 focus-visible:ring-brand-300"
       >
         <span className="relative shrink-0">
-          <Avatar className={cn("h-8 w-8", premium ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-enc-console" : "ring-1 ring-enc-line-strong")}>
+          <Avatar className={cn("h-8 w-8", premium ? "ring-2 ring-enc-warn ring-offset-2 ring-offset-enc-console" : "ring-1 ring-enc-line-strong")}>
             <AvatarImage src={me.imageUrl} alt={me.name} />
             <AvatarFallback className="bg-enc-sheet text-[12px] font-semibold text-enc-ink-2">{me.initials}</AvatarFallback>
           </Avatar>
-          {premium && <Sparkles aria-hidden="true" className="absolute -right-1.5 -top-1.5 h-3.5 w-3.5 fill-amber-300 text-amber-600" />}
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13.5px] leading-tight font-medium text-enc-ink">{me.name || (me.isLoaded ? "Signed in" : " ")}</p>
-          <p className={cn("truncate text-[12px] leading-tight", premium ? "font-semibold text-amber-700 dark:text-amber-300" : "text-enc-ink-3")}>
+          <p className={cn("truncate text-[12px] leading-tight", premium ? "font-semibold text-enc-warn" : "text-enc-ink-3")}>
             {premium ? `${PLAN_NAME[plan]} plan` : "Medical student"}
           </p>
         </div>
@@ -186,13 +185,17 @@ export function DashboardLayout({ children, activeHref, userName }: DashboardLay
           <Brand />
           <div className="flex-1" />
           <ThemeToggle />
-          <span className="relative shrink-0">
-            <Avatar className={cn("h-8 w-8", premium ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-enc-console" : "ring-1 ring-enc-line-strong")}>
+          <Link
+            href="/dashboard/profile"
+            title="Your profile"
+            aria-label="Your profile"
+            className="relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-brand-300 focus-visible:ring-offset-2 focus-visible:ring-offset-enc-console"
+          >
+            <Avatar className={cn("h-8 w-8", premium ? "ring-2 ring-enc-warn ring-offset-2 ring-offset-enc-console" : "ring-1 ring-enc-line-strong")}>
               <AvatarImage src={me.imageUrl} alt={me.name} />
               <AvatarFallback className="bg-enc-sheet text-[12px] font-semibold text-enc-ink-2">{me.initials}</AvatarFallback>
             </Avatar>
-            {premium && <Sparkles aria-hidden="true" className="absolute -right-1.5 -top-1.5 h-3.5 w-3.5 fill-amber-300 text-amber-600" />}
-          </span>
+          </Link>
         </div>
 
         {open && <div className="fixed inset-0 z-40 bg-enc-scrim/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
