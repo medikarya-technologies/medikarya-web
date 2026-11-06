@@ -77,6 +77,9 @@ export function organizationJsonLd() {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
         name: SITE_NAME,
+        // Other ways people write the name. "Medikarya" is also the name of unrelated clinics and companies in
+        // Indonesia, so the markup spells out every form that means this one.
+        alternateName: ["Medikarya", "MediKarya Technologies", "medikarya.in"],
         legalName: "MEDIKARYA TECHNOLOGIES PRIVATE LIMITED",
         url: `${SITE_URL}/`,
         logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-512.png`, width: 512, height: 512 },
@@ -107,6 +110,8 @@ export function websiteJsonLd() {
         "@type": "WebSite",
         "@id": `${SITE_URL}/#website`,
         name: SITE_NAME,
+        // Google takes the site name shown in results from here; alternateName lists other forms it may use
+        alternateName: ["Medikarya", "medikarya.in"],
         url: `${SITE_URL}/`,
         inLanguage: "en-IN",
         publisher: { "@id": `${SITE_URL}/#organization` },
