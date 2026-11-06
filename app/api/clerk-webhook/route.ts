@@ -75,8 +75,8 @@ export async function POST(req: Request) {
         }
 
         if (type === "user.updated") {
-            // Keep name and email in sync if the user updates their Clerk profile
-            const { error } = await supabaseServer
+            // Update an existing profile without touching role or progress fields.
+            const { data: updatedProfile, error } = await supabaseServer
                 .from("user_profiles")
                 .update({
                     full_name: fullName,
@@ -84,12 +84,38 @@ export async function POST(req: Request) {
                     updated_at: new Date().toISOString(),
                 })
                 .eq("clerk_user_id", clerkUserId)
+                .select("clerk_user_id")
+                .maybeSingle()
 
             if (error) {
                 console.error("Failed to update user profile on user.updated:", error)
+                return NextResponse.json({ error: "DB update failed" }, { status: 500 })
             }
 
-            console.log("Updated user_profile for:", clerkUserId)
+            // A user.updated event can arrive after a failed/missed user.created event.
+            // Create the missing row, while ignoreDuplicates protects against a concurrent insert.
+            if (!updatedProfile) {
+                const { error: insertError } = await supabaseServer.from("user_profiles").upsert(
+                    {
+                        clerk_user_id: clerkUserId,
+                        full_name: fullName,
+                        email: email,
+                        role: "student",
+                        current_streak: 0,
+                        longest_streak: 0,
+                    },
+                    { onConflict: "clerk_user_id", ignoreDuplicates: true }
+                )
+
+                if (insertError) {
+                    console.error("Failed to create missing user profile on user.updated:", insertError)
+                    return NextResponse.json({ error: "DB insert failed" }, { status: 500 })
+                }
+
+                console.log("Recovered missing user_profile on user.updated:", clerkUserId, email)
+            } else {
+                console.log("Updated user_profile for:", clerkUserId)
+            }
         }
     }
 

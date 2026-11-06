@@ -54,3 +54,6 @@ CLAUDE.local.md
 /private/
 scripts/clear-live-blockers*.sh
 *.zip
+
+.vercel
+.env*
