@@ -4,6 +4,7 @@ import { SignUp } from "@clerk/nextjs"
 import { useState } from "react"
 import Link from "next/link"
 import { useMounted } from "@/hooks/use-mounted"
+import { clerkFillElements } from "@/lib/clerk-fill"
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
 
@@ -38,7 +39,7 @@ export default function SignUpClient() {
         }}
       />
 
-      <div className="relative mx-auto max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
+      <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-lg">
         <div
           ref={ref}
           className={cn(
@@ -69,7 +70,7 @@ export default function SignUpClient() {
               appearance={{
                 elements: {
                   formButtonPrimary: "w-full rounded-xl py-4 sm:py-6 text-sm sm:text-base font-medium bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
-                  card: "shadow-none bg-transparent border-none",
+                  ...clerkFillElements,
                   headerTitle: "hidden",
                   headerSubtitle: "hidden",
                   socialButtons: "block",

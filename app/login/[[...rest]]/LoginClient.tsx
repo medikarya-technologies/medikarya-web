@@ -2,6 +2,7 @@
 
 import { SignIn } from "@clerk/nextjs"
 import { useMounted } from "@/hooks/use-mounted"
+import { clerkFillElements } from "@/lib/clerk-fill"
 
 export default function LoginClient() {
   // Clerk's box is drawn once the page has loaded, so the server and the first browser render match (hooks/use-mounted.ts)
@@ -31,7 +32,7 @@ export default function LoginClient() {
         }}
       />
 
-      <div className="relative mx-auto max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl">
+      <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-lg">
         <div
           className="relative overflow-hidden rounded-2xl sm:rounded-3xl border bg-white/80 shadow-xl backdrop-blur-md p-4 sm:p-6 md:p-8 lg:p-10 mx-auto my-auto animate-fade-in-up"
         >
@@ -51,7 +52,7 @@ export default function LoginClient() {
               appearance={{
                 elements: {
                   formButtonPrimary: "w-full rounded-xl py-4 sm:py-6 text-sm sm:text-base font-medium bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",
-                  card: "shadow-none bg-transparent border-none",
+                  ...clerkFillElements,
                   headerTitle: "hidden",
                   headerSubtitle: "hidden",
                   socialButtons: "block",
