@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { currentSubscription, periodOfPlan } from "@/lib/payments/subscriptions";
+import { ENDED_STATUSES, currentSubscription, periodOfPlan } from "@/lib/payments/subscriptions";
 
 // The student's current paid subscription, for the Plan & billing page: which, how it bills, when it renews or ends.
 // null when they are on the free plan.
@@ -17,7 +17,7 @@ export async function GET() {
         period: periodOfPlan(sub.razorpay_plan_id),
         status: sub.status,
         currentEnd: sub.current_end,
-        cancelAt: sub.cancel_at ?? (["cancelled", "completed", "halted"].includes(sub.status) ? sub.current_end : null),
+        cancelAt: sub.cancel_at ?? (ENDED_STATUSES.includes(sub.status) ? sub.current_end : null),
       },
     });
   } catch (error) {

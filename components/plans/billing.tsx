@@ -66,6 +66,8 @@ function CancelButton({ sub, onCancelled }: { sub: Subscription; onCancelled: ()
   const [busy, setBusy] = useState(false)
   const name = PLAN_OFFERS[sub.tier].name
   const until = sub.currentEnd ? longDate(sub.currentEnd) : "the end of this billing period"
+  // A renewal that hasn't gone through: the cancel route ends the plan at once, since that cycle was never paid.
+  const unpaid = sub.status === "pending"
 
   const cancel = async () => {
     setBusy(true)
@@ -74,7 +76,12 @@ function CancelButton({ sub, onCancelled }: { sub: Subscription; onCancelled: ()
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       trackEvent("Plan_Cancelled", { cancelled_plan: `${sub.tier}_${sub.period}` })
-      toast({ title: "Subscription cancelled", description: `You won't be charged again. ${name} stays until ${data.cancelAt ? longDate(data.cancelAt) : until}.` })
+      toast({
+        title: "Subscription cancelled",
+        description: unpaid
+          ? "You won't be charged again. You're on the free Student plan now."
+          : `You won't be charged again. ${name} stays until ${data.cancelAt ? longDate(data.cancelAt) : until}.`,
+      })
       await refreshPlan()
       onCancelled()
     } catch (error) {
@@ -95,8 +102,17 @@ function CancelButton({ sub, onCancelled }: { sub: Subscription; onCancelled: ()
         <AlertDialogHeader>
           <AlertDialogTitle>Cancel your {name} plan?</AlertDialogTitle>
           <AlertDialogDescription>
-            You won&apos;t be charged again. You keep {name} until {until}, then move to the free Student plan. Your attempts, scores and
-            progress stay.
+            {unpaid ? (
+              <>
+                Your last renewal hasn&apos;t been paid, so {name} ends now and you move to the free Student plan. You won&apos;t be charged
+                again. Your attempts, scores and progress stay.
+              </>
+            ) : (
+              <>
+                You won&apos;t be charged again. You keep {name} until {until}, then move to the free Student plan. Your attempts, scores and
+                progress stay.
+              </>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

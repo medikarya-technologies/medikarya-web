@@ -1,8 +1,19 @@
-import dynamic from "next/dynamic"
 import type { Metadata } from "next"
 import { Navbar } from "@/components/flowai/navbar"
 import { Hero } from "@/components/flowai/hero"
 import { MarqueeStrip } from "@/components/flowai/marquee-strip"
+// Plain imports, not next/dynamic: every section is server-rendered and its code loads at once anyway, and a
+// dynamic() section arrives as a hidden streamed block that only shows after JavaScript runs, so crawlers and link
+// previews reading the HTML missed most of the page (story, pilot, pricing, footer links).
+import StorySection from "@/components/flowai/sections/story-section"
+import DeteriorationSection from "@/components/flowai/sections/deterioration-section"
+import DebriefSection from "@/components/flowai/sections/debrief-section"
+import { DashboardPreview } from "@/components/flowai/dashboard-preview"
+import PilotProofSection from "@/components/flowai/sections/pilot-proof-section"
+import ContributeSection from "@/components/flowai/sections/contribute-section"
+import PricingSection from "@/components/flowai/sections/pricing-section"
+import FinalCtaSection from "@/components/flowai/sections/final-cta-section"
+import { Footer } from "@/components/flowai/footer"
 import { pageMetadata } from "@/lib/seo/site"
 
 // Section lineup — 8 chapters below the hero.
@@ -36,34 +47,6 @@ import { pageMetadata } from "@/lib/seo/site"
 
 const JOURNEY_ITEMS = ["History", "Investigate", "Deteriorate", "Debrief", "Reinforce"]
 const SKILL_ITEMS = ["History taking", "Investigations", "Clinical reasoning", "Diagnosis", "Management", "Nothing here is staged"]
-
-const StorySection = dynamic(() => import("@/components/flowai/sections/story-section"), {
-  loading: () => <div className="h-[650px] w-full bg-brand-50" />,
-})
-const DeteriorationSection = dynamic(() => import("@/components/flowai/sections/deterioration-section"), {
-  loading: () => <div className="h-[720px] w-full bg-brand-950" />,
-})
-const DebriefSection = dynamic(() => import("@/components/flowai/sections/debrief-section"), {
-  loading: () => <div className="h-[730px] w-full bg-brand-50" />,
-})
-const PilotProofSection = dynamic(() => import("@/components/flowai/sections/pilot-proof-section"), {
-  loading: () => <div className="h-[520px] w-full bg-brand-50" />,
-})
-const ContributeSection = dynamic(() => import("@/components/flowai/sections/contribute-section"), {
-  loading: () => <div className="h-[620px] w-full bg-enc-desk" />,
-})
-const DashboardPreview = dynamic(() => import("@/components/flowai/dashboard-preview").then((mod) => mod.DashboardPreview), {
-  loading: () => <div className="h-[560px] w-full bg-enc-sheet" />,
-})
-const PricingSection = dynamic(() => import("@/components/flowai/sections/pricing-section"), {
-  loading: () => <div className="h-[720px] w-full bg-brand-950" />,
-})
-const FinalCtaSection = dynamic(() => import("@/components/flowai/sections/final-cta-section"), {
-  loading: () => <div className="h-[420px] w-full bg-brand-50" />,
-})
-const Footer = dynamic(() => import("@/components/flowai/footer").then((mod) => mod.Footer), {
-  loading: () => <div className="h-[320px] w-full bg-enc-console" />,
-})
 
 export const metadata: Metadata = pageMetadata({
   path: "/",

@@ -1,7 +1,7 @@
 import { supabaseServer } from "@/lib/supabase/server";
-import { HOLDING_STATUSES, stillHolds, type SubscriptionRow } from "./holding";
+import { HOLDING_STATUSES, paidThroughToStore, stillHolds, type CycleDates, type SubscriptionRow } from "./holding";
 
-export { HOLDING_STATUSES, stillHolds, type SubscriptionRow } from "./holding";
+export { ENDED_STATUSES, HOLDING_STATUSES, stillHolds, type SubscriptionRow } from "./holding";
 
 // The paid tiers and how they're billed. Each (tier, period) is one Razorpay Plan, made in the dashboard or via
 // the API, and referenced by id from env, since the plan is the source of truth for price. Test and live mode
@@ -59,18 +59,20 @@ export async function saveSubscription(
   const { userId, tier } = subscriptionOwner(sub);
   if (!userId || !tier) return { error: `Subscription ${sub.id} has no userId/tier in notes`, unattributed: true };
 
-  // Some terminal lifecycle events omit current_end. Keep the last known paid-through date in that case,
-  // otherwise a mandate deleted in the UPI app could erase access to an already-paid billing period.
-  let currentEnd = sub.current_end == null ? null : new Date(sub.current_end * 1000).toISOString();
-  if (currentEnd == null) {
-    const { data, error } = await supabaseServer
-      .from("subscriptions")
-      .select("current_end")
-      .eq("razorpay_subscription_id", sub.id)
-      .maybeSingle();
-    if (error) return { error: error.message };
-    currentEnd = data?.current_end ?? null;
-  }
+  // What we stored last decides how far a cancelled mandate's paid period runs (see paidThroughToStore).
+  const stored = await supabaseServer
+    .from("subscriptions")
+    .select("status, current_start, current_end")
+    .eq("razorpay_subscription_id", sub.id)
+    .maybeSingle();
+  if (stored.error) return { error: stored.error.message };
+
+  const iso = (seconds?: number | null) => (seconds ? new Date(seconds * 1000).toISOString() : null);
+  const currentStart = iso(sub.current_start);
+  const currentEnd = paidThroughToStore(
+    { status: sub.status, current_start: currentStart, current_end: iso(sub.current_end) },
+    (stored.data as CycleDates | null) ?? null
+  );
 
   const { error } = await supabaseServer.from("subscriptions").upsert(
     {
@@ -79,7 +81,7 @@ export async function saveSubscription(
       razorpay_plan_id: sub.plan_id,
       tier,
       status: sub.status,
-      current_start: sub.current_start ? new Date(sub.current_start * 1000).toISOString() : null,
+      current_start: currentStart,
       current_end: currentEnd,
       updated_at: new Date().toISOString(),
     },
