@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { Navbar } from "@/components/flowai/navbar"
 import { Hero } from "@/components/flowai/hero"
 import { MarqueeStrip } from "@/components/flowai/marquee-strip"
@@ -60,6 +61,17 @@ export default function Page() {
   return (
     <main className="min-h-dvh bg-enc-desk">
       <Navbar />
+      <aside aria-label="First-time subscriber offer" className="bg-brand-900 px-4 py-2.5 text-white">
+        <p className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[13px] sm:text-sm">
+          <span className="font-semibold">New to MediKarya? Get 10% off your first paid plan.</span>
+          <span className="text-white/75">Use</span>
+          <code className="rounded-md border border-white/20 bg-white/10 px-2 py-0.5 font-mono font-bold tracking-wide text-white">MEDIKARYA10</code>
+          <span className="text-white/75">on UPI · ends 14 Nov 2026.</span>
+          <Link href="#pricing" className="rounded-sm font-semibold text-brand-100 underline underline-offset-2 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+            Explore plans
+          </Link>
+        </p>
+      </aside>
       <Hero />
       <MarqueeStrip items={JOURNEY_ITEMS} />
 
