@@ -19,7 +19,7 @@ const args = process.argv.slice(2);
 const all = args.includes('--all');
 const outAt = args.indexOf('--out');
 const outDir = path.resolve(outAt >= 0 ? args[outAt + 1] : path.join(__dirname, '../data/cases'));
-const id = args.find((a, i) => !a.startsWith('--') && i !== outAt + 1);
+const id = args.find((a, i) => !a.startsWith('--') && (outAt < 0 || i !== outAt + 1));
 
 async function main() {
   if (!all && !id) throw new Error('Give a case id, or --all.');

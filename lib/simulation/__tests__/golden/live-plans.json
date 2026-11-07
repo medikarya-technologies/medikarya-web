@@ -1508,7 +1508,7 @@
   },
   "40-year-old-man-found-unconscious-at-home": {
     "plan_sha": "9ee87d43b81dd2cb0dd60a5f37dc484e1e58cddf76af32bda9224c016ef4d284",
-    "compiled_sha": "a10e360b87e5716f0218c9f51acfa40216cf6b9afdb85a2c98e1b5eb99bc05c7",
+    "compiled_sha": "4151c14c1d9ba1af8da4566a4225cfe241d694a13c70d49b65a254ff55d85ea4",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -1775,7 +1775,7 @@
   },
   "45-year-old-woman-with-fever-who-has-become-confused": {
     "plan_sha": "00ac95b38e2cefd2e7050e052111bf9d7df7671f8356370bb4d3cab517c4ad0f",
-    "compiled_sha": "03053fa4569551046bbed96426d534a73f3283a206a66ee60342ccaaa8ffe3da",
+    "compiled_sha": "54440f436d7f663e3b0c6c670bc815f71d43c2d874241724de334e000a394814",
     "playthroughs": {
       "untreated": {
         "score": 0,
@@ -2858,7 +2858,7 @@
   },
   "56-year-old-man-with-chest-pain-and-a-slow-pulse": {
     "plan_sha": "7fba1403197f50149e9b3ab09bab8b97909097ce09d7928ca0366557031b193f",
-    "compiled_sha": "711a168df753c2e68b512554e41c55b3b06e88128e5b2b04ab19ae055b7c7e32",
+    "compiled_sha": "40353e8d829457cc0cb85b948c1dbb0cce09ce38fcab2ad2ee73aa06183fb6a8",
     "playthroughs": {
       "untreated": {
         "score": 0,

@@ -41,6 +41,10 @@ on the user. Detailed notes per feature live in the auto-memory folder (index `M
 
 - `engine/`: the AI patient (`chatEngine.ts`; `chatHistory.ts`: the browser sends the conversation, the server
   keeps none) and evaluation.
+- `engine/evaluation/diagnosisMatch.ts`: how a written diagnosis is marked when the AI examiner is down, and the floor
+  when it is up (spelling slips, abbreviations and harmless extra words like "high fever" pass; words that change the
+  diagnosis do not). `npm run test:sim` fails if two diagnosis words in `data/cases` are a slip apart: list real ones
+  in `DISTINCT_CLINICAL_WORDS`.
 - `lib/plans/`: `limits.ts` (Student free / Intern / Resident), `server.ts` (a student's plan), `grants.ts` (free
   plan time: case-writer rewards and workshop passes), `passes.ts`, `access.ts` (rate limits, `isAdmin`).
 - `lib/studio/`: reading and writing the studio's database from the main site.

@@ -122,9 +122,12 @@ export class DeterministicScorer {
                     },
                 };
             }
-            // Penalise ordering tests when not needed
+            // Penalise ordering tests when not needed. A test the case lists as core or optional is a sensible one
+            // (blood sugar for a diabetic with shingles, the X-ray after a chest drain), so it costs nothing.
+            const sensible = new Set([...core, ...optional, ...(cfg.core_test_groups ?? []).flat()]);
+            const unneeded = orderedTests.filter((t) => !sensible.has(t.id)).length;
             return {
-                testingScore: Math.max(0, 20 - orderedTests.length * 3),
+                testingScore: Math.max(0, 20 - unneeded * 3),
                 safetyPenalty: 0,
                 breakdown: {
                     coreMatched: 0,

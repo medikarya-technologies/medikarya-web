@@ -260,6 +260,31 @@ findings (pulse of 36, low platelets, haemolysis, enlarged kidneys) were marked 
 student lost marks for not asking about them. They are now non-critical. The seven cases whose scoring changed were
 played through again with the AI patient and the evaluator: 96 to 99, correct diagnosis.
 
+## New cases (written from guidelines, 2026-11-06)
+
+Written by the team from the sources below, every dose and threshold checked in the PDF text, and played through
+with the AI patient and the evaluator before publishing (scores 99 to 100, correct diagnosis).
+
+| Diagnosis | Written from | Notes |
+|---|---|---|
+| Acute primary angle-closure glaucoma | ICMR STW Glaucoma (July 2020); Royal Victorian Eye and Ear Hospital APAC guideline (2021) | ICMR gives the drugs (acetazolamide, IV mannitol, pilocarpine 2%, iridotomy for all angle closure) but no acute doses; acetazolamide 500 mg and its sulfonamide contraindication from RVEEH. No mannitol dose stated (neither source gives one). First ophthalmology case. |
+| Russell's viper envenomation with coagulopathy | MoHFW STG Management of Snake Bite (August 2017); WHO SEARO 2016 | 20WBCT, no test dose, 10 vials then low-dose 2 vials 6-hourly, repeat 20WBCT at 6 h, prophylactic adrenaline 0.25 mg SC, no NSAIDs or IM injections. |
+| Category III dog bite (rabies PEP) | NCDC National Guidelines for Rabies Prophylaxis 2019 (scanned PDF, read from page images); WHO position paper 2018 | Categories, 15-minute wash, ERIG 40 / HRIG 20 IU/kg infiltrated (not beyond day 7), ID 2-2-2-0-2 or IM Essen 0-3-7-14-28, 10-day observation rule. |
+| Iron deficiency anaemia from heavy menstrual bleeding (copper IUCD) | ICMR STW Heavy Menstrual Bleeding (December 2025); Anemia Mukt Bharat Abhiyaan Operational Guidelines (2026) | AMB 2026 cut-offs (non-pregnant: moderate 8.0-10.9) and treatment (1 IFA Red daily for 3 months, retest at 2 months); tranexamic acid, LNG-IUS, transfusion only below 7 g/dL. |
+| First simple febrile seizure | AAP 2011 (neurodiagnostic evaluation) and AAP 2008 (long-term management); ICMR STW Epilepsy and Fever in Children | No Indian guideline covers febrile seizures; ICMR used for paracetamol 15 mg/kg and the 5-minute rescue (buccal/intranasal midazolam 0.3-0.5 mg/kg). |
+
+## New cases (written from guidelines, batch 2, 2026-11-06)
+
+Same method; played through before publishing (scores 97 to 100, correct diagnosis).
+
+| Diagnosis | Written from | Notes |
+|---|---|---|
+| Mild acute bronchiolitis in an infant (home care, no oxygen) | NICE NG9 (2015, updated 2021); AAP 2014; WHO Pocket Book of Hospital Care for Children 2013 (4.5); ICMR STW Severe Pneumonia in Children 2019 (when to suspect bronchiolitis) | Follows the 90% SpO2 line (NICE 2021 = AAP). WHO and IMNCI allow a bronchodilator trial when the cause of a wheeze is unclear, so only regular salbutamol for home is marked as harmful. No Indian source gives detailed management (IAP STG 2022 has no official free copy). |
+| Severe acute otitis media in a toddler (immediate antibiotics) | ICMR Antimicrobial Treatment Guidelines 2019 (4.1.6.2, Table 4.1); ICMR STW Otorrhoea 2019; NCDC National Treatment Guidelines v2.0 (Nov 2025, 7.4); AAP 2013; WHO Pocket Book 2013; NICE NG91 | NCDC 2025 classifies fever ≥39 °C, severe otalgia, otalgia >48 hours, bulging drum or complication as severe and lists amoxicillin-clavulanate 90/6.4 mg/kg/day divided BID for 5–7 days. This is the regimen used in the case. ICMR/AAP differ on first line and duration; keep that distinction explicit. |
+| Uncomplicated thoracic herpes zoster, over 50, with diabetes | ICMR/DHR STW Varicella and Herpes Zoster (July 2022); EDF/EADV S2k guideline Parts 1 and 2 (2017); CDC shingles overview (2024) and recombinant vaccine guidance (2024) | Acyclovir 800 mg five times a day or valacyclovir 1 g three times a day for 7 days within 72 h; pain ladder as ICMR; vaccine not during the acute episode; contact precautions for a pregnant non-immune contact. Neither source names an NSAID dose, so none is given. |
+| Primary osteoarthritis of both knees | ICMR STW Osteoarthritis of Knee Joint (July 2024); NICE NG226 (2022) | Follows ICMR on standing X-rays and NICE on paracetamol (not routine). Topical NSAID first, oral NSAID with a PPI; no hyaluronan or arthroscopic lavage. Kidney function is core because she takes a daily over-the-counter NSAID (NICE 1.4.4 renal risk). No doses in either source, so none is given. |
+| Schizophrenia, first episode, no substance use | IPS Clinical Practice Guidelines for schizophrenia 2026 (Indian J Psychiatry 68 Suppl 1); ICMR STW Psychosis (Oct 2019); IPS CPG 2017; ICD-11 6A20 | Baseline CBC, LFT, RFT, fasting glucose, lipids; risperidone 2 mg at night for a week then 3-4 mg (ICMR); IPS 2026 monitoring table; treat 1-2 years after remission. Follows IPS over ICMR on routine trihexyphenidyl (not penalised either way). CT/MRI only with organic features (IPS 2026). |
+
 ## Needs a download (blocked here by the publisher's bot check)
 
 Nothing outstanding. Received 2026-10-29 from the user and filed: Baveno VIII (from the whole November 2026 Journal of

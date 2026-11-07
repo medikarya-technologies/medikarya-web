@@ -158,6 +158,12 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
         for (const id of t.core_tests) if (!testIds.has(id)) errors.push(`Core test "${id}" has no result in tests[].`);
         // Each core test missed costs 5 of the 20 testing marks (engine/evaluation/DeterministicScorer.ts), so a long
         // list scores a sensible work-up at 0. Core is what confirms the diagnosis; the rest is optional.
+        // +8 per core test and +3 per optional one, capped at 20: with too few, a student who orders all of them still
+        // cannot reach full marks.
+        const reachable = 8 * (t.core_tests.length + groups.length) + 3 * (strArr(t.optional_tests) ? t.optional_tests.length : 0);
+        if (t.core_tests.length + groups.length > 0 && reachable < 20) {
+          warnings.push(`A student who orders every core and optional test scores only ${reachable} of 20 for testing: add a core or optional test.`);
+        }
         if (t.core_tests.length + groups.length > 5) {
           warnings.push(`${t.core_tests.length + groups.length} core tests: a student who orders a sensible 3 would score near 0 for testing. Keep core to the tests that confirm the diagnosis (5 at most) and make the rest optional.`);
         }
@@ -168,6 +174,11 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
     if (!isObj(d) || !strArr(d.accepted_primary) || d.accepted_primary.length === 0) errors.push("evaluation_config.diagnosis.accepted_primary is empty.");
     else {
       accepted = d.accepted_primary;
+      // Spelling, plurals, "probable" and the usual abbreviations are forgiven by the matcher, but a different
+      // wording ("lobar pneumonia" for "community-acquired pneumonia") only counts if it is listed.
+      if (d.accepted_primary.length < 3) {
+        warnings.push(`Only ${d.accepted_primary.length} accepted diagnosis wording(s): add the other ways a correct student would write it (short name, abbreviation, with or without the cause).`);
+      }
       // The scorer counts an answer correct if it matches an accepted wording OR contains EVERY keyword
       // (engine/evaluation/diagnosisMatch.ts). One keyword ("copd") is a second route to correct; several that are
       // really alternatives ("tb", "tuberculosis", "koch") can never all appear, so the keyword route would be dead.

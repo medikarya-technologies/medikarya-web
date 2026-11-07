@@ -25,3 +25,11 @@ test("ordering no member of a group costs the missed-core penalty once", () => {
   assert.deepEqual(r.breakdown.missedCore, ["vbg or glucose_random"]);
   assert.ok(order("ecg", "vbg").testingScore > r.testingScore);
 });
+
+test("when no test is required, only tests the case does not list cost marks", () => {
+  const none: any = { testing: { testing_required: false, core_tests: [], optional_tests: ["glucose_random"], distractor_tests: ["ct_chest"], dangerous_tests: [] } };
+  const score = (...ids: string[]) => DeterministicScorer.scoreTesting(ids.map((id) => ({ id, name: id })), none).testingScore;
+  assert.equal(score(), 20);
+  assert.equal(score("glucose_random"), 20);
+  assert.equal(score("glucose_random", "ct_chest"), 17);
+});

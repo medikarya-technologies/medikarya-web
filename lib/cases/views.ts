@@ -43,6 +43,15 @@ export function playView(caseData: Json): Json {
   if (caseData.patient && typeof caseData.patient === "object") {
     view.patient = Object.fromEntries(PATIENT_AT_THE_BEDSIDE.filter((k) => k in caseData.patient).map((k) => [k, caseData.patient[k]]));
   }
+  // A test's basis is the writer's note on where its values come from ("written to fit a first simple febrile
+  // seizure..."): it names the diagnosis, and only the review screens read it.
+  if (Array.isArray(caseData.tests)) {
+    view.tests = caseData.tests.map((t: Json) => {
+      if (!t || typeof t !== "object" || !t.result || typeof t.result !== "object" || !("basis" in t.result)) return t;
+      const { basis: _basis, ...result } = t.result;
+      return { ...t, result };
+    });
+  }
   // who speaks for the patient is all the screen needs of the AI's role
   if (caseData.ai_role) view.ai_role = { speaker: caseData.ai_role.speaker, can_speak_for_self: caseData.ai_role.can_speak_for_self };
   view.playView = true;
