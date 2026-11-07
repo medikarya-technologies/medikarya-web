@@ -83,6 +83,16 @@ export default function PricingSection() {
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Free to start. Upgrading is optional.</h2>
         <p className="mt-4 text-lg leading-relaxed text-white/60">The Student plan stays free and gives you the whole case: history, examination, tests, diagnosis and debrief. The paid plans are there if you want more cases a day, harder cases and more live emergencies.</p>
 
+        <aside aria-label="First-time subscriber offer" className="mx-auto mt-6 max-w-xl rounded-2xl border border-brand-300/25 bg-white/[0.04] px-4 py-3 text-left sm:flex sm:items-center sm:justify-between sm:gap-4">
+          <div>
+            <p className="text-sm font-semibold text-white">Get 10% off your first paid plan</p>
+            <p className="mt-1 text-xs leading-relaxed text-white/60">For first-time subscribers paying by UPI · offer ends 14 Nov 2026</p>
+          </div>
+          <p className="mt-3 shrink-0 text-xs text-white/60 sm:mt-0">
+            Use <code className="rounded-md border border-brand-300/25 bg-brand-500/10 px-2 py-1 font-mono font-bold tracking-wide text-brand-200">MEDIKARYA10</code> at checkout
+          </p>
+        </aside>
+
         {/* Toggle */}
         <div className="mt-7 inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
           {(["monthly", "annual"] as const).map((p) => (
