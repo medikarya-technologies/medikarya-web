@@ -36,7 +36,13 @@ export async function getCaseAttemptHistory(caseId: string): Promise<CaseAttempt
             return [];
         }
 
-        return data as CaseAttempt[];
+        // The saved grading audit is for admin review and re-scoring. The student-facing debrief
+        // already has its own case data, so do not send the hidden rubric snapshot to the browser.
+        return (data as CaseAttempt[]).map((attempt) => {
+            if (!attempt.feedback_json || typeof attempt.feedback_json !== "object") return attempt;
+            const { gradingAudit: _gradingAudit, ...feedback } = attempt.feedback_json;
+            return { ...attempt, feedback_json: feedback };
+        });
     } catch (error) {
         console.error("Failed to fetch case attempt history:", error);
         return [];

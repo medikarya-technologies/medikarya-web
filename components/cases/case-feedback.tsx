@@ -603,6 +603,15 @@ function LegacyCaseFeedback({
 
         <ProgressHeader step={step} total={totalSteps} onReport={onReport} />
 
+        {step === 0 && feedback?.scoreCorrection && (
+          <div role="status" className="my-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950">
+            <p className="font-semibold">Score updated after review</p>
+            <p className="mt-1 text-sky-900">
+              Your diagnosis was accepted. The earlier score did not recognize it, so your result has been corrected to {feedback.scoreCorrection.correctedScore}/100.
+            </p>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           <motion.div
             key={step}

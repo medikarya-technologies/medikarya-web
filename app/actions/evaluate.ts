@@ -11,6 +11,7 @@ import { headers } from "next/headers";
 import { checkAiAccess } from "@/lib/plans/access";
 import { activeInvite } from "@/lib/advisors/invites";
 import { scoreClassicAttempt, scoreRubricAttempt } from "@/lib/scoring/score-attempt";
+import { gradingAuditFor } from "@/lib/scoring/grading-audit";
 
 /** Scoring spends AI (classic cases) and records an attempt: same rules as the AI routes (lib/plans/access.ts). */
 async function authorisedCase(caseId: unknown) {
@@ -235,6 +236,7 @@ async function evaluateClassicEncounter(
             caseId,
             caseTitle: config.displayTitle || config.title,
             timestamp: new Date().toISOString(),
+            gradingAudit: gradingAuditFor(config),
             simulation,
         },
         guestId,
@@ -281,6 +283,7 @@ export async function evaluateSimulation(
                 caseId,
                 caseTitle: (config as any).displayTitle || (config as any).title,
                 timestamp: new Date().toISOString(),
+                gradingAudit: gradingAuditFor(config),
             },
             guestId,
         });

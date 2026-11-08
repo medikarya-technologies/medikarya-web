@@ -7,7 +7,7 @@
 //  - NO numeric history sub-score passed to LLM (prevents anchoring)
 //  - Red flags passed with human-readable descriptions (not just slugs)
 //  - Full transcript sent (guaranteed turns: first5 + last5 + intent-mapped)
-//  - historyQualityScore only requested when needsLLMHistoryScore = true
+//  - historyQualityScore always requested; the v2 history rubric uses it for every attempt
 //  - Constrained rubric with hard max_score ceiling
 
 import { ExtractedConsultation, RedFlag, CoverageEntry } from "./types";
@@ -54,7 +54,6 @@ export class ReasoningPromptBuilder {
             ?? caseData.displayTitle
             ?? caseData.title
             ?? "N/A";
-        const keywords: string = evalConfig?.diagnosis?.must_include_keywords?.join(", ") ?? "";
 
         // ── History: coverage by message number, and quality (always) ────────
         const requiredQuestions: string[] = (evalConfig?.history?.required_questions ?? []).filter((q: unknown) => typeof q === "string");
@@ -118,7 +117,6 @@ SCORING GUIDE:
 
 2. diagnosisScore (0–15):
    Accepted answers: ${acceptedDx}
-   ${keywords ? `An answer is also correct if it contains all of these keywords: ${keywords}. They are a second way to be correct, not a requirement: an answer that matches or means the same as an accepted answer is correct without them.` : ""}
    Ignore case, punctuation, spelling slips and abbreviations (e.g. "Hypertension." is "Hypertension", "gastroentritis" is "gastroenteritis", "fevir" is "fever"). Judge the meaning, as a clinician would.
    Extra words that do not change the diagnosis are fine ("high fever" for "fever", "probable appendicitis" for "appendicitis"). Words that do change it are not ("complex" for a simple febrile seizure, "chronic" for an acute illness, "afebrile", "non-", a different organism, a different severity or a second disease named as the main one).
    12–15: the right diagnosis (15 if as specific as the case needs, 12–14 if right but vaguer). A mark of 12 or more is shown to the student as correct.

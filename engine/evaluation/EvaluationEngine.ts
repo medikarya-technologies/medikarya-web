@@ -1,14 +1,12 @@
 // =========================
 // engine/evaluation/EvaluationEngine.ts
 // =========================
-// Orchestrates the 4-layer evaluation pipeline:
+// Orchestrates the evaluation pipeline:
 //
-//   Layer 1: IntentExtractor        → structured signals from chat
-//   Layer 2: DeterministicScorer    → testingScore + 70% historyScore
-//   Layer 3: LLM (via ReasoningPromptBuilder) → reasoning, diagnosis,
-//                                               management, historyQuality,
-//                                               missedRedFlags (semantic)
-//   Layer 4: Red Flag Resolver      → tiered penalty (full/partial/none)
+//   1. IntentExtractor              → structured signals from chat
+//   2. DeterministicScorer           → structured investigation and safety marks
+//   3. AI examiner                   → reasoning, history, diagnosis, management and red flags
+//   4. Red Flag Resolver             → penalty from the examiner's clinical verdict
 
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { IntentExtractor } from "./IntentExtractor";
@@ -91,10 +89,9 @@ export class EvaluationEngine {
         }
 
         // ── Layer 2b: History ─────────────────────────────────────────────────
-        // Two versions (EVALUATION_ENGINE.md, "History, version 2"). Version 1 is worked out here as before; version
-        // 2 needs the examiner's coverage answer, so it is worked out after Layer 3. HISTORY_SCORING decides which
-        // one the student sees: version 2 by default; "v1" is the way back, "shadow" shows version 1 and stores both.
-        const historyMode = historyScoringMode(process.env.HISTORY_SCORING);
+        // Keep the retired rule-based score for comparison in the audit, but never let a deployment setting select
+        // it for a student's mark. New attempts always use the AI-semantic v2 score.
+        const historyMode = historyScoringMode();
         console.log(`EvaluationEngine: Layer 2 — scoring history coverage (mode ${historyMode})...`);
         const coverageResult = evalConfig
             ? DeterministicScorer.scoreCoverage(extracted, evalConfig)
@@ -169,11 +166,6 @@ export class EvaluationEngine {
                 },
             };
 
-            // Version 1 used the quality score only in its 8-14 band (version 2 always uses it).
-            if (!coverageResult.needsLLMHistoryScore) {
-                llmResult.historyQualityScore = 0;
-            }
-
             console.log(
                 `EvaluationEngine: LLM scores — reasoning=${llmResult.reasoningScore}, ` +
                 `historyQuality=${llmResult.historyQualityScore}, ` +
@@ -183,7 +175,7 @@ export class EvaluationEngine {
         } catch (err: any) {
             console.error("EvaluationEngine: LLM call failed, using fallback:", err.message);
             aiOk = false;
-            const dxOk = diagnosisMatches(primaryDiagnosis, evalConfig?.diagnosis?.accepted_primary ?? [], evalConfig?.diagnosis?.must_include_keywords ?? []);
+            const dxOk = diagnosisMatches(primaryDiagnosis, evalConfig?.diagnosis?.accepted_primary ?? [], []);
             llmResult = {
                 reasoningScore: 10,
                 historyQualityScore: coverageResult.needsLLMHistoryScore ? 3 : 0,
@@ -225,8 +217,11 @@ export class EvaluationEngine {
 
         // ── Aggregate scores ──────────────────────────────────────────────────
         // Round to avoid floating-point display artifacts (e.g. 7.6999999999)
+        // Retain the old score as a comparison only. Its quality marks were deliberately conditional on the old
+        // 8–14 coverage band; the student's v2 score below always uses the examiner's quality judgement.
+        const historyV1Quality = coverageResult.needsLLMHistoryScore ? llmResult.historyQualityScore : 0;
         const historyV1 = Math.round(
-            Math.min(25, coverageResult.structuredHistoryScore + llmResult.historyQualityScore) * 10
+            Math.min(25, coverageResult.structuredHistoryScore + historyV1Quality) * 10
         ) / 10;
         const historyV2: HistoryV2 = scoreHistory({
             required: evalConfig?.history?.required_questions ?? [],
@@ -234,11 +229,11 @@ export class EvaluationEngine {
             aiCoverage: aiHistoryCoverage,
             aiQuality: aiHistoryQuality,
         });
-        const historyScore = historyMode === "v2" ? historyV2.total : historyV1;
+        const historyScore = historyV2.total;
         console.log(
             `EvaluationEngine: history v1=${historyV1}, v2=${historyV2.total} ` +
             `(asked ${historyV2.asked}/${historyV2.of} by ${historyV2.coverageBy}, quality ${historyV2.quality} by ${historyV2.qualityBy}), ` +
-            `showing ${historyMode === "v2" ? "v2" : "v1"}`
+            `showing ${historyMode}`
         );
 
         const baseScore =
@@ -263,14 +258,12 @@ export class EvaluationEngine {
         // ── Determine isCorrect ───────────────────────────────────────────────
         const studentDx = primaryDiagnosis;
         const acceptedDx: string[] = evalConfig?.diagnosis?.accepted_primary ?? [];
-        const keywords: string[] = evalConfig?.diagnosis?.must_include_keywords ?? [];
-
         // The examiner reads the answer the way a clinician would (typos, word order, abbreviations), so its mark
-        // decides: 12 of 15 or more is correct. An exact accepted wording always counts. Only without the examiner
-        // do the keywords decide.
+        // decides: 12 of 15 or more is correct. An exact accepted wording is a safety net; configured keywords do
+        // not affect diagnosis marks, even when the examiner is unavailable.
         const isCorrect = aiOk
             ? llmResult.diagnosisScore >= DIAGNOSIS_CORRECT_FROM || diagnosisMatches(studentDx, acceptedDx, [])
-            : diagnosisMatches(studentDx, acceptedDx, keywords);
+            : diagnosisMatches(studentDx, acceptedDx, []);
 
         // ── Build UI-compatible testingEfficiency ─────────────────────────────
         const bd = deterministic.breakdown;
@@ -301,14 +294,14 @@ export class EvaluationEngine {
             redFlagResolutions,
 
             // Which history scorer marked this attempt, so trends, skills and workshop ranks never mix the two silently.
-            scoringVersion: { history: historyMode === "v2" ? 2 : 1, diagnosis: 2 },
+            scoringVersion: { history: 2, diagnosis: 2 },
             // Scored without the examiner (the AI call failed): re-scored later by scripts/rescore-provisional.ts.
             ...(aiOk ? {} : { provisional: true }),
-            // Both versions, always: the comparison behind the switch, and the way back if it is ever switched off.
+            // Keep the legacy heuristic only for internal comparison; it never contributes to the student's score.
             historyScoring: { mode: historyMode, v1: historyV1, v2: historyV2 },
             // What the debrief lists ("You did not ask about: ..."), from the version the student sees. Version 1's
-            // list was often wrong, so it is only given with version 2.
-            ...(historyMode === "v2" ? { historyReview: historyReview(historyV2) } : {}),
+            // list was often wrong, so it is derived only from version 2.
+            historyReview: historyReview(historyV2),
 
             feedback: {
                 strengths:    llmResult.feedback.strengths,

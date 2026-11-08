@@ -64,16 +64,16 @@ function good(): any {
 }
 
 describe("checkDraft: the history the scorer can mark", () => {
-  it("rejects a required question that names no topic", () => {
+  it("rejects a blank required question", () => {
     const c = good();
-    c.evaluation_config.history.required_questions[0] = "how long";
-    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes('"how long" names no topic')));
+    c.evaluation_config.history.required_questions[0] = "  ";
+    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("cannot contain a blank item")));
   });
 
-  it("rejects a reference history the scorer cannot credit", () => {
+  it("does not reject a reference history because the local keyword matcher cannot read its lay wording", () => {
     const c = good();
-    c.evaluation_config.history.reference_questions = ["since when is the swelling?", "any other symptoms?"];
-    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("credited with only 1 of 4")));
+    c.evaluation_config.history.reference_questions = ["Any wee?"];
+    assert.equal(checkDraft(c, ctx).errors.length, 0);
   });
 
   it("warns when there is no reference history", () => {
@@ -82,15 +82,9 @@ describe("checkDraft: the history the scorer can mark", () => {
     assert.ok(checkDraft(c, ctx).warnings.some((w) => w.includes("reference_questions is missing")));
   });
 
-  it("rejects diagnosis keywords that are alternatives, since every one must appear", () => {
+  it("does not make publishing depend on legacy diagnosis keywords", () => {
     const c = good();
     c.evaluation_config.diagnosis.must_include_keywords = ["goitre", "thyroid"];
-    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("look like alternatives")));
-  });
-
-  it("allows one keyword that the accepted wordings need not contain (a second route to correct)", () => {
-    const c = good();
-    c.evaluation_config.diagnosis.must_include_keywords = ["mng"];
     assert.equal(checkDraft(c, ctx).errors.some((e) => e.includes("must_include_keywords")), false);
   });
 });

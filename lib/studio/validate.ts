@@ -4,9 +4,6 @@
 // "errors" (the draft would break or spoil something; the converter asks the model to fix them) or "warnings"
 // (worth a human look during the game check).
 
-import { contentTokens, requiredKeys, scoreHistory } from "../../engine/evaluation/historyCoverage";
-import { broadKeyword, keywordsMatch } from "../../engine/evaluation/diagnosisMatch";
-
 export interface CheckResult {
   errors: string[];
   warnings: string[];
@@ -179,18 +176,8 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
       if (d.accepted_primary.length < 3) {
         warnings.push(`Only ${d.accepted_primary.length} accepted diagnosis wording(s): add the other ways a correct student would write it (short name, abbreviation, with or without the cause).`);
       }
-      // The scorer counts an answer correct if it matches an accepted wording OR contains EVERY keyword
-      // (engine/evaluation/diagnosisMatch.ts). One keyword ("copd") is a second route to correct; several that are
-      // really alternatives ("tb", "tuberculosis", "koch") can never all appear, so the keyword route would be dead.
-      // At least one accepted wording must contain them all. And the route must not let a different disease in.
-      const kws = strArr(d.must_include_keywords) ? d.must_include_keywords : [];
-      if (kws.length > 1 && !d.accepted_primary.some((dx: string) => keywordsMatch(dx, kws))) {
-        errors.push(`diagnosis.must_include_keywords (${kws.join(", ")}) must ALL appear in a correct answer, but no accepted wording contains them all: they look like alternatives. Keep one, or only words every correct answer contains.`);
-      }
-      const broad = broadKeyword(kws);
-      if (broad) {
-        errors.push(`diagnosis.must_include_keywords is only "${broad}", which other diseases share: any answer containing it would score as correct. Use the word that tells this disease apart (e.g. "hypothyroid", not "thyroid"; "acute kidney", not "kidney").`);
-      }
+      // must_include_keywords remains on older case records for compatibility, but diagnosis scoring is semantic
+      // (AI) with accepted wordings as the outage safety net. Do not make case publishing depend on a keyword rule.
     }
     const m = ev.management;
     if (!isObj(m) || !strArr(m.core_steps) || m.core_steps.length === 0 || !strArr(m.dangerous_steps)) {
@@ -235,9 +222,8 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
 }
 
 /**
- * The history the scorer can mark (EVALUATION_ENGINE.md, "History, version 2"). Each required question must name
- * its own topic, or no student can be credited for it when the AI examiner is unavailable; and the case's own
- * strong reference history, when it has one, must be credited with at least 90% of them by the keyword matcher.
+ * Checks the structure of the case's history rubric. Clinical meaning is marked by the AI examiner, so local
+ * keyword coverage is not used to reject a case or a reference history.
  */
 export function historyChecks(required: readonly string[], reference: unknown, errors: string[], warnings: string[]): void {
   const seen = new Set<string>();
@@ -245,32 +231,19 @@ export function historyChecks(required: readonly string[], reference: unknown, e
     const key = q.trim().toLowerCase();
     if (seen.has(key)) errors.push(`history.required_questions has "${q}" twice.`);
     seen.add(key);
-    if (contentTokens(q).length === 0) errors.push(`history.required_questions: "${q}" names no topic (only words like "how long" or "when"): say what is asked about, e.g. "how long the cough has lasted".`);
+    if (!key) errors.push("history.required_questions cannot contain a blank item.");
   }
   if (required.length > 15) errors.push(`history.required_questions has ${required.length}; keep it to 15 at most (8-12 is usual), one topic each.`);
   else if (required.length > 12) warnings.push(`history.required_questions has ${required.length}; 8-12 is usual.`);
 
-  requiredKeys(required).forEach((k, i) => {
-    if (k.tokens.length > 0 && k.distinctTokens.length === 0 && k.distinctIntents.size === 0) {
-      warnings.push(`history.required_questions: "${required[i]}" has no word of its own (all its words are in other required questions); name what sets it apart.`);
-    }
-  });
-
   if (reference === undefined) {
-    warnings.push("history.reference_questions is missing: add the questions a strong student would ask (8-15), so the history scoring can be checked on this case.");
+    warnings.push("history.reference_questions is missing: add plain-language example questions for the clinical review.");
     return;
   }
   if (!strArr(reference) || reference.length === 0) {
-    errors.push("history.reference_questions must be a list of questions a strong student would ask.");
-    return;
+    errors.push("history.reference_questions must be a non-empty list of example questions.");
   }
-  const h = scoreHistory({ required, questions: reference });
-  if (h.asked < Math.ceil(0.9 * h.of)) {
-    const missed = h.items.filter((i) => !i.covered).map((i) => i.required);
-    errors.push(
-      `history.reference_questions is credited with only ${h.asked} of ${h.of} required questions without the AI (at least 90% needed). Not matched: ${missed.join(" | ")}. Reword those required questions with the plain words a student would use, or add the question a strong student would ask.`
-    );
-  }
+  else if (reference.some((q) => !q.trim())) errors.push("history.reference_questions cannot contain a blank question.");
 }
 
 /**

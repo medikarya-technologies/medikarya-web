@@ -374,11 +374,7 @@
      "non toxic nodular goitre",
      "nodular goitre"
     ],
-    "must_include_keywords": [
-     "non-toxic",
-     "nodular",
-     "goitre"
-    ]
+    "must_include_keywords": []
    },
    "management": {
     "core_steps": [

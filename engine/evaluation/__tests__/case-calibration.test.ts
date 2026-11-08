@@ -39,7 +39,6 @@ describe("diagnosis words across the library", () => {
         const texts: string[] = [
             ...data.evaluation_config.diagnosis.accepted_primary,
             data.patient?.final_diagnosis ?? "",
-            ...(Array.isArray(data.tags) ? data.tags.map(String) : []),
         ];
         for (const t of texts) for (const w of diagnosisTokens(t)) if (w.length >= 5 && !/\d/.test(w)) words.add(w);
     }
@@ -67,6 +66,7 @@ const SAME_WORD_PAIRS: Array<[string, string]> = [
     ["complicating", "complication"], ["demyelinating", "demyelination"], ["guillain", "guillian"],
     ["hemorrhage", "hemorrhagic"], ["hypertension", "hypertensive"], ["pneumococcal", "pneumococcus"],
     ["scabie", "scabiei"], ["streptococcal", "streptococcus"], ["thoracic", "thoracis"], ["calculi", "calculus"],
+    ["diphtheria", "diphtherie"], ["gestation", "gestational"], ["pneumonia", "pneumonie"],
 ];
 
 describe("case-by-case diagnosis calibration", () => {

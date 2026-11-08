@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { auth } from "@clerk/nextjs/server";
 import { getRazorpay } from "@/lib/razorpay";
 import { saveSubscription, subscriptionOwner, type RazorpaySubscriptionEntity } from "@/lib/payments/subscriptions";
+import { markCheckoutPaid } from "@/lib/payments/checkout-attempts";
 
 // Runs when subscription checkout reports success. For a subscription Razorpay signs payment_id|subscription_id
 // (not order_id, as for a one-time payment). Once the signature holds, it reads the subscription back from
@@ -42,6 +43,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { error } = await saveSubscription(sub);
+    try {
+      await markCheckoutPaid(razorpay_subscription_id, razorpay_payment_id);
+    } catch (trackingError) {
+      // The signed payment is verified; a tracking-table issue must not make a successful payment look failed.
+      console.error("Could not mark subscription checkout as paid:", trackingError);
+    }
     if (error) {
       // The payment itself went through; the webhook will save it too, so say so rather than failing the student.
       console.error("Verified subscription could not be saved:", error);

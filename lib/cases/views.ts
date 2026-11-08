@@ -28,6 +28,7 @@ const WITHHELD = [
   "ai_examples",
   "patient_text_brief",
   "patient_facts",
+  "caseRevisionUpdatedAt",
   "source",
   // which treatments are essential, which harm, and why: the encounter runs on the rules made from it, not on it
   "live_plan",

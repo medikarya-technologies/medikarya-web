@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getRazorpay } from "@/lib/razorpay";
 import { TOTAL_COUNT, currentSubscription, isPaidTier, planIdFor, type BillingPeriod } from "@/lib/payments/subscriptions";
+import { recordCheckoutStarted } from "@/lib/payments/checkout-attempts";
 
 // Limited time UPI subscription offer created in Razorpay Dashboard (expires 14 Nov 2026).
 const SUBSCRIPTION_COUPON_CODE = "MEDIKARYA10";
@@ -53,6 +54,19 @@ export async function POST(request: NextRequest) {
       ...(couponCode === SUBSCRIPTION_COUPON_CODE ? { offer_id: SUBSCRIPTION_OFFER_ID } : {}),
       notes: { userId, tier, period },
     });
+
+    // Keep checkout usable if the tracking table has not been installed yet; the admin page will prompt for it.
+    try {
+      await recordCheckoutStarted({
+        userId,
+        subscriptionId: subscription.id,
+        tier,
+        period,
+        couponCode: couponCode || null,
+      });
+    } catch (trackingError) {
+      console.error("Could not record subscription checkout start:", trackingError);
+    }
 
     // The key id is public; sending the one the subscription was made with keeps checkout on the same key.
     return NextResponse.json({ subscription_id: subscription.id, key_id: process.env.RAZORPAY_KEY_ID });

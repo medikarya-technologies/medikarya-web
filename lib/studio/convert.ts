@@ -60,18 +60,15 @@ Scoring (evaluation_config)
   plain words a student would use ("blood in the sputum", not "haemoptysis quantification"; "how long the cough has
   lasted", not "how long"). red_flag_questions: the dangerous misses.
 - history.reference_questions: 8–15 questions a strong student would actually type, in plain words, together asking
-  every required question (they are used to check the scoring can credit this history).
+  every required question (for clinical review and calibration; never used as a keyword scoring rule).
 - testing: core_tests = what confirms the diagnosis (each must be in tests[]); optional_tests = reasonable extras;
   distractor_tests = 5–10 catalog ids that are low-value here; dangerous_tests = 1–4 catalog ids that are invasive or
   unsafe without indication. Every id must be in tests[] or the catalog.
 - diagnosis.accepted_primary: 3–8 wordings of the diagnosis a correct student might write, including the usual short
-  name and abbreviation ("AKI", "TIA"). Spelling slips, case, plurals, "probable"/"likely" and the common
-  abbreviations are already forgiven, so do not list misspellings; list wordings that differ in words. Never list a
-  wording that would also be right for a milder, more severe or complicated form of the disease;
-  must_include_keywords: 1–2 words that EVERY correct answer contains (all of them must appear in the student's
-  answer, so never list alternatives like "tb", "koch"). They must also be specific: an answer containing them must
-  be this diagnosis, never a different one ("hypothyroid" not "thyroid", "acute kidney" not "kidney", "postpartum
-  haemorrhage" not "postpartum").
+  name and abbreviation ("AKI", "TIA"). These support the semantic examiner and an exact-match outage safety net.
+  Spelling slips, case, plurals, "probable"/"likely" and common abbreviations are already forgiven, so do not list
+  misspellings; list wordings that differ in words. Never list a wording that would also be right for a milder, more
+  severe or complicated form of the disease. Set must_include_keywords to [] (legacy field; it is not used to grade).
 - management.core_steps (3–6) and dangerous_steps (1–4), fitting Indian practice.
 - red_flags: {intent, keywords[], present_in_case, critical}.
 

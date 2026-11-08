@@ -11,10 +11,9 @@ import { historyChecks } from '../lib/studio/validate';
 //   npx ts-node --project scripts/tsconfig.migrate.json scripts/check-history-scoring.ts          cases + replay (no AI)
 //   npx ts-node --project scripts/tsconfig.migrate.json scripts/check-history-scoring.ts --ai     also the real examiner
 //
-// 1. Every published case: can its history be scored? (required questions that name a topic, a reference history
-//    the keyword matcher credits, diagnosis keywords a correct answer can contain)
+// 1. Every published case: does the history rubric have the required structure and review examples?
 // 2. Every real attempt whose questions were stored (HISTORY_TAKEN events): the history score the student saw,
-//    version 2 by keywords alone, and with --ai version 2 as the examiner AI marks it now (one AI call each).
+//    an offline keyword estimate (provisional only), and with --ai the current semantic examiner's score.
 //
 // Prints case ids, dates and numbers only, never who the student was or what they typed (add --show for the typed
 // questions, on your own screen only: never paste them anywhere public).
@@ -42,11 +41,6 @@ async function main() {
     const warnings: string[] = [];
     if (!h || !Array.isArray(h.required_questions)) errors.push('no history.required_questions');
     else historyChecks(h.required_questions, h.reference_questions, errors, warnings);
-    const d = c?.evaluation_config?.diagnosis;
-    const kws: string[] = Array.isArray(d?.must_include_keywords) ? d.must_include_keywords : [];
-    if (kws.length > 1 && Array.isArray(d?.accepted_primary) && !d.accepted_primary.some((dx: string) => kws.every((k) => String(dx).toLowerCase().includes(String(k).toLowerCase())))) {
-      errors.push(`diagnosis keywords "${kws.join('", "')}" look like alternatives: no accepted wording contains them all, so the keyword route can never pass`);
-    }
     const notes = [...errors.map((e) => `ERROR ${e}`), ...warnings.filter((w) => !w.includes('reference_questions is missing')).map((w) => `warn  ${w}`)];
     if (notes.length) {
       withProblems++;
@@ -69,36 +63,45 @@ async function main() {
     .map((r) => ({ ...r, events: (r.fj?.simulation?.events ?? []) as any[] }))
     .filter((r) => r.events.some((e: any) => e.type === 'HISTORY_TAKEN') && cases.get(r.case_id)?.evaluation_config?.history);
   console.log(`\n== ${replayable.length} real attempts with their questions stored (of ${rows.length}) ==`);
-  console.log('date        questions  seen(v1)  v2-keywords  ' + (AI ? 'v2-AI (asked/of, quality)  ' : '') + 'case');
+  console.log('date        questions  saved rev  saved /25  stored v2 (asked/of,coverage,quality)  offline est.  ' + (AI ? 'current AI (asked/of, quality)  ' : '') + 'case');
   const band = (n: number) => (n >= 20 ? 'strong' : n >= 8 ? 'middle' : 'low');
-  const tally: Record<string, Record<string, number>> = { v1: {}, v2k: {}, v2ai: {} };
+  const tally: Record<string, Record<string, number>> = { savedV1: {}, savedV2: {}, storedV2: {}, offline: {}, currentAI: {} };
   for (const r of replayable) {
     const c = cases.get(r.case_id);
     const questions = r.events.filter((e: any) => e.type === 'HISTORY_TAKEN').map((e: any) => String(e.question));
-    const v1 = Number(r.fj?.historyScore ?? NaN);
-    const v2k = scoreHistory({ required: c.evaluation_config.history.required_questions, questions });
+    const savedHistory = Number(r.fj?.historyScore ?? NaN);
+    const savedVersion = r.fj?.scoringVersion?.history === 2 ? 'v2' : 'v1/legacy';
+    const storedV2Detail = r.fj?.historyScoring?.v2;
+    const storedV2 = Number(storedV2Detail?.total ?? NaN);
+    const storedV2Summary = storedV2Detail
+      ? `${storedV2Detail.asked}/${storedV2Detail.of},${storedV2Detail.coverage},${storedV2Detail.quality}`
+      : '—';
+    const offline = scoreHistory({ required: c.evaluation_config.history.required_questions, questions });
     let aiText = '';
     if (AI) {
-      process.env.HISTORY_SCORING = 'shadow';
       const inputs = classicInputsFromEvents(r.events);
       const result: any = await EvaluationEngine.evaluate(inputs.diagnosis, inputs.orderedTests, inputs.chatHistory, c);
       const v2 = result.historyScoring?.v2;
       if (v2) {
         aiText = `${String(v2.total).padStart(5)} (${v2.asked}/${v2.of} by ${v2.coverageBy}, q ${v2.quality})`.padEnd(28);
-        tally.v2ai[band(v2.total)] = (tally.v2ai[band(v2.total)] ?? 0) + 1;
+        tally.currentAI[band(v2.total)] = (tally.currentAI[band(v2.total)] ?? 0) + 1;
       }
     }
-    tally.v1[band(v1)] = (tally.v1[band(v1)] ?? 0) + 1;
-    tally.v2k[band(v2k.total)] = (tally.v2k[band(v2k.total)] ?? 0) + 1;
+    const savedKey = savedVersion === 'v2' ? 'savedV2' : 'savedV1';
+    if (Number.isFinite(savedHistory)) tally[savedKey][band(savedHistory)] = (tally[savedKey][band(savedHistory)] ?? 0) + 1;
+    if (Number.isFinite(storedV2)) tally.storedV2[band(storedV2)] = (tally.storedV2[band(storedV2)] ?? 0) + 1;
+    tally.offline[band(offline.total)] = (tally.offline[band(offline.total)] ?? 0) + 1;
     console.log(
-      `${String(r.created_at).slice(0, 10)}  ${String(questions.length).padStart(9)}  ${String(v1).padStart(8)}  ${String(v2k.total).padStart(11)}  ${aiText}${r.case_id}`
+      `${String(r.created_at).slice(0, 10)}  ${String(questions.length).padStart(9)}  ${savedVersion.padStart(9)}  ${String(savedHistory).padStart(8)}  ${`${storedV2}/${storedV2Summary}`.padStart(27)}  ${String(offline.total).padStart(11)}  ${aiText}${r.case_id}`
     );
     if (SHOW) questions.forEach((q: string, i: number) => console.log(`      ${i + 1}. ${q.slice(0, 140)}`));
   }
   console.log('\nbands (strong >= 20, middle 8-20, low < 8):');
-  console.log('  seen (v1):    ', JSON.stringify(tally.v1));
-  console.log('  v2, keywords: ', JSON.stringify(tally.v2k));
-  if (AI) console.log('  v2, with AI:  ', JSON.stringify(tally.v2ai));
+  console.log('  saved history v1/legacy: ', JSON.stringify(tally.savedV1));
+  console.log('  saved history v2:        ', JSON.stringify(tally.savedV2));
+  console.log('  stored v2 history:        ', JSON.stringify(tally.storedV2));
+  console.log('  offline estimate:         ', JSON.stringify(tally.offline));
+  if (AI) console.log('  current AI estimate:      ', JSON.stringify(tally.currentAI));
 }
 
 main().catch((e) => {

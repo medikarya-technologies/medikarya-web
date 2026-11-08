@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils";
 import { saveSubscription } from "@/lib/payments/subscriptions";
+import { markCheckoutPaid } from "@/lib/payments/checkout-attempts";
 
 // Razorpay's subscription lifecycle, delivered here — this is what actually marks a user's access as
 // active, not the checkout success screen (a payment can succeed client-side and the tab close before
@@ -53,6 +54,17 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Failed to upsert subscription:", error);
       return NextResponse.json({ error: "Database write failed" }, { status: 500 });
+    }
+
+    // Signed lifecycle events can recover a paid result if the browser never returned to verify-subscription.
+    if (sub.status === "active" || event.event === "subscription.charged") {
+      const paymentId = event.payload?.payment?.entity?.id;
+      try {
+        await markCheckoutPaid(sub.id, typeof paymentId === "string" ? paymentId : null);
+      } catch (trackingError) {
+        // The subscriptions table was saved above; attempt tracking remains secondary to the payment record.
+        console.error("Could not mark subscription checkout as paid from webhook:", trackingError);
+      }
     }
 
     return NextResponse.json({ received: true });

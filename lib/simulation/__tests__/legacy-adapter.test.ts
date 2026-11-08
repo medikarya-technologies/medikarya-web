@@ -714,97 +714,7 @@ describe("legacy adapter: the real cases", () => {
         return;
     }
 
-    // Which cases have authored examination findings today. If someone adds some, update this on purpose.
-    const HAS_EXAM = new Set([
-        "12-year-old-boy-whose-joint-pain-moves-from-one-joint-to-the-next",
-        "14-month-old-girl-who-is-breathing-fast-and-will-not-drink",
-        "16-year-old-boarding-school-boy-who-itches-all-night",
-        "18-month-old-girl-who-shook-all-over-during-a-fever",
-        "2-year-old-girl-who-cried-all-night-tugging-at-her-ear",
-        "22-year-old-student-who-stopped-going-to-college-and-talks-to-himself",
-        "5-month-old-boy-with-a-runny-nose-who-is-now-breathing-fast",
-        "58-year-old-woman-who-can-no-longer-sit-on-the-floor-for-her-prayers",
-        "64-year-old-retired-teacher-with-burning-pain-and-blisters-around-her-right-side",
-        "19-year-old-hostel-student-who-has-felt-hot-and-unwell-for-nine-days",
-        "2-year-old-boy-with-vomiting-and-watery-diarrhea",
-        "21-year-old-student-with-belly-pain-since-last-night",
-        "21-year-old-woman-with-visual-disturbances-and-headache",
-        "22-year-old-woman-37-weeks-pregnant-with-a-bad-headache",
-        "22-year-old-woman-with-a-3-year-neck-swelling",
-        "24-year-old-man-brought-in-vomiting-and-drowsy",
-        "24-year-old-man-struggling-to-breathe-after-a-bike-accident",
-        "24-year-old-man-who-has-stopped-enjoying-anything",
-        "24-year-old-man-with-fever-after-travel",
-        "24-year-old-man-with-lower-leg-pain-and-swelling",
-        "24-year-old-pregnant-woman-with-fatigue-and-breathlessness",
-        "25-year-old-woman-with-sudden-chest-pain-and-breathlessness",
-        "26-year-old-woman-bleeding-heavily-an-hour-after-giving-birth",
-        "26-year-old-woman-who-cannot-catch-her-breath",
-        "27-year-old-woman-who-fainted-at-work-with-pain-low-in-her-belly",
-        "27-year-old-woman-with-fever-shivering-and-pain-in-her-right-side",
-        "28-year-old-delivery-rider-with-high-fever-and-aching-all-over",
-        "28-year-old-man-with-a-spreading-rash-and-mouth-sores",
-        "29-year-old-man-with-belly-pain-as-his-fever-settles",
-        "30-year-old-woman-bitten-on-the-leg-by-a-stray-dog-this-morning",
-        "30-year-old-woman-with-belly-pain-and-swelling",
-        "32-year-old-man-brought-in-fitting",
-        "32-year-old-man-with-sudden-pain-from-his-left-side-to-his-groin",
-        "32-year-old-mother-of-two-who-is-breathless-on-the-stairs-and-always-tired",
-        "32-year-old-woman-with-unsteady-walking",
-        "34-year-old-man-with-a-cough-for-six-weeks-and-weight-loss",
-        "34-year-old-man-with-drooping-eyelids-and-trouble-swallowing",
-        "34-year-old-teacher-who-is-always-tired-and-cold",
-        "35-year-old-farm-worker-with-pale-patches-he-cannot-feel",
-        "36-year-old-man-with-sudden-breathlessness",
-        "38-year-old-farmer-bitten-on-the-foot-in-a-paddy-field-whose-gums-are-bleeding",
-        "4-week-old-infant-with-yellow-eyes-and-face",
-        "4-year-old-boy-whose-face-has-been-puffy-for-a-week",
-        "40-year-old-man-found-unconscious-at-home",
-        "42-year-old-driver-whose-hands-are-shaking-a-day-after-his-last-drink",
-        "42-year-old-woman-with-eight-days-of-fever-after-cutting-grass",
-        "43-year-old-shopkeeper-who-is-always-thirsty-and-up-at-night-to-pass-urine",
-        "44-year-old-man-with-left-groin-swelling",
-        "45-year-old-woman-with-fever-who-has-become-confused",
-        "46-year-old-man-whose-legs-are-too-weak-to-stand",
-        "48-year-old-man-who-suddenly-could-not-breathe-and-fainted",
-        "48-year-old-man-whose-fever-came-back-after-a-chest-infection",
-        "48-year-old-man-with-weak-legs-after-a-stomach-upset",
-        "48-year-old-woman-with-worsening-upper-back-pain",
-        "49-year-old-woman-with-flank-pain-and-blood-in-urine",
-        "50-year-old-man-having-a-health-check-for-life-insurance",
-        "52-year-old-man-vomiting-blood-at-2-am",
-        "52-year-old-woman-with-an-enlarging-lump",
-        "54-year-old-man-with-black-stools-who-vomited-blood",
-        "54-year-old-woman-with-a-neck-swelling",
-        "55-year-old-woman-who-has-felt-weak-and-sick-for-four-days",
-        "56-year-old-farmer-with-a-sore-under-his-foot-that-does-not-hurt",
-        "56-year-old-man-with-chest-pain-and-a-slow-pulse",
-        "57-year-old-taxi-driver-who-keeps-dozing-off",
-        "58-year-old-man-who-is-sweaty-and-hard-to-wake",
-        "58-year-old-man-whose-nose-will-not-stop-bleeding",
-        "58-year-old-man-with-a-genital-lump-and-groin-swelling",
-        "58-year-old-woman-who-woke-up-gasping-for-breath",
-        "58-year-old-woman-whose-right-side-suddenly-went-weak",
-        "58-year-old-woman-with-a-painful-red-eye-and-haloes-around-lights",
-        "58-year-old-woman-with-upper-abdominal-pain-and-yellow-eyes",
-        "61-year-old-shopkeeper-whose-left-side-gave-way-with-a-sudden-headache",
-        "63-year-old-woman-with-tiredness-and-numb-feet",
-        "66-year-old-man-with-numb-feet",
-        "67-year-old-man-who-has-not-passed-water-since-last-night",
-        "69-year-old-man-with-a-long-cough-and-worsening-breathlessness",
-        "70-year-old-woman-with-abdominal-pain-and-vomiting",
-        "72-year-old-man-with-recurrent-fainting",
-        "72-year-old-woman-who-cannot-stand-after-slipping-in-the-bathroom",
-        "76-year-old-woman-with-brief-weakness-of-her-right-arm-and-leg",
-        "79-year-old-man-in-a-care-home-who-has-become-confused",
-        "79-year-old-man-who-has-been-tired-and-unwell-for-weeks",
-        "85-year-old-man-who-keeps-falling",
-        "autosomal-dominant-polycystic-kidney-disease",
-        "complete-heart-block-syncope",
-        "malaria-returning-traveller-fever",
-        "non-toxic-nodular-goitre-neck-swelling",
-        "vitamin-b12-deficiency-pernicious-anaemia",
-    ]);
+    // Examination manoeuvres must follow the findings authored in each local case export.
 
     for (const file of files) {
         const id = file.replace(/\.json$/, "");
@@ -835,8 +745,9 @@ describe("legacy adapter: the real cases", () => {
                 assert.equal(c.initial_state.rate, raw.patient.vitalSigns.heartRate.value);
             });
 
-            it(`${HAS_EXAM.has(id) ? "has" : "has no"} examination findings`, () => {
-                assert.equal((c.examination?.length ?? 0) > 0, HAS_EXAM.has(id));
+            it("exposes exactly the examination findings the case authored", () => {
+                const hasAuthoredExamination = Object.keys(raw.patient_facts ?? {}).some((key) => /_examination$/.test(key));
+                assert.equal((c.examination?.length ?? 0) > 0, hasAuthoredExamination);
             });
 
             it("every result resolves without throwing", () => {

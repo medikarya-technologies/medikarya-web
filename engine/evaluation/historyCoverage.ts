@@ -8,7 +8,8 @@
 // Coverage: each of the case's required history questions is either asked or not, and every one is worth the
 // same. The AI examiner judges "asked" by meaning (students type in lay words, with typos, several questions in
 // one message), and must cite the number of the student's message that asked it; a citation that does not point
-// at a real, non-empty question is not accepted. Where the AI gives no usable answer, a keyword matcher decides.
+// at a real, non-empty question is not accepted. Keyword coverage is only a provisional fallback when the AI is
+// unavailable; provisional attempts are excluded from marks, XP and rankings until they are re-scored.
 // Quality: the AI's 0-7.5 judgement of relevance, depth and focus, always asked for; its share of 7.5 can never be
 // more than the coverage share (a history that covers a fifth of the case gets at most a fifth of the quality marks).
 //
@@ -28,16 +29,12 @@ export const HISTORY_QUALITY_MAX = 7.5;
 export const HISTORY_MAX = HISTORY_COVERAGE_MAX + HISTORY_QUALITY_MAX;
 export const HISTORY_SCORING_VERSION = 2;
 
-/** Which history score the student sees. "shadow": version 1, with version 2 worked out and stored alongside. Both
- *  versions are always worked out and stored, whichever is shown. */
-export type HistoryScoringMode = "v1" | "shadow" | "v2";
+/** Version 2 is the only history scorer for new marks. Keep accepting the old argument so a stale deployment
+ *  variable cannot silently put the retired keyword, specificity and timing scorer back in front of students. */
+export type HistoryScoringMode = "v2";
 
-/** HISTORY_SCORING in the environment. Version 2 unless it says exactly "v1" (the way back) or "shadow" (show
- *  version 1, keep version 2 beside it), so a typo can only ever leave the current scorer in place. Version 2 became
- *  the default on 2026-10-31, after the replay of real attempts (EVALUATION_ENGINE.md, "History, version 2"). */
-export function historyScoringMode(value: string | undefined): HistoryScoringMode {
-    const v = (value ?? "").trim().toLowerCase();
-    return v === "v1" || v === "shadow" ? v : "v2";
+export function historyScoringMode(_legacySetting?: string): HistoryScoringMode {
+    return "v2";
 }
 
 export interface HistoryItem {
@@ -287,9 +284,9 @@ type AiVerdict = { state: "asked"; message: number } | { state: "not_asked" } | 
 
 /**
  * Checks the AI's `historyCoverage` against what really happened. Each required item must be answered once, with
- * `asked` true or false; `asked` true must cite the number of one of the student's own messages, and that message
- * must actually ask something. An item that fails gets the keyword matcher's answer instead. If more than half
- * fail, the whole answer is not trusted and the keyword matcher decides everything.
+ * `asked` true or false; `asked` true must cite the number of one of the student's own non-empty messages. The
+ * caller requires every item to be valid for a final score; otherwise the attempt is provisional and the keyword
+ * estimate is not counted.
  */
 export function readAiCoverage(raw: unknown, requiredCount: number, questions: readonly string[]): AiVerdict[] | null {
     if (!Array.isArray(raw) || requiredCount === 0) return null;
@@ -308,7 +305,10 @@ export function readAiCoverage(raw: unknown, requiredCount: number, questions: r
         if (e.asked !== true) continue;
         const message = Number(e.message);
         if (!Number.isInteger(message) || message < 1 || message > questions.length) continue;
-        if (isCatchAll(questions[message - 1])) continue;
+        // This is only a citation check: the AI has already decided whether the question covered the required item.
+        // Do not run that semantic decision through our local vocabulary list; it rejects valid lay wording such as
+        // "Any wee?" and can turn a complete AI judgement into provisional keyword scoring.
+        if (!questions[message - 1].trim()) continue;
         verdicts[item - 1] = { state: "asked", message };
     }
     const invalid = verdicts.filter((v) => v.state === "invalid").length;
@@ -401,10 +401,12 @@ ${items.join("\n") || "(none)"}
 
 For each required item, decide whether the student asked about it in substance. Lay words, spelling mistakes and one
 message that asks about several items all count, and a general question counts for every item it plainly covers ("How
-long has this been going on?" asks the duration of each presenting complaint). It does NOT count if the patient
-volunteered it without being asked, if the student only said or explained something to the patient instead of asking,
-or if the student only examined or ordered a test. When asked is true, give the number of the student's message that
-asked it; when false, message is null.
+long has this been going on?" asks the duration of each presenting complaint). A vague catch-all such as "anything
+else?", "tell me more", "go on" or "okay" does not cover an item by itself. Do not require the student's wording to
+match this case's terminology: a short or unfamiliar lay phrase counts if its clinical meaning is clear. It does NOT
+count if the patient volunteered it without being asked, if the student only said or explained something to the patient
+instead of asking, or if the student only examined or ordered a test. When asked is true, give the number of the
+student's message that asked it; when false, message is null.
 
 HISTORY QUALITY SCORING (0-7.5), always:
   - relevance (0-2.5): did the questions target this patient's problem, or was it a generic checklist?

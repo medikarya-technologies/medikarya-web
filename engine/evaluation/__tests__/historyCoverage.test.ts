@@ -250,6 +250,15 @@ describe("reading the AI's coverage answer", () => {
         ]);
     });
 
+    it("lets the AI accept lay wording outside the local keyword vocabulary", () => {
+        const layQuestion = "Any wee?";
+        assert.equal(isCatchAll(layQuestion), true, "the legacy matcher does not know this wording");
+        assert.deepEqual(readAiCoverage([{ item: 1, asked: true, message: 1 }], 1, [layQuestion]), [
+            { state: "asked", message: 1 },
+        ]);
+        assert.equal(hasCompleteAiCoverage([{ item: 1, asked: true, message: 1 }], 1, [layQuestion]), true);
+    });
+
     it("rejects a message number that does not exist, and the item falls back to keywords", () => {
         const h = scoreHistory({
             required: ["how long the cough", "blood in sputum"],
@@ -261,10 +270,9 @@ describe("reading the AI's coverage answer", () => {
         assert.equal(h.items[1].message, 3);
     });
 
-    it("rejects a citation of a catch-all message", () => {
-        const v = readAiCoverage([{ item: 1, asked: true, message: 2 }, { item: 2, asked: false }], 2, questions);
-        assert.deepEqual(v?.[0], { state: "invalid" });
-        assert.equal(hasCompleteAiCoverage([{ item: 1, asked: true, message: 2 }, { item: 2, asked: false }], 2, questions), false);
+    it("rejects a citation that points to an empty message", () => {
+        const raw = [{ item: 1, asked: true, message: 1 }];
+        assert.equal(hasCompleteAiCoverage(raw, 1, ["   "]), false);
     });
 
     it("requires a complete answer for final grading", () => {
@@ -337,11 +345,11 @@ describe("keyword matching", () => {
 });
 
 describe("the switch", () => {
-    it("is version 2 unless it says v1 or shadow exactly, so a typo can only leave the current scorer in place", () => {
+    it("always uses the semantic scorer, even if a stale environment setting asks for the retired version", () => {
         assert.equal(historyScoringMode(undefined), "v2");
         assert.equal(historyScoringMode(""), "v2");
-        assert.equal(historyScoringMode("V1 "), "v1");
-        assert.equal(historyScoringMode("shadow"), "shadow");
+        assert.equal(historyScoringMode("V1 "), "v2");
+        assert.equal(historyScoringMode("shadow"), "v2");
         assert.equal(historyScoringMode("vl"), "v2");
     });
 });
@@ -352,5 +360,11 @@ describe("history prompt inputs", () => {
         const prompt = historyPromptSection([], [question]);
         assert.ok(prompt.includes(JSON.stringify(question)));
         assert.match(prompt, /untrusted student-authored data/i);
+    });
+
+    it("asks the examiner to distinguish catch-all phrases from unfamiliar lay wording", () => {
+        const prompt = historyPromptSection(["urine output"], ["Any wee?", "Anything else?"]);
+        assert.match(prompt, /catch-all/i);
+        assert.match(prompt, /short or unfamiliar lay phrase counts/i);
     });
 });

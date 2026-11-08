@@ -87,7 +87,12 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
             }
             trackEvent("Subscribed", { checkout_plan: checkoutPlan })
             await refreshPlan()
-            toast({ title: `You're now a ${TIER_NAME[tier]}`, description: "Your plan is active." })
+            toast({
+              title: user?.firstName ? `Hi ${user.firstName}, thank you for subscribing!` : "Thank you for subscribing to MediKarya!",
+              description: result.saved
+                ? `Your ${TIER_NAME[tier]} plan is active. We're glad you're here.`
+                : `Your payment is confirmed. We're finishing setup of your ${TIER_NAME[tier]} plan now.`,
+            })
             router.push(returnTo)
             router.refresh()
           } catch {
@@ -101,6 +106,11 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
         modal: {
           ondismiss: () => {
             trackEvent("Checkout_Closed", { checkout_plan: checkoutPlan })
+            void fetch("/api/payments/checkout-attempt", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ subscriptionId: created.subscription_id, outcome: "abandoned" }),
+            }).catch((error) => console.error("Could not record closed subscription checkout:", error))
             toast({ title: "Checkout closed", description: "You have not been charged." })
           },
         },
@@ -109,6 +119,16 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
 
       checkout.on("payment.failed", (response) => {
         trackEvent("Payment_Failed", { checkout_plan: checkoutPlan })
+        void fetch("/api/payments/checkout-attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subscriptionId: created.subscription_id,
+            outcome: "failed",
+            failureCode: response.error.code,
+            failureDescription: response.error.description,
+          }),
+        }).catch((error) => console.error("Could not record failed subscription checkout:", error))
         toast({ title: "Payment failed", description: response.error.description, variant: "destructive" })
       })
       trackEvent("Checkout_Opened", { checkout_plan: checkoutPlan })

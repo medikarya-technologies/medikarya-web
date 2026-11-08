@@ -38,6 +38,8 @@ export interface CaseCardProps extends Omit<CaseMetadata, 'createdAt' | 'updated
 
 export interface CaseData extends CaseMetadata {
   patient: any;
+  /** Database row revision that supplied the encounter config used for scoring. */
+  caseRevisionUpdatedAt?: string | null;
   patient_text_brief: string;
   patient_facts: any; // Structured object with variable keys
   questions: any[];
@@ -252,11 +254,17 @@ export async function getCaseById(requestedId: string): Promise<CaseData | null>
   try {
     const { data, error } = await supabaseServer
       .from('cases')
-      .select('id, case_json')
+      .select('id, case_json, updated_at')
       .in('id', former ? [id, former] : [id]);
 
     const row = data?.find((r) => r.id === id) ?? data?.[0];
-    if (!error && row) return forEncounter({ ...(row.case_json as CaseData), id });
+    if (!error && row) {
+      return forEncounter({
+        ...(row.case_json as CaseData),
+        id,
+        caseRevisionUpdatedAt: row.updated_at ?? null,
+      });
+    }
 
     // Not in the database: fall back to a case that ships with the app.
     const bundled = getBundledSimulationCase(id);
