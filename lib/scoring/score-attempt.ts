@@ -15,6 +15,15 @@ import { BEDSIDE_SHARE, blendLiveScore, isLivePlanCase, scoreBedside } from "../
 
 type Config = SimulationCaseConfig & Record<string, any>;
 
+/** Provisional estimates may be retained in feedback for admin diagnosis, but must not become a final mark or reward. */
+export function scoreForPersistence(score: number, provisional: boolean): number | null {
+    return provisional ? null : Math.round(score);
+}
+
+export function xpForScore(score: number, xpReward: number, provisional: boolean): number {
+    return provisional ? 0 : Math.round((score / 100) * xpReward);
+}
+
 /**
  * A classic case run at the bedside. The Clinical score is the classic evaluator's, from the case's own
  * `evaluation_config`; the Independent score is that minus what the student spent on assists. The event log is
@@ -60,7 +69,7 @@ export async function scoreClassicAttempt(config: Config, events: unknown, timeT
         timeTaken,
     };
 
-    const xpEarned = Math.round((result.score / 100) * (config.xpReward || 50));
+    const xpEarned = xpForScore(result.score, config.xpReward || 50, !!result.provisional);
     return { result, simulation, xpEarned };
 }
 
@@ -79,7 +88,7 @@ export async function scoreRubricAttempt(config: Config, events: unknown, timeTa
     const scored = scoreEncounter(replayed.events, config, judgments ?? undefined);
 
     const baseXP = config.xpReward || 50;
-    const xpEarned = Math.round((scored.clinicalScore / 100) * baseXP);
+    const xpEarned = xpForScore(scored.clinicalScore, baseXP, provisional);
 
     const investigation = scored.items.filter((i) => i.domain === "investigation_accuracy");
     const result = {

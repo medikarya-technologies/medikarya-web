@@ -5,7 +5,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 export interface CaseAttempt {
     id: string;
     case_id: string;
-    score: number;
+    score: number | null;
     xp_earned: number;
     time_taken: number;
     created_at: string;

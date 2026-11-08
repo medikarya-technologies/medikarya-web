@@ -13,6 +13,7 @@ import { IntentExtractor } from "./IntentExtractor";
 import { DeterministicScorer } from "./DeterministicScorer";
 import { ReasoningPromptBuilder } from "./ReasoningPromptBuilder";
 import { hasCompleteAiCoverage, historyReview, historyScoringMode, scoreHistory, type HistoryV2 } from "./historyCoverage";
+import { CLASSIC_EXAMINER_MODEL } from "./gradingVersion";
 import { DIAGNOSIS_CORRECT_FROM, diagnosisMatches } from "./diagnosisMatch";
 import {
     FinalEvaluationResult,
@@ -117,7 +118,7 @@ export class EvaluationEngine {
 
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({
-                model: "gemini-3.8-flash",
+                model: CLASSIC_EXAMINER_MODEL,
                 generationConfig: {
                     temperature: 0.1,
                     responseMimeType: "application/json",

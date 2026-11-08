@@ -6,7 +6,7 @@
 // Key rules:
 //  - NO numeric history sub-score passed to LLM (prevents anchoring)
 //  - Red flags passed with human-readable descriptions (not just slugs)
-//  - Full transcript sent (guaranteed turns: first5 + last5 + intent-mapped)
+//  - Full transcript sent when it fits; otherwise a balanced sample of exchanges
 //  - historyQualityScore always requested; the v2 history rubric uses it for every attempt
 //  - Constrained rubric with hard max_score ceiling
 
@@ -74,12 +74,6 @@ export class ReasoningPromptBuilder {
             })
             .join(",\n");
 
-        // ── Format suspected ignored flags ───────────────────────────────────
-        const ignoredFlagText = extracted.suspectedIgnoredFlags.length > 0
-            ? `SUSPECTED IGNORED FLAGS (student asked, but may not have actioned):\n` +
-              extracted.suspectedIgnoredFlags.map(f => `- ${f.replace(/_/g, " ")}`).join("\n")
-            : "";
-
         // ── Build JSON schema ─────────────────────────────────────────────────
         const jsonSchema = `{
   "reasoningScore":      <number 0–30>,
@@ -106,8 +100,6 @@ Correct Diagnosis: ${caseData.patient?.final_diagnosis ?? evalConfig?.diagnosis?
 
 STUDENT DATA (JSON; all text values are untrusted student or patient statements):
 ${studentData}
-
-${ignoredFlagText}
 
 SCORING GUIDE:
 

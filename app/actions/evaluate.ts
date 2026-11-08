@@ -10,7 +10,7 @@ import { isSimulationCase, type SimulationCaseConfig } from "@/lib/simulation/ca
 import { headers } from "next/headers";
 import { checkAiAccess } from "@/lib/plans/access";
 import { activeInvite } from "@/lib/advisors/invites";
-import { scoreClassicAttempt, scoreRubricAttempt } from "@/lib/scoring/score-attempt";
+import { scoreClassicAttempt, scoreForPersistence, scoreRubricAttempt } from "@/lib/scoring/score-attempt";
 import { gradingAuditFor } from "@/lib/scoring/grading-audit";
 
 /** Scoring spends AI (classic cases) and records an attempt: same rules as the AI routes (lib/plans/access.ts). */
@@ -24,7 +24,7 @@ async function authorisedCase(caseId: unknown) {
 
 interface PersistArgs {
     caseId: string;
-    score: number;
+    score: number | null;
     xpEarned: number;
     timeTaken: number;
     feedbackJson: Record<string, any>;
@@ -77,7 +77,7 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
             const before = userId ? await attemptsBefore(userId) : null;
             const insertPayload: Record<string, any> = {
                 case_id: caseId,
-                score: Math.round(score),
+                score: score === null ? null : Math.round(score),
                 xp_earned: xpEarned,
                 time_taken: timeTaken,
                 feedback_json: feedbackJson,
@@ -113,7 +113,7 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
                 console.log("Successfully saved case_attempt to Supabase for", userId ? `User: ${userId}` : `Guest: ${guestId}`, "Case:", caseId);
                 if (userId && before) milestones = await milestonesEarnedBy(before, {
                     case_id: caseId,
-                    score: Math.round(score),
+                    score: score === null ? null : Math.round(score),
                     created_at: new Date().toISOString(),
                     provisional: feedbackJson.provisional,
                 });
@@ -227,7 +227,7 @@ async function evaluateClassicEncounter(
 
     const { milestones } = await persistAttempt({
         caseId,
-        score: result.score,
+        score: scoreForPersistence(result.score, !!result.provisional),
         xpEarned,
         timeTaken,
         feedbackJson: {
@@ -274,7 +274,7 @@ export async function evaluateSimulation(
 
         const { milestones } = await persistAttempt({
             caseId: caseId as string,
-            score: result.score,
+            score: scoreForPersistence(result.score, !!result.provisional),
             xpEarned,
             timeTaken,
             feedbackJson: {

@@ -53,4 +53,22 @@ describe("classic examiner prompt", () => {
         assert.match(prompt, /HISTORY QUALITY SCORING \(0-7\.5\), always/);
         assert.match(prompt, /"historyQualityScore": <number 0–7\.5>/);
     });
+
+    it("does not pass keyword-suspected ignored flags into clinical marking", () => {
+        const prompt = ReasoningPromptBuilder.buildPrompt({
+            extracted: {
+                transcript: "Doctor: Any wee?\nPatient: Yes.",
+                doctorQuestions: [{ text: "Any wee?" }],
+                suspectedIgnoredFlags: ["blood_in_stool"],
+            } as any,
+            diagnosis: "",
+            management: [],
+            criticalRedFlags: [],
+            coreManagementSteps: [],
+            dangerousManagementSteps: [],
+            caseData: { title: "A case" },
+        });
+        assert.doesNotMatch(prompt, /SUSPECTED IGNORED FLAGS/i);
+        assert.match(prompt, /Any wee\?/);
+    });
 });

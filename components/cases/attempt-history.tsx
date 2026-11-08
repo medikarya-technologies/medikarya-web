@@ -11,13 +11,15 @@ import { isProvisionalAttempt } from "@/lib/library/attempt-quality"
 
 export interface AttemptSummary {
   id: string
-  score: number
+  score: number | null
   created_at: string
   feedback_json?: unknown
 }
 
 const formatDate = (dateString: string) =>
   new Date(dateString).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+
+const isPendingScore = (attempt: AttemptSummary) => attempt.score === null || isProvisionalAttempt(attempt)
 
 export function AttemptHistory<T extends AttemptSummary>({ attempts, onReview }: { attempts: T[]; onReview: (attempt: T) => void }) {
   const [showAll, setShowAll] = useState(false)
@@ -27,9 +29,9 @@ export function AttemptHistory<T extends AttemptSummary>({ attempts, onReview }:
     <section aria-label="Your attempts" className="flex flex-col items-center gap-4 border-t border-enc-line-strong pt-6">
       <div className="flex items-center gap-8">
         <div className="flex flex-col items-center">
-          <Eyebrow>{isProvisionalAttempt(attempts[0]) ? "Latest result" : "Last score"}</Eyebrow>
+          <Eyebrow>{isPendingScore(attempts[0]) ? "Latest result" : "Last score"}</Eyebrow>
           <span className="mt-1 font-mono text-[24px] leading-none font-medium text-enc-ink tabular-nums">
-            {isProvisionalAttempt(attempts[0]) ? "Pending" : <>{attempts[0].score}<span className="text-[14px] text-enc-ink-3">/100</span></>}
+            {isPendingScore(attempts[0]) ? "Pending" : <>{attempts[0].score}<span className="text-[14px] text-enc-ink-3">/100</span></>}
           </span>
         </div>
         <div className="h-9 w-px bg-enc-line-strong" />
@@ -47,7 +49,7 @@ export function AttemptHistory<T extends AttemptSummary>({ attempts, onReview }:
           className="h-9 w-full gap-2 rounded-lg border-enc-line-strong bg-enc-sheet text-[13px] font-medium text-enc-ink-2 hover:bg-enc-console hover:text-enc-ink sm:w-auto"
         >
           <Eye className="h-4 w-4 shrink-0 text-enc-ink-3" />
-          {isProvisionalAttempt(attempts[0]) ? "Review provisional feedback" : attempts[0].feedback_json ? "Review last feedback" : "Legacy attempt"}
+          {isPendingScore(attempts[0]) ? "Review provisional feedback" : attempts[0].feedback_json ? "Review last feedback" : "Legacy attempt"}
         </Button>
 
         {attempts.length > 1 && (
@@ -76,10 +78,10 @@ export function AttemptHistory<T extends AttemptSummary>({ attempts, onReview }:
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-semibold tracking-[0.06em] text-enc-ink-3 uppercase">{formatDate(attempt.created_at)}</span>
                   {!attempt.feedback_json && <StatusPill>Legacy</StatusPill>}
-                  {isProvisionalAttempt(attempt) && <StatusPill>Provisional</StatusPill>}
+                  {isPendingScore(attempt) && <StatusPill>Provisional</StatusPill>}
                 </div>
                 <span className="mt-0.5 block font-mono text-[17px] font-medium text-enc-ink tabular-nums">
-                  {isProvisionalAttempt(attempt) ? "Score pending review" : `Score ${attempt.score}`}
+                  {isPendingScore(attempt) ? "Score pending review" : `Score ${attempt.score}`}
                 </span>
               </div>
               <Eye className="h-4 w-4 shrink-0 text-enc-ink-3 group-hover:text-enc-ink-2" />

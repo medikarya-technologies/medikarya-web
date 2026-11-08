@@ -13,6 +13,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { ClinicalEvent } from "../../lib/simulation/encounter-events";
 import type { ScoringPredicate, SimulationCaseConfig } from "../../lib/simulation/case-schema";
 import { DIAGNOSIS_JUDGMENT, textCheckKey, type TextJudgments } from "./DualScorer";
+import { RUBRIC_EXAMINER_MODEL } from "./gradingVersion";
 
 export interface TextCheck {
     key: string;
@@ -140,7 +141,7 @@ export async function judgeTextChecks(config: SimulationCaseConfig, checks: read
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
         const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
-            model: "gemini-3.8-flash",
+            model: RUBRIC_EXAMINER_MODEL,
             generationConfig: { temperature: 0, responseMimeType: "application/json" },
         });
         const res = await model.generateContent(judgePrompt(config, checks));

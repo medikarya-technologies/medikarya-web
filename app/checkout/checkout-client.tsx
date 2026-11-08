@@ -119,13 +119,15 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
 
       checkout.on("payment.failed", (response) => {
         trackEvent("Payment_Failed", { checkout_plan: checkoutPlan })
+        const rawFailureCode = (response.error as { code?: unknown }).code
+        const failureCode = typeof rawFailureCode === "string" ? rawFailureCode : null
         void fetch("/api/payments/checkout-attempt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             subscriptionId: created.subscription_id,
             outcome: "failed",
-            failureCode: response.error.code,
+            failureCode,
             failureDescription: response.error.description,
           }),
         }).catch((error) => console.error("Could not record failed subscription checkout:", error))

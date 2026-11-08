@@ -290,56 +290,58 @@ function detectIgnoredFlags(
 
 // ── Build compressed transcript (token budget aware) ─────────────────────────
 
-function buildBudgetedTranscript(
+export function buildBudgetedTranscript(
     chatHistory: { role: string; content: string }[],
-    extractedQuestions: ExtractedQuestion[],
     tokenTarget = 3000
 ): string {
-    const allTurns = chatHistory;
-    const totalTurns = allTurns.length;
+    const full = buildTranscript(chatHistory);
+    if (estimateTokens(full) <= tokenTarget) return full;
 
-    if (estimateTokens(buildTranscript(allTurns)) <= tokenTarget) {
-        return buildTranscript(allTurns); // full transcript fits
+    // Keep complete doctor/patient exchanges together. When the conversation is long, select a balanced sample
+    // across the middle instead of using the local intent vocabulary or specificity heuristic to decide what the
+    // examiner gets to see. The history rubric separately includes every doctor question (up to its explicit cap).
+    const exchanges: number[][] = [];
+    chatHistory.forEach((message, index) => {
+        if (message.role === "user" || exchanges.length === 0) exchanges.push([index]);
+        else exchanges[exchanges.length - 1].push(index);
+    });
+
+    const selected = new Set<number>();
+    const edgeExchanges = Math.min(5, exchanges.length);
+    for (let i = 0; i < edgeExchanges; i++) {
+        exchanges[i].forEach((index) => selected.add(index));
+        exchanges[exchanges.length - 1 - i].forEach((index) => selected.add(index));
     }
 
-    // Guaranteed turns: first 5 exchanges, last 5 exchanges,
-    // AND any turn where the doctor asked a specific clinical question
-    // (regardless of whether it mapped a known intent — fallback via specificityScore)
-    const guaranteedIndices = new Set<number>();
-    for (let i = 0; i < Math.min(10, totalTurns); i++) guaranteedIndices.add(i);
-    for (let i = Math.max(0, totalTurns - 10); i < totalTurns; i++) guaranteedIndices.add(i);
-    for (const q of extractedQuestions) {
-        // Include if intent mapped (catalogue match) OR if it's a specific clinical question
-        // This ensures non-GI specialties get their questions included even if catalogue misses
-        const isClinicallySalient = q.intentSeen || q.specificityScore > 2.0;
-        if (isClinicallySalient) {
-            const chatIdx = q.turnIndex * 2;
-            guaranteedIndices.add(chatIdx);
-            guaranteedIndices.add(chatIdx + 1); // include patient reply too
-        }
+    const render = (indices: ReadonlySet<number>) => [...indices].sort((a, b) => a - b).map((i) => {
+        const message = chatHistory[i];
+        const label = message.role === "user" ? "Doctor" : "Patient";
+        return `${label}: ${String(message.content ?? "").trim()}`;
+    }).join("\n");
+
+    let remaining = tokenTarget - estimateTokens(render(selected));
+    if (remaining <= 0) return render(selected);
+
+    const middle = exchanges.slice(edgeExchanges, Math.max(edgeExchanges, exchanges.length - edgeExchanges));
+    const cost = (exchange: number[]) => estimateTokens(exchange.map((i) => {
+        const message = chatHistory[i];
+        const label = message.role === "user" ? "Doctor" : "Patient";
+        return `${label}: ${String(message.content ?? "").trim()}`;
+    }).join("\n"));
+    const costs = middle.map(cost);
+    const average = costs.length ? costs.reduce((sum, value) => sum + value, 0) / costs.length : 0;
+    const slots = average > 0 ? Math.min(middle.length, Math.max(1, Math.floor(remaining / average))) : 0;
+
+    // Stratified positions spread context throughout the encounter. Oversized exchanges are skipped rather than
+    // displacing all later context, and the chosen turns remain in their original order.
+    for (let slot = 0; slot < slots; slot++) {
+        const index = Math.min(middle.length - 1, Math.floor(((slot + 0.5) * middle.length) / slots));
+        if (costs[index] > remaining) continue;
+        middle[index].forEach((turn) => selected.add(turn));
+        remaining -= costs[index];
     }
 
-    // Build from guaranteed turns first
-    const selected = [...guaranteedIndices].sort((a, b) => a - b);
-
-    // Fill remaining budget from middle
-    let budget = tokenTarget;
-    const guaranteed = selected.map(i => allTurns[i]).filter(Boolean);
-    budget -= estimateTokens(guaranteed.map(m => String(m.content)).join(" "));
-
-    // Add middle turns if budget allows
-    const middle = allTurns
-        .filter((_, i) => !guaranteedIndices.has(i))
-        .slice(0, Math.floor(budget / 30)); // ~30 tokens per turn estimate
-
-    const finalTurns = [...new Set([...guaranteed, ...middle])];
-
-    return finalTurns
-        .map(m => {
-            const label = m.role === "user" ? "Doctor" : "Patient";
-            return `${label}: ${String(m.content ?? "").trim()}`;
-        })
-        .join("\n");
+    return render(selected);
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -390,8 +392,9 @@ export class IntentExtractor {
         const rawTranscript = buildTranscript(chatHistory);
         const tokenCount = estimateTokens(rawTranscript);
 
-        // Build optimal transcript (respects token budget)
-        const transcript = buildBudgetedTranscript(chatHistory, doctorQuestions, 3000);
+        // Build a budgeted transcript without letting the local keyword catalogue determine which clinical turns
+        // reach the semantic examiner.
+        const transcript = buildBudgetedTranscript(chatHistory, 3000);
 
         // Detect "asked but not actioned" flags
         const suspectedIgnoredFlags = detectIgnoredFlags(
