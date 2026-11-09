@@ -28,8 +28,13 @@ async function main() {
     let classic = 0;
     let rubric = 0;
     let legacyUpgraded = 0;
+    let legacyUnknownResults = 0;
+    let legacyReviewedResults = 0;
     for (const row of [...(rows ?? [])].sort((a, b) => a.id.localeCompare(b.id))) {
         const source = row.case_json as any;
+        const legacyTests = Array.isArray(source?.tests) ? source.tests.filter((t: any) => t?.result?.origin === "legacy_unknown") : [];
+        legacyUnknownResults += legacyTests.length;
+        legacyReviewedResults += legacyTests.filter((t: any) => typeof t?.result?.basis === "string" && t.result.basis.trim()).length;
         const upgraded = upgradeLegacyCase({ ...source, id: row.id }, { appearance: (appearanceOverlays as any)[row.id] });
         const c = upgraded;
         const errors: string[] = [];
@@ -52,7 +57,7 @@ async function main() {
             }
         }
         if (source?.evaluation_config) {
-            const validated = checkDraft(source, { catalogIds: new Set(CATALOG_TEST_IDS), identifiers: { names: [], places: [] } });
+            const validated = checkDraft(source, { catalogIds: new Set(CATALOG_TEST_IDS), identifiers: { names: [], places: [] }, allowLegacyUnknownOrigin: true, allowLegacyTestIds: true });
             errors.push(...validated.errors);
             const testingRequired = c.evaluation_config?.testing?.testing_required === true;
             warnings.push(...validated.warnings.filter((message) => {
@@ -94,7 +99,7 @@ async function main() {
             for (const message of bundledWarnings) console.log(`  REVIEW ${message}`);
         }
     }
-    console.log(`\n${rows?.length ?? 0} published cases + ${isSimulationCase(bundled) ? 1 : 0} bundled simulation checked: ${classic} classic, ${rubric} rubric (${legacyUpgraded} classic cases upgraded for runtime); ${casesWithErrors} case(s) with structural errors (${errorCount} errors); ${issueCount - errorCount} review notes.`);
+    console.log(`\n${rows?.length ?? 0} published cases + ${isSimulationCase(bundled) ? 1 : 0} bundled simulation checked: ${classic} classic, ${rubric} rubric (${legacyUpgraded} classic cases upgraded for runtime); ${casesWithErrors} case(s) with structural errors (${errorCount} errors); ${issueCount - errorCount} review notes; ${legacyUnknownResults} legacy test results with unknown original provenance, ${legacyReviewedResults} with a plausibility review note.`);
     console.log("Read-only structural validation only. It cannot establish clinical correctness or semantic grading fairness; those require clinician review and transcript calibration.");
 }
 

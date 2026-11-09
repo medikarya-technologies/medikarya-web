@@ -15,6 +15,10 @@ export interface CheckContext {
   /** From the case sheet: the patient's name and case number must not appear anywhere (an error); their address
    *  should not (a warning, since a town name can turn up innocently). */
   identifiers: { names: readonly string[]; places: readonly string[] };
+  /** Published legacy cases may have missing source sheets. Keep that uncertainty explicit without treating it as a draft authoring pattern. */
+  allowLegacyUnknownOrigin?: boolean;
+  /** Preserve short but valid IDs on published legacy cases without changing IDs already stored in attempt logs. */
+  allowLegacyTestIds?: boolean;
 }
 
 type Json = Record<string, any>;
@@ -24,6 +28,7 @@ const strArr = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) =>
 
 const DIFFICULTIES = ["Beginner", "Intermediate", "Advanced"];
 const EXPRESSIONS = ["calm", "tired", "anxious", "pain", "distress", "breathless", "drowsy", "irritable", "photophobic"];
+const LEGACY_CUSTOM_TEST_IDS = new Set(["iem", "bp", "fundoscopy", "tsb"]);
 
 // Words that say what the disease is, taken from the accepted diagnoses (not generic words like "acute").
 const GENERIC = new Set([
@@ -80,7 +85,15 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
     // The bedside's Examine tab offers one manoeuvre per "<system>_examination" section (legacy-adapter.ts).
     const exams = Object.keys(c.patient_facts).filter((k) => /_examination$/.test(k));
     if (exams.length === 0) errors.push('patient_facts has no "<system>_examination" sections: the student would have nothing to examine.');
-    else if (exams.length < 3) warnings.push(`Only ${exams.length} examination section${exams.length === 1 ? "" : "s"} (${exams.join(", ")}): check the case sheet's systemic examination made it in.`);
+    else if (
+      exams.length === 1 && exams[0] === "general_physical_examination" &&
+      !(isObj(c.patient_facts.general_physical_examination) &&
+        Object.keys(c.patient_facts.general_physical_examination).some((k) =>
+          /abdomen|respiratory|chest|cardiovascular|heart|neurolog|lymph|skin|fundus|extremit|musculoskel|genitourin/i.test(k)
+        ))
+    ) {
+      warnings.push("Only a general physical examination is available: check whether the source has documented system-specific findings; do not invent them.");
+    }
   }
   if (c.appearance !== undefined) {
     const a = c.appearance;
@@ -111,13 +124,19 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
       if (!isObj(t.result) || !isStr(t.result.summary) || !Array.isArray(t.result.values) || !isStr(t.result.interpretation)) {
         errors.push(`tests "${t.id}" needs result.summary, result.values[] and result.interpretation.`);
       }
-      if (isObj(t.result) && !["case_sheet", "ai", "reviewer"].includes(t.result.origin)) {
-        warnings.push(`tests "${t.id}" does not say where its values came from (result.origin "case_sheet" or "ai").`);
+      if (isObj(t.result) && t.result.origin === "legacy_unknown" && ctx.allowLegacyUnknownOrigin) {
+        // For published records only: the source was not retained, and the reviewer must document the limits of
+        // the plausibility check without implying that an online reference proves the patient's exact result.
+        if (!isStr(t.result.basis) || !t.result.basis.trim()) {
+          errors.push(`tests "${t.id}" has unknown legacy provenance and needs a result.basis review note.`);
+        }
+      } else if (isObj(t.result) && !["case_sheet", "ai", "reviewer"].includes(t.result.origin)) {
+        errors.push(`tests "${t.id}" must set result.origin to "case_sheet", "ai", or "reviewer"; only an audited published legacy case may use "legacy_unknown".`);
       } else if (isObj(t.result) && t.result.origin === "ai" && !isStr(t.result.basis)) {
-        warnings.push(`tests "${t.id}" was added by the AI but gives no basis for its values.`);
+        errors.push(`tests "${t.id}" was added by the AI but gives no basis for its values.`);
       }
-      if (!ctx.catalogIds.has(t.id) && !/^[a-z0-9]+(-[a-z0-9]+)+$/.test(t.id)) {
-        warnings.push(`tests "${t.id}" is neither a catalog id nor a hyphenated custom id.`);
+      if (!ctx.catalogIds.has(t.id) && !/^[a-z0-9]+(-[a-z0-9]+)+$/.test(t.id) && !(ctx.allowLegacyTestIds && LEGACY_CUSTOM_TEST_IDS.has(t.id))) {
+        errors.push(`tests "${t.id}" must use a catalog id or a hyphenated custom id.`);
       }
     }
   }
@@ -165,7 +184,7 @@ export function checkDraft(c: unknown, ctx: CheckContext): CheckResult {
           warnings.push(`${t.core_tests.length + groups.length} core tests: a student who orders a sensible 3 would score near 0 for testing. Keep core to the tests that confirm the diagnosis (5 at most) and make the rest optional.`);
         }
       }
-      if (strArr(t.distractor_tests) && t.distractor_tests.length < 3) warnings.push("Fewer than 3 distractor tests: over-ordering will barely cost anything.");
+      // No minimum distractor count: an unjustified distractor can deduct marks from a reasonable investigation.
     }
     const d = ev.diagnosis;
     if (!isObj(d) || !strArr(d.accepted_primary) || d.accepted_primary.length === 0) errors.push("evaluation_config.diagnosis.accepted_primary is empty.");

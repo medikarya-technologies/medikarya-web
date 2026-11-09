@@ -32,11 +32,26 @@ Facts
   value from what the sheet does document (pulse, BP, pallor, icterus, the examination, the diagnosis) so the case
   stays consistent, and add one line per proposal to review_notes ("CBC values proposed: not in the case sheet.").
   Every invented clinical detail must be in review_notes.
+- Before proposing values, run a consistency check across age, sex, pregnancy/gestation, timing, examination, units,
+  arithmetic, reference ranges, summaries and interpretations. For children use age-specific ranges; for neonates use
+  age-in-hours/days, gestation and risk context where relevant. Never copy an adult range into a child case. Derived
+  fractions must add up to the total within rounding. An interpretation must be supported by the actual values and
+  documented examination: for example, do not claim eosinophilia is absent if the differential count is missing, or
+  that a normal CBC proves a viral cause.
+- If the case sheet, exam description and investigation values conflict, do not silently choose which fact is true.
+  Preserve documented source facts, add a specific review_notes item naming the conflict and asking the clinical
+  author to resolve it. External guidelines support plausibility and test selection; they cannot verify an individual
+  historical patient's missing measurement. Only when deliberately re-authoring a synthetic teaching case may you
+  replace a conflicting value: mark it origin "ai", give its basis, and state the change and rationale in review_notes.
 
 Where each value came from (a clinical reviewer reads this instead of playing the case)
 - Every test result has "origin": "case_sheet" if its values are written in the sheet, "ai" if you proposed them.
   An "ai" result also has "basis": one short line naming the documented findings it follows from ("Hb 9.2 g/dL: the
   sheet documents conjunctival pallor and a pulse of 104/min").
+- Use "legacy_unknown" only when revising an already-published case whose original source sheet was not retained; it
+  means exactly that the value's provenance cannot now be verified. Add a result.basis note saying what was checked,
+  which guideline supports clinical plausibility, and that it does not verify the individual historical value. Never
+  use it for a new conversion.
 - Every vital sign in patient.vitalSigns has "origin" the same way (a vital the sheet records is "case_sheet").
 
 Identity and privacy
@@ -62,8 +77,9 @@ Scoring (evaluation_config)
 - history.reference_questions: 8–15 questions a strong student would actually type, in plain words, together asking
   every required question (for clinical review and calibration; never used as a keyword scoring rule).
 - testing: core_tests = what confirms the diagnosis (each must be in tests[]); optional_tests = reasonable extras;
-  distractor_tests = 5–10 catalog ids that are low-value here; dangerous_tests = 1–4 catalog ids that are invasive or
-  unsafe without indication. Every id must be in tests[] or the catalog.
+  distractor_tests = catalog ids you can clinically defend as low-value in this case; do not pad this list to reach a
+  count, because each listed distractor deducts marks. dangerous_tests = catalog ids that are clearly unsafe or
+  invasive without indication. Every id must be in tests[] or the catalog. Unlisted tests are neutral.
 - diagnosis.accepted_primary: 3–8 wordings of the diagnosis a correct student might write, including the usual short
   name and abbreviation ("AKI", "TIA"). These support the semantic examiner and an exact-match outage safety net.
   Spelling slips, case, plurals, "probable"/"likely" and common abbreviations are already forgiven, so do not list
@@ -131,7 +147,14 @@ export async function convertStudioCase(
   /** authorUpdated: the author has since corrected the case sheet themselves to answer these comments. */
   revise?: { previous: { case: unknown; review_notes: string[] }; comments: string; authorUpdated?: boolean }
 ): Promise<Conversion> {
-  const ctx = { catalogIds, identifiers: sc.identifiers };
+  const ctx = {
+    catalogIds,
+    identifiers: sc.identifiers,
+    // A reviewer rebuilding an imported legacy draft may preserve its explicit provenance/ID exceptions; brand-new
+    // conversions must use known origins and catalog or hyphenated custom IDs.
+    allowLegacyUnknownOrigin: !!revise,
+    allowLegacyTestIds: !!revise,
+  };
 
   let out = await generate(
     revise

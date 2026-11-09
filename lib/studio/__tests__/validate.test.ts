@@ -126,13 +126,19 @@ describe("checkDraft", () => {
     assert.deepEqual(checkDraft(c, ctx).errors, []);
   });
 
-  it("needs something to examine, and warns when the systemic examination is thin", () => {
+  it("needs something to examine, and flags only a general exam with no focused findings", () => {
     const none = good();
     none.patient_facts = { identity: {}, chief_complaint: "x", timeline: {} };
     assert.ok(checkDraft(none, ctx).errors.some((e) => e.includes("nothing to examine")));
-    const thin = good();
-    delete thin.patient_facts.respiratory_examination;
-    assert.ok(checkDraft(thin, ctx).warnings.some((w) => w.startsWith("Only 2 examination sections")));
+    const focused = good();
+    delete focused.patient_facts.respiratory_examination;
+    delete focused.patient_facts.local_examination;
+    focused.patient_facts.general_physical_examination = "Vitals stable.";
+    focused.patient_facts.cardiovascular_examination = "Heart sounds normal.";
+    assert.equal(checkDraft(focused, ctx).warnings.some((w) => w.includes("examination")), false);
+    const generalOnly = good();
+    generalOnly.patient_facts = { identity: {}, chief_complaint: "x", timeline: {}, general_physical_examination: "Vitals stable." };
+    assert.ok(checkDraft(generalOnly, ctx).warnings.some((w) => w.includes("system-specific findings")));
   });
 
   it("rejects an appearance the portrait cannot draw", () => {
@@ -143,13 +149,36 @@ describe("checkDraft", () => {
     assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes("appearance.expression")));
   });
 
-  it("asks every result to say where it came from, and an AI-added one why", () => {
+  it("blocks results without source provenance or an AI basis", () => {
     const c = good();
     delete c.tests[0].result.origin;
     delete c.tests[1].result.basis;
-    const { warnings } = checkDraft(c, ctx);
-    assert.ok(warnings.some((w) => w.includes('"tsh" does not say where')));
-    assert.ok(warnings.some((w) => w.includes('"usg_neck_thyroid" was added by the AI but gives no basis')));
+    const { errors } = checkDraft(c, ctx);
+    assert.ok(errors.some((e) => e.includes('"tsh" must set result.origin')));
+    assert.ok(errors.some((e) => e.includes('"usg_neck_thyroid" was added by the AI but gives no basis')));
+  });
+
+  it("allows unknown legacy provenance only during a published-case audit", () => {
+    const c = good();
+    c.tests[0].result.origin = "legacy_unknown";
+    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes('"tsh" must set result.origin')));
+    assert.ok(checkDraft(c, { ...ctx, allowLegacyUnknownOrigin: true }).errors.some((e) => e.includes('"tsh" has unknown legacy provenance')));
+    c.tests[0].result.basis = "Original source unavailable; plausibility reviewed against current guidance, which cannot verify this exact historical value.";
+    assert.equal(checkDraft(c, { ...ctx, allowLegacyUnknownOrigin: true }).errors.length, 0);
+  });
+
+  it("does not require authors to pad the distractor list", () => {
+    const c = good();
+    c.evaluation_config.testing.distractor_tests = [];
+    assert.equal(checkDraft(c, ctx).warnings.some((w) => w.includes("distractor")), false);
+  });
+
+  it("requires new custom test IDs to be hyphenated but preserves known legacy IDs during audit", () => {
+    const c = good();
+    c.tests[0].id = "tsb";
+    c.evaluation_config.testing.core_tests[0] = "tsb";
+    assert.ok(checkDraft(c, ctx).errors.some((e) => e.includes('tests "tsb" must use a catalog id or a hyphenated custom id')));
+    assert.equal(checkDraft(c, { ...ctx, allowLegacyTestIds: true }).errors.length, 0);
   });
 
   it("needs a heart rate for the bedside monitor", () => {

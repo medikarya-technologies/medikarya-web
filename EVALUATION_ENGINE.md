@@ -3,7 +3,9 @@
 
 > **Purpose of this document:** To explain, in plain language, how MediKarya grades a medical student's performance during a simulated clinical case. This document is intended for faculty, curriculum designers, and clinical supervisors who want to understand the scoring logic, its pedagogical intent, and how to interpret student results.
 >
-> **Implementation version:** MediKarya v2.0 (April 2026). Reflects the refactored multi-module engine under `engine/evaluation/`.
+> **Status:** Historical technical snapshot (April 2026). Some implementation details below are out of date and must not be used to author or approve a case. The current case-writing, provenance, paediatric consistency and fairness standard is [CASE_AUTHORING_GUIDE.md](CASE_AUTHORING_GUIDE.md). For scoring behavior, verify the current implementation in `engine/evaluation/` and `lib/simulation/`.
+
+> **Important correction:** Older sections in this file describe keyword-based diagnosis acceptance and older history-scoring behavior. Current classic diagnosis scoring does not require `must_include_keywords`; history uses semantic coverage when available with a keyword fallback only when that judgment cannot be used. The current classic test scorer uses exact test IDs and configured categories. Read the current code and case-authoring guide before relying on any numeric detail below.
 
 ---
 
@@ -162,6 +164,11 @@ Tests are matched by exact ID (no fuzzy logic). The scoring formula:
 | Dangerous test ordered | **−10** (also added to `safetyPenalty`) |
 
 The raw score is clamped to **[0, 20]**.
+
+Only IDs explicitly listed in a case rubric affect this score. A test left unlisted is neutral; authors must not add
+an unjustified `distractor_tests` entry just to meet a numeric quota, because each listed distractor subtracts 4
+points. Reasonable alternatives belong in `optional_tests` or a `core_test_groups` entry, and published-case audits
+do not treat a short distractor list as a scoring error.
 
 **Special case — `testing_required: false`:**
 - If the case doesn't require tests and the student ordered nothing → **20 pts** (correct clinical restraint)
