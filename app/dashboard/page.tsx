@@ -7,6 +7,7 @@ import { getDashboardData, getMyCertificates } from "@/app/actions/dashboard"
 import { getCases } from "@/data/cases"
 import { FIRST_CASE_HREF } from "@/lib/library/first-case"
 import { isBrandNewVisit } from "@/lib/library/first-case-server"
+import { claimGuestAttempts } from "@/lib/library/guest-claim-server"
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboard" };
@@ -18,6 +19,9 @@ async function DashboardStats() {
 }
 
 export default async function DashboardPage() {
+  // The free case they just played as a guest comes with them first (lib/library/guest-claim.ts), so they see that
+  // score here instead of being sent to the same patient again.
+  await claimGuestAttempts()
   // A brand-new account meets its first patient instead of an empty dashboard, once (lib/library/first-case.ts).
   if (await isBrandNewVisit()) redirect(FIRST_CASE_HREF)
 

@@ -17,7 +17,8 @@ export async function auth() {
 
 function asClerkUser(u: DevUser) {
   const [firstName, ...rest] = u.name.split(" ")
-  return { id: u.clerkId, firstName, lastName: rest.join(" ") || null, fullName: u.name, username: u.name, emailAddresses: [{ emailAddress: u.email }] }
+  // createdAt: a dummy account counts as just made, so a guest play from this browser moves onto it (guest-claim.ts)
+  return { id: u.clerkId, firstName, lastName: rest.join(" ") || null, fullName: u.name, username: u.name, emailAddresses: [{ emailAddress: u.email }], createdAt: Date.now() }
 }
 
 export async function currentUser() {

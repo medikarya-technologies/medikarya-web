@@ -12,6 +12,8 @@ import { checkAiAccess } from "@/lib/plans/access";
 import { activeInvite } from "@/lib/advisors/invites";
 import { scoreClassicAttempt, scoreForPersistence, scoreRubricAttempt } from "@/lib/scoring/score-attempt";
 import { gradingAuditFor } from "@/lib/scoring/grading-audit";
+import { GUEST_ID, guestOwner } from "@/lib/library/guest-claim";
+import { guestIdForSave } from "@/lib/library/guest-claim-server";
 
 /** Scoring spends AI (classic cases) and records an attempt: same rules as the AI routes (lib/plans/access.ts). */
 async function authorisedCase(caseId: unknown) {
@@ -61,9 +63,6 @@ async function milestonesEarnedBy(before: AttemptRow[], attempt: AttemptRow): Pr
     }
 }
 
-/** The id a visitor's browser keeps for them on /try (crypto.randomUUID). */
-const GUEST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /**
  * Saves the attempt and bumps the user's streak. A database failure never fails
  * the evaluation the student is waiting on.
@@ -95,10 +94,11 @@ async function persistAttempt({ caseId, score, xpEarned, timeTaken, feedbackJson
                     insertPayload.guest_id = guestId;
                     insertPayload.user_id = `advisor:${invite.id}`;
                 } else if (GUEST_ID.test(guestId)) {
-                    // A visitor on /try with no account: filed as "guest:<the id their browser keeps>", so their plays
-                    // show in Admin → User Activity (they were thrown away before). guest_id is left empty, because
-                    // that column is how advisor plays are found.
-                    insertPayload.user_id = `guest:${guestId}`;
+                    // A visitor on /try with no account: filed as "guest:<id>", so their plays show in Admin → User
+                    // Activity and move onto the account they make next (lib/library/guest-claim.ts). The id is the
+                    // server's cookie, not whatever the browser sends. guest_id is left empty, because that column is
+                    // how advisor plays are found.
+                    insertPayload.user_id = guestOwner(await guestIdForSave(guestId));
                 }
             }
             if (!insertPayload.user_id) return { milestones };
