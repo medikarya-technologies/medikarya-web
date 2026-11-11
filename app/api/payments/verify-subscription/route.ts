@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getRazorpay } from "@/lib/razorpay";
 import { saveSubscription, subscriptionOwner, type RazorpaySubscriptionEntity } from "@/lib/payments/subscriptions";
 import { markCheckoutPaid } from "@/lib/payments/checkout-attempts";
+import { paidAmount } from "@/lib/payments/paid-amount";
 
 // Runs when subscription checkout reports success. For a subscription Razorpay signs payment_id|subscription_id
 // (not order_id, as for a one-time payment). Once the signature holds, it reads the subscription back from
@@ -42,6 +43,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This subscription belongs to a different account" }, { status: 403 });
     }
 
+    // What was really collected (after any coupon), for the browser's Purchase event. Only a report: a failure here
+    // never fails the payment, the browser just sends no Purchase.
+    let paid: ReturnType<typeof paidAmount> = null;
+    try {
+      paid = paidAmount(await razorpay.payments.fetch(razorpay_payment_id));
+    } catch (paymentError) {
+      console.error("Could not read the paid amount:", paymentError);
+    }
+
     const { error } = await saveSubscription(sub);
     try {
       await markCheckoutPaid(razorpay_subscription_id, razorpay_payment_id);
@@ -52,10 +62,10 @@ export async function POST(request: NextRequest) {
     if (error) {
       // The payment itself went through; the webhook will save it too, so say so rather than failing the student.
       console.error("Verified subscription could not be saved:", error);
-      return NextResponse.json({ verified: true, saved: false, status: sub.status, tier: owner.tier });
+      return NextResponse.json({ verified: true, saved: false, status: sub.status, tier: owner.tier, paid });
     }
 
-    return NextResponse.json({ verified: true, saved: true, status: sub.status, tier: owner.tier });
+    return NextResponse.json({ verified: true, saved: true, status: sub.status, tier: owner.tier, paid });
   } catch (error) {
     console.error("Error verifying Razorpay subscription:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

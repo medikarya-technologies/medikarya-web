@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { loadMetaPixel, trackMetaPageView } from "@/lib/meta-pixel"
+import { AnalyticsIdentity } from "@/components/privacy/analytics-identity"
+import { adSource, loadMetaPixel, noteVisit, trackMetaPageView, trafficType } from "@/lib/meta-pixel"
 
 // v2 added the Meta Pixel (advertising). A "yes" to v1 covered analytics only, so those visitors are asked again; a
 // "no" to v1 still stands.
@@ -16,6 +17,7 @@ export function CookieConsent() {
     const [show, setShow] = useState(false)
 
     useEffect(() => {
+        noteVisit()
         const saved = localStorage.getItem(KEY)
         if (saved === "accepted" || saved === "rejected") setChoice(saved)
         else if (localStorage.getItem(OLD_KEY) === "rejected") setChoice("rejected")
@@ -47,10 +49,13 @@ export function CookieConsent() {
         if (clarity) clarity("consentv2", { ad_Storage: "denied", analytics_Storage: "granted" })
         loadMetaPixel()
         if (document.getElementById("clarity-script")) return
+        // Clarity sessions carry the same labels as the Meta events, so its funnels can leave out our own testing and
+        // look at visitors from Meta ads on their own.
+        const tags = `c[a]("set","traffic_type","${trafficType()}");${adSource() ? `c[a]("set","ad_source","meta");` : ""}`
         const script = document.createElement("script")
         script.id = "clarity-script"
         script.async = true
-        script.text = `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a]("consentv2",{ad_Storage:"denied",analytics_Storage:"granted"});t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","vhuxiqi1u5");`
+        script.text = `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};c[a]("consentv2",{ad_Storage:"denied",analytics_Storage:"granted"});${tags}t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","vhuxiqi1u5");`
         document.head.appendChild(script)
     }, [choice])
 
@@ -61,11 +66,13 @@ export function CookieConsent() {
     useEffect(() => {
         if (lastPath.current === pathname) return
         lastPath.current = pathname
-        trackMetaPageView()
+        // On the next tick, once the router has put the new address in the bar: the event reports location.href.
+        const timer = window.setTimeout(trackMetaPageView, 0)
+        return () => window.clearTimeout(timer)
     }, [pathname])
 
     return <>
-        {choice === "accepted" && <SpeedInsights />}
+        {choice === "accepted" && <><SpeedInsights /><AnalyticsIdentity /></>}
         {show && <div role="dialog" aria-label="Cookie preferences" aria-modal="false" className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:inset-x-6 sm:bottom-6">
             <h2 className="text-base font-bold text-slate-900">Your privacy choices</h2>
             <p className="mt-1 text-sm leading-relaxed text-slate-600">Essential storage keeps sign-in and the site working. With your permission, Microsoft Clarity and Vercel Speed Insights help us understand site use and performance, and the Meta Pixel tells us which of our Facebook and Instagram ads bring people here. You can change your choice anytime in <a className="underline" href="/cookies">Cookie Policy</a>.</p>

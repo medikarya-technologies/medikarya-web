@@ -45,6 +45,7 @@ import { EncounterTopBar, MobileTabBar, WorkspaceHeader, type TabDef, type TabId
 import { PatientPortrait } from "./patient-portrait"
 import { usePatientAppearance } from "./use-patient-appearance"
 import { NurseAlertBanner } from "./nurse-alert-banner"
+import { trackMetaEvent } from "@/lib/meta-pixel"
 import { SimulationExamConsole } from "./simulation-exam-console"
 import { SimulationInvestigations } from "./simulation-investigations"
 
@@ -93,6 +94,19 @@ interface UiSaved {
   assessmentDraft?: { slots: string[]; reasoning: string; management: string }
   /** Generated quiz for classically scored cases; rubric cases derive theirs from the result. */
   quizData?: any
+  /**
+   * A random id for this play of the case, kept with it so a resume or refresh is the same play. Only analytics use
+   * it (CaseStarted / CaseCompleted counted once each); it says nothing about the case or the student.
+   */
+  playId: string
+}
+
+function newPlayId(): string {
+  try {
+    return crypto.randomUUID()
+  } catch {
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  }
 }
 
 function readUi(key: string): UiSaved {
@@ -109,12 +123,13 @@ function readUi(key: string): UiSaved {
             management: typeof draft.management === "string" ? draft.management : "",
           }
         : undefined
-      return { chat: parsed.chat, feedback: parsed.feedback ?? null, showQuiz: !!parsed.showQuiz, quizData: parsed.quizData, assessmentDraft }
+      const playId = typeof parsed.playId === "string" && parsed.playId ? parsed.playId : newPlayId()
+      return { chat: parsed.chat, feedback: parsed.feedback ?? null, showQuiz: !!parsed.showQuiz, quizData: parsed.quizData, assessmentDraft, playId }
     }
   } catch {
     /* fall through */
   }
-  return { chat: [], feedback: null, showQuiz: false }
+  return { chat: [], feedback: null, showQuiz: false, playId: newPlayId() }
 }
 
 // ── Public entry ────────────────────────────────────────────────────────────
@@ -251,6 +266,15 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   const speaksForSelf: boolean = caseData.ai_role?.can_speak_for_self !== false
   const speaker: string = caseData.ai_role?.speaker ?? "parent"
 
+  // ── Analytics: the encounter is open and playable ─────────────────────
+  // Keyed by the play, so a resume, a refresh or React running this twice counts it once. Mounting straight into an
+  // old result is not a start. No case or clinical detail goes with it.
+  const analyticsSurface = typeof window !== "undefined" && window.location.pathname.startsWith("/try") ? "try" : "dashboard"
+  useEffect(() => {
+    if (!feedback) trackMetaEvent("CaseStarted", ui.playId, { surface: analyticsSurface })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ui.playId])
+
   // ── Resume notice ─────────────────────────────────────────────────────
   useEffect(() => {
     if (resumedAt !== null && !feedback) {
@@ -354,6 +378,9 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
     }
     setUi((prev) => ({ ...prev, feedback: result }))
     setEvaluating(false)
+    // The one place a play really finishes (a debrief shown again later is not a completion). Only the fact goes to
+    // Meta: no score, case or answer.
+    trackMetaEvent("CaseCompleted", ui.playId, { surface: analyticsSurface })
     // Start the classic quiz in the background, as the classic flow does, so it is ready by the time it is wanted.
     if (isClassic) startClassicQuiz(result, 3000)
   }

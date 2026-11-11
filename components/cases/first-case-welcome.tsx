@@ -12,7 +12,6 @@ import { useUser } from "@clerk/nextjs"
 import { ArrowRight, Clock, Compass, FlaskConical, Hand, LayoutGrid, MessageSquare, PauseCircle, Stethoscope } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { trackEvent } from "@/lib/clarity"
-import { trackMetaEvent } from "@/lib/meta-pixel"
 
 // The same four steps, names and icons as the tabs at the bedside, so the student recognises them there. Each has
 // its own colour; brand and accent follow the theme by themselves, the other two have their dark-mode shades here.
@@ -55,11 +54,8 @@ export function FirstCaseWelcomeDialog({
   const { user } = useUser()
   const firstName = user?.firstName?.trim().split(/\s+/)[0] ?? ""
 
-  // This dialog shows once, on a brand-new account's first dashboard visit, so for Meta it marks a finished sign-up.
   useEffect(() => {
-    if (!open) return
-    trackEvent("first_case_welcome")
-    trackMetaEvent("CompleteRegistration")
+    if (open) trackEvent("first_case_welcome")
   }, [open])
 
   const chose = (choice: WelcomeChoice) => trackEvent("first_case_welcome_choice", { welcome_choice: choice })

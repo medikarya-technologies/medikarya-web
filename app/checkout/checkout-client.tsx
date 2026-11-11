@@ -87,8 +87,12 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
               return
             }
             trackEvent("Subscribed", { checkout_plan: checkoutPlan })
-            // The list price: a coupon may have taken some off, which this page does not know.
-            trackMetaEvent("Subscribe", { value: amount, currency: "INR", predicted_ltv: amount, content_name: checkoutPlan })
+            // Only a verified payment with the amount Razorpay really collected (after any coupon). A zero or unknown
+            // amount sends nothing rather than a guess. Keyed by the payment, so it is counted once.
+            const paid = result.paid as { amount: number; currency: string } | null | undefined
+            if (paid && paid.amount > 0) {
+              trackMetaEvent("Purchase", response.razorpay_payment_id, { value: paid.amount, currency: paid.currency, content_name: checkoutPlan })
+            }
             await refreshPlan()
             toast({
               title: user?.firstName ? `Hi ${user.firstName}, thank you for subscribing!` : "Thank you for subscribing to MediKarya!",
@@ -137,8 +141,10 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
         toast({ title: "Payment failed", description: response.error.description, variant: "destructive" })
       })
       trackEvent("Checkout_Opened", { checkout_plan: checkoutPlan })
-      trackMetaEvent("InitiateCheckout", { value: amount, currency: "INR", content_name: checkoutPlan })
       checkout.open()
+      // After open() has put Razorpay's window up, keyed by this checkout's subscription. The list price: a coupon's
+      // discount is only known once paid.
+      trackMetaEvent("InitiateCheckout", created.subscription_id, { value: amount, currency: "INR", content_name: checkoutPlan })
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Please try again in a moment.")
     } finally {
