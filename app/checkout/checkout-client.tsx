@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { loadCheckoutScript } from "@/components/payments/razorpay-checkout-button"
 import { refreshPlan } from "@/components/plans/use-plan"
 import { trackEvent } from "@/lib/clarity"
+import { trackMetaEvent } from "@/lib/meta-pixel"
 import { PLAN_OFFERS, rupees } from "@/lib/plans/catalog"
 import { CHECKOUT_COLOR, CHECKOUT_NAME, checkoutLogo } from "@/lib/payments/checkout-brand"
 
@@ -86,6 +87,8 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
               return
             }
             trackEvent("Subscribed", { checkout_plan: checkoutPlan })
+            // The list price: a coupon may have taken some off, which this page does not know.
+            trackMetaEvent("Subscribe", { value: amount, currency: "INR", predicted_ltv: amount, content_name: checkoutPlan })
             await refreshPlan()
             toast({
               title: user?.firstName ? `Hi ${user.firstName}, thank you for subscribing!` : "Thank you for subscribing to MediKarya!",
@@ -134,6 +137,7 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
         toast({ title: "Payment failed", description: response.error.description, variant: "destructive" })
       })
       trackEvent("Checkout_Opened", { checkout_plan: checkoutPlan })
+      trackMetaEvent("InitiateCheckout", { value: amount, currency: "INR", content_name: checkoutPlan })
       checkout.open()
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Please try again in a moment.")
