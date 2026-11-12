@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeController } from "@/components/theme-controller"
 import { themeInitScript } from "@/lib/theme"
 import { CookieConsent } from "@/components/privacy/cookie-consent"
+import { GuestPlayClaim } from "@/components/library/guest-play-claim"
 import { organizationJsonLd, websiteJsonLd, OG_IMAGE } from "@/lib/seo/site"
 
 const geistSans = Geist({
@@ -156,6 +157,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </LayoutClient>
           <CookieConsent />
+          <GuestPlayClaim />
           <Toaster />
         </body>
       </html>
