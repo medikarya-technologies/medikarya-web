@@ -8,6 +8,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
+import { recordTryStep } from "@/lib/try-funnel-client"
 
 const DONE_KEY = "mk_guest_claimed"
 
@@ -28,7 +29,11 @@ export function GuestPlayClaim() {
         try {
           sessionStorage.setItem(DONE_KEY, userId)
         } catch {}
-        if (!cancelled && (body.moved ?? 0) > 0) router.refresh()
+        if ((body.moved ?? 0) > 0) {
+          // The last step of the /try funnel: a guest's play became an account's.
+          recordTryStep("signed_up", "", { anywhere: true })
+          if (!cancelled) router.refresh()
+        }
       })
       .catch(() => {})
     return () => {

@@ -46,6 +46,8 @@ import { PatientPortrait } from "./patient-portrait"
 import { usePatientAppearance } from "./use-patient-appearance"
 import { NurseAlertBanner } from "./nurse-alert-banner"
 import { trackMetaEvent } from "@/lib/meta-pixel"
+import { stepForEvent } from "@/lib/try-funnel"
+import { recordTryStep } from "@/lib/try-funnel-client"
 import { SimulationExamConsole } from "./simulation-exam-console"
 import { SimulationInvestigations } from "./simulation-investigations"
 
@@ -271,9 +273,20 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   // old result is not a start. No case or clinical detail goes with it.
   const analyticsSurface = typeof window !== "undefined" && window.location.pathname.startsWith("/try") ? "try" : "dashboard"
   useEffect(() => {
-    if (!feedback) trackMetaEvent("CaseStarted", ui.playId, { surface: analyticsSurface })
+    if (feedback) return
+    trackMetaEvent("CaseStarted", ui.playId, { surface: analyticsSurface })
+    recordTryStep("started", ui.playId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ui.playId])
+
+  // The /try funnel's milestones: a first answer, exam and test order (lib/try-funnel.ts). Only on /try; only the
+  // fact that it happened, never what was asked or ordered.
+  useEffect(() => {
+    for (const event of events) {
+      const step = stepForEvent(event.type)
+      if (step) recordTryStep(step, ui.playId)
+    }
+  }, [events, ui.playId])
 
   // ── Resume notice ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -357,6 +370,7 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
     if (evaluating) return
     setEvaluating(true)
     actions.submitAssessment(assessment)
+    recordTryStep("submitted", ui.playId)
     const finalEvents = [...engine.events]
     const timeTaken = Math.round(getNow())
 
@@ -381,6 +395,7 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
     // The one place a play really finishes (a debrief shown again later is not a completion). Only the fact goes to
     // Meta: no score, case or answer.
     trackMetaEvent("CaseCompleted", ui.playId, { surface: analyticsSurface })
+    recordTryStep("finished", ui.playId)
     // Start the classic quiz in the background, as the classic flow does, so it is ready by the time it is wanted.
     if (isClassic) startClassicQuiz(result, 3000)
   }

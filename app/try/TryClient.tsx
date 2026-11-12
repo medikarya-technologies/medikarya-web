@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Loader2, Stethoscope } from "lucide-react"
 import Link from "next/link"
 import { GUEST_CASE_IDS } from "@/lib/plans/limits"
+import { recordTryStep } from "@/lib/try-funnel-client"
 
 const FREE_CASE_ID = GUEST_CASE_IDS[0]
 
@@ -61,6 +62,11 @@ export default function TryClient({ initialCase }: { initialCase: Record<string,
   useEffect(() => {
     loadCase()
   }, [loadCase])
+
+  // The first step of the /try funnel (lib/try-funnel.ts): the briefing was seen.
+  useEffect(() => {
+    recordTryStep("viewed")
+  }, [])
 
   const handleStartCase = async () => {
     try {
