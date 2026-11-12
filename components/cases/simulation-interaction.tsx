@@ -46,6 +46,7 @@ import { PatientPortrait } from "./patient-portrait"
 import { usePatientAppearance } from "./use-patient-appearance"
 import { NurseAlertBanner } from "./nurse-alert-banner"
 import { trackMetaEvent } from "@/lib/meta-pixel"
+import { hideCookieBannerForCase } from "@/components/privacy/cookie-consent"
 import { stepForEvent } from "@/lib/try-funnel"
 import { recordTryStep } from "@/lib/try-funnel-client"
 import { SimulationExamConsole } from "./simulation-exam-console"
@@ -273,6 +274,8 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   // old result is not a start. No case or clinical detail goes with it.
   const analyticsSurface = typeof window !== "undefined" && window.location.pathname.startsWith("/try") ? "try" : "dashboard"
   useEffect(() => {
+    // Whatever the result, the case now fills the screen: the cookie banner must not sit on its controls.
+    hideCookieBannerForCase()
     if (feedback) return
     trackMetaEvent("CaseStarted", ui.playId, { surface: analyticsSurface })
     recordTryStep("started", ui.playId)

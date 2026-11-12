@@ -5,7 +5,7 @@ import { isAdminUser } from "./actions"
 import { RoleToggleButton } from "./role-toggle"
 import {
     ShieldCheck, Users, Crown, GraduationCap,
-    AlertCircle, Activity, Clock, FileText, ScrollText, Stethoscope, Ticket, Trophy, Zap, CreditCard
+    AlertCircle, Activity, Clock, FileText, ScrollText, Stethoscope, Ticket, Trophy, Zap, CreditCard, Filter
 } from "lucide-react"
 
 export const dynamic = "force-dynamic"
@@ -85,6 +85,11 @@ export default async function AdminPage() {
                             className="bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2">
                             <CreditCard className="w-4 h-4 text-emerald-600" />
                             Payments
+                        </a>
+                        <a href="/admin/funnel"
+                            className="bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-sky-600" />
+                            Try Funnel
                         </a>
                         <a href="/admin/studio"
                             className="bg-white border border-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2">
