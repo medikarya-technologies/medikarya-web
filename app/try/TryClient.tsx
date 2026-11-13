@@ -199,6 +199,7 @@ export default function TryClient({ initialCase }: { initialCase: Record<string,
       <FirstCaseConsentDialog
         open={consentOpen}
         onCancel={() => setConsentOpen(false)}
+        compact
         onAgree={() => {
           markConsented()
           setConsentOpen(false)

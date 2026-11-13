@@ -101,14 +101,14 @@ export function CookieConsent() {
 
     return <>
         {choice === "accepted" && <><SpeedInsights /><AnalyticsIdentity /></>}
-        {show && <div ref={bannerRef} role="dialog" aria-label="Cookie preferences" aria-modal="false" className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:inset-x-6 sm:bottom-6 sm:p-5">
-            <h2 className="text-sm font-bold text-slate-900 sm:text-base">Your privacy choices</h2>
-            {/* The same choice in fewer words on a phone, where the full text took half the screen. */}
-            <p className="mt-1 text-[13px] leading-snug text-slate-600 sm:hidden">With your permission we use Microsoft Clarity, Vercel Speed Insights and the Meta Pixel to improve the site and see which ads bring people here. <a className="underline" href="/cookies">Cookie Policy</a></p>
-            <p className="mt-1 hidden text-sm leading-relaxed text-slate-600 sm:block">Essential storage keeps sign-in and the site working. With your permission, Microsoft Clarity and Vercel Speed Insights help us understand site use and performance, and the Meta Pixel tells us which of our Facebook and Instagram ads bring people here. You can change your choice anytime in <a className="underline" href="/cookies">Cookie Policy</a>.</p>
-            <div className="mt-3 flex justify-end gap-2 sm:mt-4">
-                <button onClick={() => save("rejected")} className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 sm:flex-none">Essential only</button>
-                <button onClick={() => save("accepted")} className="flex-1 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white sm:flex-none">Accept</button>
+        {show && <div ref={bannerRef} role="dialog" aria-label="Cookie preferences" aria-modal="false" className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-3 shadow-xl sm:inset-x-6 sm:bottom-5 sm:flex sm:items-center sm:gap-4 sm:p-3.5">
+            <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-bold text-slate-900">Optional analytics cookies</h2>
+                <p className="mt-0.5 text-[12px] leading-snug text-slate-600">Help us improve MediKarya and measure ad visits. <a className="underline" href="/cookies">Cookie Policy</a></p>
+            </div>
+            <div className="mt-3 flex shrink-0 justify-end gap-2 sm:mt-0">
+                <button onClick={() => save("rejected")} className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-semibold text-slate-700 sm:flex-none">Essential only</button>
+                <button onClick={() => save("accepted")} className="flex-1 rounded-lg bg-slate-900 px-3 py-1.5 text-[13px] font-semibold text-white sm:flex-none">Accept</button>
             </div>
         </div>}
     </>

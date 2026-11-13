@@ -50,10 +50,16 @@ export function FirstCaseConsentDialog({
   open,
   onAgree,
   onCancel,
+  onSkip,
+  compact = false,
 }: {
   open: boolean
   onAgree: () => void
   onCancel: () => void
+  /** Lets a public free case continue after the notice without treating it as consent. */
+  onSkip?: () => void
+  /** The public trial has a shorter notice so it does not obscure the case briefing. */
+  compact?: boolean
 }) {
   const [adultConfirmed, setAdultConfirmed] = useState(false)
   useEffect(() => {
@@ -62,22 +68,29 @@ export function FirstCaseConsentDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onCancel() }}>
-      <DialogContent className="gap-0 p-0 sm:max-w-sm">
+      <DialogContent className={`gap-0 p-0 ${compact ? "sm:max-w-md" : "sm:max-w-sm"}`}>
         <DialogHeader className="gap-1.5 px-5 pt-5 pb-0 pr-12 text-left">
           <DialogTitle className="text-[15.5px] font-semibold text-enc-ink">A quick note before you start</DialogTitle>
           <DialogDescription className="text-[13.5px] leading-relaxed text-enc-ink-2">
-            These are fictional teaching cases, not guidance for real patient care. Your messages are sent to Google Gemini for patient replies. Your submitted answers may be sent to Google Gemini for scoring, feedback and quizzes, and scores are saved to your learning history. In-progress chat and case actions are saved in this browser so you can resume. Do not enter a real patient’s name, contact details, medical record, or any real person’s health information.
+            {compact
+              ? "This is a fictional teaching case, not medical advice. Do not enter any real patient information. Gemini powers patient replies and scoring; your completed result is saved so you can continue after signing up."
+              : "These are fictional teaching cases, not guidance for real patient care. Your messages are sent to Google Gemini for patient replies. Your submitted answers may be sent to Google Gemini for scoring, feedback and quizzes, and scores are saved to your learning history. In-progress chat and case actions are saved in this browser so you can resume. Do not enter a real patient’s name, contact details, medical record, or any real person’s health information."}
           </DialogDescription>
         </DialogHeader>
 
         <DialogFooter className="flex-col gap-3 px-5 pt-4 pb-5 sm:flex-col">
-          <label className="flex items-start gap-2 text-left text-[12px] leading-relaxed text-enc-ink-3">
+          {!compact && <label className="flex items-start gap-2 text-left text-[12px] leading-relaxed text-enc-ink-3">
             <input type="checkbox" className="mt-0.5" checked={adultConfirmed} onChange={(e) => setAdultConfirmed(e.target.checked)} />
             <span>I confirm that I am at least 18 years old.</span>
-          </label>
-          <Button type="button" disabled={!adultConfirmed} onClick={onAgree} className="h-10 w-full rounded-lg bg-brand-600 text-[14px] font-semibold text-white shadow-none hover:bg-brand-700">
+          </label>}
+          <Button type="button" disabled={!compact && !adultConfirmed} onClick={onAgree} className="h-10 w-full rounded-lg bg-brand-600 text-[14px] font-semibold text-white shadow-none hover:bg-brand-700">
             Start the case
           </Button>
+          {onSkip && !compact && (
+            <Button type="button" variant="ghost" onClick={onSkip} className="h-8 w-full text-[13px] font-medium text-enc-ink-2 hover:text-enc-ink">
+              Continue without confirming
+            </Button>
+          )}
           <p className="text-center text-[12px] leading-snug text-enc-ink-3">
             By starting, you agree to our{" "}
             <Link href="/terms" target="_blank" className="underline underline-offset-2 hover:text-enc-ink-2">

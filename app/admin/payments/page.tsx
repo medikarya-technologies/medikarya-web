@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server"
 import { ArrowLeft, CreditCard } from "lucide-react"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
-import { periodOfPlan } from "@/lib/payments/subscriptions"
+import { HOLDING_STATUSES, periodOfPlan, stillHolds } from "@/lib/payments/subscriptions"
 
 export const dynamic = "force-dynamic"
 export const metadata = { title: "Payments" }
@@ -31,6 +31,7 @@ interface SubscriptionRow {
   status: string
   current_start: string | null
   current_end: string | null
+  cancel_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -109,7 +110,7 @@ export default async function AdminPaymentsPage() {
   const { userId } = await auth()
   if (!(await isAdmin(userId ?? null))) redirect("/")
 
-  const [attemptsResult, subscriptionsResult] = await Promise.all([
+  const [attemptsResult, subscriptionsResult, accessResult] = await Promise.all([
     supabaseServer
       .from("subscription_checkout_attempts")
       .select("clerk_user_id, razorpay_subscription_id, tier, billing_period, coupon_code, outcome, failure_code, failure_description, payment_id, created_at, updated_at")
@@ -117,15 +118,30 @@ export default async function AdminPaymentsPage() {
       .limit(200),
     supabaseServer
       .from("subscriptions")
-      .select("clerk_user_id, razorpay_subscription_id, razorpay_plan_id, tier, status, current_start, current_end, created_at, updated_at")
+      .select("clerk_user_id, razorpay_subscription_id, razorpay_plan_id, tier, status, current_start, current_end, cancel_at, created_at, updated_at")
       .order("updated_at", { ascending: false })
       .limit(200),
+    // This deliberately is not limited to the recent-activity window: a paid student can still have access even if
+    // their checkout was more than 200 records ago.
+    supabaseServer
+      .from("subscriptions")
+      .select("clerk_user_id, razorpay_subscription_id, razorpay_plan_id, tier, status, current_start, current_end, cancel_at, created_at, updated_at")
+      .in("status", HOLDING_STATUSES),
   ])
 
   const attemptsTableMissing = isMissingAttemptsTable(attemptsResult.error)
   const attempts = (attemptsResult.data ?? []) as AttemptRow[]
   const subscriptions = (subscriptionsResult.data ?? []) as SubscriptionRow[]
-  const userIds = [...new Set([...attempts.map((row) => row.clerk_user_id), ...subscriptions.map((row) => row.clerk_user_id)])]
+  const accessSubscriptions = ((accessResult.data ?? []) as SubscriptionRow[]).filter((row) => stillHolds(row))
+  // Rarely a student can have more than one subscription record. The access check chooses Resident over Intern;
+  // present that same single, useful answer here rather than counting one student twice.
+  const accessByUser = new Map<string, SubscriptionRow>()
+  for (const subscription of accessSubscriptions) {
+    const previous = accessByUser.get(subscription.clerk_user_id)
+    if (!previous || (subscription.tier === "resident" && previous.tier !== "resident")) accessByUser.set(subscription.clerk_user_id, subscription)
+  }
+  const peopleWithAccess = [...accessByUser.values()]
+  const userIds = [...new Set([...attempts.map((row) => row.clerk_user_id), ...subscriptions.map((row) => row.clerk_user_id), ...accessSubscriptions.map((row) => row.clerk_user_id)])]
   const profilesResult = userIds.length
     ? await supabaseServer.from("user_profiles").select("clerk_user_id, full_name, email").in("clerk_user_id", userIds)
     : null
@@ -166,6 +182,7 @@ export default async function AdminPaymentsPage() {
   const loadErrors = [
     !attemptsTableMissing ? attemptsResult.error?.message : null,
     subscriptionsResult.error?.message,
+    accessResult.error?.message,
     profilesResult?.error?.message,
   ].filter(Boolean)
 
@@ -191,6 +208,7 @@ export default async function AdminPaymentsPage() {
 
         <section aria-label="Payment activity totals" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
+            ["Paid access now", peopleWithAccess.length],
             ["Paid / active", paid],
             ["Failed / needs attention", failed],
             ["Closed before payment", closed],
@@ -201,6 +219,38 @@ export default async function AdminPaymentsPage() {
               <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{count}</p>
             </div>
           ))}
+        </section>
+
+        <section className="overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+          <div className="border-b border-emerald-100 bg-emerald-50/60 px-5 py-4">
+            <h2 className="text-sm font-bold text-slate-800">People with paid access now</h2>
+            <p className="mt-1 text-xs text-slate-500">Includes active subscriptions and paid periods that remain valid after cancellation.</p>
+          </div>
+          {peopleWithAccess.length === 0 ? (
+            <p className="px-5 py-8 text-sm text-slate-500">No paid subscriptions currently grant access.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-[700px] w-full text-left text-sm">
+                <thead className="border-b border-slate-100"><tr>
+                  <th scope="col" className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Student</th>
+                  <th scope="col" className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Plan</th>
+                  <th scope="col" className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Razorpay state</th>
+                  <th scope="col" className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Access through</th>
+                </tr></thead>
+                <tbody className="divide-y divide-slate-100">
+                  {peopleWithAccess.map((subscription) => {
+                    const profile = profileById.get(subscription.clerk_user_id)
+                    return <tr key={subscription.razorpay_subscription_id} className="align-top hover:bg-slate-50/70">
+                      <td className="px-5 py-4"><p className="font-semibold text-slate-900">{profile?.full_name || "Name unavailable"}</p><p className="mt-0.5 text-xs text-slate-500">{profile?.email || subscription.clerk_user_id}</p></td>
+                      <td className="px-5 py-4 font-semibold text-slate-800">{tierName(subscription.tier)}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-slate-600">{subscription.status}</td>
+                      <td className="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{formatDateTime(subscription.cancel_at || subscription.current_end)}</td>
+                    </tr>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         {attemptsTableMissing && (
