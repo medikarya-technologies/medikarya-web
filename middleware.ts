@@ -35,6 +35,7 @@ const isPublicPage = createRouteMatcher([
     "/terms(.*)",
     "/cookies(.*)",
     "/refund-policy(.*)",
+    "/medventure(.*)",
     "/verify(.*)",
 ]);
 
@@ -88,6 +89,14 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
         const canonicalUrl = req.nextUrl.clone();
         canonicalUrl.hostname = CANONICAL_HOST;
         return NextResponse.redirect(canonicalUrl, 308);
+    }
+
+    // The event has its own short, memorable address without becoming a second deployment. Keep the route itself
+    // public too, so it remains easy to preview locally at /medventure before the subdomain is configured in Vercel.
+    if (req.nextUrl.hostname === "medventure.medikarya.in" && req.nextUrl.pathname === "/") {
+        const eventUrl = req.nextUrl.clone();
+        eventUrl.pathname = "/medventure";
+        return NextResponse.rewrite(eventUrl);
     }
 
     const read = req.method === "GET" || req.method === "HEAD";
