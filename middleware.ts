@@ -69,6 +69,8 @@ const withClerk = clerkMiddleware(async (auth, req) => {
         if (req.nextUrl.pathname === "/") eventUrl.pathname = "/medventure";
         else if (req.nextUrl.pathname === "/admin" || req.nextUrl.pathname.startsWith("/admin/")) eventUrl.pathname = `/medventure${req.nextUrl.pathname}`;
         else if (req.nextUrl.pathname === "/join") eventUrl.pathname = "/medventure/join";
+        else if (req.nextUrl.pathname === "/challenge" || req.nextUrl.pathname.startsWith("/challenge/")) eventUrl.pathname = `/medventure${req.nextUrl.pathname}`;
+        else if (req.nextUrl.pathname === "/results") eventUrl.pathname = "/medventure/results";
         if (eventUrl.pathname !== req.nextUrl.pathname) eventResponse = NextResponse.rewrite(eventUrl);
     }
 

@@ -1,19 +1,47 @@
 "use client"
 
 import { SignUp } from "@clerk/nextjs"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useMounted } from "@/hooks/use-mounted"
+import { consentMetadata } from "@/lib/legal-consent"
 import { clerkFillElements } from "@/lib/clerk-fill"
 import { cn } from "@/lib/utils"
 import { useScrollAnimation } from "@/lib/scroll-animation"
+
+const CONSENT_KEY = "mk_signup_consent_at"
 
 export default function SignUpClient() {
   const [legalConsentAt, setLegalConsentAt] = useState("")
   const { ref, isVisible } = useScrollAnimation()
   // Clerk's box is drawn once the page has loaded, so the server and the first browser render match (hooks/use-mounted.ts)
   const mounted = useMounted()
+  const pathname = usePathname()
+  // Clerk finishes a sign-up on its own sub-pages: /signup/sso-callback when Google sends the student back,
+  // /signup/continue when /login hands a new Google account over, /signup/verify-email-address. Those are fresh page
+  // loads, so the tick above is gone. Its box must still be drawn there, or the Google sign-in never completes and
+  // the student is left on this card with nothing under the checkbox.
+  const onClerkStep = !!pathname && pathname.startsWith("/signup/")
 
+  // Keep the tick for this tab, so a student who comes back to /signup itself does not have to agree again.
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(CONSENT_KEY)
+      if (saved) setLegalConsentAt(saved)
+    } catch {}
+  }, [])
+
+  function onConsentChange(checked: boolean) {
+    const at = checked ? new Date().toISOString() : ""
+    setLegalConsentAt(at)
+    try {
+      if (at) sessionStorage.setItem(CONSENT_KEY, at)
+      else sessionStorage.removeItem(CONSENT_KEY)
+    } catch {}
+  }
+
+  const showSignUp = !!legalConsentAt || onClerkStep
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-brand-50 via-white to-accent-50">
@@ -56,17 +84,23 @@ export default function SignUpClient() {
             <p className="text-sm sm:text-base text-slate-600">Practise real cases before you meet real patients</p>
           </div>
 
-          <label className="mb-5 flex items-start gap-2.5 text-left text-xs leading-relaxed text-slate-600">
-            <input type="checkbox" className="mt-0.5 accent-blue-600" checked={!!legalConsentAt} onChange={(e) => setLegalConsentAt(e.target.checked ? new Date().toISOString() : "")} />
-            <span>I confirm I am at least 18 years old. I have read and agree to the <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>. I agree that MediKarya may use the account information I provide to create and secure my account, and store my learning activity as explained in the Privacy Policy.</span>
-          </label>
+          {onClerkStep ? (
+            <p className="mb-5 text-center text-xs leading-relaxed text-slate-500">
+              By continuing you confirm you are at least 18 and agree to the <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.
+            </p>
+          ) : (
+            <label className="mb-5 flex items-start gap-2.5 text-left text-xs leading-relaxed text-slate-600">
+              <input type="checkbox" className="mt-0.5 accent-blue-600" checked={!!legalConsentAt} onChange={(e) => onConsentChange(e.target.checked)} />
+              <span>I confirm I am at least 18 years old. I have read and agree to the <Link href="/terms" className="underline">Terms of Service</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>. I agree that MediKarya may use the account information I provide to create and secure my account, and store my learning activity as explained in the Privacy Policy.</span>
+            </label>
+          )}
 
-          {/* Account fields only appear after the privacy notice and agreement have been acknowledged. */}
-          {legalConsentAt ? (mounted ? (
+          {/* On /signup itself, account fields only appear after the privacy notice and agreement have been acknowledged. */}
+          {showSignUp ? (mounted ? (
             <SignUp
               signInUrl="/login"
               afterSignUpUrl="/dashboard"
-              unsafeMetadata={{ medikaryaLegalNoticeVersion: "2026-10-29", medikaryaTermsAcceptedAt: legalConsentAt, medikaryaPrivacyNoticeAcceptedAt: legalConsentAt }}
+              unsafeMetadata={legalConsentAt ? consentMetadata(legalConsentAt, "signup") : undefined}
               appearance={{
                 elements: {
                   formButtonPrimary: "w-full rounded-xl py-4 sm:py-6 text-sm sm:text-base font-medium bg-gradient-to-r from-brand-600 to-accent-600 hover:from-brand-700 hover:to-accent-700 text-white shadow-lg hover:shadow-xl transition-all duration-200",

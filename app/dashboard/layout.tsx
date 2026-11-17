@@ -3,6 +3,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { supabaseServer } from "@/lib/supabase/server"
 import { UpgradeProvider } from "@/components/plans/upgrade-dialog"
+import { AccountConsentCheck } from "@/components/privacy/account-consent-check"
 
 // Always re-run server-side — never serve from Next.js router cache.
 // Without this, client-side navigations (e.g. post-Clerk sign-in) can hit a
@@ -57,5 +58,11 @@ export default async function DashboardRootLayout({
     after(() => ensureProfile(userId))
 
     // Every dashboard page (the library, a case, the home) can open the upgrade dialog without leaving it.
-    return <UpgradeProvider>{children}</UpgradeProvider>
+    // Accounts made without the sign-up page are asked once for the agreement it collects.
+    return (
+        <UpgradeProvider>
+            {children}
+            <AccountConsentCheck />
+        </UpgradeProvider>
+    )
 }

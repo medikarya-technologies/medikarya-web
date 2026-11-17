@@ -13,7 +13,11 @@ export const MEDVENTURE_SCORING = {
 } as const
 
 /** Raw pathway points stay faithful to the supplied cases, then become a 10-point leaderboard score. */
-export const roundOnePoints = (rawPathwayPoints: number) => Math.round(Math.max(0, Math.min(MEDVENTURE_SCORING.roundOneMax, rawPathwayPoints)) * MEDVENTURE_SCORING.roundOneDisplayMax / MEDVENTURE_SCORING.roundOneMax)
+/** `rawMaximum` comes from the published pathways. The 42-point default keeps the supplied three pathways' scoring stable. */
+export const roundOnePoints = (rawPathwayPoints: number, rawMaximum: number = MEDVENTURE_SCORING.roundOneMax) => {
+  const maximum = Math.max(1, rawMaximum)
+  return Math.round(Math.max(0, Math.min(maximum, rawPathwayPoints)) * MEDVENTURE_SCORING.roundOneDisplayMax / maximum)
+}
 
 /** MediKarya receives an equal 10-point share of the 20-point event total. */
 export const roundTwoPoints = (rawCaseScore: number) => Math.round(Math.max(0, Math.min(100, rawCaseScore)) * MEDVENTURE_SCORING.roundTwoMax / 100)
@@ -35,9 +39,9 @@ export interface RankedChallengeResult extends ChallengeResult {
 }
 
 /** Complete results first; highest points win. A faster total time breaks a points tie. */
-export function rankChallenge(results: readonly ChallengeResult[]): RankedChallengeResult[] {
+export function rankChallenge(results: readonly ChallengeResult[], roundOneMaximum: number = MEDVENTURE_SCORING.roundOneMax): RankedChallengeResult[] {
   const ranked = results
-    .map((result) => ({ ...result, roundOne: roundOnePoints(result.roundOne), roundTwo: roundTwoPoints(result.roundTwoRaw), total: roundOnePoints(result.roundOne) + roundTwoPoints(result.roundTwoRaw), totalSeconds: result.roundOneSeconds + result.roundTwoSeconds, place: 0 }))
+    .map((result) => ({ ...result, roundOne: roundOnePoints(result.roundOne, roundOneMaximum), roundTwo: roundTwoPoints(result.roundTwoRaw), total: roundOnePoints(result.roundOne, roundOneMaximum) + roundTwoPoints(result.roundTwoRaw), totalSeconds: result.roundOneSeconds + result.roundTwoSeconds, place: 0 }))
     .sort((a, b) => b.total - a.total || a.totalSeconds - b.totalSeconds || a.completedAt.localeCompare(b.completedAt))
   return ranked.map((result, index) => ({ ...result, place: index > 0 && ranked[index - 1].total === result.total && ranked[index - 1].totalSeconds === result.totalSeconds ? ranked[index - 1].place : index + 1 }))
 }

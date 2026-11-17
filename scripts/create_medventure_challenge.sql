@@ -13,6 +13,23 @@ create table if not exists public.event_rooms (
 );
 alter table public.event_rooms enable row level security;
 
+-- A pathway is an editable decision tree. Each node and answer has a stable text id;
+-- answers are { id, text, points, nextNodeId }, with null nextNodeId ending that pathway.
+create table if not exists public.event_pathways (
+    event_key text not null references public.event_rooms(event_key) on delete cascade,
+    id text not null,
+    title text not null,
+    position integer not null,
+    start_node_id text not null,
+    nodes jsonb not null default '[]'::jsonb,
+    published boolean not null default false,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    primary key (event_key, id),
+    unique (event_key, position)
+);
+alter table public.event_pathways enable row level security;
+
 create table if not exists public.event_round1_attempts (
     event_key text not null references public.event_rooms(event_key) on delete cascade,
     clerk_user_id text not null,
