@@ -14,6 +14,13 @@ const field = "mt-1 block w-full rounded-lg border border-slate-300 bg-white px-
 const primary = "inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-[14.5px] font-semibold text-white hover:bg-sky-700 disabled:opacity-50"
 const quiet = "inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[13.5px] font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+const MEDVENTURE_EVENT = "Medventure Clinical Decision Challenge"
+const MEDVENTURE_CERTIFICATE_TITLES = [
+  "MedVenture × MediKarya Clinical Decision Challenge",
+  "MedVenture × MediKarya Clinical Decision Challenge - First Place",
+  "MedVenture × MediKarya Clinical Decision Challenge - Second Place",
+  "MedVenture × MediKarya Clinical Decision Challenge - Third Place",
+] as const
 
 interface Student {
   email: string
@@ -29,19 +36,22 @@ interface Props {
   cases: Array<{ id: string; title: string; players: number }>
   issued: Record<string, { credentialId: string; name: string; revoked: boolean }>
   defaults: { title: string; day: string }
+  /** Event workspaces can offer a small set of award titles. */
+  titleOptions?: readonly string[]
   studioUrl: string
   /** Event workspaces can provide the same bounded certificate action without becoming platform admins. */
   issueAction?: typeof issueCertificatesAction
 }
 
-export function CertificatesAdmin({ event, students, notSignedUp, cases, issued, defaults, studioUrl, issueAction = issueCertificatesAction }: Props) {
+export function CertificatesAdmin({ event, students, notSignedUp, cases, issued, defaults, titleOptions, studioUrl, issueAction = issueCertificatesAction }: Props) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [progress, setProgress] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [title, setTitle] = useState(defaults.title)
+  const availableTitles = titleOptions ?? (event === MEDVENTURE_EVENT ? MEDVENTURE_CERTIFICATE_TITLES : undefined)
+  const [title, setTitle] = useState(availableTitles?.[0] ?? defaults.title)
   const [venue, setVenue] = useState("")
   const [day, setDay] = useState(defaults.day)
   // the cases most of the room played are ticked to begin with
@@ -113,7 +123,13 @@ export function CertificatesAdmin({ event, students, notSignedUp, cases, issued,
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-[14px] font-medium text-slate-700">
               Title
-              <input className={field} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={CERTIFICATE_LIMITS.titleChars} placeholder="Clinical Reasoning Workshop" />
+              {availableTitles ? (
+                <select className={field} value={title} onChange={(e) => setTitle(e.target.value)}>
+                  {availableTitles.map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              ) : (
+                <input className={field} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={CERTIFICATE_LIMITS.titleChars} placeholder="Clinical Reasoning Workshop" />
+              )}
             </label>
             <label className="block text-[14px] font-medium text-slate-700">
               Day of the workshop
