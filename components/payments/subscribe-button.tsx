@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
+import { loginUrlFor } from "@/lib/auth-return"
 
 type Tier = "intern" | "resident"
 type Period = "monthly" | "yearly"
@@ -24,16 +25,14 @@ export function SubscribeButton({ tier, period, className, children, onCheckoutN
 
   const handleClick = () => {
     if (!isLoaded) return
-    if (!isSignedIn) {
-      router.push("/login")
-      return
-    }
 
     const backTo = pathname === "/" ? "/#pricing" : pathname || "/"
     const returnTo = pathname?.startsWith("/dashboard") ? pathname : "/dashboard"
     const params = new URLSearchParams({ tier, period, backTo, returnTo })
+    const checkoutUrl = `/checkout?${params.toString()}`
     onCheckoutNavigate?.()
-    router.push(`/checkout?${params.toString()}`)
+    // Signed out: sign in (or sign up) first, then straight on to this plan's checkout
+    router.push(isSignedIn ? checkoutUrl : loginUrlFor(checkoutUrl))
   }
 
   return (

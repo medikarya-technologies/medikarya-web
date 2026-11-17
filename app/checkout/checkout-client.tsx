@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { loadCheckoutScript } from "@/components/payments/razorpay-checkout-button"
 import { refreshPlan } from "@/components/plans/use-plan"
 import { trackEvent } from "@/lib/clarity"
+import { loginUrlFor } from "@/lib/auth-return"
 import { trackMetaEvent } from "@/lib/meta-pixel"
 import { PLAN_OFFERS, rupees } from "@/lib/plans/catalog"
 import { CHECKOUT_COLOR, CHECKOUT_NAME, checkoutLogo } from "@/lib/payments/checkout-brand"
@@ -43,7 +44,8 @@ export function CheckoutClient({ tier, period, backTo, returnTo }: {
     event.preventDefault()
     if (!isLoaded || loading) return
     if (!isSignedIn) {
-      router.push("/login")
+      // back to this checkout, same plan and period, once signed in
+      router.push(loginUrlFor(window.location.pathname + window.location.search))
       return
     }
 

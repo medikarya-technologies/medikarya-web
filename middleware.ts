@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { loginUrlFor, safeReturnPath } from "@/lib/auth-return";
 
 const CANONICAL_HOST = "www.medikarya.in";
 
@@ -84,15 +85,15 @@ const withClerk = clerkMiddleware(async (auth, req) => {
     // Protect dashboard routes - redirect unauthenticated users to login
     if (isProtectedRoute(req)) {
         if (!userId) {
-            const loginUrl = new URL("/login", req.url);
-            return NextResponse.redirect(loginUrl);
+            // Come back to this page after signing in (the event desk at medventure.medikarya.in/admin, a case link)
+            return NextResponse.redirect(new URL(loginUrlFor(req.nextUrl.pathname + req.nextUrl.search), req.url));
         }
     }
 
-    // Redirect authenticated users away from auth pages to dashboard
+    // Already signed in: skip the sign-in page, to where they were headed if it says
     if (isAuthRoute(req) && userId) {
-        const dashboardUrl = new URL("/dashboard", req.url);
-        return NextResponse.redirect(dashboardUrl);
+        const next = safeReturnPath(req.nextUrl.searchParams.get("redirect_url")) ?? "/dashboard";
+        return NextResponse.redirect(new URL(next, req.url));
     }
 
     return eventResponse;

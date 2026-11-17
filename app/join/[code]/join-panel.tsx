@@ -63,8 +63,8 @@ export function JoinPanel({ code, joined: joinedAtFirst, signedIn = true, email,
           </p>
         </div>
         <Button asChild className={cn(BIG, "mt-4")}>
-          <Link href="/dashboard/cases">
-            Start your first case <ArrowRight className="h-4 w-4" />
+          <Link href={autoJoin ? "/medventure/challenge" : "/dashboard/cases"}>
+            {autoJoin ? "Enter the Medventure challenge" : "Start your first case"} <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
         {email && <p className="mt-3 text-center text-[13px] text-slate-500">Signed in as {email}</p>}

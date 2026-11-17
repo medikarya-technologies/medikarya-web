@@ -11,6 +11,11 @@ export const MEDVENTURE = {
   date: "2026-11-18",
   venue: "Maulana Azad Medical College, New Delhi",
   pass: { plan: "intern" as const, days: 5, maxJoins: 60, openDays: 1 },
+  roundTwo: {
+    caseId: "61-year-old-man-with-severe-chest-pain-and-sweating",
+    title: "61-year-old man with severe chest pain and sweating",
+  },
+  dryRun: { name: "Medventure Clinical Decision Challenge · Preflight", maxJoins: 5, days: 1 },
 } as const
 
 export interface EventStaffMember {
@@ -74,8 +79,8 @@ export async function medventureParticipant(userId: string | null): Promise<{ us
   const { data, error } = await supabaseServer.from("user_profiles").select("email").eq("clerk_user_id", userId).maybeSingle()
   if (error || typeof data?.email !== "string") return null
   const email = data.email.toLowerCase()
-  const batch = await getPassBatch(MEDVENTURE.name)
-  return batch?.emails.includes(email) ? { userId, email } : null
+  const [eventBatch, preflightBatch] = await Promise.all([getPassBatch(MEDVENTURE.name), getPassBatch(MEDVENTURE.dryRun.name)])
+  return eventBatch?.emails.includes(email) || preflightBatch?.emails.includes(email) ? { userId, email } : null
 }
 
 export async function medventureRoundOneAttempt(userId: string): Promise<{ available: boolean; attempt: EventRoundOneAttempt | null }> {

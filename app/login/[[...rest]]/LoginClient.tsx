@@ -64,7 +64,10 @@ export default function LoginClient() {
                   footerActionLink: "font-medium text-brand-600 hover:text-brand-700 transition-colors",
                 },
               }}
-              redirectUrl="/dashboard"
+              // fallback only: a ?redirect_url= (a checkout, the event desk) wins over it, and Clerk carries it on to
+              // the sign-up page if they make an account instead
+              fallbackRedirectUrl="/dashboard"
+              signUpFallbackRedirectUrl="/dashboard"
             />
           ) : (
             <div aria-hidden className="min-h-[420px]" />

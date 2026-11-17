@@ -99,7 +99,8 @@ export default function SignUpClient() {
           {showSignUp ? (mounted ? (
             <SignUp
               signInUrl="/login"
-              afterSignUpUrl="/dashboard"
+              fallbackRedirectUrl="/dashboard"
+              signInFallbackRedirectUrl="/dashboard"
               unsafeMetadata={legalConsentAt ? consentMetadata(legalConsentAt, "signup") : undefined}
               appearance={{
                 elements: {
@@ -116,7 +117,6 @@ export default function SignUpClient() {
                   footerActionLink: "font-medium text-brand-600 hover:text-brand-700 transition-colors",
                 },
               }}
-              redirectUrl="/dashboard"
             />
           ) : (
             <div aria-hidden className="min-h-[420px]" />

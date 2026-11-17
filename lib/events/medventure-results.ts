@@ -28,7 +28,9 @@ export async function medventureResults(): Promise<{ available: boolean; roundOn
     console.error("Could not read Medventure results:", roundOneError.message)
     return { available: false, roundOneMaximum: 0, progress: [], ranked: [] }
   }
-  const userIds = (roundOneRows ?? []).map((row) => String(row.clerk_user_id))
+  // Opening the room tomorrow replaces started_at, so today's preflight scores cannot ever enter the real leaderboard.
+  const rowsInThisRoom = (roundOneRows ?? []).filter((row) => !room.startedAt || new Date(String(row.started_at)).getTime() >= new Date(room.startedAt).getTime())
+  const userIds = rowsInThisRoom.map((row) => String(row.clerk_user_id))
   if (userIds.length === 0) return { available: true, roundOneMaximum: roundOneMaximum(pathways), progress: [], ranked: [] }
   const [profilesResult, startsResult] = await Promise.all([
     supabaseServer.from("user_profiles").select("clerk_user_id, full_name, email").in("clerk_user_id", userIds),
@@ -56,7 +58,7 @@ export async function medventureResults(): Promise<{ available: boolean; roundOn
     firstRoundTwo.set(userId, { score: row.score, seconds: typeof row.time_taken === "number" && row.time_taken >= 0 ? Math.round(row.time_taken) : secondsBetween(startedAt, row.completed_at) ?? 0, completedAt: row.completed_at })
   }
   const names = new Map((profilesResult.data ?? []).map((row) => [String(row.clerk_user_id), typeof row.full_name === "string" && row.full_name.trim() ? row.full_name.trim() : null]))
-  const progress = (roundOneRows ?? []).map((row): ChallengeProgress => {
+  const progress = rowsInThisRoom.map((row): ChallengeProgress => {
     const userId = String(row.clerk_user_id)
     const roundTwo = firstRoundTwo.get(userId)
     return { userId, email: String(row.email).toLowerCase(), name: names.get(userId) ?? null, roundOneRaw: Number(row.score) || 0, roundOneSeconds: secondsBetween(String(row.started_at), row.completed_at), roundOneCompletedAt: row.completed_at ?? null, roundTwoRaw: roundTwo?.score ?? null, roundTwoSeconds: roundTwo?.seconds ?? null, roundTwoCompletedAt: roundTwo?.completedAt ?? null }

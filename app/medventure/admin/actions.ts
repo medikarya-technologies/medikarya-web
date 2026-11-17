@@ -7,6 +7,7 @@ import { pathwayProblem, type EventPathway, type PathwayNode } from "@/lib/event
 import { createJoinLink, setJoinLinkActive } from "@/lib/plans/join-links"
 import { givePasses } from "@/lib/plans/pass-batches"
 import { checkJoinRequest, checkPassRequest } from "@/lib/plans/passes"
+import { indiaDay } from "@/lib/plans/limits"
 import { supabaseServer } from "@/lib/supabase/server"
 import { issueWorkshopCertificate } from "@/lib/studio/source"
 import { CERTIFICATE_LIMITS, certificateProblem, finishedAll, printableName, workshopDetail } from "@/lib/workshops/rank"
@@ -103,13 +104,13 @@ export async function deleteMedventurePathwayAction(id: string): Promise<Result>
   }
 }
 
-export async function configureMedventureRoomAction(input: { status: "draft" | "live" | "closed"; roundTwoCaseId: string | null }): Promise<Result> {
+export async function configureMedventureRoomAction(input: { status: "draft" | "live" | "closed" }): Promise<Result> {
   try {
     await eventManager()
     if (!(["draft", "live", "closed"] as string[]).includes(input.status)) return { ok: false, error: "That room status is not valid." }
-    const caseId = typeof input.roundTwoCaseId === "string" && input.roundTwoCaseId.trim() ? input.roundTwoCaseId.trim() : null
+    const caseId = MEDVENTURE.roundTwo.caseId
     const { pathways } = await medventurePathways({ publishedOnly: true })
-    if (input.status === "live" && (!caseId || pathways.length === 0)) return { ok: false, error: "Choose a Round 2 case and publish at least one Round 1 pathway before opening the room." }
+    if (input.status === "live" && pathways.length === 0) return { ok: false, error: "Publish at least one Round 1 pathway before opening the room." }
     const now = new Date().toISOString()
     const patch: Record<string, unknown> = { status: input.status, round_two_case_id: caseId, updated_at: now }
     if (input.status === "live") patch.started_at = now
@@ -187,6 +188,30 @@ export async function createMedventureJoinAction(): Promise<Result<{ code: strin
   } catch (error) {
     console.error("Could not create the Medventure entry link:", error)
     return { ok: false, error: error instanceof Error ? error.message : "Could not create the entry link." }
+  }
+}
+
+/** A tiny, separate link that lets organisers rehearse today without opening tomorrow's attendee QR. */
+export async function createMedventureDryRunAction(): Promise<Result<{ code: string }>> {
+  try {
+    const { userId } = await eventManager()
+    const today = indiaDay()
+    const check = checkJoinRequest({
+      name: MEDVENTURE.dryRun.name,
+      plan: MEDVENTURE.pass.plan,
+      startDay: today,
+      days: MEDVENTURE.dryRun.days,
+      openDay: today,
+      openDays: 1,
+      maxJoins: MEDVENTURE.dryRun.maxJoins,
+    })
+    if (!check.ok) return check
+    const link = await createJoinLink(check, userId)
+    revalidate()
+    return { ok: true, code: link.code }
+  } catch (error) {
+    console.error("Could not create the Medventure preflight link:", error)
+    return { ok: false, error: error instanceof Error ? error.message : "Could not create the preflight link." }
   }
 }
 
