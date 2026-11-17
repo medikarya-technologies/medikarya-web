@@ -38,10 +38,19 @@ export interface RankedChallengeResult extends ChallengeResult {
   place: number
 }
 
-/** Complete results first; highest points win. A faster total time breaks a points tie. */
+/**
+ * Complete results only; highest points win. A points tie goes to the faster combined time, and if that is equal too,
+ * to whoever finished both rounds first. Places are never shared: there is exactly one 1st, 2nd and 3rd, because each
+ * place carries its own prize.
+ */
 export function rankChallenge(results: readonly ChallengeResult[], roundOneMaximum: number = MEDVENTURE_SCORING.roundOneMax): RankedChallengeResult[] {
-  const ranked = results
+  const finishedAt = (iso: string) => {
+    const time = new Date(iso).getTime()
+    return Number.isFinite(time) ? time : Number.POSITIVE_INFINITY
+  }
+  return results
     .map((result) => ({ ...result, roundOne: roundOnePoints(result.roundOne, roundOneMaximum), roundTwo: roundTwoPoints(result.roundTwoRaw), total: roundOnePoints(result.roundOne, roundOneMaximum) + roundTwoPoints(result.roundTwoRaw), totalSeconds: result.roundOneSeconds + result.roundTwoSeconds, place: 0 }))
-    .sort((a, b) => b.total - a.total || a.totalSeconds - b.totalSeconds || a.completedAt.localeCompare(b.completedAt))
-  return ranked.map((result, index) => ({ ...result, place: index > 0 && ranked[index - 1].total === result.total && ranked[index - 1].totalSeconds === result.totalSeconds ? ranked[index - 1].place : index + 1 }))
+    // compared as times, not text: "…10:00:00Z" and "…10:00:00.000Z" are the same moment
+    .sort((a, b) => b.total - a.total || a.totalSeconds - b.totalSeconds || finishedAt(a.completedAt) - finishedAt(b.completedAt) || a.userId.localeCompare(b.userId))
+    .map((result, index) => ({ ...result, place: index + 1 }))
 }

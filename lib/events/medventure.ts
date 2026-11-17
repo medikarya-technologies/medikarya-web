@@ -3,6 +3,7 @@ import "server-only"
 import { supabaseServer } from "@/lib/supabase/server"
 import { isAdmin } from "@/lib/plans/access"
 import { getPassBatch } from "@/lib/plans/pass-batches"
+import { accountEmail } from "@/lib/plans/account-email"
 import type { EventPathway, PathwayNode } from "./pathways"
 import { MEDVENTURE } from "./medventure-config"
 
@@ -66,9 +67,10 @@ export async function medventurePathways(options: { publishedOnly?: boolean } = 
 /** A participant is an account on the Medventure five-day pass, never simply any MediKarya user. */
 export async function medventureParticipant(userId: string | null): Promise<{ userId: string; email: string } | null> {
   if (!userId) return null
-  const { data, error } = await supabaseServer.from("user_profiles").select("email").eq("clerk_user_id", userId).maybeSingle()
-  if (error || typeof data?.email !== "string") return null
-  const email = data.email.toLowerCase()
+  // The same email the join page put on the pass: the profile's, or for an account so new that its profile row is
+  // not made yet, its sign-in email. Reading the profile alone sent brand-new students back to the join page.
+  const email = await accountEmail(userId)
+  if (!email) return null
   const [eventBatch, preflightBatch] = await Promise.all([getPassBatch(MEDVENTURE.name), getPassBatch(MEDVENTURE.dryRun.name)])
   return eventBatch?.emails.includes(email) || preflightBatch?.emails.includes(email) ? { userId, email } : null
 }

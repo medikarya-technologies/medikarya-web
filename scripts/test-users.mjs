@@ -19,6 +19,8 @@ const db = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { per
 const USERS = [
   { clerk_user_id: "dev_admin", full_name: "Test Admin", email: "test.admin@example.invalid", role: "admin" },
   { clerk_user_id: "dev_student", full_name: "Test Student", email: "test.student@example.invalid", role: "student" },
+  // a second student, for anything with more than one player (an event leaderboard)
+  { clerk_user_id: "dev_student2", full_name: "Second Student", email: "test.student2@example.invalid", role: "student" },
 ];
 const DEV = "dev\_%";
 

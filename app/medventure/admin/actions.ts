@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
-import { cleanStaffEmail, canManageMedventure, medventurePathways, MEDVENTURE } from "@/lib/events/medventure"
+import { cleanStaffEmail, canManageMedventure, medventurePathways, medventureRoom, MEDVENTURE } from "@/lib/events/medventure"
 import { pathwayProblem, type EventPathway, type PathwayNode } from "@/lib/events/pathways"
 import { createJoinLink, setJoinLinkActive } from "@/lib/plans/join-links"
 import { givePasses } from "@/lib/plans/pass-batches"
@@ -58,6 +58,18 @@ function nodesFrom(value: unknown): PathwayNode[] | null {
   return nodes
 }
 
+/**
+ * While the room is open, the last published pathway cannot be unpublished or deleted: students part-way through
+ * Round 1 would be shown "Round 1 complete, 0/10" with a Round 2 button that only errors. Returns why, or null.
+ */
+async function lastPublishedWhileLive(pathwayId: string): Promise<string | null> {
+  const [{ room }, { available, pathways }] = await Promise.all([medventureRoom(), medventurePathways({ publishedOnly: true })])
+  if (room?.status !== "live") return null
+  if (!available) return "Could not check the published pathways. Try again."
+  const remaining = pathways.filter((pathway) => pathway.id !== pathwayId)
+  return pathways.length > 0 && remaining.length === 0 ? "The room is open, so Round 1 needs at least one published pathway. Close the room first." : null
+}
+
 /** Saves a whole pathway as one atomic draft, so students never see a half-edited clinical question. */
 export async function saveMedventurePathwayAction(input: PathwayInput): Promise<Result<{ id: string }>> {
   try {
@@ -70,6 +82,10 @@ export async function saveMedventurePathwayAction(input: PathwayInput): Promise<
     const pathway = { id, title: input.title.trim(), position: input.position, startNodeId: input.startNodeId, nodes, published: input.published }
     const problem = pathwayProblem(pathway)
     if (problem) return { ok: false, error: problem }
+    if (!pathway.published) {
+      const guard = await lastPublishedWhileLive(pathway.id)
+      if (guard) return { ok: false, error: guard }
+    }
     const { error } = await supabaseServer.from("event_pathways").upsert({
       event_key: MEDVENTURE.key,
       id: pathway.id,
@@ -95,6 +111,8 @@ export async function deleteMedventurePathwayAction(id: string): Promise<Result>
     await eventManager()
     const safeId = pathId(id)
     if (!safeId) return { ok: false, error: "That pathway is not valid." }
+    const guard = await lastPublishedWhileLive(safeId)
+    if (guard) return { ok: false, error: guard }
     const { error } = await supabaseServer.from("event_pathways").delete().eq("event_key", MEDVENTURE.key).eq("id", safeId)
     if (error) throw error
     revalidatePath("/medventure/admin/questions")
@@ -132,6 +150,32 @@ export async function configureMedventureRoomAction(input: { status: "draft" | "
   }
 }
 
+/**
+ * Clears every Round 1 answer, Round 2 start and prize row for the event and puts the room back to not open, so the
+ * real event starts from an empty leaderboard after a rehearsal. Platform admins only: an organiser pressing it during
+ * the event would erase the room. Pathways, entry links and passes are kept, and so are the students' own case
+ * attempts on MediKarya (only the event's link to them goes). Plan time already granted by a rehearsal finalise is
+ * not taken back here.
+ */
+export async function startFreshMedventureRoomAction(): Promise<Result> {
+  try {
+    const { owner } = await eventManager()
+    if (!owner) return { ok: false, error: "Only a MediKarya platform admin can start the room fresh." }
+    for (const table of ["event_round1_attempts", "event_round2_starts", "event_prizes"] as const) {
+      const { error } = await supabaseServer.from(table).delete().eq("event_key", MEDVENTURE.key)
+      if (error) throw error
+    }
+    const { error } = await supabaseServer.from("event_rooms").update({ status: "draft", started_at: null, closed_at: null, finalized_at: null, updated_at: new Date().toISOString() }).eq("event_key", MEDVENTURE.key)
+    if (error) throw error
+    revalidate()
+    revalidatePath("/medventure/admin/results")
+    return { ok: true }
+  } catch (error) {
+    console.error("Could not start the Medventure room fresh:", error)
+    return { ok: false, error: error instanceof Error ? error.message : "Could not start the room fresh." }
+  }
+}
+
 /** Locks the event table and grants the promised subscriptions once, after organisers close the room. */
 export async function finalizeMedventureResultsAction(): Promise<Result<{ awarded: number }>> {
   try {
@@ -145,7 +189,9 @@ export async function finalizeMedventureResultsAction(): Promise<Result<{ awarde
     if (winners.length === 0) return { ok: false, error: "No participant has completed both rounds yet." }
     const profiles = await supabaseServer.from("user_profiles").select("clerk_user_id, email").in("clerk_user_id", winners.map((winner) => winner.userId))
     if (profiles.error) throw profiles.error
-    const emails = new Map((profiles.data ?? []).map((row) => [String(row.clerk_user_id), String(row.email).toLowerCase()]))
+    const emails = new Map((profiles.data ?? []).filter((row) => typeof row.email === "string" && row.email).map((row) => [String(row.clerk_user_id), String(row.email).toLowerCase()]))
+    // A winner whose profile row was never made still has the email they played under on their Round 1 row
+    for (const row of results.progress) if (!emails.has(row.userId) && row.email) emails.set(row.userId, row.email)
     let awarded = 0
     for (const [index, winner] of winners.entries()) {
       const place = index + 1
