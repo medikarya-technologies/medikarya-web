@@ -3,7 +3,7 @@
 // The part of a join page that changes: sign in (or sign up) and come back here, tap Join, and then a way into the
 // cases. Signing in happens in a pop-up, so the student never loses the page they scanned.
 
-import { useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import Link from "next/link"
 import { SignInButton, SignUpButton, useClerk } from "@clerk/nextjs"
 import { ArrowRight, CircleCheck, Loader2 } from "lucide-react"
@@ -22,18 +22,35 @@ interface Props {
   until: string
   /** When the pass starts, if that is after today. */
   startsOn: string | null
+  /** Medventure is a one-step check-in: sign-in automatically claims the event pass. */
+  autoJoin?: boolean
 }
 
 const BIG = cn(PRIMARY_BUTTON, "h-12 w-full text-[15.5px]")
 
-export function JoinPanel({ code, joined: joinedAtFirst, signedIn = true, email, plan, until, startsOn }: Props) {
+export function JoinPanel({ code, joined: joinedAtFirst, signedIn = true, email, plan, until, startsOn, autoJoin = false }: Props) {
   const [joined, setJoined] = useState(joinedAtFirst)
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
   const { signOut } = useClerk()
+  const didAutoJoin = useRef(false)
   // Clerk's buttons are drawn once the page has loaded, so the server and the first browser render match
   const mounted = useMounted()
   const here = `/join/${code}`
+
+  const join = () =>
+    start(async () => {
+      setError(null)
+      const r = await joinWorkshopAction(code)
+      if (r.ok) setJoined(true)
+      else setError(r.error)
+    })
+
+  useEffect(() => {
+    if (!autoJoin || !signedIn || joined || didAutoJoin.current) return
+    didAutoJoin.current = true
+    join()
+  }, [autoJoin, joined, signedIn])
 
   if (joined) {
     return (
@@ -84,18 +101,10 @@ export function JoinPanel({ code, joined: joinedAtFirst, signedIn = true, email,
     )
   }
 
-  const join = () =>
-    start(async () => {
-      setError(null)
-      const r = await joinWorkshopAction(code)
-      if (r.ok) setJoined(true)
-      else setError(r.error)
-    })
-
   return (
     <div>
       <Button className={BIG} disabled={pending} onClick={join}>
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Join and get {plan}
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {autoJoin ? `Setting up your ${plan} access` : `Join and get ${plan}`}
       </Button>
       {error && <p className="mt-3 rounded-lg bg-red-50 p-3 text-[14px] text-red-900">{error}</p>}
       <p className="mt-3 text-center text-[13px] text-slate-500">

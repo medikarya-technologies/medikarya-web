@@ -6,6 +6,7 @@ import { accountEmail } from "@/lib/plans/account-email"
 import { PLAN_OFFERS } from "@/lib/plans/catalog"
 import { getJoinLink, hasJoined, type JoinLink } from "@/lib/plans/join-links"
 import { cleanJoinCode, passDays } from "@/lib/plans/passes"
+import { MEDVENTURE } from "@/lib/events/medventure"
 import { JoinPanel } from "./join-panel"
 
 // medikarya.in/join/<code>: where a workshop's QR code leads. It says what the workshop gives, asks the student to sign
@@ -93,14 +94,14 @@ export default async function JoinPage({ params }: Props) {
 
         <div className="mt-6">
           {joined ? (
-            <JoinPanel code={code} joined email={email} plan={offer.name} until={longDate(lastDay(link.endsAt))} startsOn={startsLater ? longDate(link.startsAt) : null} />
+            <JoinPanel code={code} joined email={email} plan={offer.name} until={longDate(lastDay(link.endsAt))} startsOn={startsLater ? longDate(link.startsAt) : null} autoJoin={link.event === MEDVENTURE.name} />
           ) : link.state !== "open" ? (
             <p className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-[14.5px] leading-relaxed text-amber-950">
               <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" />
               {CLOSED[link.state](link)}
             </p>
           ) : (
-            <JoinPanel code={code} joined={false} email={email} signedIn={!!userId} plan={offer.name} until={longDate(lastDay(link.endsAt))} startsOn={startsLater ? longDate(link.startsAt) : null} />
+            <JoinPanel code={code} joined={false} email={email} signedIn={!!userId} plan={offer.name} until={longDate(lastDay(link.endsAt))} startsOn={startsLater ? longDate(link.startsAt) : null} autoJoin={link.event === MEDVENTURE.name} />
           )}
         </div>
       </div>

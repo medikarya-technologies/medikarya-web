@@ -35,7 +35,7 @@ const isPublicPage = createRouteMatcher([
     "/terms(.*)",
     "/cookies(.*)",
     "/refund-policy(.*)",
-    "/medventure(.*)",
+    "/medventure",
     "/verify(.*)",
 ]);
 
@@ -61,9 +61,20 @@ const withClerk = clerkMiddleware(async (auth, req) => {
         return;
     }
 
+    // The Medventure subdomain is one deployment with its own short routes. Keep /admin protected by Clerk before
+    // rewriting it to the scoped organiser workspace, so organisers sign in to their normal MediKarya account.
+    let eventResponse: NextResponse | undefined;
+    if (req.nextUrl.hostname === "medventure.medikarya.in") {
+        const eventUrl = req.nextUrl.clone();
+        if (req.nextUrl.pathname === "/") eventUrl.pathname = "/medventure";
+        else if (req.nextUrl.pathname === "/admin" || req.nextUrl.pathname.startsWith("/admin/")) eventUrl.pathname = `/medventure${req.nextUrl.pathname}`;
+        else if (req.nextUrl.pathname === "/join") eventUrl.pathname = "/medventure/join";
+        if (eventUrl.pathname !== req.nextUrl.pathname) eventResponse = NextResponse.rewrite(eventUrl);
+    }
+
     // Public pages reached by POST (server actions) and the other public routes: Clerk has run, no sign-in needed
     if (isPublicPage(req) || isPublicRoute(req)) {
-        return;
+        return eventResponse;
     }
 
     const { userId } = await auth();
@@ -81,6 +92,8 @@ const withClerk = clerkMiddleware(async (auth, req) => {
         const dashboardUrl = new URL("/dashboard", req.url);
         return NextResponse.redirect(dashboardUrl);
     }
+
+    return eventResponse;
 });
 
 export default function middleware(req: NextRequest, event: NextFetchEvent) {
@@ -91,17 +104,14 @@ export default function middleware(req: NextRequest, event: NextFetchEvent) {
         return NextResponse.redirect(canonicalUrl, 308);
     }
 
-    // The event has its own short, memorable address without becoming a second deployment. Keep the route itself
-    // public too, so it remains easy to preview locally at /medventure before the subdomain is configured in Vercel.
-    if (req.nextUrl.hostname === "medventure.medikarya.in" && req.nextUrl.pathname === "/") {
-        const eventUrl = req.nextUrl.clone();
-        eventUrl.pathname = "/medventure";
-        return NextResponse.rewrite(eventUrl);
-    }
-
     const read = req.method === "GET" || req.method === "HEAD";
     // A public page, or a file such as /llms.txt or /blog/<slug>.md: served without Clerk
     if (read && !req.nextUrl.pathname.startsWith("/api/") && (isPublicPage(req) || req.nextUrl.pathname.includes("."))) {
+        if (req.nextUrl.hostname === "medventure.medikarya.in" && req.nextUrl.pathname === "/") {
+            const eventUrl = req.nextUrl.clone();
+            eventUrl.pathname = "/medventure";
+            return NextResponse.rewrite(eventUrl);
+        }
         return NextResponse.next();
     }
 

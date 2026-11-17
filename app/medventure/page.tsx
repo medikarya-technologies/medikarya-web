@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   openGraph: {
     title: "Medventure Clinical Decision Challenge",
-    description: "General clinical MCQs. One clinical reasoning case. One combined leaderboard.",
+    description: "Three clinical decision pathways. One clinical reasoning case. One combined leaderboard.",
     url: "https://medventure.medikarya.in",
     siteName: "MediKarya",
     type: "website",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 const challengeSteps = [
   {
     number: "01",
-    title: "Clinical MCQs",
+    title: "Decision pathways",
     text: "Start with general clinical questions that test how you think across the ward, the OPD and the emergency room.",
     Icon: ClipboardList,
   },
@@ -65,14 +65,20 @@ const benefits = [
   "Intern Plan for second and third place",
 ]
 
+const scoring = [
+  { mark: "10", label: "Round 1 points", text: "The three decision pathways keep their original positive and negative points, then their combined raw score is normalised to 10 for the event leaderboard." },
+  { mark: "10", label: "Round 2 points", text: "Your MediKarya clinical-case score is scaled to a maximum of 10 points, giving both rounds equal weight." },
+  { mark: "20", label: "Total points", text: "The highest combined score ranks first. Equal totals are decided by the lower combined completion time, then the earlier completed attempt." },
+]
+
 export default function MedventurePage() {
   return (
-    <main className="min-h-dvh overflow-hidden bg-[#f7faf8] text-[#18231e]">
-      <header className="border-b border-[#dbe8df] bg-white/90 backdrop-blur">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6" aria-label="Event navigation">
+    <main className="min-h-dvh overflow-hidden bg-[#f5f8f5] text-[#16261d]">
+      <header className="border-b border-[#dce8df] bg-white/95 backdrop-blur">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8" aria-label="Event navigation">
           <Link href="/" className="flex items-center gap-2.5" aria-label="MediKarya home">
             <img src="/medikarya.svg" alt="" className="h-8 w-8" />
-            <span className="text-[15px] font-semibold tracking-tight text-[#18231e]">MediKarya</span>
+            <span className="text-[15px] font-bold tracking-[-0.02em] text-[#173c2d]">MediKarya</span>
           </Link>
           <a href="#challenge" className="rounded-full border border-[#c9ddd0] px-3.5 py-1.5 text-[12px] font-semibold text-[#376c55] transition-colors hover:border-[#4b8f74] hover:bg-[#eff6f1] sm:text-[13px]">
             Challenge details
@@ -80,53 +86,75 @@ export default function MedventurePage() {
         </nav>
       </header>
 
-      <section className="relative isolate overflow-hidden bg-[#173c2d] text-white">
-        <div aria-hidden className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.14)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.14)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div aria-hidden className="absolute -right-28 top-10 h-80 w-80 rounded-full bg-[#7ac89d]/20 blur-3xl" />
-        <div aria-hidden className="absolute -bottom-36 left-[18%] h-80 w-80 rounded-full bg-[#4b8f74]/30 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
+      <section className="relative isolate overflow-hidden bg-[#153a2a] text-white">
+        <div aria-hidden className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(190,232,203,.2)_1px,transparent_1px),linear-gradient(90deg,rgba(190,232,203,.2)_1px,transparent_1px)] [background-size:52px_52px]" />
+        <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-white/15" />
+        <div aria-hidden className="absolute -right-24 top-0 h-[32rem] w-[32rem] rounded-full bg-[#78c79a]/15 blur-3xl" />
+        <div aria-hidden className="absolute bottom-0 left-[12%] h-px w-2/3 bg-[#9ce1b6]/20" />
+        <div className="relative mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20 lg:py-24">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.12fr)_minmax(20rem,.68fr)] lg:gap-14 xl:gap-20">
           <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-semibold tracking-[0.12em] text-[#d9f2e2] uppercase">
+            <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-[#bde8cb] uppercase">
               <Stethoscope className="h-3.5 w-3.5" /> Medventure x MediKarya
             </p>
-            <h1 className="mt-6 text-balance text-4xl font-semibold tracking-[-0.045em] sm:text-6xl lg:text-7xl">
+            <h1 className="mt-6 max-w-3xl text-balance text-[clamp(2.75rem,6vw,5.75rem)] font-semibold leading-[0.94] tracking-[-0.06em]">
               Clinical decisions,<br /><span className="text-[#9ce1b6]">under pressure.</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-pretty text-[16px] leading-relaxed text-white/75 sm:text-lg">
-              A clinical decision challenge for the MAMC community. General clinical MCQs, one reasoning case and one final ranking, all on the MediKarya platform.
+            <p className="mt-6 max-w-xl text-pretty text-[15px] leading-7 text-white/75 sm:text-[17px] sm:leading-8">
+              A clinical decision challenge for the MAMC community. Three decision pathways, one reasoning case and one final ranking, all on the MediKarya platform.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <div className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-medium"><CalendarDays className="h-4 w-4 text-[#9ce1b6]" /> 18 November 2026</div>
-              <div className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-medium"><MapPin className="h-4 w-4 text-[#9ce1b6]" /> MAMC, New Delhi</div>
+            <div className="mt-8 flex flex-col gap-2 text-sm font-semibold text-white/80 min-[460px]:flex-row min-[460px]:items-center min-[460px]:gap-5">
+              <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[#9ce1b6]" /> 18 November 2026</span>
+              <span className="hidden h-1 w-1 rounded-full bg-[#9ce1b6]/60 min-[460px]:block" />
+              <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-[#9ce1b6]" /> MAMC, New Delhi</span>
             </div>
-            <a href="#challenge" className="mt-9 inline-flex items-center gap-2 rounded-full bg-[#9ce1b6] px-5 py-3 text-[14px] font-semibold text-[#173c2d] transition-transform hover:-translate-y-0.5 hover:bg-white">
-              See the challenge <ArrowDown className="h-4 w-4" />
-            </a>
+            <div className="mt-8 flex flex-col gap-3 min-[460px]:flex-row">
+              <Link href="/medventure/join" className="inline-flex items-center justify-center gap-2 rounded-full bg-[#9ce1b6] px-5 py-3 text-[14px] font-bold text-[#173c2d] transition-transform hover:-translate-y-0.5 hover:bg-[#dffff0]">
+                Sign in to join <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a href="#challenge" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-white/10">
+                See the challenge <ArrowDown className="h-4 w-4" />
+              </a>
+            </div>
           </div>
-          <div className="mt-14 grid max-w-4xl gap-px overflow-hidden rounded-2xl border border-white/15 bg-white/15 sm:grid-cols-3">
-            {[["2", "rounds"], ["1", "combined score"], ["3", "places on the podium"]].map(([number, label]) => (
-              <div key={label} className="bg-[#173c2d]/75 px-5 py-4 backdrop-blur-sm"><p className="font-mono text-2xl font-semibold text-[#9ce1b6]">{number}</p><p className="mt-1 text-[13px] text-white/65">{label}</p></div>
+          <aside className="relative border-l border-[#9ce1b6]/45 pl-5 sm:pl-7 lg:justify-self-end" aria-label="Challenge route">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#bde8cb]">The brief</p>
+            <p className="mt-4 max-w-sm text-2xl font-semibold leading-tight tracking-[-0.04em] text-white sm:text-[1.8rem]">A room full of decisions. One score that carries through.</p>
+            <ol className="mt-7 space-y-5">{[["01", "Three decision pathways", "Round 1 · 10 points"], ["02", "One MediKarya patient", "Round 2 · 10 points"], ["03", "The final board", "Score first, time second"]].map(([number, title, detail]) => <li key={title} className="grid grid-cols-[2.1rem_1fr] gap-3"><span className="font-mono text-xs font-semibold text-[#9ce1b6]">{number}</span><div><p className="text-sm font-bold text-white">{title}</p><p className="mt-1 text-[12px] text-white/60">{detail}</p></div></li>)}</ol>
+            <p className="mt-8 max-w-xs border-t border-white/15 pt-4 text-[12px] leading-relaxed text-white/65">Equal totals are separated by the lower combined completion time.</p>
+          </aside>
+          </div>
+          <div className="mt-12 flex max-w-2xl flex-wrap gap-x-8 gap-y-3 border-t border-white/15 pt-5 sm:mt-14">
+            {[["2", "rounds"], ["20", "points in total"], ["3", "places on the podium"]].map(([number, label]) => (
+              <div key={label} className="flex items-baseline gap-2"><p className="font-mono text-xl font-semibold text-[#9ce1b6]">{number}</p><p className="text-[12px] text-white/65">{label}</p></div>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="challenge" className="mx-auto max-w-6xl scroll-mt-8 px-4 py-16 sm:px-6 sm:py-24">
-        <div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
+      <section className="border-y border-[#ded9c7] bg-[#f4f1e7]">
+        <div className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20">
+          <div className="max-w-2xl"><p className="text-[11px] font-bold tracking-[0.16em] text-[#668672] uppercase">How scoring works</p><h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#173c2d] sm:text-4xl">A clear score out of 20.</h2><p className="mt-4 text-[15px] leading-relaxed text-[#52675b]">Each round carries the same weight. Both scores and their completion times are recorded on the event platform.</p></div>
+          <ol className="mt-9 divide-y divide-[#d6d0bb] border-y border-[#d6d0bb]">{scoring.map(({ mark, label, text }, index) => <li key={label} className="grid gap-3 py-5 sm:grid-cols-[3.5rem_11rem_1fr] sm:items-baseline sm:gap-5"><p className="font-mono text-3xl font-semibold tracking-[-.06em] text-[#376c55]">{mark}</p><h3 className="text-[16px] font-semibold text-[#173c2d]"><span className="mr-2 text-[11px] font-bold tracking-[0.14em] text-[#718477]">0{index + 1}</span>{label}</h3><p className="max-w-2xl text-[14px] leading-relaxed text-[#52675b]">{text}</p></li>)}</ol>
+        </div>
+      </section>
+
+      <section id="challenge" className="scroll-mt-8 bg-[#10291d] py-16 text-white sm:py-24">
+        <div className="mx-auto max-w-6xl px-5 sm:px-8"><div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
           <div>
-            <p className="text-[11px] font-bold tracking-[0.16em] text-[#4b8f74] uppercase">The format</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#173c2d] sm:text-4xl">Think through both rounds. Let the combined score decide it.</h2>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-[#5a6c61]">Both parts of the challenge happen here. Every decision contributes to the same final leaderboard.</p>
+            <p className="text-[11px] font-bold tracking-[0.16em] text-[#a8ddbb] uppercase">The format</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">Think through both rounds. Let the combined score decide it.</h2>
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/65">Both parts of the challenge happen here. Every decision contributes to the same final leaderboard.</p>
           </div>
           <ol className="space-y-4">
             {challengeSteps.map(({ number, title, text, Icon }) => (
-              <li key={number} className="group relative overflow-hidden rounded-2xl border border-[#dbe8df] bg-white p-5 shadow-[0_8px_26px_rgba(30,73,51,.05)] sm:p-6">
-                <div className="absolute right-5 top-3 font-mono text-5xl font-semibold tracking-[-.08em] text-[#eff6f1] transition-colors group-hover:text-[#dcefe2]" aria-hidden>{number}</div>
-                <div className="relative flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eff6f1] text-[#4b8f74]"><Icon className="h-5 w-5" strokeWidth={2} /></span><div><h3 className="text-[17px] font-semibold text-[#173c2d]">{title}</h3><p className="mt-1.5 max-w-xl text-[14px] leading-relaxed text-[#5a6c61]">{text}</p></div></div>
+              <li key={number} className="group relative border-t border-white/15 py-5 last:border-b sm:py-6">
+                <div className="absolute right-0 top-3 font-mono text-5xl font-semibold tracking-[-.08em] text-white/[.07] transition-colors group-hover:text-white/[.14]" aria-hidden>{number}</div>
+                <div className="relative flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#a8ddbb]/30 bg-[#a8ddbb]/10 text-[#a8ddbb]"><Icon className="h-5 w-5" strokeWidth={2} /></span><div><h3 className="text-[17px] font-semibold text-white">{title}</h3><p className="mt-1.5 max-w-xl text-[14px] leading-relaxed text-white/65">{text}</p></div></div>
               </li>
             ))}
           </ol>
-        </div>
+        </div></div>
       </section>
 
       <section className="border-y border-[#dbe8df] bg-white">
@@ -138,14 +166,14 @@ export default function MedventurePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+      <section className="bg-[#dceee1] py-16 sm:py-24"><div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
           <div><p className="text-[11px] font-bold tracking-[0.16em] text-[#4b8f74] uppercase">After the challenge</p><h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#173c2d] sm:text-4xl">A result you can carry forward.</h2><p className="mt-5 max-w-xl text-[15px] leading-relaxed text-[#5a6c61]">Test your clinical thinking in a room full of peers, then keep practising after the event with MediKarya.</p><div className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#eff6f1] px-3.5 py-2 text-[13px] font-semibold text-[#376c55]"><Medal className="h-4 w-4" /> Recognition for the top three</div></div>
-          <ul className="space-y-3">{benefits.map((benefit) => <li key={benefit} className="flex gap-3 rounded-xl border border-[#dbe8df] bg-white px-4 py-3 text-[14px] font-medium text-[#264a37]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#4b8f74]" strokeWidth={2.5} />{benefit}</li>)}</ul>
+          <ul className="space-y-3">{benefits.map((benefit) => <li key={benefit} className="flex gap-3 border-b border-[#b8d5c0] py-3 text-[14px] font-medium text-[#264a37]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-[#376c55]" strokeWidth={2.5} />{benefit}</li>)}</ul>
         </div>
-      </section>
+      </div></section>
 
-      <section id="event-day" className="border-y border-[#dbe8df] bg-[#eff6f1]">
+      <section id="event-day" className="border-y border-[#dbe8df] bg-white">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 sm:py-18 lg:grid-cols-[1fr_auto] lg:items-center">
           <div><p className="text-[11px] font-bold tracking-[0.16em] text-[#4b8f74] uppercase">Your event reference</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#173c2d] sm:text-3xl">Everything you need to know, in one place.</h2><p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#5a6c61]">Your Medventure organisers will share access instructions at the venue on the day.</p></div>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">{[[CalendarDays, "18 Nov", "2026"], [MapPin, "MAMC", "New Delhi"], [Clock3, "Event", "on site"]].map(([Icon, first, second]) => { const FactIcon = Icon as typeof CalendarDays; return <div key={String(first)} className="rounded-xl border border-[#cfe0d4] bg-white px-3 py-3 text-center sm:px-4"><FactIcon className="mx-auto h-4 w-4 text-[#4b8f74]" /><p className="mt-2 text-[12px] font-bold text-[#264a37]">{String(first)}</p><p className="text-[10px] text-[#6d8376]">{String(second)}</p></div> })}</div>

@@ -88,8 +88,10 @@ function toLink(row: CodeRow, joined: number): JoinLink {
 }
 
 /** Every join link, newest first. available = false until scripts/create_pass_codes.sql has been run. */
-export async function listJoinLinks(): Promise<{ available: boolean; links: JoinLink[] }> {
-  const { data, error } = await supabaseServer.from("pass_codes").select(COLUMNS).order("created_at", { ascending: false });
+export async function listJoinLinks(options: { event?: string } = {}): Promise<{ available: boolean; links: JoinLink[] }> {
+  let query = supabaseServer.from("pass_codes").select(COLUMNS).order("created_at", { ascending: false });
+  if (options.event) query = query.eq("event", options.event);
+  const { data, error } = await query;
   if (error) {
     console.error("Could not read join links:", error.message);
     return { available: false, links: [] };

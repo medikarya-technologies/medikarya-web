@@ -30,9 +30,11 @@ interface Props {
   issued: Record<string, { credentialId: string; name: string; revoked: boolean }>
   defaults: { title: string; day: string }
   studioUrl: string
+  /** Event workspaces can provide the same bounded certificate action without becoming platform admins. */
+  issueAction?: typeof issueCertificatesAction
 }
 
-export function CertificatesAdmin({ event, students, notSignedUp, cases, issued, defaults, studioUrl }: Props) {
+export function CertificatesAdmin({ event, students, notSignedUp, cases, issued, defaults, studioUrl, issueAction = issueCertificatesAction }: Props) {
   const router = useRouter()
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -67,7 +69,7 @@ export function CertificatesAdmin({ event, students, notSignedUp, cases, issued,
       for (let i = 0; i < toIssue.length; i += CERTIFICATE_LIMITS.perCall) {
         const part = toIssue.slice(i, i + CERTIFICATE_LIMITS.perCall)
         setProgress(`Issuing… ${done} of ${toIssue.length}`)
-        const r = await issueCertificatesAction({ event, title, venue, day, cases: required, people: part.map((s) => ({ email: s.email, name: names[s.email] ?? "" })) })
+        const r = await issueAction({ event, title, venue, day, cases: required, people: part.map((s) => ({ email: s.email, name: names[s.email] ?? "" })) })
         if (!r.ok) {
           setProgress(null)
           setError(`${r.error}${done ? ` (${plural(done, "certificate")} were issued before this.)` : ""}`)
