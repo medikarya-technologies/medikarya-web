@@ -14,6 +14,7 @@ import { CERTIFICATE_LIMITS, certificateProblem, finishedAll, printableName, wor
 import { attemptsOf, membersOf } from "@/lib/workshops/server"
 import { getPassBatch } from "@/lib/plans/pass-batches"
 import { medventureResults } from "@/lib/events/medventure-results"
+import { opensFreshRoom } from "@/lib/events/room-clock"
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
@@ -113,7 +114,13 @@ export async function configureMedventureRoomAction(input: { status: "draft" | "
     if (input.status === "live" && pathways.length === 0) return { ok: false, error: "Publish at least one Round 1 pathway before opening the room." }
     const now = new Date().toISOString()
     const patch: Record<string, unknown> = { status: input.status, round_two_case_id: caseId, updated_at: now }
-    if (input.status === "live") patch.started_at = now
+    if (input.status === "live") {
+      // Every score is measured from started_at. Reopening after a Close the same day keeps it, or everyone who had
+      // already played would vanish from the leaderboard; only a new day (after the preflight) starts a fresh room.
+      const { data: current, error: currentError } = await supabaseServer.from("event_rooms").select("started_at").eq("event_key", MEDVENTURE.key).maybeSingle()
+      if (currentError) throw currentError
+      if (opensFreshRoom(current?.started_at as string | null | undefined)) patch.started_at = now
+    }
     if (input.status === "closed") patch.closed_at = now
     const { error } = await supabaseServer.from("event_rooms").upsert({ event_key: MEDVENTURE.key, ...patch }, { onConflict: "event_key" })
     if (error) throw error

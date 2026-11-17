@@ -2,7 +2,9 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
-import { currentPathwayState, stateFrom, type RoundOneState } from "@/lib/events/pathways"
+import { currentPathwayState, type RoundOneState } from "@/lib/events/pathways"
+import { roundOneAttemptInRoom } from "@/lib/events/medventure-attempts"
+import { startedBeforeRoom } from "@/lib/events/room-clock"
 import { medventureParticipant, medventurePathways, medventureRoom, MEDVENTURE } from "@/lib/events/medventure"
 import { supabaseServer } from "@/lib/supabase/server"
 
@@ -17,23 +19,13 @@ async function player() {
   return { participant, room }
 }
 
-async function attemptFor(userId: string, email: string) {
-  const { data, error } = await supabaseServer.from("event_round1_attempts").select("state, score, completed_at").eq("event_key", MEDVENTURE.key).eq("clerk_user_id", userId).maybeSingle()
-  if (error) throw error
-  if (data) return { state: stateFrom(data.state), score: Number(data.score) || 0, completedAt: data.completed_at as string | null }
-  const state = stateFrom(null)
-  const { error: insertError } = await supabaseServer.from("event_round1_attempts").insert({ event_key: MEDVENTURE.key, clerk_user_id: userId, email, state, score: 0 })
-  if (insertError) throw insertError
-  return { state, score: 0, completedAt: null }
-}
-
 /** Records one answer against the server's copy of the published pathway. Browser-provided points are never accepted. */
 export async function answerMedventurePathwayAction(answerId: string): Promise<Result<{ state: RoundOneState; score: number; complete: boolean }>> {
   try {
-    const { participant } = await player()
+    const { participant, room } = await player()
     const { pathways } = await medventurePathways({ publishedOnly: true })
     if (pathways.length === 0) return { ok: false, error: "The organiser has not published Round 1 yet." }
-    const attempt = await attemptFor(participant.userId, participant.email)
+    const attempt = await roundOneAttemptInRoom(participant.userId, participant.email, room.startedAt)
     if (attempt.completedAt) return { ok: true, state: attempt.state, score: attempt.score, complete: true }
     const state = currentPathwayState(pathways, attempt.state)
     const pathway = pathways.find((item) => item.id === state.currentPathwayId)
@@ -65,10 +57,16 @@ export async function beginMedventureRoundTwoAction(): Promise<Result<{ caseId: 
   try {
     const { participant, room } = await player()
     if (!room.roundTwoCaseId) return { ok: false, error: "The organiser has not selected the Round 2 patient." }
-    const { data: roundOne } = await supabaseServer.from("event_round1_attempts").select("completed_at").eq("event_key", MEDVENTURE.key).eq("clerk_user_id", participant.userId).maybeSingle()
-    if (!roundOne?.completed_at) return { ok: false, error: "Finish Round 1 before starting the MediKarya patient." }
-    const { error } = await supabaseServer.from("event_round2_starts").upsert({ event_key: MEDVENTURE.key, clerk_user_id: participant.userId, case_id: room.roundTwoCaseId }, { onConflict: "event_key,clerk_user_id", ignoreDuplicates: true })
-    if (error) throw error
+    const { data: roundOne } = await supabaseServer.from("event_round1_attempts").select("started_at, completed_at").eq("event_key", MEDVENTURE.key).eq("clerk_user_id", participant.userId).maybeSingle()
+    if (!roundOne?.completed_at || startedBeforeRoom(roundOne.started_at, room.startedAt)) return { ok: false, error: "Finish Round 1 before starting the MediKarya patient." }
+    // The first start in this room is kept (pressing the button again must not restart the Round 2 clock); a start
+    // from an earlier room, or for another case, is replaced, or a preflight play of the case would count here.
+    const { data: existing, error: existingError } = await supabaseServer.from("event_round2_starts").select("case_id, started_at").eq("event_key", MEDVENTURE.key).eq("clerk_user_id", participant.userId).maybeSingle()
+    if (existingError) throw existingError
+    if (!existing || existing.case_id !== room.roundTwoCaseId || startedBeforeRoom(existing.started_at, room.startedAt)) {
+      const { error } = await supabaseServer.from("event_round2_starts").upsert({ event_key: MEDVENTURE.key, clerk_user_id: participant.userId, case_id: room.roundTwoCaseId, started_at: new Date().toISOString() }, { onConflict: "event_key,clerk_user_id" })
+      if (error) throw error
+    }
     revalidatePath("/medventure/results")
     return { ok: true, caseId: room.roundTwoCaseId }
   } catch (error) {

@@ -3,6 +3,7 @@ import "server-only"
 import { rankChallenge, type RankedChallengeResult } from "./medventure-scoring"
 import { medventurePathways, medventureRoom, MEDVENTURE } from "./medventure"
 import { roundOneMaximum } from "./pathways"
+import { startedBeforeRoom } from "./room-clock"
 import { supabaseServer } from "@/lib/supabase/server"
 
 export type ChallengeProgress = {
@@ -40,7 +41,8 @@ export async function medventureResults(): Promise<{ available: boolean; roundOn
     console.error("Could not read Medventure participant records:", profilesResult.error?.message ?? startsResult.error?.message)
     return { available: false, roundOneMaximum: 0, progress: [], ranked: [] }
   }
-  const starts = (startsResult.data ?? []).filter((row) => !room.roundTwoCaseId || row.case_id === room.roundTwoCaseId)
+  // A Round 2 start from the preflight does not count, or a preflight play of the case could stand as this room's
+  const starts = (startsResult.data ?? []).filter((row) => (!room.roundTwoCaseId || row.case_id === room.roundTwoCaseId) && !startedBeforeRoom(String(row.started_at), room.startedAt))
   const startsByUser = new Map(starts.map((row) => [String(row.clerk_user_id), String(row.started_at)]))
   const startedIds = [...startsByUser.keys()]
   const attemptsResult = room.roundTwoCaseId && startedIds.length
