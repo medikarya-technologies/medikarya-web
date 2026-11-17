@@ -90,11 +90,15 @@ function readSimSpeed(): number | undefined {
   return Number.isFinite(n) && n > 0 ? Math.min(n, 120) : undefined
 }
 
+type AssessmentDraft = { slots: string[]; reasoning: string; management: string }
+// One shared empty draft, so a play with nothing typed yet hands the form the same arrays on every render
+const EMPTY_DRAFT: AssessmentDraft = { slots: ["", "", ""], reasoning: "", management: "" }
+
 interface UiSaved {
   chat: ChatMessage[]
   feedback: any | null
   showQuiz: boolean
-  assessmentDraft?: { slots: string[]; reasoning: string; management: string }
+  assessmentDraft?: AssessmentDraft
   /** Generated quiz for classically scored cases; rubric cases derive theirs from the result. */
   quizData?: any
   /**
@@ -220,25 +224,27 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   // If the student types their differential, switches to History, then comes
   // back, their work must still be there. Keeping it in a child that
   // unmounts on every tab change loses it.
-  const [diagSlots, setDiagSlots] = useState<string[]>(() => ui.assessmentDraft?.slots ?? ["", "", ""])
-  const [diagReasoning, setDiagReasoning] = useState(() => ui.assessmentDraft?.reasoning ?? "")
-  const [diagManagement, setDiagManagement] = useState(() => ui.assessmentDraft?.management ?? "")
-
-  // The response draft lives beside the event log so refreshes, network failures,
-  // and tab changes cannot make students re-enter a final assessment.
-  useEffect(() => {
-    setUi((prev) => {
-      const current = prev.assessmentDraft
-      if (
-        current &&
-        current.reasoning === diagReasoning &&
-        current.management === diagManagement &&
-        current.slots.length === diagSlots.length &&
-        current.slots.every((slot, i) => slot === diagSlots[i])
-      ) return prev
-      return { ...prev, assessmentDraft: { slots: diagSlots, reasoning: diagReasoning, management: diagManagement } }
-    })
-  }, [diagSlots, diagReasoning, diagManagement, setUi])
+  // The response draft lives beside the event log (ui, saved to this browser) so refreshes, network failures, and tab
+  // changes cannot make students re-enter a final assessment. It is kept ONLY there, and each keystroke writes it in
+  // the same update: it used to be copied in by an effect after every keystroke, a second render per key, and keys
+  // arriving faster than renders (a paste, autocorrect, a fast typist) chained those into React's "Maximum update
+  // depth exceeded".
+  const draft = ui.assessmentDraft ?? EMPTY_DRAFT
+  const diagSlots = draft.slots
+  const diagReasoning = draft.reasoning
+  const diagManagement = draft.management
+  const setDraft = useCallback(
+    <K extends keyof AssessmentDraft>(key: K, action: React.SetStateAction<AssessmentDraft[K]>) =>
+      setUi((prev) => {
+        const current = prev.assessmentDraft ?? EMPTY_DRAFT
+        const value = typeof action === "function" ? (action as (old: AssessmentDraft[K]) => AssessmentDraft[K])(current[key]) : action
+        return value === current[key] ? prev : { ...prev, assessmentDraft: { ...current, [key]: value } }
+      }),
+    [setUi]
+  )
+  const setDiagSlots = useCallback((action: React.SetStateAction<string[]>) => setDraft("slots", action), [setDraft])
+  const setDiagReasoning = useCallback((action: React.SetStateAction<string>) => setDraft("reasoning", action), [setDraft])
+  const setDiagManagement = useCallback((action: React.SetStateAction<string>) => setDraft("management", action), [setDraft])
 
   // The LIVE encounter sizes itself to exactly `100dvh` and every panel scrolls internally —
   // the page itself is never meant to scroll there. Some browser/OS combinations compute

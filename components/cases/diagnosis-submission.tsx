@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { startTransition, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -146,20 +146,29 @@ function RankedDiagnosisSubmission({
   management: controlledManagement,
   setManagement: setControlledManagement,
 }: RankedDiagnosisProps) {
-  // Fall back to local state when the parent doesn't provide controlled state.
-  const [localSlots, setLocalSlots] = useState<string[]>(() => [0, 1, 2].map((i) => initialDifferential?.[i] ?? ""))
-  const [localReasoning, setLocalReasoning] = useState("")
-  const [localManagement, setLocalManagement] = useState("")
+  // The text lives here, so a keystroke redraws only this form. The parent's copy (kept so a refresh or a tab switch
+  // keeps the draft) follows as a transition. When every keystroke redrew the whole bedside, keys arriving faster than
+  // that render (a paste, autocorrect, a fast typist) piled up into React's "Maximum update depth exceeded".
+  // The parent's values are only read once: this form stays mounted (hidden) while the student is on other tabs.
+  const [slots, setSlotsHere] = useState<string[]>(() => controlledSlots ?? [0, 1, 2].map((i) => initialDifferential?.[i] ?? ""))
+  const [reasoning, setReasoningHere] = useState(() => controlledReasoning ?? "")
+  const [management, setManagementHere] = useState(() => controlledManagement ?? "")
 
-  const slots = controlledSlots ?? localSlots
-  const setSlots = setControlledSlots ?? setLocalSlots
-  const reasoning = controlledReasoning ?? localReasoning
-  const setReasoning = setControlledReasoning ?? setLocalReasoning
-  const management = controlledManagement ?? localManagement
-  const setManagement = setControlledManagement ?? setLocalManagement
+  const setReasoning = (value: string) => {
+    setReasoningHere(value)
+    if (setControlledReasoning) startTransition(() => setControlledReasoning(value))
+  }
+  const setManagement = (value: string) => {
+    setManagementHere(value)
+    if (setControlledManagement) startTransition(() => setControlledManagement(value))
+  }
 
   const primary = slots[0].trim()
-  const setSlot = (index: number, value: string) => setSlots((prev) => prev.map((s, i) => (i === index ? value : s)))
+  const setSlot = (index: number, value: string) => {
+    const next = slots.map((s, i) => (i === index ? value : s))
+    setSlotsHere(next)
+    if (setControlledSlots) startTransition(() => setControlledSlots(next))
+  }
 
   const handleSubmit = () => {
     if (!primary) return

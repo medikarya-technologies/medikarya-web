@@ -13,6 +13,8 @@ export type ChallengeProgress = {
   roundOneRaw: number
   roundOneSeconds: number | null
   roundOneCompletedAt: string | null
+  /** Pressed Start Round 2 in this room (with no score yet, they are playing, or their scoring is pending) */
+  roundTwoStarted: boolean
   roundTwoRaw: number | null
   roundTwoSeconds: number | null
   roundTwoCompletedAt: string | null
@@ -63,7 +65,7 @@ export async function medventureResults(): Promise<{ available: boolean; roundOn
   const progress = rowsInThisRoom.map((row): ChallengeProgress => {
     const userId = String(row.clerk_user_id)
     const roundTwo = firstRoundTwo.get(userId)
-    return { userId, email: String(row.email).toLowerCase(), name: names.get(userId) ?? null, roundOneRaw: Number(row.score) || 0, roundOneSeconds: secondsBetween(String(row.started_at), row.completed_at), roundOneCompletedAt: row.completed_at ?? null, roundTwoRaw: roundTwo?.score ?? null, roundTwoSeconds: roundTwo?.seconds ?? null, roundTwoCompletedAt: roundTwo?.completedAt ?? null }
+    return { userId, email: String(row.email).toLowerCase(), name: names.get(userId) ?? null, roundOneRaw: Number(row.score) || 0, roundOneSeconds: secondsBetween(String(row.started_at), row.completed_at), roundOneCompletedAt: row.completed_at ?? null, roundTwoStarted: startsByUser.has(userId), roundTwoRaw: roundTwo?.score ?? null, roundTwoSeconds: roundTwo?.seconds ?? null, roundTwoCompletedAt: roundTwo?.completedAt ?? null }
   })
   const maximum = roundOneMaximum(pathways)
   const ranked = rankChallenge(progress.filter((row) => row.roundOneCompletedAt && row.roundOneSeconds !== null && row.roundTwoRaw !== null && row.roundTwoSeconds !== null && row.roundTwoCompletedAt).map((row) => ({ userId: row.userId, roundOne: row.roundOneRaw, roundOneSeconds: row.roundOneSeconds as number, roundTwoRaw: row.roundTwoRaw as number, roundTwoSeconds: row.roundTwoSeconds as number, completedAt: row.roundTwoCompletedAt as string })), maximum || 1)
