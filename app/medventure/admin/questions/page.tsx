@@ -6,7 +6,7 @@ import { canManageMedventure, medventurePathways } from "@/lib/events/medventure
 import { MedventureQuestionsAdmin } from "./questions-admin"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "Medventure Round 1" }
+export const metadata = { title: "MedVenture × MediKarya Round 1" }
 
 export default async function MedventureQuestionsPage() {
   const { userId } = await auth()

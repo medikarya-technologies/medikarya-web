@@ -8,7 +8,7 @@ import { roundOnePoints, roundTwoPoints } from "@/lib/events/medventure-scoring"
 import { FinalizeResults } from "./finalize-results"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "Medventure results" }
+export const metadata = { title: "MedVenture × MediKarya results" }
 
 const time = (seconds: number | null) => seconds === null ? "—" : `${Math.floor(seconds / 60)}m ${seconds % 60}s`
 

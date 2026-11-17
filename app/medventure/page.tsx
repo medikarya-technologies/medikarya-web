@@ -18,15 +18,15 @@ import {
 } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: "Medventure Clinical Decision Challenge",
-  description: "A two-round clinical decision challenge at MAMC, powered by MediKarya.",
+  title: "MedVenture × MediKarya Clinical Decision Challenge",
+  description: "A two-round MedVenture × MediKarya clinical decision challenge at MAMC.",
   alternates: { canonical: "https://medventure.medikarya.in" },
   robots: { index: false, follow: false },
   openGraph: {
-    title: "Medventure Clinical Decision Challenge",
+    title: "MedVenture × MediKarya Clinical Decision Challenge",
     description: "Three clinical decision pathways. One clinical reasoning case. One combined leaderboard.",
     url: "https://medventure.medikarya.in",
-    siteName: "MediKarya",
+    siteName: "MedVenture × MediKarya",
     type: "website",
   },
 }
@@ -53,7 +53,7 @@ const challengeSteps = [
 ]
 
 const eventDay = [
-  { title: "Join the room", text: "Your Medventure organisers will share the participation and access instructions at MAMC.", Icon: MapPin },
+  { title: "Join the room", text: "Your MedVenture × MediKarya organisers will share the participation and access instructions at MAMC.", Icon: MapPin },
   { title: "Take both rounds", text: "Move from the general MCQs into the clinical reasoning case on the same event platform.", Icon: Stethoscope },
   { title: "See the final ranking", text: "The two scores are combined to produce one final result for the room.", Icon: Target },
 ]
@@ -78,7 +78,7 @@ export default function MedventurePage() {
         <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8" aria-label="Event navigation">
           <Link href="/" className="flex items-center gap-2.5" aria-label="MediKarya home">
             <img src="/medikarya.svg" alt="" className="h-8 w-8" />
-            <span className="text-[15px] font-bold tracking-[-0.02em] text-[#173c2d]">MediKarya</span>
+            <span className="text-[15px] font-bold tracking-[-0.02em] text-[#173c2d]">MedVenture × MediKarya</span>
           </Link>
           <a href="#challenge" className="rounded-full border border-[#c9ddd0] px-3.5 py-1.5 text-[12px] font-semibold text-[#376c55] transition-colors hover:border-[#4b8f74] hover:bg-[#eff6f1] sm:text-[13px]">
             Challenge details
@@ -95,7 +95,7 @@ export default function MedventurePage() {
           <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.12fr)_minmax(20rem,.68fr)] lg:gap-14 xl:gap-20">
           <div className="max-w-3xl">
             <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-[#bde8cb] uppercase">
-              <Stethoscope className="h-3.5 w-3.5" /> Medventure x MediKarya
+              <Stethoscope className="h-3.5 w-3.5" /> MedVenture × MediKarya
             </p>
             <h1 className="mt-6 max-w-3xl text-balance text-[clamp(2.75rem,6vw,5.75rem)] font-semibold leading-[0.94] tracking-[-0.06em]">
               Clinical decisions,<br /><span className="text-[#9ce1b6]">under pressure.</span>
@@ -182,7 +182,7 @@ export default function MedventurePage() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20"><div className="relative overflow-hidden rounded-3xl bg-[#4b8f74] px-6 py-10 text-white sm:px-10 sm:py-12"><div aria-hidden className="absolute inset-y-0 right-0 w-[48%] opacity-20 [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:18px_18px]" /><div className="relative max-w-2xl"><BadgeCheck className="h-7 w-7 text-[#d9f2e2]" /><h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Ready when the room is.</h2><p className="mt-3 text-[15px] leading-relaxed text-white/80">Your organisers will share the competition instructions and access details on the day.</p><p className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-white">Powered by MediKarya <ArrowRight className="h-4 w-4" /></p></div></div></section>
 
-      <footer className="border-t border-[#dbe8df] bg-white"><div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-7 text-[12px] text-[#697a70] sm:flex-row sm:items-center sm:justify-between sm:px-6"><p className="flex items-center gap-2"><Award className="h-3.5 w-3.5 text-[#4b8f74]" /> Medventure Clinical Decision Challenge</p><Link href="/" className="font-medium text-[#376c55] hover:underline">MediKarya</Link></div></footer>
+      <footer className="border-t border-[#dbe8df] bg-white"><div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-7 text-[12px] text-[#697a70] sm:flex-row sm:items-center sm:justify-between sm:px-6"><p className="flex items-center gap-2"><Award className="h-3.5 w-3.5 text-[#4b8f74]" /> MedVenture × MediKarya Clinical Decision Challenge</p><Link href="/" className="font-medium text-[#376c55] hover:underline">MedVenture × MediKarya</Link></div></footer>
     </main>
   )
 }

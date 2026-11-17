@@ -9,7 +9,7 @@ import { allMedventureFeedback } from "@/lib/events/medventure-feedback"
 import { siteOrigin } from "@/lib/site-origin"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "Medventure feedback" }
+export const metadata = { title: "MedVenture × MediKarya feedback" }
 
 const when = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })
 

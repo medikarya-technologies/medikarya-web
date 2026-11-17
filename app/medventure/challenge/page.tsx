@@ -6,7 +6,7 @@ import { medventureParticipant, medventurePathways, medventureRoom } from "@/lib
 import { roundOneAttemptInRoom } from "@/lib/events/medventure-attempts"
 
 export const dynamic = "force-dynamic"
-export const metadata = { title: "Medventure challenge" }
+export const metadata = { title: "MedVenture × MediKarya challenge" }
 
 export default async function MedventureChallengePage() {
   const { userId } = await auth()
