@@ -77,7 +77,7 @@ export function MedventureAdmin({ origin, owner, batch, links, dryRunLinks, staf
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-[#c9ddd0] bg-white shadow-sm">
-        <header className="border-b border-[#dbe8df] bg-[#eff6f1] px-5 py-4 sm:px-6"><p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#4b8f74]">Step 4 · Event day</p><h2 className="mt-1 text-xl font-semibold text-[#173c2d]">The attendee QR for 18 November</h2><p className="mt-1.5 text-sm leading-relaxed text-[#5a6c61]">This is the QR for real participants. It opens on 18 November, asks them to sign in or sign up, then adds the five-day pass automatically.</p></header>
+        <header className="border-b border-[#dbe8df] bg-[#eff6f1] px-5 py-4 sm:px-6"><p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#4b8f74]">Step 4 · Event day</p><h2 className="mt-1 text-xl font-semibold text-[#173c2d]">The attendee QR for 19 November</h2><p className="mt-1.5 text-sm leading-relaxed text-[#5a6c61]">This is the QR for real participants. It opens on 19 November, asks them to sign in or sign up, then adds the five-day pass automatically.</p></header>
         <div className="space-y-4 p-5 sm:p-6">
           {currentLink ? (
             <>
@@ -87,7 +87,7 @@ export function MedventureAdmin({ origin, owner, batch, links, dryRunLinks, staf
               <button type="button" className={quiet} disabled={pending} onClick={() => run(() => setMedventureJoinActiveAction(currentLink.code, !currentLink.active), currentLink.active ? "The entry link is paused." : "The entry link is live again.")}>{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : currentLink.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}{currentLink.active ? "Pause entry" : "Resume entry"}</button>
             </>
           ) : (
-            <div><p className="max-w-2xl text-sm leading-relaxed text-[#5a6c61]">Create the room link once. It opens on 18 November for up to 60 participants and gives each successful joiner the agreed five-day Intern pass.</p><button type="button" className={`${button} mt-4`} disabled={pending} onClick={() => run(createMedventureJoinAction, "The entry link is ready. Show or share the short URL above.")}>{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Create entry link</button></div>
+            <div><p className="max-w-2xl text-sm leading-relaxed text-[#5a6c61]">Create the room link once. It opens on 19 November for up to 60 participants and gives each successful joiner the agreed five-day Intern pass.</p><button type="button" className={`${button} mt-4`} disabled={pending} onClick={() => run(createMedventureJoinAction, "The entry link is ready. Show or share the short URL above.")}>{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Create entry link</button></div>
           )}
         </div>
       </section>
