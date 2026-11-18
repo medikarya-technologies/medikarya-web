@@ -38,6 +38,7 @@ import { CaseQuiz } from "./case-quiz"
 import { ClinicalEventProvider, useClinicalEvents } from "./clinical-event-manager"
 import { DiagnosisSubmission, DifferentialSlots, type RankedAssessment } from "./diagnosis-submission"
 import { EmergencyInterveneModal } from "./emergency-intervene-modal"
+import { EventResultBanner } from "./event-result-banner"
 import { EncounterTour } from "./encounter-tour"
 import { ReportProblemDialog } from "./report-problem"
 import { MonitorSoundDriver } from "./monitor-sound"
@@ -535,6 +536,7 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
             We couldn&apos;t reach the server, so this result was scored on your device and hasn&apos;t been saved.
           </div>
         )}
+        {!guestId && <EventResultBanner caseId={caseData?.id} />}
         <CaseFeedback
           feedback={feedback}
           caseData={debriefCase}

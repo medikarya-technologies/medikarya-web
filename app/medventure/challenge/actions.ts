@@ -7,6 +7,7 @@ import { roundOneAttemptInRoom } from "@/lib/events/medventure-attempts"
 import { startedBeforeRoom } from "@/lib/events/room-clock"
 import { medventureParticipant, medventurePathways, medventureRoom, MEDVENTURE } from "@/lib/events/medventure"
 import { supabaseServer } from "@/lib/supabase/server"
+import { medventureResults } from "@/lib/events/medventure-results"
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }
 
@@ -73,5 +74,24 @@ export async function beginMedventureRoundTwoAction(): Promise<Result<{ caseId: 
     return { ok: true, caseId: room.roundTwoCaseId }
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Could not start Round 2." }
+  }
+}
+
+/**
+ * Whether this case's debrief is a student's scored MedVenture Round 2, so the debrief can point back to the event
+ * result (a student who left the case and came back through the library lands on the debrief, not the result).
+ * Cheapest checks first: after the event the room is closed and this stops at one read.
+ */
+export async function medventureRoundTwoScoredAction(caseId: string): Promise<boolean> {
+  try {
+    const { room } = await medventureRoom()
+    if (!room || room.status !== "live" || room.roundTwoCaseId !== caseId) return false
+    const { userId } = await auth()
+    const participant = await medventureParticipant(userId)
+    if (!participant) return false
+    const results = await medventureResults()
+    return results.progress.some((row) => row.userId === participant.userId && row.roundTwoRaw !== null)
+  } catch {
+    return false
   }
 }
