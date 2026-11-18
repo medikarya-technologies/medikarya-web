@@ -40,53 +40,156 @@ export const emptyRoundOneState = (): RoundOneState => ({ currentPathwayId: null
 const clean = (value: unknown) => typeof value === "string" ? value.trim() : ""
 const int = (value: unknown) => typeof value === "number" && Number.isFinite(value) && Number.isInteger(value)
 
-/** Rejects broken trees before an organiser can publish them to a room. */
+/**
+ * Rejects broken pathways before an organiser can publish them to a room. An answer may lead back to an earlier
+ * decision (a loop), as long as every decision a student can reach still has some way to finish the pathway, so
+ * nobody can be sent round for ever. Decisions are named as the editor numbers them ("Decision 3").
+ */
 export function pathwayProblem(pathway: Pick<EventPathway, "title" | "startNodeId" | "nodes">): string | null {
   if (!clean(pathway.title)) return "Give the pathway a title."
-  if (!Array.isArray(pathway.nodes) || pathway.nodes.length === 0) return "Add at least one decision node."
+  if (!Array.isArray(pathway.nodes) || pathway.nodes.length === 0) return "Add at least one decision."
   const ids = new Set<string>()
-  for (const node of pathway.nodes) {
-    if (!clean(node.id) || ids.has(node.id)) return "Every decision node needs a unique id."
+  const name = new Map<string, string>()
+  for (const [index, node] of pathway.nodes.entries()) {
+    const label = `Decision ${index + 1}`
+    if (!clean(node.id) || ids.has(node.id)) return "Every decision needs a unique id. Refresh the page and try again."
     ids.add(node.id)
-    if (!clean(node.prompt)) return `Write the question for node “${node.id}”.`
-    if (!Array.isArray(node.answers) || node.answers.length < 2) return `Node “${node.id}” needs at least two answers.`
+    name.set(node.id, label)
+    if (!clean(node.prompt)) return `Write the question for ${label}.`
+    if (!Array.isArray(node.answers) || node.answers.length < 2) return `${label} needs at least two answers.`
     const answerIds = new Set<string>()
     for (const answer of node.answers) {
-      if (!clean(answer.id) || answerIds.has(answer.id)) return `Every answer in “${node.id}” needs a unique id.`
+      if (!clean(answer.id) || answerIds.has(answer.id)) return `Every answer in ${label} needs a unique id. Refresh the page and try again.`
       answerIds.add(answer.id)
-      if (!clean(answer.text)) return `Write every answer in “${node.id}”.`
-      if (!int(answer.points)) return `Every answer in “${node.id}” needs a whole-number point value.`
+      if (!clean(answer.text)) return `Write every answer in ${label}.`
+      if (!int(answer.points)) return `Every answer in ${label} needs a whole-number point value.`
     }
   }
-  if (!ids.has(pathway.startNodeId)) return "Choose a valid starting node."
+  if (!ids.has(pathway.startNodeId)) return "Choose which decision the pathway starts at."
   for (const node of pathway.nodes) for (const answer of node.answers) {
-    if (answer.nextNodeId !== null && !ids.has(answer.nextNodeId)) return `“${node.id}” points to a node that does not exist.`
+    if (answer.nextNodeId !== null && !ids.has(answer.nextNodeId)) return `${name.get(node.id)} points to a decision that no longer exists.`
   }
-  const byId = new Map(pathway.nodes.map((node) => [node.id, node]))
-  const visiting = new Set<string>()
-  const visited = new Set<string>()
-  const walk = (nodeId: string): boolean => {
-    if (visiting.has(nodeId)) return false
-    if (visited.has(nodeId)) return true
-    visiting.add(nodeId)
-    const node = byId.get(nodeId)
-    const valid = !!node && node.answers.every((answer) => answer.nextNodeId === null || walk(answer.nextNodeId))
-    visiting.delete(nodeId)
-    if (valid) visited.add(nodeId)
-    return valid
+  // Every decision a student can reach must be able to reach a "Finish pathway" answer.
+  const finishes = new Set(pathway.nodes.filter((node) => node.answers.some((answer) => answer.nextNodeId === null)).map((node) => node.id))
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const node of pathway.nodes) {
+      if (!finishes.has(node.id) && node.answers.some((answer) => answer.nextNodeId !== null && finishes.has(answer.nextNodeId))) {
+        finishes.add(node.id)
+        grew = true
+      }
+    }
   }
-  if (!walk(pathway.startNodeId)) return "A pathway cannot loop back to an earlier node."
+  for (const id of reachableFrom(pathway)) {
+    if (!finishes.has(id)) return `From ${name.get(id)}, every answer keeps going round without ever finishing. Give one answer a way to "Finish pathway", or to a decision that does.`
+  }
   return null
 }
 
+function reachableFrom(pathway: Pick<EventPathway, "startNodeId" | "nodes">): Set<string> {
+  const byId = new Map(pathway.nodes.map((node) => [node.id, node]))
+  const seen = new Set<string>()
+  const queue = [pathway.startNodeId]
+  while (queue.length) {
+    const id = queue.pop()!
+    if (seen.has(id) || !byId.has(id)) continue
+    seen.add(id)
+    for (const answer of byId.get(id)!.answers) if (answer.nextNodeId) queue.push(answer.nextNodeId)
+  }
+  return seen
+}
+
+/** True when some answer leads, directly or not, back to a decision the student has already passed. */
+export function pathwayHasLoop(pathway: Pick<EventPathway, "startNodeId" | "nodes">): boolean {
+  const byId = new Map(pathway.nodes.map((node) => [node.id, node]))
+  const state = new Map<string, "open" | "done">()
+  const visit = (id: string): boolean => {
+    if (state.get(id) === "open") return true
+    if (state.get(id) === "done" || !byId.has(id)) return false
+    state.set(id, "open")
+    const loops = byId.get(id)!.answers.some((answer) => answer.nextNodeId !== null && visit(answer.nextNodeId))
+    state.set(id, "done")
+    return loops
+  }
+  return visit(pathway.startNodeId)
+}
+
+/**
+ * The points a student scores for an answer: only their FIRST answer at each decision counts. When a loop brings
+ * them back to a decision they have already answered, they answer again to move on, but it scores nothing, so going
+ * round a loop can never add (or take away) points.
+ */
+export function pointsForAnswer(steps: readonly PathwayStep[], pathwayId: string, nodeId: string, answerPoints: number): number {
+  return steps.some((step) => step.pathwayId === pathwayId && step.nodeId === nodeId) ? 0 : answerPoints
+}
+
+/** States explored before the loop search gives up and uses a safe upper bound instead. */
+const LOOP_SEARCH_LIMIT = 200_000
+
+/**
+ * The most points one pathway can give: the best route from the start to a finish, scoring each decision once
+ * (pointsForAnswer). Without loops that is the best branch at every step. With loops, a route may pass through an
+ * answered decision again (scoring nothing there) to reach new ones, so the search remembers which decisions are
+ * already answered.
+ */
 export function pathwayMaximum(pathway: Pick<EventPathway, "startNodeId" | "nodes">): number {
   const byId = new Map(pathway.nodes.map((node) => [node.id, node]))
-  const bestFrom = (nodeId: string): number => {
-    const node = byId.get(nodeId)
-    if (!node) return 0
-    return Math.max(...node.answers.map((answer) => answer.points + (answer.nextNodeId ? bestFrom(answer.nextNodeId) : 0)))
+  if (!byId.has(pathway.startNodeId)) return 0
+
+  if (!pathwayHasLoop(pathway)) {
+    const memo = new Map<string, number>()
+    const bestFrom = (nodeId: string): number => {
+      const known = memo.get(nodeId)
+      if (known !== undefined) return known
+      const node = byId.get(nodeId)
+      const best = node ? Math.max(...node.answers.map((answer) => answer.points + (answer.nextNodeId ? bestFrom(answer.nextNodeId) : 0))) : 0
+      memo.set(nodeId, best)
+      return best
+    }
+    return Math.max(0, bestFrom(pathway.startNodeId))
   }
-  return Math.max(0, bestFrom(pathway.startNodeId))
+
+  const index = new Map(pathway.nodes.map((node, i) => [node.id, BigInt(1) << BigInt(i)]))
+  const memo = new Map<string, number>()
+  let explored = 0
+  // best(id, answered): the student is about to answer `id` for the first time; `answered` holds the ones done before.
+  const best = (id: string, answered: bigint): number => {
+    const key = `${id}|${answered}`
+    const known = memo.get(key)
+    if (known !== undefined) return known
+    if (++explored > LOOP_SEARCH_LIMIT) throw new Error("search limit")
+    const now = answered | index.get(id)!
+    const result = Math.max(...byId.get(id)!.answers.map((answer) => answer.points + onward(answer.nextNodeId, now)))
+    memo.set(key, result)
+    return result
+  }
+  // From `start`, walking only through decisions already answered (they score nothing), the best way out: a finish
+  // (0) or the first new decision reached.
+  const onward = (start: string | null, answered: bigint): number => {
+    if (start === null) return 0
+    if (!(answered & index.get(start)!)) return best(start, answered)
+    let result = Number.NEGATIVE_INFINITY
+    const seen = new Set<string>()
+    const queue = [start]
+    while (queue.length) {
+      const id = queue.pop()!
+      if (seen.has(id)) continue
+      seen.add(id)
+      for (const answer of byId.get(id)!.answers) {
+        if (answer.nextNodeId === null) result = Math.max(result, 0)
+        else if (answered & index.get(answer.nextNodeId)!) queue.push(answer.nextNodeId)
+        else result = Math.max(result, best(answer.nextNodeId, answered))
+      }
+    }
+    return result
+  }
+  try {
+    return Math.max(0, best(pathway.startNodeId, BigInt(0)))
+  } catch {
+    // Too many routes to try them all: every decision's best answer, once each. Never below what a student can reach.
+    return Math.max(0, [...reachableFrom(pathway)].reduce((sum, id) => sum + Math.max(0, ...byId.get(id)!.answers.map((answer) => answer.points)), 0))
+  }
 }
 
 export function roundOneMaximum(pathways: readonly Pick<EventPathway, "startNodeId" | "nodes">[]): number {

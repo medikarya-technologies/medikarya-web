@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
-import { currentPathwayState, type RoundOneState } from "@/lib/events/pathways"
+import { currentPathwayState, pointsForAnswer, type RoundOneState } from "@/lib/events/pathways"
 import { roundOneAttemptInRoom } from "@/lib/events/medventure-attempts"
 import { startedBeforeRoom } from "@/lib/events/room-clock"
 import { medventureParticipant, medventurePathways, medventureRoom, MEDVENTURE } from "@/lib/events/medventure"
@@ -33,14 +33,16 @@ export async function answerMedventurePathwayAction(answerId: string): Promise<R
     const answer = node?.answers.find((item) => item.id === answerId)
     if (!pathway || !node || !answer) return { ok: false, error: "That answer is no longer available. Refresh the page." }
 
-    const steps = [...state.steps, { pathwayId: pathway.id, nodeId: node.id, answerId: answer.id, points: answer.points, at: new Date().toISOString() }]
+    // Only the first answer at a decision scores; a loop back to it scores nothing the second time (pointsForAnswer)
+    const points = pointsForAnswer(state.steps, pathway.id, node.id, answer.points)
+    const steps = [...state.steps, { pathwayId: pathway.id, nodeId: node.id, answerId: answer.id, points, at: new Date().toISOString() }]
     let next: RoundOneState
     if (answer.nextNodeId) next = { ...state, currentNodeId: answer.nextNodeId, steps }
     else {
       const completedPathwayIds = [...state.completedPathwayIds, pathway.id]
       next = currentPathwayState(pathways, { ...state, currentPathwayId: null, currentNodeId: null, completedPathwayIds, steps })
     }
-    const score = attempt.score + answer.points
+    const score = attempt.score + points
     const complete = next.currentPathwayId === null
     const { error } = await supabaseServer.from("event_round1_attempts").update({ state: next, score, ...(complete ? { completed_at: new Date().toISOString() } : {}) }).eq("event_key", MEDVENTURE.key).eq("clerk_user_id", participant.userId)
     if (error) throw error
