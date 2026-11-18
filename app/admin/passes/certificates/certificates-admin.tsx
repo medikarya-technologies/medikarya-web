@@ -183,6 +183,13 @@ export function CertificatesAdmin({ event, students, notSignedUp, cases, issued,
           {plural(students.length, "student")} signed up with their pass email
           {notSignedUp > 0 ? `; ${notSignedUp} never signed up` : ""}. {issuedCount > 0 && `${plural(issuedCount, "certificate")} issued so far.`}
         </p>
+        {/* Award titles go to one student: "Include none", then tick the winner, instead of unticking everyone else */}
+        {finished.some((s) => !issued[s.email]) && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className={quiet} disabled={pending} onClick={() => setLeft({})}>Include all</button>
+            <button type="button" className={quiet} disabled={pending} onClick={() => setLeft(Object.fromEntries(finished.filter((s) => !issued[s.email]).map((s) => [s.email, true])))}>Include none</button>
+          </div>
+        )}
 
         {finished.length === 0 ? (
           <p className="mt-3 rounded-xl border border-dashed border-slate-300 p-6 text-center text-slate-500">Nobody has finished every ticked case yet.</p>
@@ -240,7 +247,7 @@ export function CertificatesAdmin({ event, students, notSignedUp, cases, issued,
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" className={primary} disabled={pending || !!problem || toIssue.length === 0} onClick={issueAll}>
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Award className="h-4 w-4" />}
-          {progress ?? (toIssue.length ? `Issue ${plural(toIssue.length, "certificate")}` : "Everyone listed has one")}
+          {progress ?? (toIssue.length ? `Issue ${plural(toIssue.length, "certificate")}` : finished.some((s) => !issued[s.email]) ? "Tick who gets one" : "Everyone listed has one")}
         </button>
         {issuedCount > 0 && (
           <button type="button" className={quiet} onClick={() => void copyLinks()}>
