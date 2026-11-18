@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { PatientCard } from "@/components/cases/patient-card"
 import { FirstCaseWelcomeDialog } from "@/components/cases/first-case-welcome"
@@ -64,10 +64,14 @@ export default function CasePage() {
   const router = useRouter()
   // ?first=1: a brand-new account sent here from the dashboard (lib/library/first-case.ts). Remembered at once, not
   // when the case has loaded, so going straight back to the dashboard never sends them here a second time.
-  const firstVisit = useSearchParams().get("first") === "1"
+  const search = useSearchParams()
+  const firstVisit = search.get("first") === "1"
   useEffect(() => {
     if (firstVisit) markWelcomed()
   }, [firstVisit])
+  // ?review=last: open the latest attempt's debrief straight away (the MedVenture result links here), not the briefing
+  const reviewLast = search.get("review") === "last"
+  const reviewOpened = useRef(false)
   
   // State
   const [caseStarted, setCaseStarted] = useState(false)
@@ -155,6 +159,17 @@ export default function CasePage() {
   useEffect(() => {
     loadData()
   }, [loadData])
+
+  // Once, after the attempts arrive: a link with ?review=last lands on that debrief (when it has one to show)
+  useEffect(() => {
+    if (!reviewLast || reviewOpened.current || loading) return
+    reviewOpened.current = true
+    const latest = attempts[0]
+    if (latest?.feedback_json) {
+      setSelectedAttempt(latest)
+      setViewingHistory(true)
+    }
+  }, [reviewLast, loading, attempts])
 
   const handleStartCase = async () => {
     try {
