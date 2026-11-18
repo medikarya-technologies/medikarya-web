@@ -218,6 +218,8 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   const [differentialOpen, setDifferentialOpen] = useState(false)
   const [monitorOpen, setMonitorOpen] = useState(false)
   const [evaluating, setEvaluating] = useState(false)
+  // Set while an event's Round 2 hands over to the event result, so the debrief does not flash on the way
+  const [leavingForEvent, setLeavingForEvent] = useState(false)
   const pendingQuestion = useRef<string | null>(null)
 
   // ── Diagnosis form state — lifted here so it survives tab switches ──────
@@ -405,6 +407,14 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
     // Meta: no score, case or answer.
     trackMetaEvent("CaseCompleted", ui.playId, { surface: analyticsSurface })
     recordTryStep("finished", ui.playId)
+    // Round 2 of an event (opened from the challenge with ?event=medventure) ends on the event's result screen, not
+    // the debrief; the debrief stays saved here for later. A provisional score does not count for the event, so that
+    // student stays on the debrief, which tells them to try again.
+    if (!result?.provisional && new URLSearchParams(window.location.search).get("event") === "medventure") {
+      setLeavingForEvent(true)
+      window.location.assign("/medventure/results")
+      return
+    }
     // Start the classic quiz in the background, as the classic flow does, so it is ready by the time it is wanted.
     if (isClassic) startClassicQuiz(result, 3000)
   }
@@ -468,6 +478,18 @@ function Encounter({ caseData, onExit, guestId, ui, setUi, uiKey, speed, onTour,
   }
 
   // ── Debrief & quiz ────────────────────────────────────────────────────
+  if (leavingForEvent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-enc-desk p-6 text-center">
+        <div>
+          <Loader2 className="mx-auto h-7 w-7 animate-spin text-brand-600" />
+          <h3 className="mt-4 text-[17px] font-semibold text-enc-ink">Round 2 is done</h3>
+          <p className="mt-1 text-[13px] text-enc-ink-2">Opening your result…</p>
+        </div>
+      </div>
+    )
+  }
+
   if (feedback && ui.showQuiz && (quiz || isClassic)) {
     // A refresh can land straight on the quiz: reuse the saved questions, or generate them now.
     // The ref guard makes this safe to reach more than once.
