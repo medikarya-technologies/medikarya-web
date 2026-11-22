@@ -104,7 +104,7 @@ export default function MedventurePage() {
               A clinical decision challenge for the MAMC community. Three decision pathways, one reasoning case and one final ranking, all on the MediKarya platform.
             </p>
             <div className="mt-8 flex flex-col gap-2 text-sm font-semibold text-white/80 min-[460px]:flex-row min-[460px]:items-center min-[460px]:gap-5">
-              <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[#9ce1b6]" /> 19 November 2026</span>
+              <span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[#9ce1b6]" /> 22 November 2026</span>
               <span className="hidden h-1 w-1 rounded-full bg-[#9ce1b6]/60 min-[460px]:block" />
               <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4 text-[#9ce1b6]" /> MAMC, New Delhi</span>
             </div>
@@ -176,7 +176,7 @@ export default function MedventurePage() {
       <section id="event-day" className="border-y border-[#dbe8df] bg-white">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 sm:py-18 lg:grid-cols-[1fr_auto] lg:items-center">
           <div><p className="text-[11px] font-bold tracking-[0.16em] text-[#4b8f74] uppercase">Your event reference</p><h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[#173c2d] sm:text-3xl">Everything you need to know, in one place.</h2><p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#5a6c61]">Your Medventure organisers will share access instructions at the venue on the day.</p></div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">{[[CalendarDays, "19 Nov", "2026"], [MapPin, "MAMC", "New Delhi"], [Clock3, "Event", "on site"]].map(([Icon, first, second]) => { const FactIcon = Icon as typeof CalendarDays; return <div key={String(first)} className="rounded-xl border border-[#cfe0d4] bg-white px-3 py-3 text-center sm:px-4"><FactIcon className="mx-auto h-4 w-4 text-[#4b8f74]" /><p className="mt-2 text-[12px] font-bold text-[#264a37]">{String(first)}</p><p className="text-[10px] text-[#6d8376]">{String(second)}</p></div> })}</div>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">{[[CalendarDays, "22 Nov", "2026"], [MapPin, "MAMC", "New Delhi"], [Clock3, "Event", "on site"]].map(([Icon, first, second]) => { const FactIcon = Icon as typeof CalendarDays; return <div key={String(first)} className="rounded-xl border border-[#cfe0d4] bg-white px-3 py-3 text-center sm:px-4"><FactIcon className="mx-auto h-4 w-4 text-[#4b8f74]" /><p className="mt-2 text-[12px] font-bold text-[#264a37]">{String(first)}</p><p className="text-[10px] text-[#6d8376]">{String(second)}</p></div> })}</div>
         </div>
       </section>
 
